@@ -12,7 +12,7 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
       <div className="space-y-5">
         <PageHeader title="채용 정보" homeHref="/jobs" homeLabel="이전 목록으로" />
         <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-card">
-          <p className="text-sm text-muted">공고를 찾을 수 없습니다.</p>
+          <p className="text-sm text-muted">채용 정보를 찾을 수 없습니다.</p>
           <Link href="/jobs" className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">
             이전 목록으로
           </Link>

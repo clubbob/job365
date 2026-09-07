@@ -48,16 +48,18 @@ type FieldLabelProps = {
   htmlFor?: string;
   children: React.ReactNode;
   optional?: boolean;
+  required?: boolean;
 };
 
-export function FieldLabel({ htmlFor, children, optional }: FieldLabelProps) {
+export function FieldLabel({ htmlFor, children, optional, required }: FieldLabelProps) {
   return (
     <label
       htmlFor={htmlFor}
       className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"
     >
       {children}
-      {optional && <span className="text-xs font-normal text-subtle">(선택)</span>}
+      {required ? <span className="text-xs font-normal text-primary">필수</span> : null}
+      {optional ? <span className="text-xs font-normal text-subtle">(선택)</span> : null}
     </label>
   );
 }

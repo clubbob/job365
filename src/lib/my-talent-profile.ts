@@ -1,4 +1,4 @@
-import type { TalentProfile } from '@/types/talent';
+import { isEducationLevel, type TalentProfile } from '@/types/talent';
 
 const STORAGE_KEY = 'job365.myTalentProfiles';
 
@@ -25,10 +25,11 @@ export function loadMyTalentProfile(userId: string): TalentProfile | null {
 }
 
 export function listMyTalentProfiles(): TalentProfile[] {
-  return Object.values(readStore());
+  return Object.values(readStore()).filter((profile) => isEducationLevel(profile.education));
 }
 
 export function saveMyTalentProfile(userId: string, profile: TalentProfile): void {
+  if (!isEducationLevel(profile.education)) return;
   const store = readStore();
   store[userId] = profile;
   writeStore(store);

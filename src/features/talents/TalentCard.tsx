@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { maskTalentName } from '@/lib/talent-display';
+import { maskTalentName, talentEducation } from '@/lib/talent-display';
 import { WORK_TYPE_LABELS } from '@/types/job';
 import type { TalentProfile } from '@/types/talent';
 
@@ -21,6 +21,7 @@ export default function TalentCard({
           {WORK_TYPE_LABELS[talent.workType]}
         </span>
         <span className="text-xs text-subtle">{talent.careerLabel}</span>
+        <span className="text-xs text-subtle">{talentEducation(talent)}</span>
       </div>
       <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">
         {maskTalentName(talent.name)} · {talent.headline}

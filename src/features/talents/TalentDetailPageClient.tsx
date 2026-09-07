@@ -6,7 +6,7 @@ import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
 import TalentProposeButton from '@/features/talents/TalentProposeButton';
 import { getTalentById } from '@/lib/talent-catalog';
-import { displayTalentName, talentRecentDate } from '@/lib/talent-display';
+import { displayTalentName, talentEducation, talentRecentDate } from '@/lib/talent-display';
 import type { TalentProposalStatus } from '@/lib/talent-proposals';
 import { WORK_TYPE_LABELS } from '@/types/job';
 
@@ -33,7 +33,7 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
     <div className="space-y-6">
       <PageHeader
         title={`${displayTalentName(talent.name, revealName)} · ${talent.headline}`}
-        description={talent.careerLabel}
+        description={`${talent.careerLabel} · ${talentEducation(talent)}`}
         homeHref="/talents"
         homeLabel="이전 목록으로"
       />
@@ -59,6 +59,10 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
           <div>
             <dt className="text-subtle">경력</dt>
             <dd className="mt-0.5 font-medium text-foreground">{talent.careerLabel}</dd>
+          </div>
+          <div>
+            <dt className="text-subtle">학력</dt>
+            <dd className="mt-0.5 font-medium text-foreground">{talentEducation(talent)}</dd>
           </div>
           <div>
             <dt className="text-subtle">프로필 최근일</dt>

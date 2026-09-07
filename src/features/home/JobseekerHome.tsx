@@ -8,10 +8,10 @@ export default function JobseekerHome() {
       <section className="rounded-2xl bg-gradient-to-br from-primary to-primary-dark px-5 py-8 text-white shadow-card sm:px-8">
         <p className="text-sm font-semibold text-blue-100">구직자 홈</p>
         <h1 className="mt-2 text-2xl font-bold leading-snug sm:text-3xl">
-          지금 지원할 수 있는 채용 공고를 찾아 보세요
+          지금 지원할 수 있는 채용 정보를 찾아 보세요
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-blue-100 sm:text-base">
-          채용 공고를 선택해 바로 지원할 수 있습니다. 이용료는 없습니다.
+          채용 정보를 선택해 바로 지원할 수 있습니다. 이용료는 없습니다.
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
@@ -33,7 +33,7 @@ export default function JobseekerHome() {
 
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-foreground">최근 채용 공고</h2>
+          <h2 className="text-lg font-bold text-foreground">최근 채용 정보</h2>
           <p className="mt-1 text-sm text-muted">관심 있는 근무 형태를 골라 보세요.</p>
         </div>
         <Link href="/jobs" className="text-sm font-semibold text-primary hover:underline">

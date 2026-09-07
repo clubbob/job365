@@ -10,7 +10,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: 'JOB 365',
-  description: '정규직·계약직·프리랜서 등 무료 채용 매칭 플랫폼',
+  description: '파트타임부터 정규직까지, 100% 무료 이용·매칭 서비스',
   icons: {
     icon: '/favicon.svg',
   },

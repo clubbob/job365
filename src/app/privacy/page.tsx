@@ -17,7 +17,7 @@ export default function PrivacyPage() {
 
       <LegalSection title="2. 이용 목적">
         <LegalP>
-          회원 식별, 공고 등록·지원 처리, 합격/불합격 안내, 고객 문의 응대, 서비스 개선 및 부정 이용 방지에
+          회원 식별, 채용 정보 등록·지원 처리, 합격/불합격 안내, 고객 문의 응대, 서비스 개선 및 부정 이용 방지에
           사용합니다.
         </LegalP>
       </LegalSection>

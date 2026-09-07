@@ -16,7 +16,7 @@ export default function TalentsPageClient() {
     <div className="space-y-6">
       <PageHeader
         title="인재 정보"
-        description="정규직부터 프로젝트까지, 이용료 없이 인재 정보를 찾아보세요."
+        description="파트타임부터 정규직까지, 이용료 없이 인재 정보를 찾아보세요."
       />
 
       <p className="rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted">

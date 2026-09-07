@@ -8,10 +8,10 @@ export default function RecruiterHome() {
       <section className="rounded-2xl bg-gradient-to-br from-primary-dark to-primary px-5 py-8 text-white shadow-card sm:px-8">
         <p className="text-sm font-semibold text-blue-100">구인자 홈</p>
         <h1 className="mt-2 text-2xl font-bold leading-snug sm:text-3xl">
-          지금 채용할 수 있는 사람을 찾아 보세요
+          지금 채용할 수 있는 인재를 찾아 보세요
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-blue-100 sm:text-base">
-          채용 공고를 올리고 지원자를 한 곳에서 관리합니다. 이용료는 없습니다.
+          채용 정보를 올리고 지원자를 한 곳에서 관리합니다. 이용료는 없습니다.
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
@@ -24,15 +24,15 @@ export default function RecruiterHome() {
             href="/jobs/new"
             className="inline-flex rounded-lg border border-white/40 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
           >
-            채용 공고 등록
+            채용 정보 등록
           </Link>
         </div>
       </section>
 
       <AdSlot placement="header" />
 
-      <Card title="내 채용 공고" description="등록한 공고와 지원 현황이 여기에 모입니다.">
-        <p className="text-sm text-muted">아직 등록된 공고가 없습니다. 첫 공고는 다음 단계에서 작성할 수 있습니다.</p>
+      <Card title="내 채용 정보" description="등록한 채용 정보와 지원 현황이 여기에 모입니다.">
+        <p className="text-sm text-muted">아직 등록된 채용 정보가 없습니다. 첫 채용 정보는 다음 단계에서 작성할 수 있습니다.</p>
       </Card>
 
       <Card title="최근 지원자">

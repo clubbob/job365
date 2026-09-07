@@ -40,6 +40,7 @@ export default function TalentList({
         talent.summary,
         talent.desiredPay,
         talent.careerLabel,
+        talent.education,
         ...talent.tags,
       ]
         .join(' ')

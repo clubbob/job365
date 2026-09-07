@@ -6,7 +6,7 @@ import { authInputClassName } from '@/lib/auth-ui';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 import { loadMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
 import { WORK_TYPE_FILTERS, WORK_TYPE_LABELS, type JobWorkType } from '@/types/job';
-import type { TalentProfile } from '@/types/talent';
+import { EDUCATION_OPTIONS, isEducationLevel, type EducationLevel, type TalentProfile } from '@/types/talent';
 
 const WORK_TYPES: JobWorkType[] = WORK_TYPE_FILTERS.flatMap((item) =>
   item.id === 'all' ? [] : [item.id],
@@ -17,6 +17,7 @@ export default function MyTalentProfileForm({ userId, nickname }: { userId: stri
   const [headline, setHeadline] = useState('');
   const [workType, setWorkType] = useState<JobWorkType>('fulltime');
   const [careerLabel, setCareerLabel] = useState('');
+  const [education, setEducation] = useState<EducationLevel | ''>('');
   const [location, setLocation] = useState('');
   const [desiredPay, setDesiredPay] = useState('');
   const [available, setAvailable] = useState('');
@@ -26,6 +27,7 @@ export default function MyTalentProfileForm({ userId, nickname }: { userId: stri
   const [createdAt, setCreatedAt] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const existing = loadMyTalentProfile(userId);
@@ -37,6 +39,7 @@ export default function MyTalentProfileForm({ userId, nickname }: { userId: stri
     setHeadline(existing.headline);
     setWorkType(existing.workType);
     setCareerLabel(existing.careerLabel);
+    setEducation(isEducationLevel(existing.education) ? existing.education : '');
     setLocation(existing.location);
     setDesiredPay(existing.desiredPay);
     setAvailable(existing.available);
@@ -49,6 +52,12 @@ export default function MyTalentProfileForm({ userId, nickname }: { userId: stri
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (!isEducationLevel(education)) {
+      setSaved(false);
+      setError('학력은 필수 등록 항목입니다.');
+      return;
+    }
+    setError('');
     const today = getKoreaDateLocalToday();
     const profile: TalentProfile = {
       id: `talent-me-${userId}`,
@@ -56,6 +65,7 @@ export default function MyTalentProfileForm({ userId, nickname }: { userId: stri
       headline: headline.trim(),
       workType,
       careerLabel: careerLabel.trim(),
+      education,
       location: location.trim(),
       desiredPay: desiredPay.trim(),
       available: available.trim(),
@@ -78,7 +88,7 @@ export default function MyTalentProfileForm({ userId, nickname }: { userId: stri
     <div id="resume" className="scroll-mt-20">
     <Card
       title="인재 프로필"
-      description="저장하면 인재 정보에 반영되고, 프로필 최근일은 수정한 날짜로 바뀝니다."
+      description="학력은 필수입니다. 저장하면 인재 정보에 반영되고, 프로필 최근일은 수정한 날짜로 바뀝니다."
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div>
@@ -127,6 +137,31 @@ export default function MyTalentProfileForm({ userId, nickname }: { userId: stri
             className={authInputClassName}
             required
           />
+        </div>
+        <div>
+          <FieldLabel htmlFor="talent-education" required>
+            학력
+          </FieldLabel>
+          <select
+            id="talent-education"
+            value={education}
+            onChange={(event) => {
+              const next = event.target.value;
+              setEducation(isEducationLevel(next) ? next : '');
+            }}
+            className={authInputClassName}
+            required
+          >
+            <option value="" disabled>
+              학력을 선택하세요
+            </option>
+            {EDUCATION_OPTIONS.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+          {error ? <p className="mt-1.5 text-sm text-danger">{error}</p> : null}
         </div>
         <div>
           <FieldLabel htmlFor="talent-location">희망 근무지</FieldLabel>
@@ -181,7 +216,9 @@ export default function MyTalentProfileForm({ userId, nickname }: { userId: stri
           />
         </div>
         <div>
-          <FieldLabel htmlFor="talent-tags">태그</FieldLabel>
+          <FieldLabel htmlFor="talent-tags" optional>
+            태그
+          </FieldLabel>
           <input
             id="talent-tags"
             value={tags}

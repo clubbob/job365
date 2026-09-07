@@ -12,12 +12,12 @@ export default function GuestHome() {
   return (
     <div className="space-y-6">
       <section className="rounded-2xl bg-gradient-to-br from-primary to-primary-dark px-5 py-8 text-white shadow-card sm:px-8">
-        <p className="text-sm font-semibold text-blue-100">100% 무료 매칭</p>
+        <p className="text-sm font-semibold text-blue-100">100% 무료 이용·매칭</p>
         <h1 className="mt-2 text-2xl font-bold leading-snug sm:text-3xl">
-          부담 없는 100% 무료 매칭, 정규직부터 프로젝트까지
+          100% 무료 이용·매칭 서비스, 파트타임부터 정규직까지
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-blue-100 sm:text-base">
-          무료 채용 플랫폼입니다. 구인자, 구직자 모두 이용료가 없습니다.
+          무료 이용·매칭 서비스입니다. 구인자, 구직자 모두 이용료가 없습니다.
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
@@ -47,7 +47,7 @@ export default function GuestHome() {
 
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-foreground">최근 채용 공고</h2>
+          <h2 className="text-lg font-bold text-foreground">최근 채용 정보</h2>
           <p className="mt-1 text-sm text-muted">관심 있는 근무 형태를 골라 보세요.</p>
         </div>
         <Link href="/jobs" className="text-sm font-semibold text-primary hover:underline">

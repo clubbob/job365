@@ -64,13 +64,13 @@ export default function MyPageClient() {
       </Card>
 
       <Card title="지원 내역">
-        <p className="text-sm text-muted">구직자로 지원한 공고와 결과는 다음 단계에서 확인할 수 있습니다.</p>
+        <p className="text-sm text-muted">구직자로 지원한 채용 정보와 결과는 다음 단계에서 확인할 수 있습니다.</p>
       </Card>
 
       {mode === 'jobseeker' ? <MyTalentProfileForm userId={user.uid} nickname={nickname} /> : null}
 
       <Card title="지원자 관리">
-        <p className="text-sm text-muted">구인자로 올린 공고의 지원자 열람과 합/불 처리는 다음 단계에서 열립니다.</p>
+        <p className="text-sm text-muted">구인자로 올린 채용 정보의 지원자 열람과 합/불 처리는 다음 단계에서 열립니다.</p>
       </Card>
     </div>
   );

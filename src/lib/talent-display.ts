@@ -13,3 +13,7 @@ export function displayTalentName(name: string, revealed: boolean): string {
 export function talentRecentDate(talent: Pick<TalentProfile, 'createdAt' | 'updatedAt'>): string {
   return talent.updatedAt || talent.createdAt;
 }
+
+export function talentEducation(talent: Pick<TalentProfile, 'education'>): string {
+  return talent.education;
+}

@@ -18,7 +18,7 @@ export default function InquiryPageClient() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="문의하기" description="서비스 이용, 공고, 기업 인증 관련 문의를 남겨 주세요." />
+      <PageHeader title="문의하기" description="서비스 이용, 채용 정보, 기업 인증 관련 문의를 남겨 주세요." />
       <Card>
       {submitted ? (
         <p className="text-sm text-muted">
