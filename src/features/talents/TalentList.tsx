@@ -90,8 +90,9 @@ export default function TalentList({
 
   useEffect(() => {
     if (!persistKey) return;
+    const key = persistKey;
     function onScroll() {
-      saveListScroll(persistKey, window.scrollY);
+      saveListScroll(key, window.scrollY);
     }
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -107,6 +108,11 @@ export default function TalentList({
   function goToPage(next: number) {
     setPage(next);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function rememberListPosition() {
+    if (!persistKey) return;
+    saveListScroll(persistKey, window.scrollY);
   }
 
   return (
@@ -155,7 +161,7 @@ export default function TalentList({
           <Fragment key={talent.id}>
             <TalentCard
               talent={talent}
-              onNavigate={persistKey ? () => saveListScroll(persistKey, window.scrollY) : undefined}
+              onNavigate={persistKey ? rememberListPosition : undefined}
             />
             {index === 1 ? <AdSlot className="col-span-2" placement="infeed" /> : null}
           </Fragment>
