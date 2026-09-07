@@ -8,7 +8,9 @@ import { loadMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profil
 import { WORK_TYPE_FILTERS, WORK_TYPE_LABELS, type JobWorkType } from '@/types/job';
 import type { TalentProfile } from '@/types/talent';
 
-const WORK_TYPES = WORK_TYPE_FILTERS.filter((item) => item.id !== 'all').map((item) => item.id);
+const WORK_TYPES: JobWorkType[] = WORK_TYPE_FILTERS.flatMap((item) =>
+  item.id === 'all' ? [] : [item.id],
+);
 
 export default function MyTalentProfileForm({ userId, nickname }: { userId: string; nickname: string }) {
   const [name, setName] = useState(nickname);
