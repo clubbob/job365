@@ -19,6 +19,10 @@ export default function JobsPageClient() {
         description="정규직부터 프로젝트까지, 이용료 없이 채용 공고를 찾아보세요."
       />
 
+      <p className="rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted">
+        채용 공고는 목록에서 바로 확인할 수 있습니다. 지원하면 해당 구인자에게만 지원 내용이 전달됩니다.
+      </p>
+
       {canPost ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-card">
           <p className="text-sm text-muted">인재를 찾고 있다면 공고를 올려 보세요. 등록 이용료는 없습니다.</p>
