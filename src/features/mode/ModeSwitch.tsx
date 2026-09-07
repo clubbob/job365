@@ -4,7 +4,7 @@ import { USER_MODE_LABELS, type UserMode } from '@/lib/user-mode';
 import { useUserMode } from '@/features/mode/mode-context';
 import { cn } from '@/lib/utils';
 
-const MODES: UserMode[] = ['jobseeker', 'recruiter'];
+const MODES: UserMode[] = ['recruiter', 'jobseeker'];
 
 export default function ModeSwitch({
   className,

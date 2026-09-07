@@ -1,4 +1,11 @@
-export type JobWorkType = 'remote' | 'freelance' | 'parttime' | 'short';
+export type JobWorkType =
+  | 'fulltime'
+  | 'contract'
+  | 'intern'
+  | 'freelance'
+  | 'parttime'
+  | 'dispatch'
+  | 'project';
 export type JobPayType = 'hourly' | 'daily' | 'monthly' | 'per_task';
 export type JobStatus = 'draft' | 'pending' | 'published' | 'closed' | 'rejected';
 
@@ -16,21 +23,28 @@ export type JobPosting = {
 };
 
 export const WORK_TYPE_LABELS: Record<JobWorkType, string> = {
-  remote: '재택',
+  fulltime: '정규직',
+  contract: '계약직',
+  intern: '인턴',
   freelance: '프리랜서',
-  parttime: '알바',
-  short: '알바',
+  parttime: '파트타임',
+  dispatch: '파견·도급',
+  project: '프로젝트',
 };
 
 export const WORK_TYPE_FILTERS: Array<{
-  id: 'all' | 'parttime' | 'remote' | 'freelance';
+  id: 'all' | JobWorkType;
   label: string;
   types: JobWorkType[] | null;
 }> = [
   { id: 'all', label: '전체', types: null },
-  { id: 'parttime', label: '알바', types: ['parttime', 'short'] },
-  { id: 'remote', label: '재택', types: ['remote'] },
+  { id: 'fulltime', label: '정규직', types: ['fulltime'] },
+  { id: 'contract', label: '계약직', types: ['contract'] },
+  { id: 'intern', label: '인턴', types: ['intern'] },
   { id: 'freelance', label: '프리랜서', types: ['freelance'] },
+  { id: 'parttime', label: '파트타임', types: ['parttime'] },
+  { id: 'dispatch', label: '파견·도급', types: ['dispatch'] },
+  { id: 'project', label: '프로젝트', types: ['project'] },
 ];
 
 export const PAY_TYPE_LABELS: Record<JobPayType, string> = {

@@ -1,0 +1,16 @@
+---
+description: 상단 메뉴는 선택 항목을 파란 버튼처럼 강조한다
+globs: src/components/layout/Header*.tsx
+alwaysApply: true
+---
+
+# 상단 메뉴 스타일
+
+상단 주요 메뉴(채용 정보, 인재 정보 등)는 밑줄만 쓰지 않는다. 선택된 항목은 로그인 버튼과 같이 **파란 배경 + 흰 글자**로 분명히 보이게 한다.
+
+- 활성: `bg-primary text-white shadow-sm`
+- 비활성: `text-muted hover:bg-neutral-100 hover:text-foreground`
+- 공통: `rounded-lg font-semibold` (데스크톱 `px-3.5 py-2 text-sm`)
+- 모바일 메뉴도 활성은 `bg-primary text-white`
+
+메뉴를 추가·수정할 때도 이 대비를 유지한다. 파란 글자 + 밑줄만 있는 소극적 활성 상태로 되돌리지 않는다.

@@ -8,6 +8,7 @@ const TITLE_HEADER_PATHS = new Set([
   '/mypage',
   '/jobs',
   '/jobs/new',
+  '/talents',
   '/inquiry',
   '/login',
   '/signup',
@@ -25,6 +26,7 @@ export default function PageHomeBack() {
     pathname.startsWith('/admin') ||
     pathname.startsWith('/reset-password') ||
     pathname.startsWith('/jobs/') ||
+    pathname.startsWith('/talents/') ||
     TITLE_HEADER_PATHS.has(pathname)
   ) {
     return null;

@@ -3,8 +3,8 @@ export type UserMode = 'jobseeker' | 'recruiter';
 const USER_MODE_KEY = 'job365.userMode';
 
 export const USER_MODE_LABELS: Record<UserMode, string> = {
-  jobseeker: '구직자',
-  recruiter: '구인자',
+  jobseeker: '구직자 (취업개인)',
+  recruiter: '구인자 (채용회사)',
 };
 
 export const USER_MODE_PATHS: Record<UserMode, string> = {

@@ -10,11 +10,11 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
   if (!job) {
     return (
       <div className="space-y-5">
-        <PageHeader title="채용 공고" />
+        <PageHeader title="채용 정보" homeHref="/jobs" homeLabel="이전 목록으로" />
         <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-card">
           <p className="text-sm text-muted">공고를 찾을 수 없습니다.</p>
           <Link href="/jobs" className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">
-            채용 공고 목록으로
+            이전 목록으로
           </Link>
         </div>
       </div>
@@ -23,7 +23,12 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={job.title} description={job.companyName} />
+      <PageHeader
+        title={job.title}
+        description={job.companyName}
+        homeHref="/jobs"
+        homeLabel="이전 목록으로"
+      />
       <AdSlot placement="header" />
       <article className="rounded-xl border border-border bg-surface p-5 shadow-card sm:p-6">
         <div className="mb-3 flex flex-wrap gap-2">

@@ -5,10 +5,14 @@ export default function PageHeader({
   title,
   description,
   showRefresh = true,
+  homeHref,
+  homeLabel,
 }: {
   title: string;
   description?: string;
   showRefresh?: boolean;
+  homeHref?: string;
+  homeLabel?: string;
 }) {
   return (
     <header className="flex items-start justify-between gap-3">
@@ -16,7 +20,7 @@ export default function PageHeader({
         <h1 className="text-2xl font-bold text-foreground">{title}</h1>
         {description ? <p className="text-sm text-muted">{description}</p> : null}
       </div>
-      <PageActions showRefresh={showRefresh} />
+      <PageActions showRefresh={showRefresh} homeHref={homeHref} homeLabel={homeLabel} />
     </header>
   );
 }

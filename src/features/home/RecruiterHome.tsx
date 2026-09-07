@@ -13,12 +13,20 @@ export default function RecruiterHome() {
         <p className="mt-3 text-sm leading-relaxed text-blue-100 sm:text-base">
           채용 공고를 올리고 지원자를 한 곳에서 관리합니다. 이용료는 없습니다.
         </p>
-        <Link
-          href="/jobs/new"
-          className="mt-5 inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition hover:bg-blue-50"
-        >
-          채용 공고 등록
-        </Link>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Link
+            href="/talents"
+            className="inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition hover:bg-blue-50"
+          >
+            인재 정보
+          </Link>
+          <Link
+            href="/jobs/new"
+            className="inline-flex rounded-lg border border-white/40 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+          >
+            채용 공고 등록
+          </Link>
+        </div>
       </section>
 
       <AdSlot placement="header" />

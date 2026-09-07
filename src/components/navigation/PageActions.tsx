@@ -5,14 +5,18 @@ import RefreshButton from '@/components/navigation/RefreshButton';
 export default function PageActions({
   showHome = true,
   showRefresh = true,
+  homeHref,
+  homeLabel,
 }: {
   showHome?: boolean;
   showRefresh?: boolean;
+  homeHref?: string;
+  homeLabel?: string;
 }) {
   return (
     <div className="flex shrink-0 items-center gap-2">
       {showRefresh ? <RefreshButton /> : null}
-      {showHome ? <HomeBackLink /> : null}
+      {showHome ? <HomeBackLink href={homeHref} label={homeLabel} /> : null}
     </div>
   );
 }

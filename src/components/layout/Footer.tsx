@@ -26,7 +26,7 @@ export default function Footer() {
 
         <div className={rowClassName}>
           <span className="text-sm text-muted">JOB 365</span>
-          <span className="text-sm text-foreground">알바·재택·프리랜서 무료 매칭</span>
+          <span className="text-sm text-foreground">무료 채용 매칭</span>
         </div>
 
         <p className="text-sm text-muted">Copyright © 2026 JOB 365. All rights reserved.</p>

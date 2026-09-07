@@ -14,17 +14,23 @@ export default function GuestHome() {
       <section className="rounded-2xl bg-gradient-to-br from-primary to-primary-dark px-5 py-8 text-white shadow-card sm:px-8">
         <p className="text-sm font-semibold text-blue-100">100% 무료 매칭</p>
         <h1 className="mt-2 text-2xl font-bold leading-snug sm:text-3xl">
-          알바·재택·프리랜서, 지금 바로 찾아보세요
+          부담 없는 100% 무료 매칭, 정규직부터 프로젝트까지
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-blue-100 sm:text-base">
-          학생, 재택, 프리랜서를 위한 무료 채용 플랫폼입니다. 구인자, 구직자 이용료 모두 없습니다.
+          무료 채용 플랫폼입니다. 구인자, 구직자 모두 이용료가 없습니다.
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
             href="/jobs"
             className="rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition hover:bg-blue-50"
           >
-            채용 공고 보기
+            채용 정보 보기
+          </Link>
+          <Link
+            href="/talents"
+            className="rounded-lg border border-white/40 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+          >
+            인재 정보 보기
           </Link>
           {!isLoggedIn ? (
             <Link
@@ -49,7 +55,7 @@ export default function GuestHome() {
         </Link>
       </div>
 
-      <JobList />
+      <JobList limit={6} />
     </div>
   );
 }

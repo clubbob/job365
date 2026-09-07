@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import HeaderModeMenu from '@/components/layout/HeaderModeMenu';
 import Logo from '@/components/brand/Logo';
 import { useAuth } from '@/features/auth/auth-context';
-import { useUserMode } from '@/features/mode/mode-context';
 import { getUserNicknameFallback } from '@/lib/user-display';
 import { cn } from '@/lib/utils';
 
@@ -42,21 +41,12 @@ function isNavActive(pathname: string, href: string, exact: boolean): boolean {
 
 export default function HeaderClient() {
   const { user, loading, logout } = useAuth();
-  const { mode } = useUserMode();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const navItems =
-    user && mode === 'recruiter'
-      ? [
-          { href: '/', label: '구인자 홈', exact: true },
-            { href: '/jobs/new', label: '채용 공고 등록', exact: false },
-        ]
-      : user && mode === 'jobseeker'
-        ? [
-            { href: '/', label: '구직자 홈', exact: true },
-            { href: '/jobs', label: '채용 공고', exact: false },
-          ]
-        : [];
+  const navItems = [
+    { href: '/jobs', label: '채용 정보', exact: false },
+    { href: '/talents', label: '인재 정보', exact: false },
+  ];
 
   useEffect(() => {
     setMenuOpen(false);
@@ -70,10 +60,10 @@ export default function HeaderClient() {
   }, [menuOpen]);
 
   const navLinkClassName =
-    'rounded-lg px-2.5 py-2 text-sm font-medium text-muted transition-colors hover:bg-neutral-100 hover:text-foreground';
+    'rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors';
 
   const mobileLinkClassName =
-    'block rounded-lg px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-neutral-100';
+    'block rounded-lg px-3 py-3 text-base font-semibold transition-colors';
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface shadow-sm print:hidden">
@@ -90,16 +80,14 @@ export default function HeaderClient() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={cn(navLinkClassName, active && 'font-semibold text-primary')}
+                  className={cn(
+                    navLinkClassName,
+                    active
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'text-muted hover:bg-neutral-100 hover:text-foreground',
+                  )}
                 >
-                  <span
-                    className={cn(
-                      'inline-block border-b-2 pb-0.5',
-                      active ? 'border-primary' : 'border-transparent',
-                    )}
-                  >
-                    {item.label}
-                  </span>
+                  {item.label}
                 </Link>
               );
             })}
@@ -157,7 +145,12 @@ export default function HeaderClient() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={cn(mobileLinkClassName, active && 'bg-primary/10 font-semibold text-primary')}
+                  className={cn(
+                    mobileLinkClassName,
+                    active
+                      ? 'bg-primary text-white'
+                      : 'text-foreground hover:bg-neutral-100',
+                  )}
                   onClick={() => setMenuOpen(false)}
                 >
                   {item.label}

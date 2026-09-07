@@ -8,7 +8,7 @@ export default function TermsPage() {
     <LegalPageShell title="이용약관" effectiveDate={EFFECTIVE_DATE}>
       <LegalSection title="제1조 (목적)">
         <LegalP>
-          본 약관은 JOB 365(이하 &quot;회사&quot;)가 제공하는 알바·재택·프리랜서 매칭 웹 서비스(이하 &quot;서비스&quot;)의
+          본 약관은 JOB 365(이하 &quot;회사&quot;)가 제공하는 채용 매칭 웹 서비스(이하 &quot;서비스&quot;)의
           이용과 관련하여, 회사와 이용자 간 권리·의무 및 책임사항을 규정합니다.
         </LegalP>
       </LegalSection>
@@ -24,8 +24,9 @@ export default function TermsPage() {
 
       <LegalSection title="제3조 (서비스의 내용)">
         <LegalP>
-          회사는 알바·재택·프리랜서 일자리를 중심으로 한 무료 매칭 서비스를 제공합니다. 공고 열람과 지원,
-          공고 등록은 이용 수수료 없이 제공되며, 서비스 내 광고가 표시될 수 있습니다.
+          회사는 정규직, 계약직, 인턴, 프리랜서, 파트타임, 파견·도급, 프로젝트 일자리를 중심으로 한 무료 매칭
+          서비스를 제공합니다. 공고 열람과 지원, 공고 등록은 이용 수수료 없이 제공되며, 서비스 내 광고가 표시될 수
+          있습니다.
         </LegalP>
       </LegalSection>
 

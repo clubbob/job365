@@ -7,7 +7,7 @@ import { useUserMode } from '@/features/mode/mode-context';
 import { USER_MODE_LABELS, type UserMode } from '@/lib/user-mode';
 import { cn } from '@/lib/utils';
 
-const MODES: UserMode[] = ['jobseeker', 'recruiter'];
+const MODES: UserMode[] = ['recruiter', 'jobseeker'];
 
 export default function HeaderModeMenu({
   className,
@@ -34,7 +34,7 @@ export default function HeaderModeMenu({
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const label = mode ? USER_MODE_LABELS[mode] : '이용 선택';
+  const label = mode ? USER_MODE_LABELS[mode] : '설정';
 
   return (
     <div ref={rootRef} className={cn('relative', className)}>
@@ -46,7 +46,7 @@ export default function HeaderModeMenu({
         )}
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label={mode ? `이용 선택, 현재 ${label}` : '이용 선택'}
+        aria-label={mode ? `설정, 현재 ${label}` : '설정'}
         onClick={() => setOpen((value) => !value)}
       >
         {label}
@@ -59,7 +59,7 @@ export default function HeaderModeMenu({
         <div
           role="menu"
           className={cn(
-            'absolute z-50 mt-1 w-36 rounded-lg border border-border bg-surface py-1 shadow-card',
+            'absolute z-50 mt-1 min-w-[12.5rem] rounded-lg border border-border bg-surface py-1 shadow-card',
             align === 'center' && 'left-1/2 -translate-x-1/2',
             align === 'right' && 'right-0',
             align === 'left' && 'left-0',
