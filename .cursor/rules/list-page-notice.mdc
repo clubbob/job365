@@ -10,7 +10,7 @@ alwaysApply: true
 
 1. `PageHeader` (제목 + 한 줄 설명)
 2. 안내 박스 — 항상 표시. `rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted`
-3. 역할별 CTA 박스 (있을 때만: 구인자 채용 정보 등록 / 구직자 내 프로필)
+3. 역할별 CTA 박스 (채용 정보 등록 / 내 프로필 — 로그인 여부와 관계없이 표시)
 4. `AdSlot placement="header"`
 5. 목록 (`JobList` / `TalentList`)
 
