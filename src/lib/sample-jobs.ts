@@ -1,4 +1,6 @@
-import type { JobPosting } from '@/types/job';
+import type { JobPosting, JobWorkType } from '@/types/job';
+import { JOB_WORK_TYPES, WORK_TYPE_LABELS } from '@/types/job';
+import { CATEGORY_ITEM_COUNT } from '@/lib/list-page';
 
 const JOBS: JobPosting[] = [
   {
@@ -507,4 +509,46 @@ const JOBS: JobPosting[] = [
   },
 ];
 
-export const SAMPLE_JOBS: JobPosting[] = [...JOBS].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+const EXTRA_JOB_TITLES: Record<JobWorkType, string[]> = {
+  fulltime: ['영업 관리 정규직', '총무 담당 정규직', '품질관리 정규직', '구매 담당 정규직'],
+  contract: ['브랜드 운영 계약직', 'CS 리드 계약직', '물류 기획 계약직', '교육 운영 계약직'],
+  intern: ['영업 지원 인턴', '회계 보조 인턴', '물류 운영 인턴', '리서치 인턴'],
+  freelance: ['카드뉴스 제작', '블로그 원고 작성', '상세페이지 디자인', '고객 후기 편집'],
+  parttime: ['주말 매장 지원', '저녁 전화 상담', '오전 진열 보조', '주중 포장 알바'],
+  dispatch: ['사무 보조 파견', '물류 검수 파견', '매장 진열 파견', '행사 안내 파견'],
+  project: ['쇼핑몰 개편 프로젝트', '채용 사이트 제작', '브랜드 촬영 프로젝트', '프로모션 운영 프로젝트'],
+};
+
+function extraCreatedAt(index: number): string {
+  const day = (index % 28) + 1;
+  const month = index < 28 ? 8 : 7;
+  return `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function padJobsPerType(jobs: JobPosting[], perType = CATEGORY_ITEM_COUNT): JobPosting[] {
+  const extras: JobPosting[] = [];
+  let seq = 100;
+
+  for (const workType of JOB_WORK_TYPES) {
+    const ofType = jobs.filter((job) => job.workType === workType);
+    const titles = EXTRA_JOB_TITLES[workType];
+    const needed = Math.max(0, perType - ofType.length);
+
+    for (let index = 0; index < needed; index += 1) {
+      const source = ofType[index % ofType.length];
+      extras.push({
+        ...source,
+        id: `sample-extra-${seq}`,
+        title: titles[index] ?? `${WORK_TYPE_LABELS[workType]} 채용 ${index + 1}`,
+        createdAt: extraCreatedAt(index),
+      });
+      seq += 1;
+    }
+  }
+
+  return [...jobs, ...extras];
+}
+
+export const SAMPLE_JOBS: JobPosting[] = padJobsPerType(JOBS).sort((a, b) =>
+  b.createdAt.localeCompare(a.createdAt),
+);

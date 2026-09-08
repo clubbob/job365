@@ -1,12 +1,13 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import AdSlot from '@/components/ads/AdSlot';
 import JobCard from '@/features/jobs/JobCard';
 import { loadListRestore, saveListRestore, saveListScroll } from '@/lib/list-restore';
 import { SAMPLE_JOBS } from '@/lib/sample-jobs';
 import { cn } from '@/lib/utils';
-import { WORK_TYPE_FILTERS } from '@/types/job';
+import { WORK_TYPE_FILTERS, type JobWorkType } from '@/types/job';
 
 type FilterId = (typeof WORK_TYPE_FILTERS)[number]['id'];
 
@@ -19,14 +20,22 @@ export default function JobList({
   persistKey,
   showSearch = false,
   showCount = false,
+  workType,
+  hideFilters = false,
+  filterAsLinks = false,
+  showInfeed = true,
 }: {
   limit?: number;
   pageSize?: number;
   persistKey?: string;
   showSearch?: boolean;
   showCount?: boolean;
+  workType?: JobWorkType;
+  hideFilters?: boolean;
+  filterAsLinks?: boolean;
+  showInfeed?: boolean;
 }) {
-  const [filter, setFilter] = useState<FilterId>('all');
+  const [filter, setFilter] = useState<FilterId>(workType ?? 'all');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [ready, setReady] = useState(!persistKey);
@@ -37,7 +46,11 @@ export default function JobList({
     const keyword = query.trim().toLowerCase();
 
     return SAMPLE_JOBS.filter((job) => {
-      if (selected?.types && !selected.types.includes(job.workType)) return false;
+      if (workType) {
+        if (job.workType !== workType) return false;
+      } else if (selected?.types && !selected.types.includes(job.workType)) {
+        return false;
+      }
       if (!keyword) return true;
 
       const haystack = [job.title, job.companyName, job.location, job.summary, job.payLabel, ...job.tags]
@@ -45,7 +58,7 @@ export default function JobList({
         .toLowerCase();
       return haystack.includes(keyword);
     });
-  }, [filter, query]);
+  }, [filter, query, workType]);
 
   const totalPages = pageSize ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
 
@@ -136,23 +149,39 @@ export default function JobList({
         </div>
       ) : null}
 
+      {!hideFilters ? (
       <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-        {WORK_TYPE_FILTERS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setFilter(item.id)}
-            className={cn(
-              'shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
-              filter === item.id
-                ? 'border-primary bg-primary text-white'
-                : 'border-border bg-surface text-muted hover:border-primary/40 hover:text-foreground',
-            )}
-          >
-            {item.label}
-          </button>
-        ))}
+        {WORK_TYPE_FILTERS.map((item) => {
+          const href = item.id === 'all' ? '/jobs' : `/categories/${item.id}`;
+          const active = filterAsLinks ? item.id === 'all' : filter === item.id;
+          const className = cn(
+            'shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
+            active
+              ? 'border-primary bg-primary text-white'
+              : 'border-border bg-surface text-muted hover:border-primary/40 hover:text-foreground',
+          );
+
+          if (filterAsLinks) {
+            return (
+              <Link key={item.id} href={href} className={className}>
+                {item.label}
+              </Link>
+            );
+          }
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setFilter(item.id)}
+              className={className}
+            >
+              {item.label}
+            </button>
+          );
+        })}
       </div>
+      ) : null}
 
       {showCount ? (
         <div className="flex items-center justify-between gap-3">
@@ -170,7 +199,7 @@ export default function JobList({
               job={job}
               onNavigate={persistKey ? rememberListPosition : undefined}
             />
-            {index === 1 ? <AdSlot className="col-span-2" placement="infeed" /> : null}
+            {index === 1 && showInfeed ? <AdSlot className="col-span-2" placement="infeed" /> : null}
           </Fragment>
         ))}
       </div>

@@ -63,15 +63,38 @@ export default function MyPageClient() {
         </dl>
       </Card>
 
-      <Card title="지원 내역">
-        <p className="text-sm text-muted">구직자로 지원한 채용 정보와 결과는 다음 단계에서 확인할 수 있습니다.</p>
-      </Card>
+      {mode === 'jobseeker' ? (
+        <>
+          <Card title="지원 내역">
+            <p className="text-sm text-muted">구직자로 지원한 채용 정보와 결과는 다음 단계에서 확인할 수 있습니다.</p>
+          </Card>
+          <MyTalentProfileForm userId={user.uid} nickname={nickname} />
+        </>
+      ) : null}
 
-      {mode === 'jobseeker' ? <MyTalentProfileForm userId={user.uid} nickname={nickname} /> : null}
+      {mode === 'recruiter' ? (
+        <>
+          <Card title="채용 정보 등록" description="구직자에게 노출할 채용 정보를 등록합니다.">
+            <Link
+              href="/jobs/new"
+              className="inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
+            >
+              채용 정보 등록
+            </Link>
+          </Card>
+          <Card title="지원자 관리">
+            <p className="text-sm text-muted">구인자로 올린 채용 정보의 지원자 열람과 합/불 처리는 다음 단계에서 열립니다.</p>
+          </Card>
+        </>
+      ) : null}
 
-      <Card title="지원자 관리">
-        <p className="text-sm text-muted">구인자로 올린 채용 정보의 지원자 열람과 합/불 처리는 다음 단계에서 열립니다.</p>
-      </Card>
+      {!mode ? (
+        <Card title="이용 방식">
+          <p className="text-sm text-muted">
+            상단 설정에서 구인자 또는 구직자를 선택하면 채용 정보 등록이나 이력서 등록을 할 수 있습니다.
+          </p>
+        </Card>
+      ) : null}
     </div>
   );
 }

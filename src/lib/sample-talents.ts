@@ -1,4 +1,6 @@
 import type { JobWorkType } from '@/types/job';
+import { JOB_WORK_TYPES } from '@/types/job';
+import { CATEGORY_ITEM_COUNT } from '@/lib/list-page';
 import type { EducationLevel, TalentProfile } from '@/types/talent';
 
 type TalentSeed = {
@@ -585,7 +587,67 @@ const SEEDS: TalentSeed[] = [
   },
 ];
 
-export const SAMPLE_TALENTS: TalentProfile[] = SEEDS.map((item, index) => ({
+const EXTRA_TALENT_NAMES = [
+  '김가온',
+  '이하준',
+  '박서율',
+  '최은우',
+  '정시우',
+  '한유진',
+  '오시아',
+  '윤도하',
+  '강태리',
+  '배수빈',
+  '신태윤',
+  '문지호',
+  '임나연',
+  '노민재',
+  '곽하린',
+  '황도윤',
+  '유세아',
+  '장지안',
+  '백하율',
+  '남태오',
+  '고은재',
+  '안시윤',
+  '홍지호',
+  '송하람',
+  '권도연',
+  '하은성',
+  '진서하',
+  '류민호',
+];
+
+function extraCreatedAt(index: number): string {
+  const day = (index % 28) + 1;
+  const month = index < 28 ? 8 : 7;
+  return `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function padTalentSeeds(seeds: TalentSeed[], perType = CATEGORY_ITEM_COUNT): TalentSeed[] {
+  const extras: TalentSeed[] = [];
+  let nameIndex = 0;
+
+  for (const workType of JOB_WORK_TYPES) {
+    const ofType = seeds.filter((item) => item.workType === workType);
+    const needed = Math.max(0, perType - ofType.length);
+
+    for (let index = 0; index < needed; index += 1) {
+      const source = ofType[index % ofType.length];
+      const baseName = EXTRA_TALENT_NAMES[nameIndex % EXTRA_TALENT_NAMES.length] ?? source.name;
+      extras.push({
+        ...source,
+        name: `${baseName}${nameIndex + 1}`,
+        createdAt: extraCreatedAt(index),
+      });
+      nameIndex += 1;
+    }
+  }
+
+  return [...seeds, ...extras];
+}
+
+export const SAMPLE_TALENTS: TalentProfile[] = padTalentSeeds(SEEDS).map((item, index) => ({
   ...item,
   id: `talent-${index + 1}`,
   education: sampleEducation(item),

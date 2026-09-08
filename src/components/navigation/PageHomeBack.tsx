@@ -27,6 +27,7 @@ export default function PageHomeBack() {
     pathname.startsWith('/reset-password') ||
     pathname.startsWith('/jobs/') ||
     pathname.startsWith('/talents/') ||
+    pathname.startsWith('/categories/') ||
     TITLE_HEADER_PATHS.has(pathname)
   ) {
     return null;

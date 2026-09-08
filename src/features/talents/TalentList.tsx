@@ -6,7 +6,7 @@ import TalentCard from '@/features/talents/TalentCard';
 import { loadListRestore, saveListRestore, saveListScroll } from '@/lib/list-restore';
 import { listTalents } from '@/lib/talent-catalog';
 import { cn } from '@/lib/utils';
-import { WORK_TYPE_FILTERS } from '@/types/job';
+import { WORK_TYPE_FILTERS, type JobWorkType } from '@/types/job';
 
 type FilterId = (typeof WORK_TYPE_FILTERS)[number]['id'];
 
@@ -15,12 +15,24 @@ const PAGE_BUTTON =
 
 export default function TalentList({
   pageSize = 10,
-  persistKey = 'talents',
+  persistKey,
+  workType,
+  limit,
+  showSearch = true,
+  showCount = true,
+  hideFilters = false,
+  showInfeed = true,
 }: {
   pageSize?: number;
   persistKey?: string;
+  workType?: JobWorkType;
+  limit?: number;
+  showSearch?: boolean;
+  showCount?: boolean;
+  hideFilters?: boolean;
+  showInfeed?: boolean;
 }) {
-  const [filter, setFilter] = useState<FilterId>('all');
+  const [filter, setFilter] = useState<FilterId>(workType ?? 'all');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [ready, setReady] = useState(!persistKey);
@@ -31,7 +43,11 @@ export default function TalentList({
     const keyword = query.trim().toLowerCase();
 
     return listTalents().filter((talent) => {
-      if (selected?.types && !selected.types.includes(talent.workType)) return false;
+      if (workType) {
+        if (talent.workType !== workType) return false;
+      } else if (selected?.types && !selected.types.includes(talent.workType)) {
+        return false;
+      }
       if (!keyword) return true;
 
       const haystack = [
@@ -47,7 +63,7 @@ export default function TalentList({
         .toLowerCase();
       return haystack.includes(keyword);
     });
-  }, [filter, query]);
+  }, [filter, query, workType]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 
@@ -100,9 +116,10 @@ export default function TalentList({
   }, [persistKey]);
 
   const talents = useMemo(() => {
+    if (limit) return filtered.slice(0, limit);
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
-  }, [filtered, page, pageSize]);
+  }, [filtered, limit, page, pageSize]);
 
   const hasQuery = query.trim().length > 0;
 
@@ -118,6 +135,7 @@ export default function TalentList({
 
   return (
     <section className="space-y-4">
+      {showSearch ? (
       <div>
         <label htmlFor="talent-search" className="sr-only">
           인재 검색
@@ -131,7 +149,9 @@ export default function TalentList({
           className="w-full rounded-xl border border-border-strong bg-surface px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-subtle focus:border-primary focus:ring-2 focus:ring-primary/25"
         />
       </div>
+      ) : null}
 
+      {!hideFilters ? (
       <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
         {WORK_TYPE_FILTERS.map((item) => (
           <button
@@ -149,13 +169,16 @@ export default function TalentList({
           </button>
         ))}
       </div>
+      ) : null}
 
+      {showCount ? (
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted">
-          인재 <span className="font-semibold text-foreground">{filtered.length}</span>명
+          인재 <span className="font-semibold text-foreground">{limit ? Math.min(filtered.length, limit) : filtered.length}</span>명
         </p>
-        <p className="text-xs text-subtle">{totalPages > 1 ? `${page}/${totalPages}페이지 · 최신순` : '최신순'}</p>
+        <p className="text-xs text-subtle">{!limit && totalPages > 1 ? `${page}/${totalPages}페이지 · 최신순` : '최신순'}</p>
       </div>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         {talents.map((talent, index) => (
@@ -164,7 +187,7 @@ export default function TalentList({
               talent={talent}
               onNavigate={persistKey ? rememberListPosition : undefined}
             />
-            {index === 1 ? <AdSlot className="col-span-2" placement="infeed" /> : null}
+            {index === 1 && showInfeed ? <AdSlot className="col-span-2" placement="infeed" /> : null}
           </Fragment>
         ))}
       </div>
@@ -189,7 +212,7 @@ export default function TalentList({
         </div>
       ) : null}
 
-      {filtered.length > pageSize ? (
+      {filtered.length > pageSize && !limit ? (
         <nav className="flex flex-wrap items-center justify-center gap-1 pt-1" aria-label="인재 정보 페이지">
           <button
             type="button"

@@ -55,7 +55,7 @@ export default function GuestHome() {
         </Link>
       </div>
 
-      <JobList limit={6} />
+      <JobList limit={6} filterAsLinks />
     </div>
   );
 }

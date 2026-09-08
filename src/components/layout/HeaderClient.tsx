@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import HeaderModeMenu from '@/components/layout/HeaderModeMenu';
 import Logo from '@/components/brand/Logo';
 import { useAuth } from '@/features/auth/auth-context';
+import { useUserMode } from '@/features/mode/mode-context';
+import { getModeRegisterAction } from '@/lib/user-mode';
 import { getUserNicknameFallback } from '@/lib/user-display';
 import { cn } from '@/lib/utils';
 
@@ -36,13 +38,16 @@ function MenuIcon({ open }: { open: boolean }) {
 
 function isNavActive(pathname: string, href: string, exact: boolean): boolean {
   if (exact) return pathname === href;
+  if (href === '/jobs' && pathname.startsWith('/jobs/new')) return false;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export default function HeaderClient() {
   const { user, loading, logout } = useAuth();
+  const { mode } = useUserMode();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const registerAction = user ? getModeRegisterAction(mode) : null;
   const navItems = [
     { href: '/jobs', label: '채용 정보', exact: false },
     { href: '/talents', label: '인재 정보', exact: false },
@@ -99,6 +104,14 @@ export default function HeaderClient() {
         <div className="hidden items-center justify-end gap-2 md:flex">
           {!loading && user ? (
             <>
+              {registerAction ? (
+                <Link
+                  href={registerAction.href}
+                  className="rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
+                >
+                  {registerAction.label}
+                </Link>
+              ) : null}
               <span className="inline-flex max-w-[9.5rem] truncate px-1 text-sm font-semibold text-foreground">
                 {getUserNicknameFallback(user)}
               </span>
@@ -161,11 +174,22 @@ export default function HeaderClient() {
             <div className="border-t border-border pt-3">
               {!loading && user ? (
                 <div className="space-y-1">
+                  {registerAction ? (
+                    <Link
+                      href={registerAction.href}
+                      className="mb-2 block rounded-lg bg-primary px-3 py-3 text-center text-base font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {registerAction.label}
+                    </Link>
+                  ) : null}
                   <Link
                     href="/mypage"
                     className={cn(
                       mobileLinkClassName,
-                      pathname === '/mypage' && 'bg-primary/10 font-semibold text-primary',
+                      pathname === '/mypage'
+                        ? 'bg-primary text-white'
+                        : 'text-foreground hover:bg-neutral-100',
                     )}
                     onClick={() => setMenuOpen(false)}
                   >

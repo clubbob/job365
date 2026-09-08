@@ -1,17 +1,15 @@
 ---
-description: 채용 정보·인재 정보 목록은 제목 아래 안내 박스를 유지한다
+description: 채용 정보·인재 정보 목록은 제목 아래 안내·등록 박스를 넣지 않는다
 globs: src/features/jobs/JobsPageClient.tsx,src/features/talents/TalentsPageClient.tsx
 alwaysApply: true
 ---
 
-# 목록 페이지 안내 구조
+# 목록 페이지 구조
 
-`/jobs`(채용 정보)와 `/talents`(인재 정보)는 같은 순서를 유지한다. 한쪽에서만 안내 박스를 빼지 않는다.
+`/jobs`(채용 정보)와 `/talents`(인재 정보)는 같은 순서를 유지한다. 로그인 여부와 관계없이 안내 박스와 등록 CTA를 넣지 않는다.
 
 1. `PageHeader` (제목 + 한 줄 설명)
-2. 안내 박스 — 항상 표시. `rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted`
-3. 역할별 CTA 박스 (채용 정보 등록 / 내 프로필 — 로그인 여부와 관계없이 표시)
-4. `AdSlot placement="header"`
-5. 목록 (`JobList` / `TalentList`)
+2. `AdSlot placement="header"`
+3. 목록 (`JobList` / `TalentList`)
 
-안내 문구는 페이지에 맞게 둔다. 인재 쪽 실명 안내를 채용 쪽에 그대로 복사하지 않는다.
+채용 정보 등록은 `/jobs/new`, 이력서 등록은 마이페이지에서만 다룬다.

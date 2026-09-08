@@ -47,6 +47,14 @@ export const WORK_TYPE_FILTERS: Array<{
   { id: 'project', label: '프로젝트', types: ['project'] },
 ];
 
+export const JOB_WORK_TYPES = WORK_TYPE_FILTERS.flatMap((item) =>
+  item.id === 'all' ? [] : [item.id],
+);
+
+export function isJobWorkType(value: string): value is JobWorkType {
+  return JOB_WORK_TYPES.includes(value as JobWorkType);
+}
+
 export const PAY_TYPE_LABELS: Record<JobPayType, string> = {
   hourly: '시급',
   daily: '일급',
