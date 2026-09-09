@@ -16,7 +16,11 @@ const CONSENT_EXEMPT_PATHS = new Set([
 ]);
 
 function isConsentExemptPath(pathname: string): boolean {
-  return CONSENT_EXEMPT_PATHS.has(pathname) || pathname.startsWith('/reset-password');
+  return (
+    CONSENT_EXEMPT_PATHS.has(pathname) ||
+    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/admin')
+  );
 }
 
 export default function ConsentGate({ children }: { children: React.ReactNode }) {

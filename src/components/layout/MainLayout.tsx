@@ -7,7 +7,7 @@ import PageHomeBack from '@/components/navigation/PageHomeBack';
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClientProviders>
-      <div className="flex min-h-dvh flex-col">
+      <div className="flex min-h-dvh min-w-0 flex-col">
         <HeaderClient />
         <LayoutMain>
           <PageHomeBack />

@@ -26,7 +26,7 @@ export default function LayoutMain({
   return (
     <main
       className={cn(
-        'mx-auto w-full px-4 pb-6 pt-5 sm:px-6',
+        'mx-auto w-full min-w-0 flex-1 px-4 pb-6 pt-5 sm:px-6',
         isAdmin ? 'max-w-7xl' : 'max-w-4xl',
       )}
     >

@@ -5,6 +5,8 @@ import Link from 'next/link';
 import AdSlot from '@/components/ads/AdSlot';
 import JobCard from '@/features/jobs/JobCard';
 import { loadListRestore, saveListRestore, saveListScroll } from '@/lib/list-restore';
+import { listJobs } from '@/lib/job-catalog';
+import { jobSearchText } from '@/lib/job-display';
 import { SAMPLE_JOBS } from '@/lib/sample-jobs';
 import { cn } from '@/lib/utils';
 import { WORK_TYPE_FILTERS, type JobWorkType } from '@/types/job';
@@ -35,6 +37,7 @@ export default function JobList({
   filterAsLinks?: boolean;
   showInfeed?: boolean;
 }) {
+  const [allJobs, setAllJobs] = useState(SAMPLE_JOBS);
   const [filter, setFilter] = useState<FilterId>(workType ?? 'all');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -45,7 +48,7 @@ export default function JobList({
     const selected = WORK_TYPE_FILTERS.find((item) => item.id === filter);
     const keyword = query.trim().toLowerCase();
 
-    return SAMPLE_JOBS.filter((job) => {
+    return allJobs.filter((job) => {
       if (workType) {
         if (job.workType !== workType) return false;
       } else if (selected?.types && !selected.types.includes(job.workType)) {
@@ -53,14 +56,16 @@ export default function JobList({
       }
       if (!keyword) return true;
 
-      const haystack = [job.title, job.companyName, job.location, job.summary, job.payLabel, ...job.tags]
-        .join(' ')
-        .toLowerCase();
+      const haystack = jobSearchText(job).toLowerCase();
       return haystack.includes(keyword);
     });
-  }, [filter, query, workType]);
+  }, [filter, query, workType, allJobs]);
 
   const totalPages = pageSize ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
+
+  useEffect(() => {
+    setAllJobs(listJobs());
+  }, []);
 
   useEffect(() => {
     if (!persistKey) return;

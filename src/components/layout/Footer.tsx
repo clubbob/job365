@@ -1,35 +1,62 @@
 import Link from 'next/link';
+import { COMPANY } from '@/lib/company';
 
-const rowClassName = 'flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-x-6';
-
-const linkClassName =
-  'text-sm text-primary/80 underline decoration-primary/25 underline-offset-[3px] transition-colors hover:text-primary hover:decoration-primary/50';
+const navLinkClassName =
+  'text-sm text-muted transition-colors hover:text-foreground hover:underline hover:underline-offset-2';
 
 export default function Footer() {
   return (
     <footer className="border-t border-border bg-surface print:hidden">
-      <div className="mx-auto max-w-4xl space-y-3 px-4 py-6 text-center text-sm text-muted sm:px-6">
-        <nav className={rowClassName} aria-label="법적 고지">
-          <Link href="/terms" className={linkClassName}>
+      <div className="mx-auto w-full min-w-0 max-w-4xl px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center sm:px-6">
+        <nav
+          className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1"
+          aria-label="법적 고지"
+        >
+          <Link href="/terms" className={navLinkClassName}>
             이용약관
           </Link>
-          <Link href="/privacy" className={linkClassName}>
+          <Link href="/privacy" className={navLinkClassName}>
             개인정보처리방침
           </Link>
-          <Link href="/marketing" className={linkClassName}>
+          <Link href="/marketing" className={navLinkClassName}>
             마케팅수신동의
           </Link>
-          <Link href="/inquiry" className={linkClassName}>
+          <Link href="/inquiry" className={navLinkClassName}>
             문의하기
           </Link>
         </nav>
 
-        <div className={rowClassName}>
-          <span className="text-sm text-muted">JOB 365</span>
-          <span className="text-sm text-foreground">무료 이용·매칭 서비스</span>
-        </div>
+        <p className="mt-3 text-sm">
+          <span className="font-semibold text-foreground">{COMPANY.serviceName}</span>
+          <span className="mx-2 text-subtle" aria-hidden>
+            ·
+          </span>
+          <span className="text-muted">무료 이용·매칭 서비스</span>
+        </p>
 
-        <p className="text-sm text-muted">Copyright © 2026 JOB 365. All rights reserved.</p>
+        <p className="mt-2 text-xs leading-6 text-muted sm:text-sm">
+          <span className="whitespace-nowrap">회사명 : {COMPANY.name}</span>
+          <span className="mx-2 text-subtle" aria-hidden>
+            |
+          </span>
+          <span className="whitespace-nowrap">대표 : {COMPANY.ceo}</span>
+          <span className="mx-2 text-subtle" aria-hidden>
+            |
+          </span>
+          <span className="whitespace-nowrap">사업자등록번호 : {COMPANY.businessNumber}</span>
+        </p>
+        <p className="mt-0.5 text-xs sm:text-sm">
+          <a
+            href={`mailto:${COMPANY.email}`}
+            className="inline-block max-w-full text-muted transition-colors hover:text-foreground hover:underline hover:underline-offset-2"
+          >
+            이메일 : {COMPANY.email}
+          </a>
+        </p>
+
+        <p className="mt-3 text-xs text-subtle">
+          Copyright © 2026 {COMPANY.serviceName}. All rights reserved.
+        </p>
       </div>
     </footer>
   );

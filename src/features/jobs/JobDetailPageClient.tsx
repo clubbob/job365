@@ -1,11 +1,47 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
-import { SAMPLE_JOBS } from '@/lib/sample-jobs';
-import { PAY_TYPE_LABELS, WORK_TYPE_LABELS } from '@/types/job';
+import { getJobById } from '@/lib/job-catalog';
+import {
+  jobCareerLabel,
+  jobDeadlineLabel,
+  jobHeadcountLabel,
+} from '@/lib/job-display';
+import { PAY_TYPE_LABELS, WORK_TYPE_LABELS, type JobPosting } from '@/types/job';
+
+function DetailSection({ title, body }: { title: string; body?: string }) {
+  if (!body?.trim()) return null;
+  return (
+    <section className="mt-6">
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      <p className="mt-1.5 whitespace-pre-wrap text-[15px] leading-relaxed text-muted">{body}</p>
+    </section>
+  );
+}
+
+function Fact({ label, value }: { label: string; value?: string | null }) {
+  if (!value) return null;
+  return (
+    <div>
+      <dt className="text-subtle">{label}</dt>
+      <dd className="mt-0.5 font-medium text-foreground">{value}</dd>
+    </div>
+  );
+}
 
 export default function JobDetailPageClient({ jobId }: { jobId: string }) {
-  const job = SAMPLE_JOBS.find((item) => item.id === jobId);
+  const [job, setJob] = useState<JobPosting | null | undefined>(undefined);
+
+  useEffect(() => {
+    setJob(getJobById(jobId) ?? null);
+  }, [jobId]);
+
+  if (job === undefined) {
+    return <p className="py-8 text-center text-sm text-muted">불러오는 중…</p>;
+  }
 
   if (!job) {
     return (
@@ -20,6 +56,9 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
       </div>
     );
   }
+
+  const career = jobCareerLabel(job);
+  const headcount = jobHeadcountLabel(job.headcount);
 
   return (
     <div className="space-y-6">
@@ -38,25 +77,36 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
           <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-muted">
             {PAY_TYPE_LABELS[job.payType]}
           </span>
+          {career ? (
+            <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-muted">
+              {career}
+            </span>
+          ) : null}
         </div>
         <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-subtle">급여</dt>
             <dd className="mt-0.5 font-semibold text-primary">{job.payLabel}</dd>
           </div>
-          <div>
-            <dt className="text-subtle">근무지</dt>
-            <dd className="mt-0.5 font-medium text-foreground">{job.location}</dd>
-          </div>
+          <Fact label="근무지" value={job.location} />
+          <Fact label="모집 인원" value={headcount} />
+          <Fact label="학력" value={job.education} />
+          <Fact label="근무 시간" value={job.workHours} />
+          <Fact label="접수 마감" value={job.deadline ? jobDeadlineLabel(job.deadline) : null} />
         </dl>
-        <p className="mt-5 text-[15px] leading-relaxed text-muted">{job.summary}</p>
-        <div className="mt-5 flex flex-wrap gap-1.5">
-          {job.tags.map((tag) => (
-            <span key={tag} className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-muted">
-              {tag}
-            </span>
-          ))}
-        </div>
+        <DetailSection title="담당 업무" body={job.summary} />
+        <DetailSection title="자격 요건" body={job.requirements} />
+        <DetailSection title="우대 사항" body={job.preferred} />
+        <DetailSection title="복리후생" body={job.benefits} />
+        {job.tags.length > 0 ? (
+          <div className="mt-5 flex flex-wrap gap-1.5">
+            {job.tags.map((tag) => (
+              <span key={tag} className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-muted">
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <button
           type="button"
           disabled

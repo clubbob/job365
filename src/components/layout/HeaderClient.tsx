@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import HeaderModeMenu from '@/components/layout/HeaderModeMenu';
+import AdminHeader from '@/components/layout/AdminHeader';
 import Logo from '@/components/brand/Logo';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
@@ -69,6 +70,10 @@ export default function HeaderClient() {
 
   const mobileLinkClassName =
     'block rounded-lg px-3 py-3 text-base font-semibold transition-colors';
+
+  if (pathname.startsWith('/admin')) {
+    return <AdminHeader />;
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface shadow-sm print:hidden">

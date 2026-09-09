@@ -1,7 +1,7 @@
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminApp, getAdminFirestore } from '@/lib/firebaseAdmin';
-import type { UserProfile, UserProvider, UserSettings } from '@/types/user';
+import type { UserProfile, UserProvider, UserSettings, AdminUserListItem } from '@/types/user';
 
 export type UserAccount = {
   profile: UserProfile;
@@ -118,4 +118,39 @@ export async function deleteUserAccount(uid: string): Promise<void> {
   if (app) {
     await getAuth(app).deleteUser(uid);
   }
+}
+
+function serializeTimestamp(value: unknown): string | null {
+  if (!value || typeof value !== 'object') return null;
+  if ('toDate' in value && typeof value.toDate === 'function') {
+    try {
+      return (value as { toDate: () => Date }).toDate().toISOString();
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+export async function listUserAccounts(limit = 200): Promise<AdminUserListItem[]> {
+  const db = getAdminFirestore();
+  if (!db) return [];
+
+  const snap = await db.collection('users').limit(limit).get();
+  const items = snap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      email: (data.email as string | null) ?? null,
+      nickname:
+        typeof data.nickname === 'string' && data.nickname.trim() ? data.nickname.trim() : '사용자',
+      provider: (data.provider as UserProvider) ?? 'email',
+      role: (data.role as UserProfile['role']) ?? 'user',
+      status: (data.status as UserProfile['status']) ?? 'active',
+      createdAt: serializeTimestamp(data.createdAt),
+    } satisfies AdminUserListItem;
+  });
+
+  items.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
+  return items;
 }

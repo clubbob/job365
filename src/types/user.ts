@@ -15,3 +15,13 @@ export type UserSettings = {
   userId: string;
   notifyEmailAgreed: boolean;
 };
+
+export type AdminUserListItem = {
+  id: string;
+  email: string | null;
+  nickname: string;
+  provider: UserProvider;
+  role: UserRole;
+  status: UserStatus;
+  createdAt: string | null;
+};

@@ -15,9 +15,9 @@ export default function PageHeader({
   homeLabel?: string;
 }) {
   return (
-    <header className="flex items-start justify-between gap-3">
+    <header className="flex min-w-0 items-start justify-between gap-3">
       <div className="min-w-0 space-y-1">
-        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+        <h1 className="text-xl font-bold text-foreground sm:text-2xl">{title}</h1>
         {description ? <p className="text-sm text-muted">{description}</p> : null}
       </div>
       <PageActions showRefresh={showRefresh} homeHref={homeHref} homeLabel={homeLabel} />

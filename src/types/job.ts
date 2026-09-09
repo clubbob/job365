@@ -7,7 +7,19 @@ export type JobWorkType =
   | 'dispatch'
   | 'project';
 export type JobPayType = 'hourly' | 'daily' | 'monthly' | 'per_task';
+export type JobCareerType = 'new' | 'experienced' | 'any';
 export type JobStatus = 'draft' | 'pending' | 'published' | 'closed' | 'rejected';
+
+export const JOB_EDUCATION_OPTIONS = [
+  '학력무관',
+  '고등학교 졸업 이상',
+  '전문대학 졸업 이상',
+  '대학교 졸업 이상',
+  '석사 이상',
+  '박사 이상',
+] as const;
+
+export type JobEducation = (typeof JOB_EDUCATION_OPTIONS)[number];
 
 export type JobPosting = {
   id: string;
@@ -20,6 +32,18 @@ export type JobPosting = {
   summary: string;
   tags: string[];
   createdAt: string;
+  businessNumber?: string;
+  headcount?: number;
+  careerType?: JobCareerType;
+  careerMinYears?: number;
+  education?: JobEducation | string;
+  workHours?: string;
+  deadline?: string;
+  payAmount?: string;
+  payNegotiable?: boolean;
+  requirements?: string;
+  preferred?: string;
+  benefits?: string;
 };
 
 export const WORK_TYPE_LABELS: Record<JobWorkType, string> = {
@@ -55,9 +79,29 @@ export function isJobWorkType(value: string): value is JobWorkType {
   return JOB_WORK_TYPES.includes(value as JobWorkType);
 }
 
+export function isJobPayType(value: string): value is JobPayType {
+  return value in PAY_TYPE_LABELS;
+}
+
+export function isJobCareerType(value: string): value is JobCareerType {
+  return value in CAREER_TYPE_LABELS;
+}
+
+export function isJobEducation(value: string): value is JobEducation {
+  return (JOB_EDUCATION_OPTIONS as readonly string[]).includes(value);
+}
+
 export const PAY_TYPE_LABELS: Record<JobPayType, string> = {
   hourly: '시급',
   daily: '일급',
   monthly: '월급',
   per_task: '건별',
 };
+
+export const CAREER_TYPE_LABELS: Record<JobCareerType, string> = {
+  new: '신입',
+  experienced: '경력',
+  any: '경력무관',
+};
+
+export const JOB_CAREER_TYPES = Object.keys(CAREER_TYPE_LABELS) as JobCareerType[];

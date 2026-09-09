@@ -46,11 +46,11 @@ export default function GuestHome() {
       <AdSlot placement="header" />
 
       <div className="flex items-end justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-lg font-bold text-foreground">최근 채용 정보</h2>
           <p className="mt-1 text-sm text-muted">관심 있는 근무 형태를 골라 보세요.</p>
         </div>
-        <Link href="/jobs" className="text-sm font-semibold text-primary hover:underline">
+        <Link href="/jobs" className="shrink-0 text-sm font-semibold text-primary hover:underline">
           전체 보기
         </Link>
       </div>
