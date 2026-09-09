@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
@@ -17,6 +17,8 @@ import {
   saveBizVerify,
   type BizVerifyRecord,
 } from '@/lib/biz-verify-store';
+import { getMyJobPosting } from '@/lib/my-job-posts';
+import type { JobPosting } from '@/types/job';
 
 type NumberCheck = {
   businessNumber: string;
@@ -30,8 +32,13 @@ type StatusApiResponse =
 
 export default function JobNewPageClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const { mode } = useUserMode();
+  const editId = searchParams.get('edit');
+  const fromMypage = searchParams.get('from') === 'mypage';
+  const returnPath = fromMypage ? '/mypage?tab=jobs' : undefined;
+  const nextPath = `/jobs/new${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
   const [companyName, setCompanyName] = useState('');
   const [businessNumber, setBusinessNumber] = useState('');
   const [pending, setPending] = useState(false);
@@ -39,6 +46,8 @@ export default function JobNewPageClient() {
   const [numberCheck, setNumberCheck] = useState<NumberCheck | null>(null);
   const [verified, setVerified] = useState<BizVerifyRecord | null>(null);
   const [showJobForm, setShowJobForm] = useState(false);
+  const [editJob, setEditJob] = useState<JobPosting | null>(null);
+  const [editMissing, setEditMissing] = useState(false);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -46,7 +55,16 @@ export default function JobNewPageClient() {
     setNumberCheck(null);
     setShowJobForm(false);
     setError('');
+    setEditJob(null);
+    setEditMissing(false);
     if (!user) {
+      setReady(true);
+      return;
+    }
+    if (editId) {
+      const job = getMyJobPosting(user.uid, editId);
+      if (job) setEditJob(job);
+      else setEditMissing(true);
       setReady(true);
       return;
     }
@@ -56,7 +74,7 @@ export default function JobNewPageClient() {
       setBusinessNumber(existing.businessNumber);
     }
     setReady(true);
-  }, [user]);
+  }, [user, editId]);
 
   async function handleVerifyNumber(event: React.FormEvent) {
     event.preventDefault();
@@ -114,8 +132,12 @@ export default function JobNewPageClient() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="채용 정보 등록"
-        description="채용 정보를 등록할 때마다 국세청 사업자등록 상태조회를 합니다."
+        title={editId ? '채용 정보 수정' : '채용 정보 등록'}
+        description={
+          editId
+            ? '등록한 채용 정보를 수정하면 목록과 마이페이지에 바로 반영됩니다.'
+            : '채용 정보를 등록할 때마다 국세청 사업자등록 상태조회를 합니다.'
+        }
       />
       <AdSlot placement="header" />
 
@@ -125,7 +147,7 @@ export default function JobNewPageClient() {
         <Card>
           <p className="text-sm text-muted">채용 정보를 등록하려면 로그인해 주세요.</p>
           <Link
-            href="/login?next=/jobs/new"
+            href={`/login?next=${encodeURIComponent(nextPath)}`}
             className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
           >
             로그인
@@ -135,11 +157,31 @@ export default function JobNewPageClient() {
         <Card>
           <p className="text-sm text-muted">채용 정보 등록은 구인자로 이용할 때 할 수 있습니다.</p>
         </Card>
+      ) : editMissing ? (
+        <Card title="채용 정보를 찾을 수 없습니다">
+          <p className="text-sm text-muted">마이페이지에서 등록한 채용 정보만 수정할 수 있습니다.</p>
+          <Link
+            href={returnPath || '/mypage?tab=jobs'}
+            className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
+          >
+            마이페이지로
+          </Link>
+        </Card>
+      ) : editJob && user ? (
+        <JobCreateForm
+          userId={user.uid}
+          companyName={editJob.companyName}
+          businessNumber={editJob.businessNumber}
+          initialJob={editJob}
+          returnPath={returnPath}
+          onCancel={() => router.push(returnPath || `/jobs/${editJob.id}`)}
+        />
       ) : verified && showJobForm && user ? (
         <JobCreateForm
           userId={user.uid}
           companyName={verified.companyName}
           businessNumber={verified.businessNumber}
+          returnPath={returnPath}
           onCancel={() => setShowJobForm(false)}
         />
       ) : verified ? (
@@ -186,7 +228,7 @@ export default function JobNewPageClient() {
             >
               다시 조회
             </Button>
-            <Button type="button" variant="secondary" onClick={() => router.push('/jobs')}>
+            <Button type="button" variant="secondary" onClick={() => router.push(returnPath || '/jobs')}>
               취소
             </Button>
           </div>

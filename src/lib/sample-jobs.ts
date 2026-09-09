@@ -12,7 +12,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 280만원',
     location: '서울 구로구',
     summary: '자사몰 전화·채팅 문의 응대. 주 5일, 4대보험. 고객상담 경험자 우대.',
-    tags: ['정규직', '4대보험', '주 5일'],
     createdAt: '2026-09-07',
   },
   {
@@ -24,7 +23,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 420만원',
     location: '서울 서초구',
     summary: 'React 기반 서비스 화면 개발. 주 5일 하이브리드 근무, 경력 2년 이상.',
-    tags: ['정규직', 'React', '하이브리드'],
     createdAt: '2026-09-04',
   },
   {
@@ -36,7 +34,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 310만원',
     location: '서울 종로구',
     summary: '전표 처리와 월마감. 회계 프로그램 사용 가능하면 초보도 지원 가능합니다.',
-    tags: ['정규직', '회계', '초보가능'],
     createdAt: '2026-09-01',
   },
   {
@@ -48,7 +45,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 300만원',
     location: '경기 이천시',
     summary: '입고·출고 일정 관리. 주간 근무, 식대 지원. 물류 경험자 우대.',
-    tags: ['정규직', '물류', '식대지원'],
     createdAt: '2026-08-28',
   },
   {
@@ -60,7 +56,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 290만원',
     location: '서울 마포구',
     summary: '뉴스레터와 블로그 원고 작성·교정. 주 5일, 유연출퇴근 가능.',
-    tags: ['정규직', '글쓰기', '유연근무'],
     createdAt: '2026-08-24',
   },
   {
@@ -72,7 +67,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 270만원',
     location: '서울 마포구',
     summary: '홀 운영과 파트타임 스케줄 관리. 카페 근무 1년 이상이면 지원 가능합니다.',
-    tags: ['정규직', '매장', '매니저'],
     createdAt: '2026-08-20',
   },
   {
@@ -84,7 +78,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 320만원',
     location: '서울 성동구',
     summary: 'SNS·상세페이지 운영. 계약 기간 1년, 평가 후 정규직 전환 가능.',
-    tags: ['계약직', '전환가능', '마케팅'],
     createdAt: '2026-09-06',
   },
   {
@@ -96,7 +89,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 300만원',
     location: '서울 강남구',
     summary: '공고 관리와 면접 일정 조율. 10개월 계약, 채용 업무 경험 우대.',
-    tags: ['계약직', 'HR', '10개월'],
     createdAt: '2026-09-03',
   },
   {
@@ -108,7 +100,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 330만원',
     location: '서울 구로구',
     summary: '입점 셀러 온보딩과 문의 대응. 1년 계약, 성과에 따라 연장합니다.',
-    tags: ['계약직', 'CS', '1년'],
     createdAt: '2026-08-30',
   },
   {
@@ -120,7 +111,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 280만원',
     location: '재택 / 서울 강남구',
     summary: '유튜브 컷편집과 자막. 6개월 계약, 주 3일 재택 가능.',
-    tags: ['계약직', '영상', '재택'],
     createdAt: '2026-08-26',
   },
   {
@@ -132,7 +122,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 270만원',
     location: '경기 성남시',
     summary: '라벨러 일정 관리와 품질 검수. 8개월 프로젝트성 계약입니다.',
-    tags: ['계약직', '데이터', '검수'],
     createdAt: '2026-08-22',
   },
   {
@@ -144,7 +133,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 260만원',
     location: '서울 용산구',
     summary: '신규 매장 오픈 준비와 교육. 4개월 계약, 오픈 후 정규 전환 검토.',
-    tags: ['계약직', '오픈', '전환가능'],
     createdAt: '2026-08-18',
   },
   {
@@ -156,7 +144,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 220만원',
     location: '서울 강남구',
     summary: '6개월 인턴. 서비스 화면 정리와 사용자 인터뷰 보조. 포트폴리오 있으면 우대.',
-    tags: ['인턴', '6개월', '기획'],
     createdAt: '2026-09-06',
   },
   {
@@ -168,7 +155,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 200만원',
     location: '서울 성동구',
     summary: 'SNS 초안 작성과 성과 정리. 3개월, 주 4일 근무도 협의 가능합니다.',
-    tags: ['인턴', '마케팅', '3개월'],
     createdAt: '2026-09-02',
   },
   {
@@ -180,7 +166,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 230만원',
     location: '서울 서초구',
     summary: '사내 어드민 화면 수정. 6개월, HTML/CSS 기본만 되어도 지원 가능.',
-    tags: ['인턴', '개발', '6개월'],
     createdAt: '2026-08-29',
   },
   {
@@ -192,7 +177,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 210만원',
     location: '서울 성동구',
     summary: '상세페이지 시안 보조. 4개월, 피그마 사용 경험이면 충분합니다.',
-    tags: ['인턴', '디자인', '피그마'],
     createdAt: '2026-08-25',
   },
   {
@@ -204,7 +188,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 200만원',
     location: '서울 강남구',
     summary: '문서 정리, 면접 안내, 비품 관리. 3개월 체험형 인턴입니다.',
-    tags: ['인턴', '총무', '3개월'],
     createdAt: '2026-08-21',
   },
   {
@@ -216,7 +199,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 190만원',
     location: '서울 구로구',
     summary: '상품 후기 정리와 숏폼 대본 초안. 주 5일, 대학생 방학 인턴 환영.',
-    tags: ['인턴', '콘텐츠', '학생환영'],
     createdAt: '2026-08-17',
   },
   {
@@ -228,7 +210,6 @@ const JOBS: JobPosting[] = [
     payLabel: '건당 25,000원',
     location: '재택',
     summary: '상품 특징을 보고 짧은 상세 문구를 작성하는 건별 일입니다. 포트폴리오 있으면 우대.',
-    tags: ['프리랜서', '재택', '건별'],
     createdAt: '2026-09-05',
   },
   {
@@ -240,7 +221,6 @@ const JOBS: JobPosting[] = [
     payLabel: '영상 10분당 8,000원',
     location: '재택',
     summary: '자동 자막을 듣고 맞춤법·타이밍을 고치는 작업. 저녁·주말에도 가능합니다.',
-    tags: ['프리랜서', '재택', '건별'],
     createdAt: '2026-09-02',
   },
   {
@@ -252,7 +232,6 @@ const JOBS: JobPosting[] = [
     payLabel: '건당 80,000원',
     location: '재택',
     summary: '기존 로고 색과 여백을 다듬는 단기 작업. 일러스트레이터 사용 가능자.',
-    tags: ['프리랜서', '디자인', '건별'],
     createdAt: '2026-08-28',
   },
   {
@@ -264,7 +243,6 @@ const JOBS: JobPosting[] = [
     payLabel: '건당 15,000원',
     location: '재택',
     summary: '패션 상품명·옵션명을 자연스러운 영어로 옮기는 일. 건별 정산.',
-    tags: ['프리랜서', '번역', '재택'],
     createdAt: '2026-08-23',
   },
   {
@@ -276,7 +254,6 @@ const JOBS: JobPosting[] = [
     payLabel: '파일당 40,000원',
     location: '재택',
     summary: '중복 제거와 서식 통일. 함수 기본만 되면 가능합니다.',
-    tags: ['프리랜서', '엑셀', '재택'],
     createdAt: '2026-08-19',
   },
   {
@@ -288,7 +265,6 @@ const JOBS: JobPosting[] = [
     payLabel: '장당 7,000원',
     location: '재택',
     summary: '음료·디저트 컷 색감 보정. 라이트룸 또는 포토샵 사용.',
-    tags: ['프리랜서', '보정', '건별'],
     createdAt: '2026-08-16',
   },
   {
@@ -300,7 +276,6 @@ const JOBS: JobPosting[] = [
     payLabel: '시급 11,000원',
     location: '서울 마포구',
     summary: '토·일 10:00~16:00. 간단한 음료 서빙과 홀 정리. 경력 무관.',
-    tags: ['파트타임', '주말', '시간제'],
     createdAt: '2026-09-05',
   },
   {
@@ -312,7 +287,6 @@ const JOBS: JobPosting[] = [
     payLabel: '시급 11,500원',
     location: '서울 용산구',
     summary: '월~금 07:30~12:00. 오픈 준비와 간단한 제조. 출근 전 근무 환영.',
-    tags: ['파트타임', '오전', '오픈'],
     createdAt: '2026-09-01',
   },
   {
@@ -324,7 +298,6 @@ const JOBS: JobPosting[] = [
     payLabel: '시급 12,000원',
     location: '재택 (전국)',
     summary: '주 15시간부터. 카카오톡·이메일 응대, 육아와 병행하기 좋은 시간대입니다.',
-    tags: ['파트타임', '재택', '주 15시간'],
     createdAt: '2026-08-27',
   },
   {
@@ -336,7 +309,6 @@ const JOBS: JobPosting[] = [
     payLabel: '시급 10,300원',
     location: '서울 노원구',
     summary: '평일 18:00~22:00. 좌석 안내와 자리 정리. 학생 지원 가능.',
-    tags: ['파트타임', '저녁', '학생환영'],
     createdAt: '2026-08-23',
   },
   {
@@ -348,7 +320,6 @@ const JOBS: JobPosting[] = [
     payLabel: '시급 12,500원',
     location: '경기 이천시',
     summary: '주 3일 택. 13:00~18:00 포장·라벨 부착. 체력 부담 적은 작업입니다.',
-    tags: ['파트타임', '포장', '주 3일'],
     createdAt: '2026-08-19',
   },
   {
@@ -360,7 +331,6 @@ const JOBS: JobPosting[] = [
     payLabel: '시급 11,000원',
     location: '서울 종로구',
     summary: '수강 안내와 전화 응대. 화·목·토 오후, 친절한 응대만 있으면 됩니다.',
-    tags: ['파트타임', '데스크', '주 3일'],
     createdAt: '2026-08-15',
   },
   {
@@ -372,7 +342,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 250만원',
     location: '서울 강남구',
     summary: '대기업 사무팀 파견. 문서 작성, 일정 관리, 방문객 안내. 파견 후 계약 연장 가능.',
-    tags: ['파견', '사무', '4대보험'],
     createdAt: '2026-09-04',
   },
   {
@@ -384,7 +353,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 270만원',
     location: '서울 서초구',
     summary: '사내 PC 장애 접수와 계정 발급. 1년 파견, 연장 가능성 높습니다.',
-    tags: ['파견', 'IT', '1년'],
     createdAt: '2026-08-31',
   },
   {
@@ -396,7 +364,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 260만원',
     location: '경기 이천시',
     summary: '출고 피킹 도급. 야간 없음, 2교대 중 주간만 운영합니다.',
-    tags: ['도급', '물류', '주간'],
     createdAt: '2026-08-27',
   },
   {
@@ -408,7 +375,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 255만원',
     location: '서울 구로구',
     summary: '인바운드 상담 파견. 교육 2주 제공, 경력 무관.',
-    tags: ['파견', '상담', '교육제공'],
     createdAt: '2026-08-22',
   },
   {
@@ -420,7 +386,6 @@ const JOBS: JobPosting[] = [
     payLabel: '일급 150,000원',
     location: '서울 강남구 COEX',
     summary: '부스 안내와 입장 관리. 기간 도급, 주말 포함 근무 가능자.',
-    tags: ['도급', '전시', '단기'],
     createdAt: '2026-08-18',
   },
   {
@@ -432,7 +397,6 @@ const JOBS: JobPosting[] = [
     payLabel: '월급 265만원',
     location: '서울 종로구',
     summary: '전표 입력 파견. 6개월, 세무 프로그램 교육 후 투입합니다.',
-    tags: ['파견', '회계', '6개월'],
     createdAt: '2026-08-14',
   },
   {
@@ -444,7 +408,6 @@ const JOBS: JobPosting[] = [
     payLabel: '프로젝트 800만원',
     location: '재택 / 협의',
     summary: '3개월 쇼핑몰 개편. 프론트 화면과 결제 연동. 기간 내 산출물 기준으로 정산합니다.',
-    tags: ['프로젝트', '3개월', '웹'],
     createdAt: '2026-09-03',
   },
   {
@@ -456,7 +419,6 @@ const JOBS: JobPosting[] = [
     payLabel: '프로젝트 600만원',
     location: '재택 / 협의',
     summary: '소개 페이지 5면. 2개월, 디자인·퍼블리싱 가능 팀 또는 개인.',
-    tags: ['프로젝트', '2개월', '웹'],
     createdAt: '2026-08-30',
   },
   {
@@ -468,7 +430,6 @@ const JOBS: JobPosting[] = [
     payLabel: '프로젝트 450만원',
     location: '서울 강남구 / 재택',
     summary: '채용 마이크로사이트와 광고 소재. 6주 단기 프로젝트입니다.',
-    tags: ['프로젝트', '6주', '채용'],
     createdAt: '2026-08-26',
   },
   {
@@ -480,7 +441,6 @@ const JOBS: JobPosting[] = [
     payLabel: '프로젝트 900만원',
     location: '경기 성남시 / 재택',
     summary: '매출 지표 대시보드. 10주, SQL·시각화 경험 필수.',
-    tags: ['프로젝트', '데이터', '10주'],
     createdAt: '2026-08-21',
   },
   {
@@ -492,7 +452,6 @@ const JOBS: JobPosting[] = [
     payLabel: '프로젝트 700만원',
     location: '서울 서초구',
     summary: '기존 앱 주요 화면 8개 개선. 2개월, 피그마 핸드오프까지.',
-    tags: ['프로젝트', 'UI', '2개월'],
     createdAt: '2026-08-17',
   },
   {
@@ -504,7 +463,6 @@ const JOBS: JobPosting[] = [
     payLabel: '프로젝트 500만원',
     location: '서울 성수동',
     summary: '3주 팝업 기획·현장 운영. 스태프 섭외와 일정 관리 포함.',
-    tags: ['프로젝트', '3주', '오프라인'],
     createdAt: '2026-08-13',
   },
 ];

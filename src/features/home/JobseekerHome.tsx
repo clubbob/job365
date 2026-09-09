@@ -21,7 +21,7 @@ export default function JobseekerHome() {
             채용 정보
           </Link>
           <Link
-            href="/mypage#resume"
+            href="/talents/new"
             className="inline-flex rounded-lg border border-white/40 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
           >
             이력서 등록

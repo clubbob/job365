@@ -6,7 +6,7 @@ export type JobWorkType =
   | 'parttime'
   | 'dispatch'
   | 'project';
-export type JobPayType = 'hourly' | 'daily' | 'monthly' | 'per_task';
+export type JobPayType = 'hourly' | 'daily' | 'monthly' | 'yearly' | 'per_task';
 export type JobCareerType = 'new' | 'experienced' | 'any';
 export type JobStatus = 'draft' | 'pending' | 'published' | 'closed' | 'rejected';
 
@@ -30,7 +30,6 @@ export type JobPosting = {
   payLabel: string;
   location: string;
   summary: string;
-  tags: string[];
   createdAt: string;
   businessNumber?: string;
   headcount?: number;
@@ -38,6 +37,10 @@ export type JobPosting = {
   careerMinYears?: number;
   education?: JobEducation | string;
   workHours?: string;
+  workDays?: string;
+  positionLevel?: string;
+  probation?: string;
+  process?: string;
   deadline?: string;
   payAmount?: string;
   payNegotiable?: boolean;
@@ -95,6 +98,7 @@ export const PAY_TYPE_LABELS: Record<JobPayType, string> = {
   hourly: '시급',
   daily: '일급',
   monthly: '월급',
+  yearly: '연봉',
   per_task: '건별',
 };
 
@@ -105,3 +109,25 @@ export const CAREER_TYPE_LABELS: Record<JobCareerType, string> = {
 };
 
 export const JOB_CAREER_TYPES = Object.keys(CAREER_TYPE_LABELS) as JobCareerType[];
+
+export const JOB_POSITION_OPTIONS = [
+  '직급무관',
+  '사원',
+  '주임·계장',
+  '대리',
+  '과장',
+  '차장',
+  '부장',
+  '임원',
+] as const;
+
+export const JOB_PROBATION_OPTIONS = ['없음', '1개월', '2개월', '3개월', '6개월', '협의'] as const;
+
+export const JOB_WORK_DAY_OPTIONS = [
+  '주 5일(월~금)',
+  '주 6일',
+  '주 3일',
+  '주말',
+  '교대근무',
+  '요일협의',
+] as const;

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
-import { USER_MODE_LABELS, getModeRegisterAction, type UserMode } from '@/lib/user-mode';
+import { USER_MODE_LABELS, type UserMode } from '@/lib/user-mode';
 import { cn } from '@/lib/utils';
 
 const MODES: UserMode[] = ['recruiter', 'jobseeker'];
@@ -35,7 +35,6 @@ export default function HeaderModeMenu({
   }, []);
 
   const label = mode ? USER_MODE_LABELS[mode] : '설정';
-  const registerAction = getModeRegisterAction(mode);
 
   return (
     <div ref={rootRef} className={cn('relative', className)}>
@@ -97,25 +96,12 @@ export default function HeaderModeMenu({
           >
             선택해제
           </button>
-          {registerAction ? (
-            <Link
-              href={registerAction.href}
-              role="menuitem"
-              className="block border-t border-border px-3 py-2 text-left text-sm font-semibold text-foreground hover:bg-neutral-50"
-              onClick={() => setOpen(false)}
-            >
-              {registerAction.label}
-            </Link>
-          ) : null}
           {showLogout ? (
             <>
               <Link
                 href="/mypage"
                 role="menuitem"
-                className={cn(
-                  'block px-3 py-2 text-left text-sm text-foreground hover:bg-neutral-50',
-                  registerAction ? '' : 'border-t border-border',
-                )}
+                className="block border-t border-border px-3 py-2 text-left text-sm text-foreground hover:bg-neutral-50"
                 onClick={() => setOpen(false)}
               >
                 마이페이지

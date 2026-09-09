@@ -5,13 +5,16 @@ import { useRouter } from 'next/navigation';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
 import { authInputClassName } from '@/lib/auth-ui';
 import { addDaysToKoreaDate, getKoreaDateLocalToday } from '@/lib/datetime';
-import { formatJobPayLabel, formatPayAmountInput } from '@/lib/job-display';
+import { formatJobPayLabel, formatPayAmountInput, parsePayLabel, PAY_UNIT_LABELS } from '@/lib/job-display';
 import { saveMyJobPosting } from '@/lib/my-job-posts';
 import { cn } from '@/lib/utils';
 import {
   CAREER_TYPE_LABELS,
   JOB_CAREER_TYPES,
   JOB_EDUCATION_OPTIONS,
+  JOB_POSITION_OPTIONS,
+  JOB_PROBATION_OPTIONS,
+  JOB_WORK_DAY_OPTIONS,
   JOB_WORK_TYPES,
   PAY_TYPE_LABELS,
   WORK_TYPE_LABELS,
@@ -27,13 +30,6 @@ import {
 } from '@/types/job';
 
 const PAY_TYPES = Object.keys(PAY_TYPE_LABELS) as JobPayType[];
-
-const PAY_UNIT: Record<JobPayType, string> = {
-  hourly: '원 / 시간',
-  daily: '원 / 일',
-  monthly: '만원 / 월',
-  per_task: '원 / 건',
-};
 
 const controlClassName =
   'rounded-xl border border-border-strong bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition placeholder:text-subtle placeholder:font-normal focus:border-primary focus:ring-2 focus:ring-primary/25 sm:text-base';
@@ -59,33 +55,56 @@ export default function JobCreateForm({
   userId,
   companyName,
   businessNumber,
+  initialJob,
+  returnPath,
   onCancel,
 }: {
   userId: string;
   companyName: string;
   businessNumber: string;
+  initialJob?: JobPosting;
+  returnPath?: string;
   onCancel: () => void;
 }) {
   const router = useRouter();
   const today = getKoreaDateLocalToday();
-  const [title, setTitle] = useState('');
-  const [workType, setWorkType] = useState<JobWorkType | ''>('');
-  const [headcount, setHeadcount] = useState('1');
-  const [careerType, setCareerType] = useState<JobCareerType | ''>('');
-  const [careerMinYears, setCareerMinYears] = useState('1');
-  const [education, setEducation] = useState<JobEducation | ''>('');
-  const [location, setLocation] = useState('');
-  const [workHours, setWorkHours] = useState('');
-  const [alwaysOpen, setAlwaysOpen] = useState(false);
-  const [deadline, setDeadline] = useState(addDaysToKoreaDate(today, 30));
-  const [payType, setPayType] = useState<JobPayType | ''>('');
-  const [payAmount, setPayAmount] = useState('');
-  const [payNegotiable, setPayNegotiable] = useState(false);
-  const [summary, setSummary] = useState('');
-  const [requirements, setRequirements] = useState('');
-  const [preferred, setPreferred] = useState('');
-  const [benefits, setBenefits] = useState('');
-  const [tags, setTags] = useState('');
+  const editing = Boolean(initialJob);
+  const initialPay = initialJob
+    ? initialJob.payType
+      ? {
+          payType: initialJob.payType,
+          amount: initialJob.payAmount ?? '',
+          negotiable: Boolean(initialJob.payNegotiable),
+        }
+      : parsePayLabel(initialJob.payLabel)
+    : { payType: '' as JobPayType | '', amount: '', negotiable: false };
+  const [title, setTitle] = useState(initialJob?.title ?? '');
+  const [workType, setWorkType] = useState<JobWorkType | ''>(initialJob?.workType ?? '');
+  const [headcount, setHeadcount] = useState(String(initialJob?.headcount || 1));
+  const [careerType, setCareerType] = useState<JobCareerType | ''>(initialJob?.careerType ?? '');
+  const [careerMinYears, setCareerMinYears] = useState(String(initialJob?.careerMinYears || 1));
+  const [education, setEducation] = useState<JobEducation | ''>(
+    initialJob?.education && isJobEducation(initialJob.education) ? initialJob.education : '',
+  );
+  const [location, setLocation] = useState(initialJob?.location ?? '');
+  const [workDays, setWorkDays] = useState(initialJob?.workDays ?? '');
+  const [workHours, setWorkHours] = useState(initialJob?.workHours ?? '');
+  const [positionLevel, setPositionLevel] = useState(initialJob?.positionLevel ?? '');
+  const [probation, setProbation] = useState(initialJob?.probation ?? '');
+  const [alwaysOpen, setAlwaysOpen] = useState(initialJob?.deadline === 'open');
+  const [deadline, setDeadline] = useState(
+    initialJob?.deadline && initialJob.deadline !== 'open'
+      ? initialJob.deadline
+      : addDaysToKoreaDate(today, 30),
+  );
+  const [payType, setPayType] = useState<JobPayType | ''>(initialPay.payType);
+  const [payAmount, setPayAmount] = useState(initialPay.amount);
+  const [payNegotiable, setPayNegotiable] = useState(initialPay.negotiable);
+  const [summary, setSummary] = useState(initialJob?.summary ?? '');
+  const [requirements, setRequirements] = useState(initialJob?.requirements ?? '');
+  const [preferred, setPreferred] = useState(initialJob?.preferred ?? '');
+  const [benefits, setBenefits] = useState(initialJob?.benefits ?? '');
+  const [process, setProcess] = useState(initialJob?.process ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -105,7 +124,7 @@ export default function JobCreateForm({
     setError('');
     setSaving(true);
     const job: JobPosting = {
-      id: `job-me-${userId}-${Date.now()}`,
+      id: initialJob?.id ?? `job-me-${userId}-${Date.now()}`,
       title: title.trim(),
       companyName,
       businessNumber,
@@ -120,25 +139,29 @@ export default function JobCreateForm({
       preferred: preferred.trim() || undefined,
       benefits: benefits.trim() || undefined,
       workHours: workHours.trim() || undefined,
+      workDays: workDays.trim() || undefined,
+      positionLevel: positionLevel.trim() || undefined,
+      probation: probation.trim() || undefined,
+      process: process.trim() || undefined,
       headcount: count,
       careerType,
       careerMinYears: careerType === 'experienced' ? years : undefined,
       education,
       deadline: alwaysOpen ? 'open' : deadline,
-      tags: tags
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean),
-      createdAt: today,
+      createdAt: initialJob?.createdAt ?? today,
     };
     saveMyJobPosting(userId, job);
-    router.push(`/jobs/${job.id}`);
+    router.push(returnPath || `/jobs/${job.id}`);
   }
 
   return (
     <Card
-      title="채용 정보 작성"
-      description="구직자에게 보이는 채용 정보를 입력합니다. 등록하면 채용 정보 목록에 바로 게시됩니다."
+      title={editing ? '채용 정보 수정' : '채용 정보 작성'}
+      description={
+        editing
+          ? '수정한 내용은 채용 정보와 마이페이지에 바로 반영됩니다.'
+          : '구직자에게 보이는 채용 정보를 입력합니다. 등록하면 채용 정보 목록에 바로 게시됩니다.'
+      }
     >
       <form className="space-y-0" onSubmit={handleSubmit}>
         <Section title="회사 정보">
@@ -244,7 +267,7 @@ export default function JobCreateForm({
                     required={!payNegotiable}
                   />
                   <span className="shrink-0 whitespace-nowrap text-sm text-muted">
-                    {payType ? PAY_UNIT[payType] : '원'}
+                    {payType ? PAY_UNIT_LABELS[payType] : '원'}
                   </span>
                   <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-foreground">
                     <input
@@ -258,28 +281,45 @@ export default function JobCreateForm({
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 items-end gap-4 md:flex md:flex-nowrap">
+            <div className="grid grid-cols-2 items-end gap-4 sm:grid-cols-4">
               <div className="min-w-0">
                 <FieldLabel htmlFor="job-career" required>
                   경력
                 </FieldLabel>
-                <select
-                  id="job-career"
-                  value={careerType}
-                  onChange={(event) => {
-                    const next = event.target.value;
-                    setCareerType(isJobCareerType(next) ? next : '');
-                  }}
-                  className={cn(controlClassName, 'w-full md:w-40', !careerType && 'font-normal text-subtle')}
-                  required
-                >
-                  <PlaceholderOption />
-                  {JOB_CAREER_TYPES.map((item) => (
-                    <option key={item} value={item}>
-                      {CAREER_TYPE_LABELS[item]}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    id="job-career"
+                    value={careerType}
+                    onChange={(event) => {
+                      const next = event.target.value;
+                      setCareerType(isJobCareerType(next) ? next : '');
+                    }}
+                    className={cn(controlClassName, 'w-full min-w-0', !careerType && 'font-normal text-subtle')}
+                    required
+                  >
+                    <PlaceholderOption />
+                    {JOB_CAREER_TYPES.map((item) => (
+                      <option key={item} value={item}>
+                        {CAREER_TYPE_LABELS[item]}
+                      </option>
+                    ))}
+                  </select>
+                  {careerType === 'experienced' ? (
+                    <>
+                      <input
+                        id="job-career-years"
+                        type="number"
+                        min={1}
+                        max={40}
+                        value={careerMinYears}
+                        onChange={(event) => setCareerMinYears(event.target.value)}
+                        className={cn(controlClassName, 'w-14 shrink-0 text-right tabular-nums')}
+                        required
+                      />
+                      <span className="shrink-0 text-sm text-muted">년</span>
+                    </>
+                  ) : null}
+                </div>
               </div>
               <div className="min-w-0">
                 <FieldLabel htmlFor="job-education" required>
@@ -292,7 +332,7 @@ export default function JobCreateForm({
                     const next = event.target.value;
                     setEducation(isJobEducation(next) ? next : '');
                   }}
-                  className={cn(controlClassName, 'w-full md:w-52', !education && 'font-normal text-subtle')}
+                  className={cn(controlClassName, 'w-full', !education && 'font-normal text-subtle')}
                   required
                 >
                   <PlaceholderOption />
@@ -303,28 +343,44 @@ export default function JobCreateForm({
                   ))}
                 </select>
               </div>
-            </div>
-          </div>
-          {careerType === 'experienced' ? (
-            <div>
-              <FieldLabel htmlFor="job-career-years" required>
-                최소 경력
-              </FieldLabel>
-              <div className="flex items-center gap-2">
-                <input
-                  id="job-career-years"
-                  type="number"
-                  min={1}
-                  max={40}
-                  value={careerMinYears}
-                  onChange={(event) => setCareerMinYears(event.target.value)}
-                  className={cn(controlClassName, 'w-20 text-right tabular-nums')}
-                  required
-                />
-                <span className="shrink-0 text-sm text-muted">년 이상</span>
+              <div className="min-w-0">
+                <FieldLabel htmlFor="job-position" optional>
+                  직급/직책
+                </FieldLabel>
+                <select
+                  id="job-position"
+                  value={positionLevel}
+                  onChange={(event) => setPositionLevel(event.target.value)}
+                  className={cn(controlClassName, 'w-full', !positionLevel && 'font-normal text-subtle')}
+                >
+                  <PlaceholderOption />
+                  {JOB_POSITION_OPTIONS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="min-w-0">
+                <FieldLabel htmlFor="job-probation" optional>
+                  수습 기간
+                </FieldLabel>
+                <select
+                  id="job-probation"
+                  value={probation}
+                  onChange={(event) => setProbation(event.target.value)}
+                  className={cn(controlClassName, 'w-full', !probation && 'font-normal text-subtle')}
+                >
+                  <PlaceholderOption />
+                  {JOB_PROBATION_OPTIONS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
-          ) : null}
+          </div>
           <div>
             <FieldLabel htmlFor="job-location" required>
               근무지
@@ -338,40 +394,60 @@ export default function JobCreateForm({
               required
             />
           </div>
-          <div>
-            <FieldLabel htmlFor="job-hours" optional>
-              근무 시간
-            </FieldLabel>
-            <input
-              id="job-hours"
-              value={workHours}
-              onChange={(event) => setWorkHours(event.target.value)}
-              className={authInputClassName}
-              placeholder="예: 주 5일, 09:00~18:00 (휴게 1시간)"
-            />
-          </div>
-          <div>
-            <FieldLabel htmlFor="job-deadline">접수 마감</FieldLabel>
-            <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-6">
+            <div className="min-w-0">
+              <FieldLabel htmlFor="job-work-days" optional>
+                근무 요일
+              </FieldLabel>
+              <select
+                id="job-work-days"
+                value={workDays}
+                onChange={(event) => setWorkDays(event.target.value)}
+                className={cn(controlClassName, 'w-full sm:w-44', !workDays && 'font-normal text-subtle')}
+              >
+                <PlaceholderOption />
+                {JOB_WORK_DAY_OPTIONS.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="min-w-0 w-full sm:max-w-xs">
+              <FieldLabel htmlFor="job-hours" optional>
+                근무 시간
+              </FieldLabel>
               <input
-                id="job-deadline"
-                type="date"
-                min={today}
-                value={deadline}
-                onChange={(event) => setDeadline(event.target.value)}
-                className={cn(controlClassName, 'w-44', alwaysOpen && 'text-subtle')}
-                disabled={alwaysOpen}
-                required={!alwaysOpen}
+                id="job-hours"
+                value={workHours}
+                onChange={(event) => setWorkHours(event.target.value)}
+                className={authInputClassName}
+                placeholder="예: 09:00~18:00"
               />
-              <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-foreground">
+            </div>
+            <div className="shrink-0">
+              <FieldLabel htmlFor="job-deadline">접수 마감</FieldLabel>
+              <div className="flex flex-wrap items-center gap-3">
                 <input
-                  type="checkbox"
-                  checked={alwaysOpen}
-                  onChange={(event) => setAlwaysOpen(event.target.checked)}
-                  className="size-4 accent-primary"
+                  id="job-deadline"
+                  type="date"
+                  min={today}
+                  value={deadline}
+                  onChange={(event) => setDeadline(event.target.value)}
+                  className={cn(controlClassName, 'w-44', alwaysOpen && 'text-subtle')}
+                  disabled={alwaysOpen}
+                  required={!alwaysOpen}
                 />
-                상시채용
-              </label>
+                <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={alwaysOpen}
+                    onChange={(event) => setAlwaysOpen(event.target.checked)}
+                    className="size-4 accent-primary"
+                  />
+                  상시채용
+                </label>
+              </div>
             </div>
           </div>
         </Section>
@@ -427,15 +503,15 @@ export default function JobCreateForm({
             />
           </div>
           <div>
-            <FieldLabel htmlFor="job-tags" optional>
-              키워드
+            <FieldLabel htmlFor="job-process" optional>
+              전형 절차
             </FieldLabel>
             <input
-              id="job-tags"
-              value={tags}
-              onChange={(event) => setTags(event.target.value)}
+              id="job-process"
+              value={process}
+              onChange={(event) => setProcess(event.target.value)}
               className={authInputClassName}
-              placeholder="쉼표로 구분 (예: 정규직, 4대보험, 주 5일)"
+              placeholder="예: 서류 전형 → 면접 → 최종 합격"
             />
           </div>
         </Section>
@@ -444,7 +520,7 @@ export default function JobCreateForm({
 
         <div className="mt-6 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row">
           <Button type="submit" fullWidth disabled={saving}>
-            {saving ? '등록 중…' : '채용 정보 등록'}
+            {saving ? '저장 중…' : editing ? '수정 반영' : '채용 정보 등록'}
           </Button>
           <Button type="button" variant="secondary" fullWidth onClick={onCancel}>
             취소

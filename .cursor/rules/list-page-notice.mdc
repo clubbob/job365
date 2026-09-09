@@ -12,4 +12,4 @@ alwaysApply: true
 2. `AdSlot placement="header"`
 3. 목록 (`JobList` / `TalentList`)
 
-채용 정보 등록은 `/jobs/new`, 이력서 등록은 마이페이지에서만 다룬다.
+채용 정보 등록은 `/jobs/new`, 이력서 등록은 `/talents/new`에서만 다룬다.

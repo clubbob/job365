@@ -1,19 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
+import {
+  DetailBadge,
+  DetailHero,
+  DetailSection,
+  DetailStatGrid,
+  DetailTags,
+  DetailText,
+} from '@/components/ui/PostingDetail';
 import TalentProposeButton from '@/features/talents/TalentProposeButton';
 import { getTalentById } from '@/lib/talent-catalog';
-import { displayTalentName, talentEducation, talentRecentDate } from '@/lib/talent-display';
+import { displayTalentName, talentEducation } from '@/lib/talent-display';
 import type { TalentProposalStatus } from '@/lib/talent-proposals';
 import { WORK_TYPE_LABELS } from '@/types/job';
+import type { TalentProfile } from '@/types/talent';
 
 export default function TalentDetailPageClient({ talentId }: { talentId: string }) {
   const [proposalStatus, setProposalStatus] = useState<TalentProposalStatus>('none');
-  const talent = getTalentById(talentId);
-  const revealName = proposalStatus === 'accepted';
+  const [talent, setTalent] = useState<TalentProfile | null | undefined>(undefined);
+
+  useEffect(() => {
+    setTalent(getTalentById(talentId) ?? null);
+  }, [talentId]);
+
+  if (talent === undefined) {
+    return <p className="py-8 text-center text-sm text-muted">불러오는 중…</p>;
+  }
 
   if (!talent) {
     return (
@@ -29,60 +45,84 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
     );
   }
 
+  const revealName = proposalStatus === 'accepted';
+  const workType = WORK_TYPE_LABELS[talent.workType];
+  const displayName = displayTalentName(talent.name, revealName);
+
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={`${displayTalentName(talent.name, revealName)} · ${talent.headline}`}
-        description={`${talent.careerLabel} · ${talentEducation(talent)}`}
-        homeHref="/talents"
-        homeLabel="이전 목록으로"
-      />
+    <div className="space-y-5">
+      <PageHeader title="인재 정보" description={talent.headline} homeHref="/talents" homeLabel="이전 목록으로" />
       <AdSlot placement="header" />
-      <article className="rounded-xl border border-border bg-surface p-5 shadow-card sm:p-6">
-        <div className="mb-3 flex flex-wrap gap-2">
-          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-            {WORK_TYPE_LABELS[talent.workType]}
-          </span>
-          <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-muted">
-            {talent.available}
-          </span>
+
+      <article className="space-y-4">
+        <DetailHero
+          eyebrow={displayName}
+          title={talent.headline}
+          badges={
+            <>
+              <DetailBadge tone="primary">{workType}</DetailBadge>
+              <DetailBadge>{talent.careerLabel}</DetailBadge>
+              <DetailBadge>{talentEducation(talent)}</DetailBadge>
+            </>
+          }
+          highlightLabel={talent.desiredPay ? '희망 급여' : undefined}
+          highlightValue={talent.desiredPay || undefined}
+          facts={[
+            { label: '희망 근무지', value: talent.location || '—' },
+            { label: '가능 시기', value: talent.available || '—' },
+            { label: '경력', value: talent.careerLabel },
+          ]}
+        />
+
+        <DetailStatGrid
+          items={[
+            { label: '이름', value: displayName },
+            { label: '직무', value: talent.headline },
+            { label: '희망 근무 형태', value: workType },
+            { label: '경력', value: talent.careerLabel },
+            { label: '학력', value: talentEducation(talent) },
+            { label: '희망 근무지', value: talent.location },
+            { label: '가능 시기', value: talent.available },
+            { label: '학교', value: talent.school },
+            { label: '전공', value: talent.major },
+          ]}
+        />
+
+        <DetailSection title="자기 소개">
+          <DetailText value={talent.summary} />
+        </DetailSection>
+        <DetailSection title="경력 사항">
+          <DetailText value={talent.careerHistory} />
+        </DetailSection>
+        <DetailSection title="자격증">
+          <DetailText value={talent.experience} />
+        </DetailSection>
+        <DetailSection title="어학">
+          <DetailText value={talent.languages} />
+        </DetailSection>
+        <DetailSection title="스킬">
+          <DetailTags items={talent.tags} />
+        </DetailSection>
+        <DetailSection title="포트폴리오">
+          {talent.portfolioUrl ? (
+            <a
+              href={talent.portfolioUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex max-w-full break-all rounded-lg bg-primary/10 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/15"
+            >
+              {talent.portfolioUrl}
+            </a>
+          ) : (
+            <p className="text-subtle">—</p>
+          )}
+        </DetailSection>
+
+        <div className="rounded-xl border border-border bg-surface px-4 py-4 shadow-sm sm:px-5">
+          <TalentProposeButton talentId={talent.id} onStatusChange={setProposalStatus} />
         </div>
-        <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-subtle">희망 급여</dt>
-            <dd className="mt-0.5 font-semibold text-primary">{talent.desiredPay}</dd>
-          </div>
-          <div>
-            <dt className="text-subtle">희망 근무지</dt>
-            <dd className="mt-0.5 font-medium text-foreground">{talent.location}</dd>
-          </div>
-          <div>
-            <dt className="text-subtle">경력</dt>
-            <dd className="mt-0.5 font-medium text-foreground">{talent.careerLabel}</dd>
-          </div>
-          <div>
-            <dt className="text-subtle">학력</dt>
-            <dd className="mt-0.5 font-medium text-foreground">{talentEducation(talent)}</dd>
-          </div>
-          <div>
-            <dt className="text-subtle">프로필 최근일</dt>
-            <dd className="mt-0.5 font-medium text-foreground">{talentRecentDate(talent)}</dd>
-          </div>
-        </dl>
-        <p className="mt-5 text-[15px] leading-relaxed text-muted">{talent.summary}</p>
-        <div className="mt-5">
-          <h2 className="text-sm font-semibold text-foreground">경력 요약</h2>
-          <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{talent.experience}</p>
-        </div>
-        <div className="mt-5 flex flex-wrap gap-1.5">
-          {talent.tags.map((tag) => (
-            <span key={tag} className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-muted">
-              {tag}
-            </span>
-          ))}
-        </div>
-        <TalentProposeButton talentId={talent.id} onStatusChange={setProposalStatus} />
       </article>
+
       <AdSlot placement="detail" />
     </div>
   );

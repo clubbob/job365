@@ -26,6 +26,10 @@ export function listMyJobPostings(userId?: string): JobPosting[] {
   return Object.values(store).flat();
 }
 
+export function getMyJobPosting(userId: string, jobId: string): JobPosting | null {
+  return listMyJobPostings(userId).find((item) => item.id === jobId) ?? null;
+}
+
 export function saveMyJobPosting(userId: string, job: JobPosting): void {
   const store = readStore();
   const current = store[userId] ?? [];

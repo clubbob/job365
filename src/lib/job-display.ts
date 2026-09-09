@@ -16,13 +16,15 @@ export function formatJobPayLabel(
   const hasAmount = Number.isFinite(amount) && amount > 0;
   const formatted = amount.toLocaleString('ko-KR');
   const body = hasAmount
-    ? payType === 'monthly'
-      ? `월급 ${amount}만원`
-      : payType === 'hourly'
-        ? `시급 ${formatted}원`
-        : payType === 'daily'
-          ? `일급 ${formatted}원`
-          : `건당 ${formatted}원`
+    ? payType === 'yearly'
+      ? `연봉 ${amount}만원`
+      : payType === 'monthly'
+        ? `월급 ${amount}만원`
+        : payType === 'hourly'
+          ? `시급 ${formatted}원`
+          : payType === 'daily'
+            ? `일급 ${formatted}원`
+            : `건당 ${formatted}원`
     : '';
 
   if (negotiable) {
@@ -30,6 +32,30 @@ export function formatJobPayLabel(
     return body ? `${body} (협의가능)` : `${typeLabel} 협의`;
   }
   return body;
+}
+
+export const PAY_UNIT_LABELS: Record<JobPayType, string> = {
+  hourly: '원 / 시간',
+  daily: '원 / 일',
+  monthly: '만원 / 월',
+  yearly: '만원 / 년',
+  per_task: '원 / 건',
+};
+
+export function parsePayLabel(label: string): {
+  payType: JobPayType | '';
+  amount: string;
+  negotiable: boolean;
+} {
+  const text = label.trim();
+  const negotiable = /협의/.test(text);
+  const digits = text.replace(/[^\d]/g, '');
+  if (/시급/.test(text)) return { payType: 'hourly', amount: digits, negotiable };
+  if (/일급/.test(text)) return { payType: 'daily', amount: digits, negotiable };
+  if (/건당|건별/.test(text)) return { payType: 'per_task', amount: digits, negotiable };
+  if (/연봉/.test(text)) return { payType: 'yearly', amount: digits, negotiable };
+  if (/월급/.test(text)) return { payType: 'monthly', amount: digits, negotiable };
+  return { payType: '', amount: '', negotiable };
 }
 
 export function formatPayAmountInput(digits: string): string {
@@ -65,12 +91,15 @@ export function jobSearchText(job: JobPosting): string {
     job.summary,
     job.payLabel,
     job.workHours,
+    job.workDays,
     job.education,
+    job.positionLevel,
+    job.probation,
     job.requirements,
     job.preferred,
     job.benefits,
+    job.process,
     jobCareerLabel(job),
-    ...job.tags,
   ]
     .filter(Boolean)
     .join(' ');

@@ -19,9 +19,9 @@ type TalentSeed = {
 
 function sampleEducation(seed: TalentSeed): EducationLevel {
   if (seed.workType === 'intern' || seed.tags.includes('학생') || seed.tags.includes('학생환영')) {
-    return '대학교 재학';
+    return '대학교 졸업 이상';
   }
-  if (seed.careerLabel === '신입') return '대학교 재학';
+  if (seed.careerLabel === '신입') return '대학교 졸업 이상';
   if (
     seed.headline.includes('물류') ||
     seed.headline.includes('포장') ||
@@ -30,12 +30,12 @@ function sampleEducation(seed: TalentSeed): EducationLevel {
     seed.headline.includes('카페') ||
     seed.headline.includes('오전 오픈')
   ) {
-    return '고등학교 졸업';
+    return '고등학교 졸업 이상';
   }
-  if (seed.headline.includes('데이터 대시보드')) return '석사 졸업';
+  if (seed.headline.includes('데이터 대시보드')) return '석사 이상';
   const years = Number(seed.careerLabel.replace(/[^0-9]/g, ''));
-  if (years > 0 && years <= 2) return '전문대학 졸업';
-  return '대학교 졸업';
+  if (years > 0 && years <= 2) return '전문대학 졸업 이상';
+  return '대학교 졸업 이상';
 }
 
 const SEEDS: TalentSeed[] = [

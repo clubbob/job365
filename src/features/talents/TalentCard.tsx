@@ -26,13 +26,19 @@ export default function TalentCard({
       <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">
         {maskTalentName(talent.name)} · {talent.headline}
       </h3>
-      <p className="mt-1 truncate text-sm font-medium text-muted">{talent.location}</p>
+      {talent.location ? (
+        <p className="mt-1 truncate text-sm font-medium text-muted">{talent.location}</p>
+      ) : null}
       <p className="mt-2 line-clamp-2 text-xs text-muted sm:text-sm">{talent.summary}</p>
       <div className="mt-auto flex flex-col gap-2 pt-3">
-        <div className="flex flex-wrap items-end justify-between gap-1 text-sm">
-          <span className="font-semibold text-primary">{talent.desiredPay}</span>
-          <span className="text-xs text-subtle">{talent.available}</span>
-        </div>
+        {talent.desiredPay || talent.available ? (
+          <div className="flex flex-wrap items-end justify-between gap-1 text-sm">
+            {talent.desiredPay ? (
+              <span className="font-semibold text-primary">{talent.desiredPay}</span>
+            ) : null}
+            {talent.available ? <span className="text-xs text-subtle">{talent.available}</span> : null}
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-1.5">
           {talent.tags.map((tag) => (
             <span key={tag} className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-muted">

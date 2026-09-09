@@ -12,14 +12,6 @@ export const USER_MODE_PATHS: Record<UserMode, string> = {
   recruiter: '/',
 };
 
-export function getModeRegisterAction(
-  mode: UserMode | null,
-): { href: string; label: string } | null {
-  if (mode === 'recruiter') return { href: '/jobs/new', label: '채용 정보 등록' };
-  if (mode === 'jobseeker') return { href: '/mypage#resume', label: '이력서 등록' };
-  return null;
-}
-
 export function clearUserMode(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(USER_MODE_KEY);

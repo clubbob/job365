@@ -57,6 +57,12 @@ export default function TalentList({
         talent.desiredPay,
         talent.careerLabel,
         talent.education,
+        talent.school,
+        talent.major,
+        talent.experience,
+        talent.careerHistory,
+        talent.languages,
+        talent.portfolioUrl,
         ...talent.tags,
       ]
         .join(' ')

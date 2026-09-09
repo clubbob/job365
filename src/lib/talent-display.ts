@@ -1,4 +1,4 @@
-import type { TalentProfile } from '@/types/talent';
+import { normalizeEducation, type TalentProfile } from '@/types/talent';
 
 export function maskTalentName(name: string): string {
   const chars = Array.from(name.trim());
@@ -15,5 +15,5 @@ export function talentRecentDate(talent: Pick<TalentProfile, 'createdAt' | 'upda
 }
 
 export function talentEducation(talent: Pick<TalentProfile, 'education'>): string {
-  return talent.education;
+  return normalizeEducation(talent.education) || talent.education || '미입력';
 }

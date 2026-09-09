@@ -4,33 +4,21 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
+import {
+  DetailBadge,
+  DetailHero,
+  DetailSection,
+  DetailStatGrid,
+  DetailText,
+} from '@/components/ui/PostingDetail';
+import { formatBusinessNumber } from '@/lib/business-number';
 import { getJobById } from '@/lib/job-catalog';
 import {
   jobCareerLabel,
   jobDeadlineLabel,
   jobHeadcountLabel,
 } from '@/lib/job-display';
-import { PAY_TYPE_LABELS, WORK_TYPE_LABELS, type JobPosting } from '@/types/job';
-
-function DetailSection({ title, body }: { title: string; body?: string }) {
-  if (!body?.trim()) return null;
-  return (
-    <section className="mt-6">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-      <p className="mt-1.5 whitespace-pre-wrap text-[15px] leading-relaxed text-muted">{body}</p>
-    </section>
-  );
-}
-
-function Fact({ label, value }: { label: string; value?: string | null }) {
-  if (!value) return null;
-  return (
-    <div>
-      <dt className="text-subtle">{label}</dt>
-      <dd className="mt-0.5 font-medium text-foreground">{value}</dd>
-    </div>
-  );
-}
+import { WORK_TYPE_LABELS, type JobPosting } from '@/types/job';
 
 export default function JobDetailPageClient({ jobId }: { jobId: string }) {
   const [job, setJob] = useState<JobPosting | null | undefined>(undefined);
@@ -59,62 +47,77 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
 
   const career = jobCareerLabel(job);
   const headcount = jobHeadcountLabel(job.headcount);
+  const workType = WORK_TYPE_LABELS[job.workType];
+  const deadline = job.deadline ? jobDeadlineLabel(job.deadline) : null;
+  const businessNumber = job.businessNumber ? formatBusinessNumber(job.businessNumber) : '';
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={job.title}
-        description={job.companyName}
-        homeHref="/jobs"
-        homeLabel="이전 목록으로"
-      />
+    <div className="space-y-5">
+      <PageHeader title="채용 정보" description={job.companyName} homeHref="/jobs" homeLabel="이전 목록으로" />
       <AdSlot placement="header" />
-      <article className="rounded-xl border border-border bg-surface p-5 shadow-card sm:p-6">
-        <div className="mb-3 flex flex-wrap gap-2">
-          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-            {WORK_TYPE_LABELS[job.workType]}
-          </span>
-          <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-muted">
-            {PAY_TYPE_LABELS[job.payType]}
-          </span>
-          {career ? (
-            <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-muted">
-              {career}
-            </span>
-          ) : null}
-        </div>
-        <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-subtle">급여</dt>
-            <dd className="mt-0.5 font-semibold text-primary">{job.payLabel}</dd>
-          </div>
-          <Fact label="근무지" value={job.location} />
-          <Fact label="모집 인원" value={headcount} />
-          <Fact label="학력" value={job.education} />
-          <Fact label="근무 시간" value={job.workHours} />
-          <Fact label="접수 마감" value={job.deadline ? jobDeadlineLabel(job.deadline) : null} />
-        </dl>
-        <DetailSection title="담당 업무" body={job.summary} />
-        <DetailSection title="자격 요건" body={job.requirements} />
-        <DetailSection title="우대 사항" body={job.preferred} />
-        <DetailSection title="복리후생" body={job.benefits} />
-        {job.tags.length > 0 ? (
-          <div className="mt-5 flex flex-wrap gap-1.5">
-            {job.tags.map((tag) => (
-              <span key={tag} className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-muted">
-                {tag}
-              </span>
-            ))}
-          </div>
-        ) : null}
+
+      <article className="space-y-4">
+        <DetailHero
+          eyebrow={job.companyName}
+          title={job.title}
+          badges={
+            <>
+              <DetailBadge tone="primary">{workType}</DetailBadge>
+              {career ? <DetailBadge>{career}</DetailBadge> : null}
+              {job.education ? <DetailBadge>{job.education}</DetailBadge> : null}
+            </>
+          }
+          highlightLabel="지급 기준"
+          highlightValue={job.payLabel}
+          facts={[
+            { label: '근무지', value: job.location },
+            { label: '접수 마감', value: deadline || '—' },
+            { label: '모집 인원', value: headcount || '—' },
+          ]}
+        />
+
+        <DetailStatGrid
+          items={[
+            { label: '회사명', value: job.companyName },
+            { label: '사업자등록번호', value: businessNumber },
+            { label: '근무 형태', value: workType },
+            { label: '모집 인원', value: headcount },
+            { label: '경력', value: career },
+            { label: '학력', value: job.education },
+            { label: '직급/직책', value: job.positionLevel },
+            { label: '수습 기간', value: job.probation },
+            { label: '근무지', value: job.location },
+            { label: '근무 요일', value: job.workDays },
+            { label: '근무 시간', value: job.workHours },
+            { label: '접수 마감', value: deadline },
+          ]}
+        />
+
+        <DetailSection title="담당 업무">
+          <DetailText value={job.summary} />
+        </DetailSection>
+        <DetailSection title="자격 요건">
+          <DetailText value={job.requirements} />
+        </DetailSection>
+        <DetailSection title="우대 사항">
+          <DetailText value={job.preferred} />
+        </DetailSection>
+        <DetailSection title="복리후생">
+          <DetailText value={job.benefits} />
+        </DetailSection>
+        <DetailSection title="전형 절차">
+          <DetailText value={job.process} />
+        </DetailSection>
+
         <button
           type="button"
           disabled
-          className="mt-6 w-full rounded-lg bg-primary/70 px-4 py-3 text-sm font-semibold text-white"
+          className="w-full rounded-xl bg-primary/70 px-4 py-3.5 text-sm font-semibold text-white shadow-sm"
         >
           지원하기 (다음 단계에서 열립니다)
         </button>
       </article>
+
       <AdSlot placement="detail" />
     </div>
   );

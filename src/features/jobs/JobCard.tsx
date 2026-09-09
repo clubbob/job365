@@ -1,19 +1,25 @@
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 import type { JobPosting } from '@/types/job';
 import { WORK_TYPE_LABELS } from '@/types/job';
 
 export default function JobCard({
   job,
   onNavigate,
+  className,
 }: {
   job: JobPosting;
   onNavigate?: () => void;
+  className?: string;
 }) {
   return (
     <Link
       href={`/jobs/${job.id}`}
       onClick={onNavigate}
-      className="flex h-full flex-col rounded-xl border border-border bg-surface p-3 shadow-card transition hover:border-primary/40 hover:shadow-card-hover sm:p-4"
+      className={cn(
+        'flex h-full flex-col rounded-xl border border-border bg-surface p-3 shadow-card transition hover:border-primary/40 hover:shadow-card-hover sm:p-4',
+        className,
+      )}
     >
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
@@ -28,13 +34,6 @@ export default function JobCard({
         <div className="flex flex-wrap items-end justify-between gap-1 text-sm">
           <span className="font-semibold text-primary">{job.payLabel}</span>
           <span className="text-xs text-subtle">{job.location}</span>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {job.tags.map((tag) => (
-            <span key={tag} className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-muted">
-              {tag}
-            </span>
-          ))}
         </div>
       </div>
     </Link>
