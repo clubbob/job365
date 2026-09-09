@@ -171,7 +171,7 @@ export default function JobNewPageClient() {
         <JobCreateForm
           userId={user.uid}
           companyName={editJob.companyName}
-          businessNumber={editJob.businessNumber}
+          businessNumber={editJob.businessNumber ?? ''}
           initialJob={editJob}
           returnPath={returnPath}
           onCancel={() => router.push(returnPath || `/jobs/${editJob.id}`)}
