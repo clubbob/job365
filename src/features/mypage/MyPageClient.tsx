@@ -10,6 +10,7 @@ import JobCard from '@/features/jobs/JobCard';
 import { useUserMode } from '@/features/mode/mode-context';
 import { listMyJobPostings } from '@/lib/my-job-posts';
 import { loadMyTalentProfile } from '@/lib/my-talent-profile';
+import { syncMyJobPosting, syncMyTalentProfile } from '@/lib/posting-sync';
 import { talentEducation, talentRecentDate } from '@/lib/talent-display';
 import { fetchUserAccount } from '@/lib/users-api';
 import { getUserNicknameFallback } from '@/lib/user-display';
@@ -78,6 +79,12 @@ export default function MyPageClient() {
     setMyJobs(listMyJobPostings(user.uid));
     setMyResume(loadMyTalentProfile(user.uid));
     setMineReady(true);
+    const jobs = listMyJobPostings(user.uid);
+    const resume = loadMyTalentProfile(user.uid);
+    void Promise.all([
+      ...jobs.map((job) => syncMyJobPosting(job)),
+      resume ? syncMyTalentProfile(resume) : Promise.resolve(),
+    ]);
   }, [user]);
 
   useEffect(() => {

@@ -7,6 +7,7 @@ import { authInputClassName } from '@/lib/auth-ui';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 import { formatJobPayLabel, formatPayAmountInput, parsePayLabel, PAY_UNIT_LABELS } from '@/lib/job-display';
 import { loadMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
+import { syncMyTalentProfile } from '@/lib/posting-sync';
 import { cn } from '@/lib/utils';
 import {
   CAREER_TYPE_LABELS,
@@ -59,10 +60,12 @@ export default function MyTalentProfileForm({
   userId,
   nickname,
   returnPath,
+  onSave,
 }: {
   userId: string;
   nickname: string;
   returnPath?: string;
+  onSave?: (profile: TalentProfile) => Promise<void>;
 }) {
   const router = useRouter();
   const [name, setName] = useState(nickname);
@@ -212,10 +215,19 @@ export default function MyTalentProfileForm({
     };
     setSaving(true);
     saveMyTalentProfile(userId, profile);
-    setCreatedAt(profile.createdAt);
-    setUpdatedAt(profile.updatedAt);
-    setSaved(true);
-    router.push(returnPath || `/talents/${profile.id}`);
+    void (async () => {
+      try {
+        if (onSave) await onSave(profile);
+        else await syncMyTalentProfile(profile);
+        setCreatedAt(profile.createdAt);
+        setUpdatedAt(profile.updatedAt);
+        setSaved(true);
+        router.push(returnPath || `/talents/${profile.id}`);
+      } catch {
+        setSaving(false);
+        setError('저장에 실패했습니다. 다시 시도해 주세요.');
+      }
+    })();
   }
 
   const editing = Boolean(createdAt);
@@ -517,7 +529,7 @@ export default function MyTalentProfileForm({
         {updatedAt ? <p className="text-sm text-muted">프로필 최근일 {updatedAt}</p> : null}
         {saved ? (
           <p className="text-sm text-success">
-            {returnPath ? '저장했습니다. 마이페이지로 이동합니다.' : '저장했습니다. 인재 정보로 이동합니다.'}
+            {returnPath ? '저장했습니다. 목록으로 이동합니다.' : '저장했습니다. 인재 정보로 이동합니다.'}
           </p>
         ) : null}
         <div className="flex flex-col gap-2 sm:flex-row">

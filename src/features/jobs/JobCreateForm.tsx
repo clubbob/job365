@@ -7,6 +7,7 @@ import { authInputClassName } from '@/lib/auth-ui';
 import { addDaysToKoreaDate, getKoreaDateLocalToday } from '@/lib/datetime';
 import { formatJobPayLabel, formatPayAmountInput, parsePayLabel, PAY_UNIT_LABELS } from '@/lib/job-display';
 import { saveMyJobPosting } from '@/lib/my-job-posts';
+import { syncMyJobPosting } from '@/lib/posting-sync';
 import { cn } from '@/lib/utils';
 import {
   CAREER_TYPE_LABELS,
@@ -57,6 +58,8 @@ export default function JobCreateForm({
   businessNumber,
   initialJob,
   returnPath,
+  companyEditable = false,
+  onSave,
   onCancel,
 }: {
   userId: string;
@@ -64,6 +67,8 @@ export default function JobCreateForm({
   businessNumber: string;
   initialJob?: JobPosting;
   returnPath?: string;
+  companyEditable?: boolean;
+  onSave?: (job: JobPosting) => Promise<void>;
   onCancel: () => void;
 }) {
   const router = useRouter();
@@ -105,10 +110,12 @@ export default function JobCreateForm({
   const [preferred, setPreferred] = useState(initialJob?.preferred ?? '');
   const [benefits, setBenefits] = useState(initialJob?.benefits ?? '');
   const [process, setProcess] = useState(initialJob?.process ?? '');
+  const [company, setCompany] = useState(companyName);
+  const [bizNumber, setBizNumber] = useState(businessNumber);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!isJobWorkType(workType) || !isJobCareerType(careerType) || !isJobEducation(education) || !isJobPayType(payType)) {
       setError('근무 형태, 경력, 학력, 지급 기준을 선택해 주세요.');
@@ -126,8 +133,8 @@ export default function JobCreateForm({
     const job: JobPosting = {
       id: initialJob?.id ?? `job-me-${userId}-${Date.now()}`,
       title: title.trim(),
-      companyName,
-      businessNumber,
+      companyName: company.trim() || companyName,
+      businessNumber: bizNumber.trim() || undefined,
       workType,
       payType,
       payLabel,
@@ -151,7 +158,14 @@ export default function JobCreateForm({
       createdAt: initialJob?.createdAt ?? today,
     };
     saveMyJobPosting(userId, job);
-    router.push(returnPath || `/jobs/${job.id}`);
+    try {
+      if (onSave) await onSave(job);
+      else await syncMyJobPosting(job);
+      router.push(returnPath || `/jobs/${job.id}`);
+    } catch {
+      setSaving(false);
+      setError('저장에 실패했습니다. 다시 시도해 주세요.');
+    }
   }
 
   return (
@@ -167,12 +181,27 @@ export default function JobCreateForm({
         <Section title="회사 정보">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <FieldLabel htmlFor="job-company">회사명</FieldLabel>
-              <input id="job-company" value={companyName} className={authInputClassName} readOnly />
+              <FieldLabel htmlFor="job-company" required={companyEditable}>
+                회사명
+              </FieldLabel>
+              <input
+                id="job-company"
+                value={company}
+                onChange={(event) => setCompany(event.target.value)}
+                className={authInputClassName}
+                readOnly={!companyEditable}
+                required={companyEditable}
+              />
             </div>
             <div>
               <FieldLabel htmlFor="job-biz-number">사업자등록번호</FieldLabel>
-              <input id="job-biz-number" value={businessNumber} className={authInputClassName} readOnly />
+              <input
+                id="job-biz-number"
+                value={bizNumber}
+                onChange={(event) => setBizNumber(event.target.value)}
+                className={authInputClassName}
+                readOnly={!companyEditable}
+              />
             </div>
           </div>
         </Section>

@@ -30,9 +30,35 @@ export function getMyJobPosting(userId: string, jobId: string): JobPosting | nul
   return listMyJobPostings(userId).find((item) => item.id === jobId) ?? null;
 }
 
+export function listMyJobPostingsWithOwners(): Array<{ userId: string; job: JobPosting }> {
+  const store = readStore();
+  return Object.entries(store).flatMap(([userId, jobs]) => jobs.map((job) => ({ userId, job })));
+}
+
+export function findMyJobPosting(jobId: string): { userId: string; job: JobPosting } | null {
+  return listMyJobPostingsWithOwners().find((item) => item.job.id === jobId) ?? null;
+}
+
 export function saveMyJobPosting(userId: string, job: JobPosting): void {
   const store = readStore();
   const current = store[userId] ?? [];
   store[userId] = [job, ...current.filter((item) => item.id !== job.id)];
   writeStore(store);
+}
+
+export function deleteMyJobPosting(userId: string, jobId: string): boolean {
+  const store = readStore();
+  const current = store[userId] ?? [];
+  const next = current.filter((item) => item.id !== jobId);
+  if (next.length === current.length) return false;
+  if (next.length === 0) delete store[userId];
+  else store[userId] = next;
+  writeStore(store);
+  return true;
+}
+
+export function deleteMyJobPostingById(jobId: string): boolean {
+  const found = findMyJobPosting(jobId);
+  if (!found) return false;
+  return deleteMyJobPosting(found.userId, jobId);
 }
