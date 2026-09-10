@@ -23,6 +23,7 @@ import { isEmailPasswordUser } from '@/lib/auth-providers';
 import {
   saveGoogleAuthError,
   saveGoogleAuthReturn,
+  shouldFallbackGoogleRedirect,
   shouldUseGoogleRedirect,
 } from '@/lib/google-auth-flow';
 
@@ -163,7 +164,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
 
-    await signInWithPopup(auth, provider);
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      if (shouldFallbackGoogleRedirect(error)) {
+        saveGoogleAuthReturn(returnPath);
+        await signInWithRedirect(auth, provider);
+        return false;
+      }
+      throw error;
+    }
 
     const currentUser = auth.currentUser;
     if (!currentUser) return false;

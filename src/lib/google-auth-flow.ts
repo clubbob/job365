@@ -1,10 +1,23 @@
 const GOOGLE_AUTH_RETURN_KEY = 'job365.googleAuthReturn';
 const GOOGLE_AUTH_ERROR_KEY = 'job365.googleAuthError';
 
-export function shouldUseGoogleRedirect(): boolean {
+function isInAppBrowser(): boolean {
   if (typeof window === 'undefined') return false;
-  const host = window.location.hostname;
-  return host !== 'localhost' && host !== '127.0.0.1';
+  const ua = window.navigator.userAgent || '';
+  return /FBAN|FBAV|Instagram|Line\/|KAKAOTALK|NAVER\(inapp/i.test(ua);
+}
+
+export function shouldUseGoogleRedirect(): boolean {
+  return isInAppBrowser();
+}
+
+export function shouldFallbackGoogleRedirect(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request')
+  );
 }
 
 export function saveGoogleAuthReturn(returnPath: string): void {
