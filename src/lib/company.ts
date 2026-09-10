@@ -4,6 +4,7 @@ export const COMPANY = {
   businessNumber: '129-09-53285',
   email: 'job365.admin@gmail.com',
   serviceName: 'JOB 365',
+  website: 'https://joblink365.com',
 } as const;
 
 /** 공공데이터 이용 시 출처 표시 */

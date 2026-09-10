@@ -21,6 +21,14 @@ export default function LegalCompanyInfo({ title = '회사 정보' }: { title?: 
           <dd className="inline break-all">{COMPANY.businessNumber}</dd>
         </div>
         <div className="min-w-0">
+          <dt className="inline">웹사이트 : </dt>
+          <dd className="inline break-all">
+            <a href={COMPANY.website} className={mailtoClassName}>
+              joblink365.com
+            </a>
+          </dd>
+        </div>
+        <div className="min-w-0">
           <dt className="inline">이메일 : </dt>
           <dd className="inline break-all">
             <a href={`mailto:${COMPANY.email}`} className={mailtoClassName}>

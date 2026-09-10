@@ -1,5 +1,6 @@
 import { getAdminNotifyEmail } from '@/lib/admin-notify-email';
 import { isEmailServiceConfigured, sendNaverEmail } from '@/lib/naver-smtp';
+import { getPublicSiteUrl } from '@/lib/site';
 import { getProviderLabel } from '@/lib/user-display';
 import type { UserProvider } from '@/types/user';
 
@@ -36,7 +37,7 @@ export async function sendSignupCreatedEmail(input: SignupCreatedEmailInput): Pr
   const to = getAdminNotifyEmail();
   if (!to) return;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000';
+  const appUrl = getPublicSiteUrl();
   const adminUrl = `${appUrl.replace(/\/$/, '')}/admin/users`;
   const providerLabel = getProviderLabel(input.provider);
   const email = input.email?.trim() || '-';

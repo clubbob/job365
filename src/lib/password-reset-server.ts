@@ -1,11 +1,8 @@
 import type { NextRequest } from 'next/server';
+import { getPublicSiteUrl } from '@/lib/site';
 
 export function resolvePublicBaseUrl(req: NextRequest): string {
-  const envBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL;
-  if (typeof envBaseUrl === 'string' && envBaseUrl.trim()) {
-    return envBaseUrl.trim().replace(/\/+$/, '');
-  }
-  return req.nextUrl.origin.replace(/\/+$/, '');
+  return getPublicSiteUrl(req.nextUrl.origin);
 }
 
 export function toCustomResetUrl(baseUrl: string, firebaseResetLink: string): string {

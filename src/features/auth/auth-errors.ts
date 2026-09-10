@@ -12,9 +12,9 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/network-request-failed': '네트워크 오류가 발생했습니다.',
   'auth/popup-closed-by-user': '계정 확인을 완료하지 않았습니다.',
   'auth/cancelled-popup-request': '계정 확인을 완료하지 않았습니다.',
-  'auth/unauthorized-domain': '이 도메인은 Firebase에 허용되지 않았습니다. Authentication → Settings → Authorized domains에 localhost를 추가해 주세요.',
+  'auth/unauthorized-domain': '이 도메인은 Firebase에 허용되지 않았습니다. Authentication → Settings → Authorized domains에 localhost와 joblink365.com을 추가해 주세요.',
   'auth/operation-not-allowed': 'Google 로그인이 아직 켜져 있지 않습니다. Firebase Authentication에서 Google을 사용 설정해 주세요.',
-  'auth/internal-error': 'Google 로그인 설정이 완료되지 않았습니다. Google Cloud OAuth 클라이언트에 http://localhost:3000 을 추가해 주세요.',
+  'auth/internal-error': 'Google 로그인 설정이 완료되지 않았습니다. Google Cloud OAuth 클라이언트에 현재 사이트 주소와 http://localhost:3000 을 추가해 주세요.',
   'auth/account-exists-with-different-credential': '같은 이메일이 다른 로그인 방식으로 이미 가입되어 있습니다.',
 };
 
