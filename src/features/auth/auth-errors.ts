@@ -33,6 +33,9 @@ export function getAuthErrorMessage(
     if (context === 'passwordConfirm' && PASSWORD_CONFIRM_ERROR_CODES.has(error.code)) {
       return '비밀번호가 올바르지 않습니다.';
     }
+    if (error.code.startsWith('auth/requests-from-referer-')) {
+      return '이 사이트 주소가 Firebase API 키에 아직 허용되지 않았습니다. 잠시 후 다시 시도해 주세요.';
+    }
     return AUTH_ERROR_MESSAGES[error.code] ?? `${fallback} (${error.code})`;
   }
   if (error instanceof Error && error.message) return error.message;
