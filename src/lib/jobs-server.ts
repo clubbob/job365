@@ -71,3 +71,18 @@ export async function deleteStoredJobPosting(id: string): Promise<boolean> {
   await ref.delete();
   return true;
 }
+
+export async function deleteStoredJobPostingsByOwner(ownerId: string): Promise<number> {
+  const db = getAdminFirestore();
+  if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
+  const snap = await db.collection(COLLECTION).where('ownerId', '==', ownerId).get();
+  if (snap.empty) return 0;
+
+  const docs = snap.docs;
+  for (let i = 0; i < docs.length; i += 400) {
+    const batch = db.batch();
+    for (const doc of docs.slice(i, i + 400)) batch.delete(doc.ref);
+    await batch.commit();
+  }
+  return docs.length;
+}

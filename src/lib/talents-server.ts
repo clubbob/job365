@@ -1,4 +1,4 @@
-import type { DocumentData } from 'firebase-admin/firestore';
+import type { DocumentData, DocumentReference } from 'firebase-admin/firestore';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { omitUndefined } from '@/lib/omit-undefined';
 import type { TalentProfile } from '@/types/talent';
@@ -64,4 +64,20 @@ export async function deleteStoredTalentProfile(id: string): Promise<boolean> {
   if (!existing) return false;
   await db.collection(COLLECTION).doc(existing.ownerId).delete();
   return true;
+}
+
+export async function deleteStoredTalentProfilesByOwner(ownerId: string): Promise<number> {
+  const db = getAdminFirestore();
+  if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
+  const refs = new Map<string, DocumentReference>();
+  const direct = db.collection(COLLECTION).doc(ownerId);
+  const directSnap = await direct.get();
+  if (directSnap.exists) refs.set(direct.id, direct);
+  const querySnap = await db.collection(COLLECTION).where('ownerId', '==', ownerId).get();
+  for (const doc of querySnap.docs) refs.set(doc.id, doc.ref);
+  if (refs.size === 0) return 0;
+  const batch = db.batch();
+  refs.forEach((ref) => batch.delete(ref));
+  await batch.commit();
+  return refs.size;
 }

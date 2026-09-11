@@ -1,6 +1,8 @@
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminApp, getAdminFirestore } from '@/lib/firebaseAdmin';
+import { deleteStoredJobPostingsByOwner } from '@/lib/jobs-server';
+import { deleteStoredTalentProfilesByOwner } from '@/lib/talents-server';
 import type { UserProfile, UserProvider, UserSettings, AdminUserListItem } from '@/types/user';
 
 export type UserAccount = {
@@ -109,6 +111,9 @@ export async function deleteUserAccount(uid: string): Promise<void> {
   const db = getAdminFirestore();
   if (!db) throw new Error('Firestore Admin not available');
 
+  await deleteStoredJobPostingsByOwner(uid);
+  await deleteStoredTalentProfilesByOwner(uid);
+
   const batch = db.batch();
   batch.delete(db.collection('userSettings').doc(uid));
   batch.delete(db.collection('users').doc(uid));
@@ -116,7 +121,13 @@ export async function deleteUserAccount(uid: string): Promise<void> {
 
   const app = getAdminApp();
   if (app) {
-    await getAuth(app).deleteUser(uid);
+    try {
+      await getAuth(app).deleteUser(uid);
+    } catch (error) {
+      const code =
+        error && typeof error === 'object' && 'code' in error ? String((error as { code: unknown }).code) : '';
+      if (!code.includes('user-not-found')) throw error;
+    }
   }
 }
 

@@ -182,7 +182,9 @@ export default function MyTalentProfileForm({
     }
     setError('');
     const today = getKoreaDateLocalToday();
+    const existing = loadMyTalentProfile(userId);
     const profile: TalentProfile = {
+      ...(existing ?? {}),
       id: `talent-me-${userId}`,
       name: name.trim(),
       headline: headline.trim(),
@@ -214,13 +216,13 @@ export default function MyTalentProfileForm({
       updatedAt: today,
     };
     setSaving(true);
-    saveMyTalentProfile(userId, profile);
+    const savedProfile = saveMyTalentProfile(userId, profile);
     void (async () => {
       try {
-        if (onSave) await onSave(profile);
-        else await syncMyTalentProfile(profile);
-        setCreatedAt(profile.createdAt);
-        setUpdatedAt(profile.updatedAt);
+        if (onSave) await onSave(savedProfile);
+        else await syncMyTalentProfile(savedProfile);
+        setCreatedAt(savedProfile.createdAt);
+        setUpdatedAt(savedProfile.updatedAt);
         setSaved(true);
         router.push(returnPath || `/talents/${profile.id}`);
       } catch {

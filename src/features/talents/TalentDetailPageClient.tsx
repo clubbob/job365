@@ -14,9 +14,8 @@ import {
 } from '@/components/ui/PostingDetail';
 import TalentProposeButton from '@/features/talents/TalentProposeButton';
 import { getTalentById } from '@/lib/talent-catalog';
-import { displayTalentName, talentEducation } from '@/lib/talent-display';
+import { displayTalentName, talentBasicInfoItems, talentEducation, talentWorkTypeLabel } from '@/lib/talent-display';
 import type { TalentProposalStatus } from '@/lib/talent-proposals';
-import { WORK_TYPE_LABELS } from '@/types/job';
 import type { TalentProfile } from '@/types/talent';
 
 export default function TalentDetailPageClient({ talentId }: { talentId: string }) {
@@ -46,7 +45,7 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
   }
 
   const revealName = proposalStatus === 'accepted';
-  const workType = WORK_TYPE_LABELS[talent.workType];
+  const workType = talentWorkTypeLabel(talent.workType);
   const displayName = displayTalentName(talent.name, revealName);
 
   return (
@@ -58,6 +57,8 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
         <DetailHero
           eyebrow={displayName}
           title={talent.headline}
+          photoUrl={talent.photoUrl}
+          photoAlt={displayName}
           badges={
             <>
               <DetailBadge tone="primary">{workType}</DetailBadge>
@@ -76,8 +77,7 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
 
         <DetailStatGrid
           items={[
-            { label: '이름', value: displayName },
-            { label: '직무', value: talent.headline },
+            ...talentBasicInfoItems(talent, revealName),
             { label: '희망 근무 형태', value: workType },
             { label: '경력', value: talent.careerLabel },
             { label: '학력', value: talentEducation(talent) },

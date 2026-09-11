@@ -42,7 +42,7 @@ export async function sendSignupCreatedEmail(input: SignupCreatedEmailInput): Pr
   const providerLabel = getProviderLabel(input.provider);
   const email = input.email?.trim() || '-';
   const signedUpAt = formatSignupDateTime();
-  const subject = `[JOB365 가입] ${input.nickname}`;
+  const subject = `[JobLink 365 가입] ${input.nickname}`;
 
   const text = [
     '신규 회원이 가입했습니다.',

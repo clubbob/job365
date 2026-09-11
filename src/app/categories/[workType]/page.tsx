@@ -14,12 +14,12 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { workType } = await params;
   if (!isJobWorkType(workType)) {
-    return { title: '채용 카테고리 | JOB 365' };
+    return { title: '채용 카테고리' };
   }
 
   const label = WORK_TYPE_LABELS[workType];
   return {
-    title: `${label} | JOB 365`,
+    title: label,
     description: `${label} 채용 정보와 이력서 정보를 확인하세요.`,
   };
 }

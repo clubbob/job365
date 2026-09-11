@@ -12,8 +12,7 @@ import {
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
 import { deleteMyTalentProfileById, listMyTalentProfilesWithOwners } from '@/lib/my-talent-profile';
-import { talentEducation, talentRecentDate } from '@/lib/talent-display';
-import { WORK_TYPE_LABELS } from '@/types/job';
+import { talentEducation, talentRecentDate, talentWorkTypeLabel } from '@/lib/talent-display';
 import type { TalentProfile } from '@/types/talent';
 
 type TalentRow = { ownerId: string; profile: TalentProfile };
@@ -101,7 +100,7 @@ export default function AdminTalentsClient() {
                     <td className="py-2.5 pr-4 font-medium text-foreground">{row.profile.name}</td>
                     <td className="py-2.5 pr-4 text-muted">{row.profile.headline}</td>
                     <td className="py-2.5 pr-4 text-muted">
-                      {WORK_TYPE_LABELS[row.profile.workType]} · {talentEducation(row.profile)}
+                      {talentWorkTypeLabel(row.profile.workType)} · {talentEducation(row.profile)}
                     </td>
                     <td className="py-2.5 pr-4 whitespace-nowrap text-muted">{talentRecentDate(row.profile)}</td>
                     <td className="py-2.5">

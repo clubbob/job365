@@ -20,7 +20,7 @@ export async function PUT(request: Request) {
 
   try {
     const profile = (await request.json()) as TalentProfile;
-    if (!profile?.id || !profile.name || !profile.headline) {
+    if (!profile?.id || !profile.name) {
       return NextResponse.json(
         { ok: false, error: { code: 'INVALID_PROFILE', message: '이력서가 올바르지 않습니다.' } },
         { status: 400 },

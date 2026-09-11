@@ -21,7 +21,7 @@ export function buildPasswordResetEmailHtml(resetLink: string): string {
     <div style="margin:0; padding:24px 12px; background:#F3F4F6;">
       <div style="font-family: Arial, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; max-width:560px; margin:0 auto; background:#FFFFFF; color:#111827; border:1px solid #E5E7EB; border-radius:14px; overflow:hidden;">
         <div style="padding:18px 22px; border-bottom:1px solid #E5E7EB; background:#F8FAFC;">
-          <p style="margin:0; font-size:12px; letter-spacing:0.06em; color:#2563EB; font-weight:700;">JOB 365 ACCOUNT</p>
+          <p style="margin:0; font-size:12px; letter-spacing:0.06em; color:#2563EB; font-weight:700;">JobLink 365 ACCOUNT</p>
           <h2 style="margin:8px 0 0 0; font-size:22px; line-height:1.35;">비밀번호 재설정 안내</h2>
         </div>
         <div style="padding:20px 22px;">

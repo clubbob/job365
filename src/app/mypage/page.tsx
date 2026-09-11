@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import MyPageClient from '@/features/mypage/MyPageClient';
 
 export const metadata: Metadata = {
-  title: '마이페이지 | JOB 365',
+  title: '이용 현황',
 };
 
 export default function MyPage() {

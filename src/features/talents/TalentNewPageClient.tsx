@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
-import MyTalentProfileForm from '@/features/talents/MyTalentProfileForm';
+import ResumeRegisterForm from '@/features/talents/ResumeRegisterForm';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
 import { loadMyTalentProfile } from '@/lib/my-talent-profile';
@@ -18,7 +18,7 @@ export default function TalentNewPageClient() {
   const { user, loading } = useAuth();
   const { mode } = useUserMode();
   const fromMypage = searchParams.get('from') === 'mypage';
-  const returnPath = fromMypage ? '/mypage?tab=resume' : undefined;
+  const returnPath = fromMypage ? '/mypage?tab=resume&sub=resume' : undefined;
   const nextPath = `/talents/new${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
   const [nickname, setNickname] = useState('');
   const [hasResume, setHasResume] = useState(false);
@@ -48,8 +48,8 @@ export default function TalentNewPageClient() {
         title={hasResume ? '이력서 수정' : '이력서 등록'}
         description={
           hasResume
-            ? '수정한 내용은 인재 정보와 마이페이지에 바로 반영됩니다.'
-            : '인재 정보에 올릴 이력을 등록합니다.'
+            ? '항목별로 나눠 수정하고, 각 항목에서 바로 저장할 수 있습니다.'
+            : '항목별로 나눠 입력하고, 각 항목에서 바로 저장할 수 있습니다.'
         }
       />
       <AdSlot placement="header" />
@@ -71,7 +71,13 @@ export default function TalentNewPageClient() {
           <p className="text-sm text-muted">이력서 등록은 구직자로 이용할 때 할 수 있습니다.</p>
         </Card>
       ) : (
-        <MyTalentProfileForm userId={user.uid} nickname={nickname} returnPath={returnPath} />
+        <ResumeRegisterForm
+          userId={user.uid}
+          nickname={nickname}
+          accountEmail={user.email ?? ''}
+          returnPath={returnPath}
+          onSaved={() => setHasResume(true)}
+        />
       )}
     </div>
   );

@@ -1,4 +1,5 @@
-import { isEducationLevel, type TalentProfile } from '@/types/talent';
+import { getKoreaDateLocalToday } from '@/lib/datetime';
+import { withTalentPublishState, type TalentProfile } from '@/types/talent';
 
 const STORAGE_KEY = 'job365.myTalentProfiles';
 
@@ -25,7 +26,9 @@ export function loadMyTalentProfile(userId: string): TalentProfile | null {
 }
 
 export function listMyTalentProfiles(): TalentProfile[] {
-  return Object.values(readStore()).filter((profile) => isEducationLevel(profile.education));
+  return Object.values(readStore()).filter(
+    (profile) => typeof profile?.id === 'string' && typeof profile?.name === 'string',
+  );
 }
 
 export function listMyTalentProfilesWithOwners(): Array<{ userId: string; profile: TalentProfile }> {
@@ -38,11 +41,32 @@ export function findMyTalentProfile(id: string): { userId: string; profile: Tale
   );
 }
 
-export function saveMyTalentProfile(userId: string, profile: TalentProfile): void {
-  if (!isEducationLevel(profile.education)) return;
+export function createEmptyTalentProfile(userId: string, nickname = ''): TalentProfile {
+  const today = getKoreaDateLocalToday();
+  return withTalentPublishState({
+    id: `talent-me-${userId}`,
+    name: nickname.trim(),
+    headline: '',
+    workType: '',
+    careerLabel: '',
+    education: '',
+    location: '',
+    desiredPay: '',
+    summary: '',
+    experience: '',
+    available: '',
+    tags: [],
+    createdAt: today,
+    updatedAt: today,
+  });
+}
+
+export function saveMyTalentProfile(userId: string, profile: TalentProfile): TalentProfile {
+  const next = withTalentPublishState(profile);
   const store = readStore();
-  store[userId] = profile;
+  store[userId] = next;
   writeStore(store);
+  return next;
 }
 
 export function deleteMyTalentProfile(userId: string): boolean {

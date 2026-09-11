@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
-import { USER_MODE_LABELS, type UserMode } from '@/lib/user-mode';
+import { USER_MODE_LABELS, USER_MODE_SHORT_LABELS, type UserMode } from '@/lib/user-mode';
 import { cn } from '@/lib/utils';
 
 const MODES: UserMode[] = ['recruiter', 'jobseeker'];
+
+const itemClassName = 'block w-full px-3 py-2 text-left text-sm hover:bg-neutral-50';
 
 export default function HeaderModeMenu({
   className,
@@ -19,7 +21,7 @@ export default function HeaderModeMenu({
   showLogout?: boolean;
 }) {
   const { logout } = useAuth();
-  const { mode, setMode, resetMode } = useUserMode();
+  const { mode, setMode } = useUserMode();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -34,22 +36,17 @@ export default function HeaderModeMenu({
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const label = mode ? USER_MODE_LABELS[mode] : '설정';
-
   return (
     <div ref={rootRef} className={cn('relative', className)}>
       <button
         type="button"
-        className={cn(
-          'inline-flex items-center gap-1 rounded-lg bg-neutral-100 px-2.5 py-2 text-sm font-medium transition-colors hover:bg-neutral-200 hover:text-foreground',
-          mode ? 'text-foreground' : 'text-muted',
-        )}
+        className="inline-flex items-center gap-1 rounded-lg bg-neutral-100 px-2.5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-neutral-200"
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label={mode ? `설정, 현재 ${label}` : '설정'}
+        aria-label={mode ? `마이페이지, 현재 ${USER_MODE_SHORT_LABELS[mode]}` : '마이페이지'}
         onClick={() => setOpen((value) => !value)}
       >
-        {label}
+        마이페이지
         <span aria-hidden className="text-subtle">
           ▾
         </span>
@@ -65,13 +62,14 @@ export default function HeaderModeMenu({
             align === 'left' && 'left-0',
           )}
         >
+          <p className="px-3 pb-1 pt-2 text-xs font-semibold text-subtle">이용 주체</p>
           {MODES.map((item) => (
             <button
               key={item}
               type="button"
               role="menuitem"
               className={cn(
-                'block w-full px-3 py-2 text-left text-sm hover:bg-neutral-50',
+                itemClassName,
                 mode === item ? 'font-semibold text-primary' : 'text-foreground',
               )}
               onClick={() => {
@@ -82,34 +80,20 @@ export default function HeaderModeMenu({
               {USER_MODE_LABELS[item]}
             </button>
           ))}
-          <button
-            type="button"
-            role="menuitem"
-            className={cn(
-              'block w-full px-3 py-2 text-left text-sm hover:bg-neutral-50',
-              !mode ? 'font-semibold text-primary' : 'text-foreground',
-            )}
-            onClick={() => {
-              setOpen(false);
-              resetMode({ navigate: true });
-            }}
-          >
-            선택해제
-          </button>
           {showLogout ? (
             <>
               <Link
                 href="/mypage"
                 role="menuitem"
-                className="block border-t border-border px-3 py-2 text-left text-sm text-foreground hover:bg-neutral-50"
+                className={cn(itemClassName, 'border-t border-border text-foreground')}
                 onClick={() => setOpen(false)}
               >
-                마이페이지
+                이용 현황
               </Link>
               <button
                 type="button"
                 role="menuitem"
-                className="block w-full px-3 py-2 text-left text-sm text-muted hover:bg-neutral-50"
+                className={cn(itemClassName, 'text-muted')}
                 onClick={() => {
                   setOpen(false);
                   logout();

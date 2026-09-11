@@ -12,6 +12,7 @@ export default function AdminDashboard() {
         description="회원과 서비스 운영 현황을 확인합니다."
         homeHref="/"
         homeLabel="사이트로"
+        homeOpenInNewWindow
       />
 
       <div className="grid gap-4 sm:grid-cols-3">

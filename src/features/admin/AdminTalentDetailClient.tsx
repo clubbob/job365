@@ -20,9 +20,8 @@ import {
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
 import { deleteMyTalentProfileById, findMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
-import { displayTalentName, talentEducation } from '@/lib/talent-display';
-import { WORK_TYPE_LABELS } from '@/types/job';
-import type { TalentProfile } from '@/types/talent';
+import { displayTalentName, talentBasicInfoItems, talentEducation, talentWorkTypeLabel } from '@/lib/talent-display';
+import { isPublishedTalent, type TalentProfile } from '@/types/talent';
 
 type ItemResponse =
   | { ok: true; data: { item: { ownerId: string; profile: TalentProfile } | null } }
@@ -87,16 +86,18 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
   }
 
   const talent = item.profile;
-  const workType = WORK_TYPE_LABELS[talent.workType];
+  const workType = talentWorkTypeLabel(talent.workType);
   const displayName = displayTalentName(talent.name, true);
 
   return (
     <div className="space-y-5">
       <PageHeader title="이력서" description={talent.headline} homeHref="/admin/talents" homeLabel="목록으로" />
       <div className="flex flex-wrap gap-2">
-        <Link href={`/talents/${talent.id}`} className={adminSecondaryActionClassName}>
-          사이트에서 보기
-        </Link>
+        {isPublishedTalent(talent) ? (
+          <Link href={`/talents/${talent.id}`} className={adminSecondaryActionClassName}>
+            사이트에서 보기
+          </Link>
+        ) : null}
         <Link href={`/admin/talents/${encodeURIComponent(item.ownerId)}/edit`} className={adminPrimaryActionClassName}>
           수정
         </Link>
@@ -108,6 +109,8 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
         <DetailHero
           eyebrow={displayName}
           title={talent.headline}
+          photoUrl={talent.photoUrl}
+          photoAlt={displayName}
           badges={
             <>
               <DetailBadge tone="primary">{workType}</DetailBadge>
@@ -125,8 +128,7 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
         />
         <DetailStatGrid
           items={[
-            { label: '이름', value: displayName },
-            { label: '직무', value: talent.headline },
+            ...talentBasicInfoItems(talent, true),
             { label: '희망 근무 형태', value: workType },
             { label: '경력', value: talent.careerLabel },
             { label: '학력', value: talentEducation(talent) },

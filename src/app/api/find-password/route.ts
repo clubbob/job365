@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     });
     const resetLink = toCustomResetUrl(baseUrl, firebaseResetLink);
 
-    const subject = '[JOB365] 비밀번호 재설정 안내';
+    const subject = '[JobLink 365] 비밀번호 재설정 안내';
     const text = `안녕하세요.\n\n요청하신 비밀번호 재설정 링크입니다.\n아래 링크에서 새 비밀번호를 설정해 주세요.\n\n${resetLink}\n\n본인이 요청하지 않았다면 이 메일을 무시해 주세요.\n`;
     const html = buildPasswordResetEmailHtml(resetLink);
 

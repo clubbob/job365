@@ -25,6 +25,8 @@ export function DetailHero({
   eyebrow,
   title,
   subtitle,
+  photoUrl,
+  photoAlt,
   badges,
   highlightLabel,
   highlightValue,
@@ -33,6 +35,8 @@ export function DetailHero({
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  photoUrl?: string;
+  photoAlt?: string;
   badges?: React.ReactNode;
   highlightLabel?: string;
   highlightValue?: string;
@@ -41,12 +45,24 @@ export function DetailHero({
   return (
     <div className="overflow-hidden rounded-2xl border border-primary/15 bg-surface shadow-card">
       <div className="bg-gradient-to-br from-primary/12 via-primary/[0.04] to-surface p-5 sm:p-7">
-        {eyebrow ? <p className="text-sm font-semibold text-primary">{eyebrow}</p> : null}
-        {badges ? <div className={cn('flex flex-wrap gap-1.5', eyebrow && 'mt-2.5')}>{badges}</div> : null}
-        <h2 className={cn('text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl', (eyebrow || badges) && 'mt-3')}>
-          {title}
-        </h2>
-        {subtitle ? <p className="mt-1.5 text-sm font-medium text-muted">{subtitle}</p> : null}
+        <div className="flex items-start gap-4">
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photoUrl}
+              alt={photoAlt ?? ''}
+              className="size-20 shrink-0 rounded-xl object-contain bg-white ring-1 ring-border sm:size-24"
+            />
+          ) : null}
+          <div className="min-w-0 flex-1">
+            {eyebrow ? <p className="text-sm font-semibold text-primary">{eyebrow}</p> : null}
+            {badges ? <div className={cn('flex flex-wrap gap-1.5', eyebrow && 'mt-2.5')}>{badges}</div> : null}
+            <h2 className={cn('text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl', (eyebrow || badges) && 'mt-3')}>
+              {title}
+            </h2>
+            {subtitle ? <p className="mt-1.5 text-sm font-medium text-muted">{subtitle}</p> : null}
+          </div>
+        </div>
 
         {highlightValue || facts?.length ? (
           <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(12rem,0.9fr)_minmax(0,1.4fr)]">

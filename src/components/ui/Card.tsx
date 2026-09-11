@@ -11,14 +11,16 @@ import {
 type CardProps = {
   children: React.ReactNode;
   className?: string;
+  id?: string;
   title?: React.ReactNode;
   description?: string;
   action?: React.ReactNode;
 };
 
-export function Card({ children, className, title, description, action }: CardProps) {
+export function Card({ children, className, id, title, description, action }: CardProps) {
   return (
     <section
+      id={id}
       className={cn(
         'rounded-xl border border-border bg-surface p-4 shadow-card sm:p-5',
         className,

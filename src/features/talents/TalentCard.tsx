@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { maskTalentName, talentEducation } from '@/lib/talent-display';
-import { WORK_TYPE_LABELS } from '@/types/job';
+import { maskTalentName, talentEducation, talentWorkTypeLabel } from '@/lib/talent-display';
 import type { TalentProfile } from '@/types/talent';
 
 export default function TalentCard({
@@ -16,16 +15,28 @@ export default function TalentCard({
       onClick={onNavigate}
       className="flex h-full flex-col rounded-xl border border-border bg-surface p-3 shadow-card transition hover:border-primary/40 hover:shadow-card-hover sm:p-4"
     >
-      <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-          {WORK_TYPE_LABELS[talent.workType]}
-        </span>
-        <span className="text-xs text-subtle">{talent.careerLabel}</span>
-        <span className="text-xs text-subtle">{talentEducation(talent)}</span>
+      <div className="mb-2 flex items-start gap-2.5">
+        {talent.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={talent.photoUrl}
+            alt=""
+            className="size-11 shrink-0 rounded-lg object-contain bg-white ring-1 ring-border sm:size-12"
+          />
+        ) : null}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              {talentWorkTypeLabel(talent.workType)}
+            </span>
+            <span className="text-xs text-subtle">{talent.careerLabel}</span>
+            <span className="text-xs text-subtle">{talentEducation(talent)}</span>
+          </div>
+          <h3 className="mt-1.5 line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">
+            {maskTalentName(talent.name)} · {talent.headline}
+          </h3>
+        </div>
       </div>
-      <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">
-        {maskTalentName(talent.name)} · {talent.headline}
-      </h3>
       {talent.location ? (
         <p className="mt-1 truncate text-sm font-medium text-muted">{talent.location}</p>
       ) : null}

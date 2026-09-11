@@ -8,7 +8,7 @@ export default function TermsPage() {
     <LegalPageShell title="이용약관" effectiveDate={EFFECTIVE_DATE}>
       <LegalSection title="제1조 (목적)">
         <LegalP>
-          본 약관은 새봄인터내셔널(이하 &quot;회사&quot;)이 운영하는 JOB 365 이용·매칭 웹 서비스(이하
+          본 약관은 새봄인터내셔널(이하 &quot;회사&quot;)이 운영하는 JobLink 365 이용·매칭 웹 서비스(이하
           &quot;서비스&quot;)의 이용과 관련하여, 회사와 이용자 간 권리·의무 및 책임사항을 규정합니다.
         </LegalP>
       </LegalSection>

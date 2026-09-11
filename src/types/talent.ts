@@ -1,4 +1,4 @@
-import { JOB_EDUCATION_OPTIONS, isJobEducation, type JobEducation, type JobPayType, type JobWorkType } from '@/types/job';
+import { JOB_EDUCATION_OPTIONS, isJobEducation, isJobWorkType, type JobEducation, type JobPayType, type JobWorkType } from '@/types/job';
 
 export const EDUCATION_OPTIONS = JOB_EDUCATION_OPTIONS;
 export type EducationLevel = JobEducation;
@@ -26,13 +26,20 @@ export function normalizeEducation(value: unknown): EducationLevel | '' {
   return LEGACY_EDUCATION[value] ?? '';
 }
 
+export const TALENT_GENDERS = ['남', '여'] as const;
+export type TalentGender = (typeof TALENT_GENDERS)[number];
+
+export function isTalentGender(value: unknown): value is TalentGender {
+  return value === '남' || value === '여';
+}
+
 export type TalentProfile = {
   id: string;
   name: string;
   headline: string;
-  workType: JobWorkType;
+  workType: JobWorkType | '';
   careerLabel: string;
-  education: EducationLevel;
+  education: EducationLevel | '';
   location: string;
   desiredPay: string;
   payType?: JobPayType;
@@ -42,6 +49,13 @@ export type TalentProfile = {
   experience: string;
   available: string;
   tags: string[];
+  photoUrl?: string;
+  birthDate?: string;
+  gender?: TalentGender;
+  phone?: string;
+  email?: string;
+  address?: string;
+  homepage?: string;
   school?: string;
   major?: string;
   careerHistory?: string;
@@ -49,4 +63,35 @@ export type TalentProfile = {
   portfolioUrl?: string;
   createdAt: string;
   updatedAt: string;
+  draft?: boolean;
 };
+
+export function isCompleteTalentProfile(profile: TalentProfile): boolean {
+  return (
+    Boolean(profile.name.trim()) &&
+    Boolean(profile.headline.trim()) &&
+    Boolean(profile.summary.trim()) &&
+    Boolean(profile.careerLabel.trim()) &&
+    isEducationLevel(profile.education) &&
+    isJobWorkType(profile.workType)
+  );
+}
+
+export function missingTalentPublishFields(profile: TalentProfile): string[] {
+  const missing: string[] = [];
+  if (!profile.name.trim()) missing.push('이름');
+  if (!profile.headline.trim()) missing.push('직무');
+  if (!isJobWorkType(profile.workType)) missing.push('희망 근무 형태');
+  if (!profile.careerLabel.trim()) missing.push('경력');
+  if (!isEducationLevel(profile.education)) missing.push('학력');
+  if (!profile.summary.trim()) missing.push('자기 소개');
+  return missing;
+}
+
+export function withTalentPublishState(profile: TalentProfile): TalentProfile {
+  return { ...profile, draft: !isCompleteTalentProfile(profile) };
+}
+
+export function isPublishedTalent(profile: TalentProfile): boolean {
+  return profile.draft !== true && isCompleteTalentProfile(profile);
+}

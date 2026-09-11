@@ -62,3 +62,10 @@ export function deleteMyJobPostingById(jobId: string): boolean {
   if (!found) return false;
   return deleteMyJobPosting(found.userId, jobId);
 }
+
+export function deleteAllMyJobPostings(userId: string): void {
+  const store = readStore();
+  if (!(userId in store)) return;
+  delete store[userId];
+  writeStore(store);
+}

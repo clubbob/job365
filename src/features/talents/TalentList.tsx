@@ -45,8 +45,8 @@ export default function TalentList({
     return listTalents().filter((talent) => {
       if (workType) {
         if (talent.workType !== workType) return false;
-      } else if (selected?.types && !selected.types.includes(talent.workType)) {
-        return false;
+      } else if (selected?.types) {
+        if (!talent.workType || !selected.types.includes(talent.workType)) return false;
       }
       if (!keyword) return true;
 

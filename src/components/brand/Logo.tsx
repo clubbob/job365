@@ -40,7 +40,7 @@ export default function Logo({ showWordmark = true, className, iconClassName }: 
 
       {showWordmark && (
         <span className="flex items-baseline gap-1.5 font-bold tracking-tight text-foreground">
-          <span className="text-[15px] sm:text-base">JOB</span>
+          <span className="text-[15px] sm:text-base">JobLink</span>
           <span className="text-[15px] text-primary sm:text-base">365</span>
         </span>
       )}

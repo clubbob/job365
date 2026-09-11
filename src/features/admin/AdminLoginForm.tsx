@@ -30,6 +30,7 @@ export default function AdminLoginForm() {
         showRefresh={false}
         homeHref="/"
         homeLabel="사이트로"
+        homeOpenInNewWindow
       />
       <Card>
         <form className="space-y-4" onSubmit={handleSubmit}>

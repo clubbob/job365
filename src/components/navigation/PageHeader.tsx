@@ -7,12 +7,14 @@ export default function PageHeader({
   showRefresh = true,
   homeHref,
   homeLabel,
+  homeOpenInNewWindow,
 }: {
   title: string;
   description?: string;
   showRefresh?: boolean;
   homeHref?: string;
   homeLabel?: string;
+  homeOpenInNewWindow?: boolean;
 }) {
   return (
     <header className="flex min-w-0 items-start justify-between gap-3">
@@ -20,7 +22,12 @@ export default function PageHeader({
         <h1 className="text-xl font-bold text-foreground sm:text-2xl">{title}</h1>
         {description ? <p className="text-sm text-muted">{description}</p> : null}
       </div>
-      <PageActions showRefresh={showRefresh} homeHref={homeHref} homeLabel={homeLabel} />
+      <PageActions
+        showRefresh={showRefresh}
+        homeHref={homeHref}
+        homeLabel={homeLabel}
+        homeOpenInNewWindow={homeOpenInNewWindow}
+      />
     </header>
   );
 }
