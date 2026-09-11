@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import MyTalentProfileForm from '@/features/talents/MyTalentProfileForm';
 import { adminJson } from '@/lib/admin-ui';
 import { findMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
+import { talentResumeTitle } from '@/lib/talent-display';
 import type { TalentProfile } from '@/types/talent';
 
 type ItemResponse =
@@ -60,15 +61,16 @@ export default function AdminTalentEditClient({ talentId }: { talentId: string }
 
   return (
     <div className="space-y-5">
-      <PageHeader title="이력서 수정" description={item.profile.headline} homeHref="/admin/talents" homeLabel="목록으로" />
+      <PageHeader title="이력서 수정" description={talentResumeTitle(item.profile)} homeHref="/admin/talents" homeLabel="목록으로" />
       <MyTalentProfileForm
         userId={item.ownerId}
         nickname={item.profile.name}
-        returnPath={`/admin/talents/${encodeURIComponent(item.ownerId)}`}
+        initialProfile={item.profile}
+        returnPath={`/admin/talents/${encodeURIComponent(item.profile.id)}`}
         onSave={async (profile) => {
           saveMyTalentProfile(item.ownerId, profile);
           const res = await adminJson<{ ok?: boolean; error?: { code?: string; message?: string } }>(
-            `/api/admin/talents/${encodeURIComponent(item.ownerId)}`,
+            `/api/admin/talents/${encodeURIComponent(item.profile.id)}`,
             { method: 'PUT', body: JSON.stringify(profile) },
           );
           if (res.ok === false && res.error?.code !== 'ADMIN_NOT_CONFIGURED') {
@@ -79,7 +81,7 @@ export default function AdminTalentEditClient({ talentId }: { talentId: string }
       <button
         type="button"
         className="text-sm font-semibold text-muted hover:text-foreground"
-        onClick={() => router.push(`/admin/talents/${encodeURIComponent(item.ownerId)}`)}
+        onClick={() => router.push(`/admin/talents/${encodeURIComponent(item.profile.id)}`)}
       >
         취소하고 상세로
       </button>

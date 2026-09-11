@@ -58,10 +58,15 @@ export default function HeaderClient() {
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const navItems = [
     { href: '/jobs', label: '채용 정보', exact: false },
     { href: '/talents', label: '인재 정보', exact: false },
   ];
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -74,6 +79,7 @@ export default function HeaderClient() {
     };
   }, [menuOpen]);
 
+  const accountReady = mounted && !loading;
   const navLinkClassName =
     'rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors';
 
@@ -116,7 +122,9 @@ export default function HeaderClient() {
         )}
 
         <div className="hidden items-center justify-end gap-2 md:flex">
-          {!loading && user ? (
+          {!accountReady ? (
+            <div className="h-9 w-44 rounded-lg bg-neutral-100" aria-hidden="true" />
+          ) : user ? (
             <>
               <span className="inline-flex max-w-[9.5rem] truncate px-1 text-sm font-semibold text-foreground">
                 {getUserNicknameFallback(user)}
@@ -153,7 +161,7 @@ export default function HeaderClient() {
           aria-label="모바일 메뉴"
         >
           <div className="mx-auto max-w-4xl space-y-3 px-4 py-3 sm:px-6">
-            {!loading && user ? (
+            {!accountReady ? null : user ? (
               <div className="border-b border-border pb-3">
                 <p className="mb-2 flex items-center gap-2 px-1 text-sm font-semibold text-foreground">
                   <span className="truncate">{getUserNicknameFallback(user)}</span>
@@ -182,7 +190,7 @@ export default function HeaderClient() {
               );
             })}
 
-            {!loading && !user ? (
+            {!accountReady || user ? null : (
               <div className="border-t border-border pt-3">
                 <Link
                   href="/login"
@@ -192,7 +200,7 @@ export default function HeaderClient() {
                   로그인
                 </Link>
               </div>
-            ) : null}
+            )}
           </div>
         </nav>
       )}

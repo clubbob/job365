@@ -2,37 +2,46 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
 import ResumeRegisterForm from '@/features/talents/ResumeRegisterForm';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
-import { loadMyTalentProfile } from '@/lib/my-talent-profile';
+import { getMyTalentProfile } from '@/lib/my-talent-profile';
 import { fetchUserAccount } from '@/lib/users-api';
 import { getUserNicknameFallback } from '@/lib/user-display';
 
-export default function TalentNewPageClient() {
-  const searchParams = useSearchParams();
+export default function TalentNewPageClient({
+  editId,
+  from,
+}: {
+  editId?: string;
+  from?: string;
+}) {
   const { user, loading } = useAuth();
   const { mode } = useUserMode();
-  const fromMypage = searchParams.get('from') === 'mypage';
+  const fromMypage = from === 'mypage';
   const returnPath = fromMypage ? '/mypage?tab=resume&sub=resume' : undefined;
-  const nextPath = `/talents/new${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+  const nextQuery = new URLSearchParams();
+  if (editId) nextQuery.set('edit', editId);
+  if (from) nextQuery.set('from', from);
+  const nextPath = `/talents/new${nextQuery.size > 0 ? `?${nextQuery.toString()}` : ''}`;
   const [nickname, setNickname] = useState('');
-  const [hasResume, setHasResume] = useState(false);
+  const [editMissing, setEditMissing] = useState(false);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    setEditMissing(false);
     if (!user) {
       setNickname('');
-      setHasResume(false);
       setReady(true);
       return;
     }
     setNickname(getUserNicknameFallback(user));
-    setHasResume(Boolean(loadMyTalentProfile(user.uid)));
+    if (editId && !getMyTalentProfile(user.uid, editId)) {
+      setEditMissing(true);
+    }
     void fetchUserAccount(user)
       .then((result) => {
         if (result.ok) {
@@ -40,14 +49,16 @@ export default function TalentNewPageClient() {
         }
       })
       .finally(() => setReady(true));
-  }, [user]);
+  }, [user, editId]);
+
+  const editing = Boolean(editId) && !editMissing;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={hasResume ? '이력서 수정' : '이력서 등록'}
+        title={editing ? '이력서 수정' : '이력서 등록'}
         description={
-          hasResume
+          editing
             ? '항목별로 나눠 수정하고, 각 항목에서 바로 저장할 수 있습니다.'
             : '항목별로 나눠 입력하고, 각 항목에서 바로 저장할 수 있습니다.'
         }
@@ -70,13 +81,26 @@ export default function TalentNewPageClient() {
         <Card>
           <p className="text-sm text-muted">이력서 등록은 구직자로 이용할 때 할 수 있습니다.</p>
         </Card>
+      ) : editMissing ? (
+        <Card>
+          <p className="text-sm text-muted">이력서를 찾을 수 없습니다.</p>
+          {returnPath ? (
+            <Link
+              href={returnPath}
+              className="mt-4 inline-flex rounded-lg border border-border-strong bg-surface px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-neutral-50"
+            >
+              이력서 관리로
+            </Link>
+          ) : null}
+        </Card>
       ) : (
         <ResumeRegisterForm
+          key={editId || 'new'}
           userId={user.uid}
           nickname={nickname}
           accountEmail={user.email ?? ''}
+          profileId={editId ?? undefined}
           returnPath={returnPath}
-          onSaved={() => setHasResume(true)}
         />
       )}
     </div>

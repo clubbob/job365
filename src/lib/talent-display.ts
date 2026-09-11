@@ -6,6 +6,10 @@ export function talentWorkTypeLabel(workType: JobWorkType | ''): string {
   return workType ? WORK_TYPE_LABELS[workType] : '미입력';
 }
 
+export function talentResumeTitle(talent: Pick<TalentProfile, 'title' | 'name' | 'headline'>): string {
+  return talent.title?.trim() || '제목 없음';
+}
+
 export function maskTalentName(name: string): string {
   const chars = Array.from(name.trim());
   if (chars.length <= 1) return chars[0] ?? '';
@@ -30,11 +34,11 @@ export function talentBasicInfoItems(
 ): Array<{ label: string; value?: string | null }> {
   return [
     { label: '이름', value: displayTalentName(talent.name, revealed) },
-    { label: '생년월일', value: privateContactValue(formatBirthDate(talent.birthDate), revealed) },
+    { label: '생년월', value: privateContactValue(formatBirthDate(talent.birthDate), revealed) },
     { label: '성별', value: talent.gender || '—' },
     { label: '휴대폰', value: privateContactValue(talent.phone, revealed) },
     { label: '이메일', value: privateContactValue(talent.email, revealed) },
-    { label: '주소', value: privateContactValue(talent.address, revealed) },
+    { label: '거주 지역', value: talent.address || '—' },
     { label: '홈페이지 / SNS', value: talent.homepage || '—' },
     { label: '직무', value: talent.headline },
   ];

@@ -6,7 +6,15 @@ import { Button, Card, FieldLabel } from '@/components/ui/Card';
 import { authInputClassName } from '@/lib/auth-ui';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 import { formatJobPayLabel, formatPayAmountInput, parsePayLabel, PAY_UNIT_LABELS } from '@/lib/job-display';
-import { createEmptyTalentProfile, loadMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
+import {
+  RESIDENCE_CITIES,
+  RESIDENCE_DISTRICTS,
+  formatResidence,
+  isCompleteResidence,
+  parseResidence,
+  type ResidenceCity,
+} from '@/lib/korea-regions';
+import { createEmptyTalentProfile, createTalentProfileId, getMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
 import { syncMyTalentProfile } from '@/lib/posting-sync';
 import { readResumePhoto } from '@/lib/resume-photo';
 import {
@@ -75,6 +83,21 @@ const amountInputClassName = cn(controlClassName, 'w-28 text-right tabular-nums 
 
 function PlaceholderOption() {
   return <option value="">선택</option>;
+}
+
+const CURRENT_YEAR = Number(getKoreaDateLocalToday().slice(0, 4));
+const BIRTH_YEARS = Array.from({ length: 90 }, (_, index) => String(CURRENT_YEAR - index));
+const BIRTH_MONTHS = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'));
+
+function splitBirthDate(value: string): { year: string; month: string } {
+  const match = /^(\d{4})-(\d{2})/.exec(value);
+  if (!match) return { year: '', month: '' };
+  return { year: match[1] ?? '', month: match[2] ?? '' };
+}
+
+function composeBirthDate(year: string, month: string): string {
+  if (!year || !month) return '';
+  return `${year}-${month}`;
 }
 
 function careerLabelFrom(type: JobCareerType, years: string): string {
@@ -154,24 +177,30 @@ export default function ResumeRegisterForm({
   userId,
   nickname,
   accountEmail,
+  profileId,
   returnPath,
   onSaved,
 }: {
   userId: string;
   nickname: string;
   accountEmail?: string;
+  profileId?: string;
   returnPath?: string;
   onSaved?: (profile: TalentProfile) => void;
 }) {
   const router = useRouter();
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const [resumeId] = useState(() => profileId || createTalentProfileId());
+  const [title, setTitle] = useState('');
   const [name, setName] = useState(nickname);
   const [photoUrl, setPhotoUrl] = useState('');
-  const [birthDate, setBirthDate] = useState('');
+  const [birthYear, setBirthYear] = useState('');
+  const [birthMonth, setBirthMonth] = useState('');
   const [gender, setGender] = useState<TalentGender | ''>('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState(accountEmail ?? '');
-  const [address, setAddress] = useState('');
+  const [residenceCity, setResidenceCity] = useState<ResidenceCity | ''>('');
+  const [residenceDistrict, setResidenceDistrict] = useState('');
   const [homepage, setHomepage] = useState('');
   const [headline, setHeadline] = useState('');
   const [education, setEducation] = useState<EducationLevel | ''>('');
@@ -197,29 +226,37 @@ export default function ResumeRegisterForm({
   const [error, setError] = useState<{ section: SectionId; message: string } | null>(null);
 
   useEffect(() => {
-    const existing = loadMyTalentProfile(userId);
+    const existing = getMyTalentProfile(userId, resumeId);
     const prefs = loadWorkPreferences(userId);
     if (!existing) {
+      setTitle('');
       setName(nickname);
       setPhotoUrl('');
-      setBirthDate('');
+      setBirthYear('');
+      setBirthMonth('');
       setGender('');
       setPhone('');
       setEmail(accountEmail ?? '');
-      setAddress('');
+      setResidenceCity('');
+      setResidenceDistrict('');
       setHomepage('');
       setHeadline('');
       setRegions(prefs?.regions ?? []);
       setOccupations(prefs?.occupations ?? []);
       return;
     }
+    setTitle(existing.title || existing.headline || '');
     setName(existing.name || nickname);
     setPhotoUrl(existing.photoUrl ?? '');
-    setBirthDate(existing.birthDate ?? '');
+    const birth = splitBirthDate(existing.birthDate ?? '');
+    setBirthYear(birth.year);
+    setBirthMonth(birth.month);
     setGender(existing.gender ?? '');
     setPhone(existing.phone ?? '');
     setEmail(existing.email || accountEmail || '');
-    setAddress(existing.address ?? '');
+    const residence = parseResidence(existing.address ?? '');
+    setResidenceCity(residence.city);
+    setResidenceDistrict(residence.district);
     setHomepage(existing.homepage ?? '');
     setHeadline(existing.headline);
     setEducation(normalizeEducation(existing.education));
@@ -249,13 +286,14 @@ export default function ResumeRegisterForm({
     setRegions(fromLocation.length > 0 ? fromLocation : (prefs?.regions ?? []));
     setOccupations(prefs?.occupations ?? []);
     setSummary(existing.summary);
-  }, [accountEmail, nickname, userId]);
+  }, [accountEmail, nickname, resumeId, userId]);
 
   function mergeAndSave(section: SectionId, partial: Partial<TalentProfile>) {
     const today = getKoreaDateLocalToday();
-    const existing = loadMyTalentProfile(userId) ?? createEmptyTalentProfile(userId, nickname);
+    const existing = getMyTalentProfile(userId, resumeId) ?? createEmptyTalentProfile(userId, nickname, resumeId);
     const next = saveMyTalentProfile(userId, {
       ...existing,
+      id: resumeId,
       ...partial,
       createdAt: existing.createdAt || today,
       updatedAt: today,
@@ -277,34 +315,52 @@ export default function ResumeRegisterForm({
 
   function saveBasics(event: React.FormEvent) {
     event.preventDefault();
+    if (!title.trim()) {
+      setSavedSection(null);
+      setError({ section: 'basics', message: '이력서 제목을 입력해 주세요.' });
+      return;
+    }
     if (!name.trim()) {
       setSavedSection(null);
       setError({ section: 'basics', message: '이름을 입력해 주세요.' });
       return;
     }
-    if (phone.trim() && !isValidPhone(phone)) {
+    const birthDate = composeBirthDate(birthYear, birthMonth);
+    const thisMonth = getKoreaDateLocalToday().slice(0, 7);
+    if (!birthDate || birthDate > thisMonth) {
       setSavedSection(null);
-      setError({ section: 'basics', message: '휴대폰 번호를 확인해 주세요.' });
+      setError({ section: 'basics', message: '생년월을 선택해 주세요.' });
       return;
     }
-    if (email.trim() && !isValidEmail(email)) {
+    if (!isTalentGender(gender)) {
       setSavedSection(null);
-      setError({ section: 'basics', message: '이메일 주소를 확인해 주세요.' });
+      setError({ section: 'basics', message: '성별을 선택해 주세요.' });
       return;
     }
-    if (birthDate && birthDate > getKoreaDateLocalToday()) {
+    if (!phone.trim() || !isValidPhone(phone)) {
       setSavedSection(null);
-      setError({ section: 'basics', message: '생년월일을 확인해 주세요.' });
+      setError({ section: 'basics', message: '휴대폰 번호를 입력해 주세요.' });
+      return;
+    }
+    if (!email.trim() || !isValidEmail(email)) {
+      setSavedSection(null);
+      setError({ section: 'basics', message: '이메일을 입력해 주세요.' });
+      return;
+    }
+    if (!isCompleteResidence(residenceCity, residenceDistrict)) {
+      setSavedSection(null);
+      setError({ section: 'basics', message: '거주 지역을 선택해 주세요.' });
       return;
     }
     mergeAndSave('basics', {
+      title: title.trim(),
       name: name.trim(),
       photoUrl: photoUrl || undefined,
-      birthDate: birthDate || undefined,
-      gender: isTalentGender(gender) ? gender : undefined,
-      phone: phone.trim() || undefined,
-      email: email.trim() || undefined,
-      address: address.trim() || undefined,
+      birthDate,
+      gender,
+      phone: phone.trim(),
+      email: email.trim(),
+      address: formatResidence(residenceCity, residenceDistrict),
       homepage: normalizeWebsite(homepage),
     });
   }
@@ -428,12 +484,25 @@ export default function ResumeRegisterForm({
       <Card
         id="resume-basics"
         title="기본 정보"
-        description="이력서 기본 정보를 입력합니다."
+        description="이력서 제목과 기본 정보를 입력합니다."
         className="scroll-mt-[7.5rem]"
       >
         <form className="space-y-4" onSubmit={saveBasics} noValidate>
+          <div>
+            <FieldLabel htmlFor="talent-title" required>
+              이력서 제목
+            </FieldLabel>
+            <input
+              id="talent-title"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              className={authInputClassName}
+              placeholder="예: 웹 개발자 지원용"
+              required
+            />
+          </div>
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-            <div className="shrink-0 sm:w-52">
+            <div className="shrink-0 sm:w-36">
               <FieldLabel htmlFor="talent-photo" optional>
                 사진
               </FieldLabel>
@@ -445,20 +514,20 @@ export default function ResumeRegisterForm({
                 className="sr-only"
                 onChange={(event) => void handlePhotoChange(event)}
               />
-              <div className="flex w-44 flex-col gap-3 sm:w-52">
-                <div className="flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-white">
+              <div className="flex w-32 flex-col gap-2 sm:w-36">
+                <div className="flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-xl border border-border bg-white">
                   {photoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={photoUrl} alt="이력서 사진" className="max-h-full max-w-full object-contain" />
                   ) : (
-                    <span className="px-3 text-center text-sm text-subtle">사진 없음</span>
+                    <span className="px-2 text-center text-xs text-subtle">사진 없음</span>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   <button
                     type="button"
                     onClick={() => photoInputRef.current?.click()}
-                    className="rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-semibold text-foreground hover:bg-neutral-50"
+                    className="rounded-lg border border-border-strong bg-surface px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-neutral-50"
                   >
                     {photoUrl ? '사진 변경' : '사진 등록'}
                   </button>
@@ -469,7 +538,7 @@ export default function ResumeRegisterForm({
                         setPhotoUrl('');
                         setSavedSection(null);
                       }}
-                      className="rounded-lg px-3 py-2 text-sm font-semibold text-muted hover:bg-neutral-100 hover:text-foreground"
+                      className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted hover:bg-neutral-100 hover:text-foreground"
                     >
                       삭제
                     </button>
@@ -477,7 +546,8 @@ export default function ResumeRegisterForm({
                 </div>
               </div>
             </div>
-            <div className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2">
+            <div className="min-w-0 flex-1 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-[minmax(8rem,11rem)_minmax(0,1fr)]">
               <div>
                 <FieldLabel htmlFor="talent-name" required>
                   이름
@@ -491,20 +561,58 @@ export default function ResumeRegisterForm({
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="talent-birth" optional>
-                  생년월일
-                </FieldLabel>
-                <input
-                  id="talent-birth"
-                  type="date"
-                  value={birthDate}
-                  max={getKoreaDateLocalToday()}
-                  onChange={(event) => setBirthDate(event.target.value)}
-                  className={cn(controlClassName, 'w-full', !birthDate && 'font-normal text-subtle')}
-                />
+                <FieldLabel required>생년월</FieldLabel>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex min-w-0 items-center gap-1.5">
+                    <select
+                      id="talent-birth-year"
+                      aria-label="출생 연도"
+                      value={birthYear}
+                      onChange={(event) => setBirthYear(event.target.value)}
+                      className={cn(
+                        controlClassName,
+                        'min-w-0 flex-1 px-3',
+                        !birthYear && 'font-normal text-subtle',
+                      )}
+                      required
+                    >
+                      <option value="">선택</option>
+                      {BIRTH_YEARS.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="shrink-0 text-sm text-muted">년</span>
+                  </label>
+                  <label className="flex min-w-0 items-center gap-1.5">
+                    <select
+                      id="talent-birth-month"
+                      aria-label="출생 월"
+                      value={birthMonth}
+                      onChange={(event) => setBirthMonth(event.target.value)}
+                      className={cn(
+                        controlClassName,
+                        'min-w-0 flex-1 px-3',
+                        !birthMonth && 'font-normal text-subtle',
+                      )}
+                      required
+                    >
+                      <option value="">선택</option>
+                      {BIRTH_MONTHS.map((item) => (
+                        <option key={item} value={item}>
+                          {Number(item)}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="shrink-0 text-sm text-muted">월</span>
+                  </label>
+                </div>
               </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-[auto_minmax(8rem,1fr)_minmax(10rem,1.4fr)]">
               <div>
-                <FieldLabel optional>성별</FieldLabel>
+                <FieldLabel required>성별</FieldLabel>
                 <div className="flex gap-1.5">
                   {TALENT_GENDERS.map((item) => {
                     const active = gender === item;
@@ -528,7 +636,7 @@ export default function ResumeRegisterForm({
                 </div>
               </div>
               <div>
-                <FieldLabel htmlFor="talent-phone" optional>
+                <FieldLabel htmlFor="talent-phone" required>
                   휴대폰
                 </FieldLabel>
                 <input
@@ -540,10 +648,11 @@ export default function ResumeRegisterForm({
                   onChange={(event) => setPhone(formatPhoneInput(event.target.value))}
                   placeholder="010-0000-0000"
                   className={authInputClassName}
+                  required
                 />
               </div>
-              <div className="sm:col-span-2">
-                <FieldLabel htmlFor="talent-email" optional>
+              <div>
+                <FieldLabel htmlFor="talent-email" required>
                   이메일
                 </FieldLabel>
                 <input
@@ -554,21 +663,68 @@ export default function ResumeRegisterForm({
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="name@example.com"
                   className={authInputClassName}
+                  required
                 />
               </div>
-              <div className="sm:col-span-2">
-                <FieldLabel htmlFor="talent-address" optional>
-                  주소
-                </FieldLabel>
-                <input
-                  id="talent-address"
-                  value={address}
-                  onChange={(event) => setAddress(event.target.value)}
-                  placeholder="예: 서울시 강남구"
-                  className={authInputClassName}
-                />
               </div>
-              <div className="sm:col-span-2">
+              <div>
+                <FieldLabel required>거주 지역</FieldLabel>
+                <div className="flex flex-wrap gap-1.5">
+                  {RESIDENCE_CITIES.map((item) => {
+                    const active = residenceCity === item;
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => {
+                          if (active) {
+                            setResidenceCity('');
+                            setResidenceDistrict('');
+                            return;
+                          }
+                          setResidenceCity(item);
+                          setResidenceDistrict('');
+                        }}
+                        className={cn(
+                          'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
+                          active
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'border border-border-strong bg-surface text-foreground hover:bg-neutral-50',
+                        )}
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+                </div>
+                {residenceCity && RESIDENCE_DISTRICTS[residenceCity].length > 0 ? (
+                  <div className="mt-3 border-t border-border pt-3">
+                    <div className="flex flex-wrap gap-1.5">
+                    {RESIDENCE_DISTRICTS[residenceCity].map((item) => {
+                      const active = residenceDistrict === item;
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => setResidenceDistrict(active ? '' : item)}
+                          className={cn(
+                            'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
+                            active
+                              ? 'bg-primary text-white shadow-sm'
+                              : 'border border-border-strong bg-surface text-foreground hover:bg-neutral-50',
+                          )}
+                        >
+                          {item}
+                        </button>
+                      );
+                    })}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+              <div>
                 <FieldLabel htmlFor="talent-homepage" optional>
                   홈페이지 / SNS
                 </FieldLabel>

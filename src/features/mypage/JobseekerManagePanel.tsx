@@ -1,9 +1,16 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import WorkPreferencesForm from '@/features/mypage/WorkPreferencesForm';
-import { talentEducation, talentRecentDate, talentWorkTypeLabel } from '@/lib/talent-display';
+import {
+  deleteMyTalentProfileById,
+  duplicateMyTalentProfile,
+  listMyTalentProfilesForUser,
+} from '@/lib/my-talent-profile';
+import { syncDeleteTalentProfile, syncMyTalentProfile } from '@/lib/posting-sync';
+import { talentEducation, talentRecentDate, talentResumeTitle, talentWorkTypeLabel } from '@/lib/talent-display';
 import { cn } from '@/lib/utils';
 import { isPublishedTalent, type TalentProfile } from '@/types/talent';
 
@@ -24,23 +31,56 @@ export function isJobseekerSubTab(value: string | null): value is JobseekerSubTa
 
 const primaryLinkClassName =
   'inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover';
-const secondaryLinkClassName =
-  'inline-flex rounded-lg border border-border-strong bg-surface px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-neutral-50';
+const rowActionClassName =
+  'inline-flex rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-semibold text-foreground hover:bg-neutral-50';
+const dangerActionClassName =
+  'inline-flex rounded-lg border border-danger/30 px-3 py-2 text-sm font-semibold text-danger hover:bg-red-50';
 
 export default function JobseekerManagePanel({
   userId,
-  resume,
+  resumes,
   ready,
   subTab,
   onSelectSubTab,
+  onResumesChange,
 }: {
   userId: string;
-  resume: TalentProfile | null;
+  resumes: TalentProfile[];
   ready: boolean;
   subTab: JobseekerSubTab;
   onSelectSubTab: (id: JobseekerSubTab) => void;
+  onResumesChange: (resumes: TalentProfile[]) => void;
 }) {
-  const resumePublished = Boolean(resume && isPublishedTalent(resume));
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setBusyId(null);
+  }, [resumes]);
+
+  function refresh() {
+    onResumesChange(listMyTalentProfilesForUser(userId));
+  }
+
+  async function handleCopy(resume: TalentProfile) {
+    setBusyId(resume.id);
+    const copied = duplicateMyTalentProfile(userId, resume.id);
+    if (copied) {
+      await syncMyTalentProfile(copied);
+      refresh();
+    }
+    setBusyId(null);
+  }
+
+  async function handleDelete(resume: TalentProfile) {
+    const title = talentResumeTitle(resume);
+    if (!window.confirm(`「${title}」 이력서를 삭제할까요?`)) return;
+    setBusyId(resume.id);
+    deleteMyTalentProfileById(resume.id);
+    await syncDeleteTalentProfile(resume.id);
+    refresh();
+    setBusyId(null);
+  }
+
   return (
     <div className="space-y-4">
       <div
@@ -76,74 +116,102 @@ export default function JobseekerManagePanel({
         <Card
           title="이력서 관리"
           description={
-            ready && resume
-              ? resumePublished
-                ? `최근 저장일 ${talentRecentDate(resume)}`
-                : `작성 중 · 최근 저장일 ${talentRecentDate(resume)}`
-              : '항목별로 나눠 입력하고, 각 항목에서 바로 저장할 수 있습니다.'
+            ready && resumes.length > 0
+              ? `${resumes.length}건이 등록되어 있습니다. 지원 회사별로 내용을 나눠 등록하거나 복사해 새로 만들 수 있습니다.`
+              : '지원 회사별로 내용을 나눠 등록하고, 복사해서 새 이력서를 만들 수 있습니다.'
           }
           action={
             <Link href="/talents/new?from=mypage" className={primaryLinkClassName}>
-              {resume ? '이력서 수정' : '이력서 등록'}
+              이력서 등록
             </Link>
           }
         >
           {!ready ? (
             <p className="text-sm text-muted">불러오는 중…</p>
-          ) : resume ? (
-            <div className="space-y-3">
-              <div className="overflow-hidden rounded-xl border border-primary/15 bg-gradient-to-br from-primary/10 via-surface to-surface p-4">
-                <div className="flex items-start gap-3">
-                  {resume.photoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={resume.photoUrl}
-                      alt=""
-                      className="size-14 shrink-0 rounded-xl object-contain bg-white ring-1 ring-border"
-                    />
-                  ) : null}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap gap-1.5">
-                      {resumePublished ? (
-                        <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white">
-                          공개
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold text-muted">
-                          작성 중
-                        </span>
-                      )}
-                      <span className="rounded-full bg-white/90 px-2.5 py-0.5 text-xs font-medium text-muted ring-1 ring-inset ring-border">
-                        {talentWorkTypeLabel(resume.workType)}
-                      </span>
-                      {resume.careerLabel ? (
-                        <span className="rounded-full bg-white/90 px-2.5 py-0.5 text-xs font-medium text-muted ring-1 ring-inset ring-border">
-                          {resume.careerLabel}
-                        </span>
-                      ) : null}
-                      <span className="rounded-full bg-white/90 px-2.5 py-0.5 text-xs font-medium text-muted ring-1 ring-inset ring-border">
-                        {talentEducation(resume)}
-                      </span>
+          ) : resumes.length > 0 ? (
+            <ul className="divide-y divide-border rounded-xl border border-border">
+              {resumes.map((resume) => {
+                const published = isPublishedTalent(resume);
+                const title = talentResumeTitle(resume);
+                const busy = busyId === resume.id;
+                return (
+                  <li key={resume.id} className="p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {published ? (
+                            <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white">
+                              공개
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold text-muted">
+                              작성 중
+                            </span>
+                          )}
+                          {resume.workType ? (
+                            <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-muted">
+                              {talentWorkTypeLabel(resume.workType)}
+                            </span>
+                          ) : null}
+                          {resume.careerLabel ? (
+                            <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-muted">
+                              {resume.careerLabel}
+                            </span>
+                          ) : null}
+                          {resume.education ? (
+                            <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-muted">
+                              {talentEducation(resume)}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p
+                          className={
+                            resume.title?.trim()
+                              ? 'mt-2 text-base font-bold text-foreground'
+                              : 'mt-2 text-base font-bold text-subtle'
+                          }
+                        >
+                          {title}
+                        </p>
+                        {resume.headline?.trim() && resume.headline.trim() !== title ? (
+                          <p className="mt-1 text-sm text-muted">{resume.headline}</p>
+                        ) : null}
+                        <p className="mt-1 text-xs text-subtle">최근 저장일 {talentRecentDate(resume)}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 sm:justify-end">
+                        <Link
+                          href={`/talents/new?edit=${encodeURIComponent(resume.id)}&from=mypage`}
+                          className={rowActionClassName}
+                        >
+                          수정
+                        </Link>
+                        <button
+                          type="button"
+                          className={rowActionClassName}
+                          disabled={busy}
+                          onClick={() => void handleCopy(resume)}
+                        >
+                          복사
+                        </button>
+                        {published ? (
+                          <Link href={`/talents/${resume.id}`} className={rowActionClassName}>
+                            보기
+                          </Link>
+                        ) : null}
+                        <button
+                          type="button"
+                          className={dangerActionClassName}
+                          disabled={busy}
+                          onClick={() => void handleDelete(resume)}
+                        >
+                          삭제
+                        </button>
+                      </div>
                     </div>
-                    <p className="mt-3 text-lg font-bold leading-snug text-foreground">
-                      {resume.name}
-                      {resume.headline ? ` · ${resume.headline}` : ''}
-                    </p>
-                    {resume.desiredPay ? (
-                      <p className="mt-2 text-base font-bold text-primary">{resume.desiredPay}</p>
-                    ) : null}
-                    {resume.location ? <p className="mt-1 text-sm text-muted">{resume.location}</p> : null}
-                  </div>
-                </div>
-              </div>
-              {resumePublished ? (
-                <Link href={`/talents/${resume.id}`} className={secondaryLinkClassName}>
-                  내 이력서 보기
-                </Link>
-              ) : (
-                <p className="text-sm text-muted">필수 항목을 모두 저장하면 인재 정보에 공개됩니다.</p>
-              )}
-            </div>
+                  </li>
+                );
+              })}
+            </ul>
           ) : (
             <p className="text-sm text-muted">아직 등록한 이력서가 없습니다.</p>
           )}

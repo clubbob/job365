@@ -18,9 +18,9 @@ export function isValidEmail(value: string): boolean {
 
 export function formatBirthDate(value?: string): string {
   if (!value) return '';
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  const match = /^(\d{4})-(\d{2})/.exec(value);
   if (!match) return value;
-  return `${match[1]}.${match[2]}.${match[3]}`;
+  return `${match[1]}.${match[2]}`;
 }
 
 export function normalizeWebsite(value: string): string | undefined {

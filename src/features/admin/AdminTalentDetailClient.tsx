@@ -20,7 +20,7 @@ import {
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
 import { deleteMyTalentProfileById, findMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
-import { displayTalentName, talentBasicInfoItems, talentEducation, talentWorkTypeLabel } from '@/lib/talent-display';
+import { displayTalentName, talentBasicInfoItems, talentEducation, talentResumeTitle, talentWorkTypeLabel } from '@/lib/talent-display';
 import { isPublishedTalent, type TalentProfile } from '@/types/talent';
 
 type ItemResponse =
@@ -60,10 +60,10 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
 
   async function handleDelete() {
     if (!item) return;
-    if (!window.confirm(`${item.profile.name} 이력서를 삭제할까요?`)) return;
+    if (!window.confirm(`${talentResumeTitle(item.profile)} 이력서를 삭제할까요?`)) return;
     deleteMyTalentProfileById(item.profile.id);
     try {
-      await adminJson(`/api/admin/talents/${encodeURIComponent(item.ownerId)}`, { method: 'DELETE' });
+      await adminJson(`/api/admin/talents/${encodeURIComponent(item.profile.id)}`, { method: 'DELETE' });
     } catch {
       // 로컬에서는 이미 지웠습니다.
     }
@@ -91,14 +91,14 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
 
   return (
     <div className="space-y-5">
-      <PageHeader title="이력서" description={talent.headline} homeHref="/admin/talents" homeLabel="목록으로" />
+      <PageHeader title="이력서" description={talentResumeTitle(talent)} homeHref="/admin/talents" homeLabel="목록으로" />
       <div className="flex flex-wrap gap-2">
         {isPublishedTalent(talent) ? (
           <Link href={`/talents/${talent.id}`} className={adminSecondaryActionClassName}>
             사이트에서 보기
           </Link>
         ) : null}
-        <Link href={`/admin/talents/${encodeURIComponent(item.ownerId)}/edit`} className={adminPrimaryActionClassName}>
+        <Link href={`/admin/talents/${encodeURIComponent(item.profile.id)}/edit`} className={adminPrimaryActionClassName}>
           수정
         </Link>
         <button type="button" className={adminDangerActionClassName} onClick={() => void handleDelete()}>

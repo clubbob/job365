@@ -650,6 +650,7 @@ function padTalentSeeds(seeds: TalentSeed[], perType = CATEGORY_ITEM_COUNT): Tal
 export const SAMPLE_TALENTS: TalentProfile[] = padTalentSeeds(SEEDS).map((item, index) => ({
   ...item,
   id: `talent-${index + 1}`,
+  title: item.headline,
   education: sampleEducation(item),
   updatedAt: item.createdAt,
 })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));

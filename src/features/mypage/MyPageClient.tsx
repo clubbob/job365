@@ -9,7 +9,7 @@ import { useAuth } from '@/features/auth/auth-context';
 import JobCard from '@/features/jobs/JobCard';
 import { useUserMode } from '@/features/mode/mode-context';
 import { listMyJobPostings } from '@/lib/my-job-posts';
-import { loadMyTalentProfile } from '@/lib/my-talent-profile';
+import { listMyTalentProfilesForUser } from '@/lib/my-talent-profile';
 import { syncMyJobPosting, syncMyTalentProfile } from '@/lib/posting-sync';
 import JobseekerManagePanel, {
   isJobseekerSubTab,
@@ -23,7 +23,7 @@ import type { UserMode } from '@/lib/user-mode';
 import type { JobPosting } from '@/types/job';
 import type { TalentProfile } from '@/types/talent';
 
-type TabId = 'account' | 'applications' | 'resume' | 'jobs' | 'mode';
+type TabId = 'account' | 'applications' | 'resume' | 'jobs';
 
 const TAB_CLASS =
   'shrink-0 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors';
@@ -32,23 +32,16 @@ const primaryLinkClassName =
 const secondaryLinkClassName =
   'inline-flex rounded-lg border border-border-strong bg-surface px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-neutral-50';
 
-function tabsForMode(mode: UserMode | null): Array<{ id: TabId; label: string }> {
+function tabsForMode(mode: UserMode): Array<{ id: TabId; label: string }> {
   if (mode === 'jobseeker') {
     return [
       { id: 'account', label: '내 계정' },
       { id: 'resume', label: '취업 관리' },
     ];
   }
-  if (mode === 'recruiter') {
-    return [
-      { id: 'account', label: '내 계정' },
-      { id: 'jobs', label: '채용 관리' },
-    ];
-  }
   return [
     { id: 'account', label: '내 계정' },
-    { id: 'resume', label: '취업 관리' },
-    { id: 'mode', label: '이용 방식' },
+    { id: 'jobs', label: '채용 관리' },
   ];
 }
 
@@ -56,14 +49,14 @@ export default function MyPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
-  const { mode } = useUserMode();
+  const { mode, ready } = useUserMode();
   const [account, setAccount] = useState<UserAccountData | null>(null);
   const [tab, setTab] = useState<TabId>('account');
   const [jobseekerSubTab, setJobseekerSubTab] = useState<JobseekerSubTab>('conditions');
   const [myJobs, setMyJobs] = useState<JobPosting[]>([]);
-  const [myResume, setMyResume] = useState<TalentProfile | null>(null);
+  const [myResumes, setMyResumes] = useState<TalentProfile[]>([]);
   const [mineReady, setMineReady] = useState(false);
-  const tabs = tabsForMode(mode);
+  const tabs = mode ? tabsForMode(mode) : [];
 
   useEffect(() => {
     if (!user) return;
@@ -75,18 +68,18 @@ export default function MyPageClient() {
   useEffect(() => {
     if (!user) {
       setMyJobs([]);
-      setMyResume(null);
+      setMyResumes([]);
       setMineReady(false);
       return;
     }
-    setMyJobs(listMyJobPostings(user.uid));
-    setMyResume(loadMyTalentProfile(user.uid));
-    setMineReady(true);
     const jobs = listMyJobPostings(user.uid);
-    const resume = loadMyTalentProfile(user.uid);
+    const resumes = listMyTalentProfilesForUser(user.uid);
+    setMyJobs(jobs);
+    setMyResumes(resumes);
+    setMineReady(true);
     void Promise.all([
       ...jobs.map((job) => syncMyJobPosting(job)),
-      resume ? syncMyTalentProfile(resume) : Promise.resolve(),
+      ...resumes.map((resume) => syncMyTalentProfile(resume)),
     ]);
   }, [user]);
 
@@ -98,7 +91,7 @@ export default function MyPageClient() {
       setJobseekerSubTab('applications');
       return;
     }
-    if (requested && tabsForMode(mode).some((item) => item.id === requested)) {
+    if (mode && requested && tabsForMode(mode).some((item) => item.id === requested)) {
       setTab(requested as TabId);
       if (requested === 'resume') {
         setJobseekerSubTab(isJobseekerSubTab(requestedSub) ? requestedSub : 'conditions');
@@ -107,10 +100,17 @@ export default function MyPageClient() {
   }, [mode, searchParams]);
 
   useEffect(() => {
-    if (!tabsForMode(mode).some((item) => item.id === tab)) {
+    if (mode && !tabsForMode(mode).some((item) => item.id === tab)) {
       setTab('account');
     }
   }, [mode, tab]);
+
+  useEffect(() => {
+    if (loading || !ready) return;
+    if (user && !mode) {
+      router.replace('/');
+    }
+  }, [loading, ready, user, mode, router]);
 
   function selectTab(id: TabId) {
     setTab(id);
@@ -127,7 +127,7 @@ export default function MyPageClient() {
     router.replace(id === 'conditions' ? '/mypage?tab=resume' : `/mypage?tab=resume&sub=${id}`);
   }
 
-  if (loading) {
+  if (loading || !ready || (user && !mode)) {
     return <p className="py-10 text-center text-sm text-muted">불러오는 중…</p>;
   }
 
@@ -195,10 +195,11 @@ export default function MyPageClient() {
       {tab === 'resume' ? (
         <JobseekerManagePanel
           userId={user.uid}
-          resume={myResume}
+          resumes={myResumes}
           ready={mineReady}
           subTab={jobseekerSubTab}
           onSelectSubTab={selectJobseekerSubTab}
+          onResumesChange={setMyResumes}
         />
       ) : null}
 
@@ -240,14 +241,6 @@ export default function MyPageClient() {
           ) : (
             <p className="text-sm text-muted">아직 등록한 채용 정보가 없습니다.</p>
           )}
-        </Card>
-      ) : null}
-
-      {tab === 'mode' ? (
-        <Card title="이용 방식">
-          <p className="text-sm text-muted">
-            상단 마이페이지에서 구인자 또는 구직자를 선택하면 채용 정보 등록이나 이력서 등록을 할 수 있습니다.
-          </p>
         </Card>
       ) : null}
     </div>

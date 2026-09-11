@@ -6,7 +6,7 @@ import { Button, Card, FieldLabel } from '@/components/ui/Card';
 import { authInputClassName } from '@/lib/auth-ui';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 import { formatJobPayLabel, formatPayAmountInput, parsePayLabel, PAY_UNIT_LABELS } from '@/lib/job-display';
-import { loadMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
+import { createTalentProfileId, getMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
 import { syncMyTalentProfile } from '@/lib/posting-sync';
 import { cn } from '@/lib/utils';
 import {
@@ -59,15 +59,19 @@ function parseCareer(label: string): { type: JobCareerType | ''; years: string }
 export default function MyTalentProfileForm({
   userId,
   nickname,
+  initialProfile,
   returnPath,
   onSave,
 }: {
   userId: string;
   nickname: string;
+  initialProfile?: TalentProfile;
   returnPath?: string;
   onSave?: (profile: TalentProfile) => Promise<void>;
 }) {
   const router = useRouter();
+  const [profileId] = useState(() => initialProfile?.id || createTalentProfileId());
+  const [title, setTitle] = useState(initialProfile?.title ?? '');
   const [name, setName] = useState(nickname);
   const [headline, setHeadline] = useState('');
   const [workType, setWorkType] = useState<JobWorkType | ''>('');
@@ -87,15 +91,16 @@ export default function MyTalentProfileForm({
   const [languages, setLanguages] = useState('');
   const [portfolioUrl, setPortfolioUrl] = useState('');
   const [tags, setTags] = useState('');
-  const [createdAt, setCreatedAt] = useState<string | null>(() => loadMyTalentProfile(userId)?.createdAt ?? null);
+  const [createdAt, setCreatedAt] = useState<string | null>(() => initialProfile?.createdAt ?? null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const existing = loadMyTalentProfile(userId);
+    const existing = initialProfile ?? getMyTalentProfile(userId, profileId);
     if (!existing) {
+      setTitle('');
       setName(nickname);
       setWorkType('');
       setCareerType('');
@@ -107,6 +112,7 @@ export default function MyTalentProfileForm({
       setUpdatedAt(null);
       return;
     }
+    setTitle(existing.title || existing.headline || '');
     setName(existing.name);
     setHeadline(existing.headline);
     setWorkType(existing.workType);
@@ -136,13 +142,13 @@ export default function MyTalentProfileForm({
     setTags(existing.tags.join(', '));
     setCreatedAt(existing.createdAt);
     setUpdatedAt(existing.updatedAt);
-  }, [nickname, userId]);
+  }, [initialProfile, nickname, profileId, userId]);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!name.trim() || !headline.trim()) {
+    if (!title.trim() || !name.trim() || !headline.trim()) {
       setSaved(false);
-      setError('이름과 직무를 입력해 주세요.');
+      setError('이력서 제목, 이름, 직무를 입력해 주세요.');
       return;
     }
     if (!isJobWorkType(workType)) {
@@ -182,10 +188,11 @@ export default function MyTalentProfileForm({
     }
     setError('');
     const today = getKoreaDateLocalToday();
-    const existing = loadMyTalentProfile(userId);
+    const existing = initialProfile ?? getMyTalentProfile(userId, profileId);
     const profile: TalentProfile = {
       ...(existing ?? {}),
-      id: `talent-me-${userId}`,
+      id: existing?.id ?? profileId,
+      title: title.trim(),
       name: name.trim(),
       headline: headline.trim(),
       workType,
@@ -244,6 +251,19 @@ export default function MyTalentProfileForm({
       }
     >
       <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+        <div>
+          <FieldLabel htmlFor="talent-title" required>
+            이력서 제목
+          </FieldLabel>
+          <input
+            id="talent-title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="예: 웹 개발자 지원용"
+            className={authInputClassName}
+            required
+          />
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <FieldLabel htmlFor="talent-name" required>

@@ -12,7 +12,7 @@ import {
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
 import { deleteMyTalentProfileById, listMyTalentProfilesWithOwners } from '@/lib/my-talent-profile';
-import { talentEducation, talentRecentDate, talentWorkTypeLabel } from '@/lib/talent-display';
+import { talentEducation, talentRecentDate, talentResumeTitle, talentWorkTypeLabel } from '@/lib/talent-display';
 import type { TalentProfile } from '@/types/talent';
 
 type TalentRow = { ownerId: string; profile: TalentProfile };
@@ -55,10 +55,10 @@ export default function AdminTalentsClient() {
   }, []);
 
   async function handleDelete(row: TalentRow) {
-    if (!window.confirm(`${row.profile.name} 이력서를 삭제할까요?`)) return;
+    if (!window.confirm(`${talentResumeTitle(row.profile)} 이력서를 삭제할까요?`)) return;
     deleteMyTalentProfileById(row.profile.id);
     try {
-      await adminJson(`/api/admin/talents/${encodeURIComponent(row.ownerId)}`, { method: 'DELETE' });
+      await adminJson(`/api/admin/talents/${encodeURIComponent(row.profile.id)}`, { method: 'DELETE' });
     } catch {
       // 로컬에서는 이미 지웠습니다.
     }
@@ -87,6 +87,7 @@ export default function AdminTalentsClient() {
             <table className="min-w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border text-subtle">
+                  <th className="py-2 pr-4 font-semibold">제목</th>
                   <th className="py-2 pr-4 font-semibold">이름</th>
                   <th className="py-2 pr-4 font-semibold">직무</th>
                   <th className="py-2 pr-4 font-semibold">희망 근무</th>
@@ -97,6 +98,7 @@ export default function AdminTalentsClient() {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.profile.id} className="border-b border-border last:border-0">
+                    <td className="py-2.5 pr-4 font-medium text-foreground">{talentResumeTitle(row.profile)}</td>
                     <td className="py-2.5 pr-4 font-medium text-foreground">{row.profile.name}</td>
                     <td className="py-2.5 pr-4 text-muted">{row.profile.headline}</td>
                     <td className="py-2.5 pr-4 text-muted">
@@ -106,13 +108,13 @@ export default function AdminTalentsClient() {
                     <td className="py-2.5">
                       <div className="flex flex-wrap gap-1.5">
                         <Link
-                          href={`/admin/talents/${encodeURIComponent(row.ownerId)}`}
+                          href={`/admin/talents/${encodeURIComponent(row.profile.id)}`}
                           className={adminSecondaryActionClassName}
                         >
                           보기
                         </Link>
                         <Link
-                          href={`/admin/talents/${encodeURIComponent(row.ownerId)}/edit`}
+                          href={`/admin/talents/${encodeURIComponent(row.profile.id)}/edit`}
                           className={adminPrimaryActionClassName}
                         >
                           수정

@@ -16,7 +16,7 @@ function asTalentProfile(value: unknown): TalentProfile | null {
   if (typeof profile.id !== 'string' || typeof profile.name !== 'string' || typeof profile.headline !== 'string') {
     return null;
   }
-  return profile;
+  return { ...profile, title: profile.title ?? '' };
 }
 
 function fromDoc(id: string, data: DocumentData): StoredTalentProfile | null {
@@ -50,10 +50,19 @@ export async function upsertStoredTalentProfile(ownerId: string, profile: Talent
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
   const record = {
     ownerId,
-    profile: omitUndefined({ ...profile } as Record<string, unknown>),
+    profile: omitUndefined({ ...profile, title: profile.title ?? '' } as Record<string, unknown>),
     updatedAt: new Date().toISOString(),
   };
-  await db.collection(COLLECTION).doc(ownerId).set(record);
+  await db.collection(COLLECTION).doc(profile.id).set(record);
+  if (profile.id !== ownerId) {
+    const legacy = await db.collection(COLLECTION).doc(ownerId).get();
+    if (legacy.exists) {
+      const legacyProfile = asTalentProfile(legacy.data()?.profile ?? legacy.data());
+      if (legacyProfile && legacyProfile.id === profile.id) {
+        await legacy.ref.delete();
+      }
+    }
+  }
   return { ownerId, profile };
 }
 
@@ -62,7 +71,38 @@ export async function deleteStoredTalentProfile(id: string): Promise<boolean> {
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
   const existing = await getStoredTalentProfile(id);
   if (!existing) return false;
-  await db.collection(COLLECTION).doc(existing.ownerId).delete();
+
+  const refs = new Map<string, DocumentReference>();
+  const byProfileId = db.collection(COLLECTION).doc(existing.profile.id);
+  const byProfileSnap = await byProfileId.get();
+  if (byProfileSnap.exists) refs.set(byProfileSnap.id, byProfileId);
+
+  if (id !== existing.profile.id) {
+    const byParam = db.collection(COLLECTION).doc(id);
+    const byParamSnap = await byParam.get();
+    if (byParamSnap.exists) {
+      const paramProfile = asTalentProfile(byParamSnap.data()?.profile ?? byParamSnap.data());
+      if (!paramProfile || paramProfile.id === existing.profile.id) {
+        refs.set(byParamSnap.id, byParam);
+      }
+    }
+  }
+
+  if (existing.ownerId !== existing.profile.id) {
+    const ownerDoc = db.collection(COLLECTION).doc(existing.ownerId);
+    const ownerSnap = await ownerDoc.get();
+    if (ownerSnap.exists) {
+      const ownerProfile = asTalentProfile(ownerSnap.data()?.profile ?? ownerSnap.data());
+      if (ownerProfile && ownerProfile.id === existing.profile.id) {
+        refs.set(ownerSnap.id, ownerDoc);
+      }
+    }
+  }
+
+  if (refs.size === 0) return false;
+  const batch = db.batch();
+  refs.forEach((ref) => batch.delete(ref));
+  await batch.commit();
   return true;
 }
 

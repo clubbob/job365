@@ -82,18 +82,20 @@ export default function HeaderModeMenu({
           ))}
           {showLogout ? (
             <>
-              <Link
-                href="/mypage"
-                role="menuitem"
-                className={cn(itemClassName, 'border-t border-border text-foreground')}
-                onClick={() => setOpen(false)}
-              >
-                이용 현황
-              </Link>
+              {mode ? (
+                <Link
+                  href="/mypage"
+                  role="menuitem"
+                  className={cn(itemClassName, 'border-t border-border text-foreground')}
+                  onClick={() => setOpen(false)}
+                >
+                  이용 현황
+                </Link>
+              ) : null}
               <button
                 type="button"
                 role="menuitem"
-                className={cn(itemClassName, 'text-muted')}
+                className={cn(itemClassName, mode ? 'text-muted' : 'border-t border-border text-muted')}
                 onClick={() => {
                   setOpen(false);
                   logout();

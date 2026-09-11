@@ -1,3 +1,4 @@
+import { isCompleteResidence, parseResidence } from '@/lib/korea-regions';
 import { JOB_EDUCATION_OPTIONS, isJobEducation, isJobWorkType, type JobEducation, type JobPayType, type JobWorkType } from '@/types/job';
 
 export const EDUCATION_OPTIONS = JOB_EDUCATION_OPTIONS;
@@ -35,6 +36,7 @@ export function isTalentGender(value: unknown): value is TalentGender {
 
 export type TalentProfile = {
   id: string;
+  title: string;
   name: string;
   headline: string;
   workType: JobWorkType | '';
@@ -67,8 +69,15 @@ export type TalentProfile = {
 };
 
 export function isCompleteTalentProfile(profile: TalentProfile): boolean {
+  const residence = parseResidence(profile.address ?? '');
   return (
+    Boolean(profile.title?.trim()) &&
     Boolean(profile.name.trim()) &&
+    Boolean(profile.birthDate?.trim()) &&
+    isTalentGender(profile.gender) &&
+    Boolean(profile.phone?.trim()) &&
+    Boolean(profile.email?.trim()) &&
+    isCompleteResidence(residence.city, residence.district) &&
     Boolean(profile.headline.trim()) &&
     Boolean(profile.summary.trim()) &&
     Boolean(profile.careerLabel.trim()) &&
@@ -79,7 +88,14 @@ export function isCompleteTalentProfile(profile: TalentProfile): boolean {
 
 export function missingTalentPublishFields(profile: TalentProfile): string[] {
   const missing: string[] = [];
+  const residence = parseResidence(profile.address ?? '');
+  if (!profile.title?.trim()) missing.push('이력서 제목');
   if (!profile.name.trim()) missing.push('이름');
+  if (!profile.birthDate?.trim()) missing.push('생년월');
+  if (!isTalentGender(profile.gender)) missing.push('성별');
+  if (!profile.phone?.trim()) missing.push('휴대폰');
+  if (!profile.email?.trim()) missing.push('이메일');
+  if (!isCompleteResidence(residence.city, residence.district)) missing.push('거주 지역');
   if (!profile.headline.trim()) missing.push('직무');
   if (!isJobWorkType(profile.workType)) missing.push('희망 근무 형태');
   if (!profile.careerLabel.trim()) missing.push('경력');
