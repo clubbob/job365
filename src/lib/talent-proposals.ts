@@ -190,6 +190,7 @@ export function listSentProposals(recruiterId: string): ReceivedProposal[] {
   for (const [talentId, value] of Object.entries(talentsById)) {
     const record = asRecord(value);
     if (!record || record.hiddenFromSenderList) continue;
+    const resume = resolveProposalTalent(talentId);
     const company = companyForRecruiter(recruiterId, record);
     items.push({
       id: `${recruiterId}:${talentId}`,
