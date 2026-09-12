@@ -1,5 +1,6 @@
 import { formatBusinessNumber } from '@/lib/business-number';
 import type { BizVerifyStatus } from '@/lib/nts-business-status';
+import { isValidPhone } from '@/lib/talent-contact';
 
 export type { BizVerifyStatus };
 
@@ -11,6 +12,17 @@ export type BizVerifyRecord = {
   taxType: string | null;
   verifiedAt: string;
   source: 'nts';
+  ceo?: string;
+  address?: string;
+  phone?: string;
+  fax?: string;
+  foundedOn?: string;
+  employeeCount?: string;
+  lastYearRevenue?: string;
+  website?: string;
+  intro?: string;
+  registrantName?: string;
+  registrantMobile?: string;
 };
 
 const STORAGE_KEY = 'job365.bizVerify';
@@ -43,6 +55,16 @@ export function loadBizVerify(userId: string): BizVerifyRecord | null {
     taxType: record.taxType ?? null,
     source: 'nts',
   };
+}
+
+export function isCompanyInfoComplete(record: BizVerifyRecord | null): boolean {
+  return Boolean(
+    record &&
+      record.status === 'active' &&
+      record.companyName.trim() &&
+      record.registrantName?.trim() &&
+      isValidPhone(record.registrantMobile ?? ''),
+  );
 }
 
 export function saveBizVerify(userId: string, record: BizVerifyRecord): void {

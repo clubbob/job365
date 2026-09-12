@@ -1,3 +1,6 @@
+import { isJobWorkType, type JobWorkType } from '@/types/job';
+import type { TalentProfile } from '@/types/talent';
+
 const STORAGE_KEY = 'job365.workPreferences';
 
 export const REGION_OPTIONS = [
@@ -94,6 +97,24 @@ export const OCCUPATION_OPTIONS = [
 
 export type OccupationOption = (typeof OCCUPATION_OPTIONS)[number];
 
+export const AVAILABLE_OPTIONS = ['즉시 가능', '2주 후', '1개월 후', '3개월 후'] as const;
+
+export type AvailableOption = (typeof AVAILABLE_OPTIONS)[number];
+
+export function isAvailableOption(value: unknown): value is AvailableOption {
+  return typeof value === 'string' && (AVAILABLE_OPTIONS as readonly string[]).includes(value);
+}
+
+export function normalizeAvailable(value: string): AvailableOption | '' {
+  const text = value.trim();
+  if (isAvailableOption(text)) return text;
+  if (/즉시/.test(text)) return '즉시 가능';
+  if (/2주/.test(text)) return '2주 후';
+  if (/3개월/.test(text)) return '3개월 후';
+  if (/1개월|한\s*달|한달/.test(text)) return '1개월 후';
+  return '';
+}
+
 const LEGACY_OCCUPATIONS: Record<string, OccupationOption> = {
   '사무·행정': '경영·사무',
   '인사·총무': '경영·사무',
@@ -120,10 +141,23 @@ function normalizeOccupation(value: unknown): OccupationOption | null {
 export type WorkPreferences = {
   regions: RegionOption[];
   occupations: OccupationOption[];
+  workTypes: JobWorkType[];
+  available: AvailableOption | '';
+  hasJobConditions: boolean;
   updatedAt: string;
 };
 
-type Store = Record<string, WorkPreferences>;
+export type WorkPreferenceInput = {
+  regions: RegionOption[];
+  occupations: OccupationOption[];
+  workTypes: JobWorkType[];
+  available: AvailableOption | '';
+};
+
+type StoredWorkPreferences = Omit<WorkPreferences, 'hasJobConditions'> & {
+  workType?: JobWorkType | '';
+};
+type Store = Record<string, StoredWorkPreferences>;
 
 export function isRegionOption(value: unknown): value is RegionOption {
   return typeof value === 'string' && (REGION_OPTIONS as readonly string[]).includes(value);
@@ -149,27 +183,74 @@ function writeStore(store: Store): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
 }
 
+function parseStoredWorkTypes(record: StoredWorkPreferences): JobWorkType[] {
+  if (Array.isArray(record.workTypes)) {
+    return [...new Set(record.workTypes.filter(isJobWorkType))];
+  }
+  return typeof record.workType === 'string' && isJobWorkType(record.workType) ? [record.workType] : [];
+}
+
 export function loadWorkPreferences(userId: string): WorkPreferences | null {
   const record = readStore()[userId];
   if (!record) return null;
   return {
     regions: expandRegions(record.regions.filter(isRegionOption)),
     occupations: [...new Set(record.occupations.map(normalizeOccupation).filter((item): item is OccupationOption => Boolean(item)))],
+    workTypes: parseStoredWorkTypes(record),
+    available: normalizeAvailable(typeof record.available === 'string' ? record.available : ''),
+    hasJobConditions:
+      Object.prototype.hasOwnProperty.call(record, 'workTypes') ||
+      Object.prototype.hasOwnProperty.call(record, 'workType'),
     updatedAt: record.updatedAt,
   };
 }
 
-export function saveWorkPreferences(
-  userId: string,
-  input: { regions: RegionOption[]; occupations: OccupationOption[] },
-): WorkPreferences {
-  const next: WorkPreferences = {
+export function saveWorkPreferences(userId: string, input: WorkPreferenceInput): WorkPreferences {
+  const workTypes = [...new Set(input.workTypes.filter(isJobWorkType))];
+  const next: StoredWorkPreferences = {
     regions: compactRegions(input.regions),
     occupations: input.occupations,
+    workTypes,
+    workType: workTypes[0] ?? '',
+    available: normalizeAvailable(input.available),
     updatedAt: new Date().toISOString(),
   };
   const store = readStore();
   store[userId] = next;
   writeStore(store);
-  return next;
+  return { ...next, workTypes, hasJobConditions: true };
+}
+
+export function headlineFromOccupations(occupations: readonly string[]): string {
+  return occupations.filter(Boolean).join(', ');
+}
+
+export function talentFieldsFromWorkPreferences(
+  prefs: WorkPreferences,
+): Partial<Pick<TalentProfile, 'workType' | 'workTypes' | 'available' | 'desiredPay' | 'payType' | 'payAmount' | 'payNegotiable' | 'location' | 'headline'>> {
+  const location = locationLabelFromRegions(prefs.regions);
+  if (!prefs.hasJobConditions) {
+    return location ? { location } : {};
+  }
+  return {
+    workType: prefs.workTypes[0] ?? '',
+    workTypes: prefs.workTypes,
+    available: prefs.available,
+    desiredPay: '',
+    payType: undefined,
+    payAmount: '',
+    payNegotiable: false,
+    location,
+  };
+}
+
+export function workPreferencesAreComplete(
+  prefs: WorkPreferenceInput | WorkPreferences | null | undefined,
+): boolean {
+  if (!prefs) return false;
+  return prefs.workTypes.length > 0 && prefs.regions.length > 0 && prefs.occupations.length > 0 && Boolean(prefs.available);
+}
+
+export function isWorkPreferencesComplete(userId: string): boolean {
+  return workPreferencesAreComplete(loadWorkPreferences(userId));
 }

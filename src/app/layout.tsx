@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     default: COMPANY.serviceName,
     template: `%s | ${COMPANY.serviceName}`,
   },
-  description: '파트타임부터 정규직까지, 100% 무료 이용·매칭 서비스',
+  description: '알바부터 정규직까지, 100% 무료 이용·매칭 서비스',
   icons: {
     icon: '/favicon.svg',
   },

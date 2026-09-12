@@ -353,7 +353,7 @@ const SEEDS: TalentSeed[] = [
   },
   {
     name: '홍나경',
-    headline: '카페 홀 파트타임',
+    headline: '카페 홀 알바',
     workType: 'parttime',
     careerLabel: '경력 1년',
     location: '서울 마포구',
@@ -366,7 +366,7 @@ const SEEDS: TalentSeed[] = [
   },
   {
     name: '송지호',
-    headline: '오전 오픈 파트타임',
+    headline: '오전 오픈 알바',
     workType: 'parttime',
     careerLabel: '경력 2년',
     location: '서울 용산구',
@@ -508,6 +508,32 @@ const SEEDS: TalentSeed[] = [
     createdAt: '2026-08-14',
   },
   {
+    name: '도하린',
+    headline: '보험 설계 위촉',
+    workType: 'commission',
+    careerLabel: '경력 3년',
+    location: '서울 종로구',
+    desiredPay: '',
+    summary: '개인 보험 설계 위촉으로 일해 왔습니다. 교육 후 활동하는 형태를 선호합니다.',
+    experience: '생명·손해보험 설계 3년. 초회 상담.',
+    available: '즉시 가능',
+    tags: ['위촉', '보험', '상담'],
+    createdAt: '2026-09-03',
+  },
+  {
+    name: '남기현',
+    headline: '산업기능요원 생산',
+    workType: 'military',
+    careerLabel: '신입',
+    location: '경기 이천시',
+    desiredPay: '',
+    summary: '병역특례 산업기능요원으로 생산 현장에 지원합니다. 주간 근무가 가능합니다.',
+    experience: '공고 기계과 졸업. 현장실습 6개월.',
+    available: '즉시 가능',
+    tags: ['병역특례', '생산', '주간'],
+    createdAt: '2026-09-02',
+  },
+  {
     name: '위지안',
     headline: '쇼핑몰 리뉴얼',
     workType: 'project',
@@ -630,6 +656,7 @@ function padTalentSeeds(seeds: TalentSeed[], perType = CATEGORY_ITEM_COUNT): Tal
 
   for (const workType of JOB_WORK_TYPES) {
     const ofType = seeds.filter((item) => item.workType === workType);
+    if (ofType.length === 0) continue;
     const needed = Math.max(0, perType - ofType.length);
 
     for (let index = 0; index < needed; index += 1) {

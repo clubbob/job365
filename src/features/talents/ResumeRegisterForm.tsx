@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
+import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
 import { authInputClassName } from '@/lib/auth-ui';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
-import { formatJobPayLabel, formatPayAmountInput, parsePayLabel, PAY_UNIT_LABELS } from '@/lib/job-display';
+import { firstRequiredError } from '@/lib/form-required';
 import {
   RESIDENCE_CITIES,
   RESIDENCE_DISTRICTS,
@@ -14,7 +16,7 @@ import {
   parseResidence,
   type ResidenceCity,
 } from '@/lib/korea-regions';
-import { createEmptyTalentProfile, createTalentProfileId, getMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
+import { canPublishMyTalentProfile, createEmptyTalentProfile, createTalentProfileId, getMyTalentProfile, missingPublishRequirements, saveMyTalentProfile } from '@/lib/my-talent-profile';
 import { syncMyTalentProfile } from '@/lib/posting-sync';
 import { readResumePhoto } from '@/lib/resume-photo';
 import {
@@ -24,65 +26,36 @@ import {
   normalizeWebsite,
 } from '@/lib/talent-contact';
 import { cn } from '@/lib/utils';
-import {
-  isNationwideSelection,
-  isRegionOption,
-  loadWorkPreferences,
-  locationLabelFromRegions,
-  NATIONWIDE_REGION,
-  OCCUPATION_OPTIONS,
-  REGION_OPTIONS,
-  regionsFromLocationText,
-  saveWorkPreferences,
-  toggleRegionSelection,
-  type OccupationOption,
-  type RegionOption,
-} from '@/lib/work-preferences';
+import { isWorkPreferencesComplete } from '@/lib/work-preferences';
 import {
   CAREER_TYPE_LABELS,
   JOB_CAREER_TYPES,
-  PAY_TYPE_LABELS,
-  WORK_TYPE_FILTERS,
-  WORK_TYPE_LABELS,
+  formatCareerYearsInput,
   isJobCareerType,
-  isJobPayType,
-  isJobWorkType,
+  parseCareerYears,
   type JobCareerType,
-  type JobPayType,
-  type JobWorkType,
 } from '@/types/job';
 import {
   EDUCATION_OPTIONS,
   TALENT_GENDERS,
   isEducationLevel,
   isTalentGender,
-  isTalentSkillsComplete,
   normalizeEducation,
   type EducationLevel,
   type TalentGender,
   type TalentProfile,
 } from '@/types/talent';
 
-const WORK_TYPES: JobWorkType[] = WORK_TYPE_FILTERS.flatMap((item) =>
-  item.id === 'all' ? [] : [item.id],
-);
-const PAY_TYPES = Object.keys(PAY_TYPE_LABELS) as JobPayType[];
-
 const SECTIONS = [
   { id: 'basics', label: '기본 정보' },
   { id: 'education', label: '학력 정보' },
   { id: 'career', label: '경력 정보' },
-  { id: 'skills', label: '보유 역량 / 자격증' },
-  { id: 'conditions', label: '희망 근무 조건' },
+  { id: 'skills', label: '보유 역량' },
   { id: 'summary', label: '자기 소개' },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]['id'];
 type SectionSnapshots = Record<SectionId, string>;
-
-function encodeSorted(values: readonly string[]): string[] {
-  return [...values].sort();
-}
 
 type SectionValues = {
   title: string;
@@ -106,14 +79,6 @@ type SectionValues = {
   experience: string;
   languages: string;
   tags: string;
-  portfolioUrl: string;
-  workType: string;
-  available: string;
-  payType: string;
-  payAmount: string;
-  payNegotiable: boolean;
-  regions: readonly string[];
-  occupations: readonly string[];
   summary: string;
 };
 
@@ -131,6 +96,7 @@ function snapshotsFromValues(values: SectionValues): SectionSnapshots {
       residenceCity: values.residenceCity,
       residenceDistrict: values.residenceDistrict,
       homepage: values.homepage,
+      headline: values.headline,
     }),
     education: JSON.stringify({
       education: values.education,
@@ -146,17 +112,6 @@ function snapshotsFromValues(values: SectionValues): SectionSnapshots {
       experience: values.experience,
       languages: values.languages,
       tags: values.tags,
-      portfolioUrl: values.portfolioUrl,
-    }),
-    conditions: JSON.stringify({
-      headline: values.headline,
-      workType: values.workType,
-      available: values.available,
-      payType: values.payType,
-      payAmount: values.payAmount,
-      payNegotiable: values.payNegotiable,
-      regions: encodeSorted(values.regions),
-      occupations: encodeSorted(values.occupations),
     }),
     summary: JSON.stringify({ summary: values.summary }),
   };
@@ -179,18 +134,14 @@ function isSectionComplete(id: SectionId, values: SectionValues): boolean {
       );
     }
     case 'education':
-      return isEducationLevel(values.education);
+      return isEducationLevel(values.education) && Boolean(values.school.trim());
     case 'career':
-      return isJobCareerType(values.careerType);
+      return (
+        isJobCareerType(values.careerType) &&
+        (values.careerType !== 'experienced' || Boolean(parseCareerYears(values.careerMinYears)))
+      );
     case 'skills':
-      return isTalentSkillsComplete({
-        experience: values.experience,
-        languages: values.languages,
-        tags: parseTags(values.tags),
-        portfolioUrl: values.portfolioUrl,
-      });
-    case 'conditions':
-      return Boolean(values.headline.trim()) && isJobWorkType(values.workType);
+      return true;
     case 'summary':
       return Boolean(values.summary.trim());
   }
@@ -198,7 +149,6 @@ function isSectionComplete(id: SectionId, values: SectionValues): boolean {
 
 const controlClassName =
   'rounded-xl border border-border-strong bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition placeholder:text-subtle placeholder:font-normal focus:border-primary focus:ring-2 focus:ring-primary/25 sm:text-base';
-const amountInputClassName = cn(controlClassName, 'w-28 text-right tabular-nums sm:w-32');
 
 function PlaceholderOption() {
   return <option value="">선택</option>;
@@ -221,27 +171,24 @@ function composeBirthDate(year: string, month: string): string {
 
 function careerLabelFrom(type: JobCareerType, years: string): string {
   if (type === 'experienced') {
-    const count = Math.max(1, Math.floor(Number(years) || 1));
-    return `경력 ${count}년`;
+    const count = parseCareerYears(years);
+    return count ? `경력 ${count}년` : CAREER_TYPE_LABELS.experienced;
   }
   return CAREER_TYPE_LABELS[type];
 }
 
 function parseCareer(label: string): { type: JobCareerType | ''; years: string } {
-  if (label === CAREER_TYPE_LABELS.new) return { type: 'new', years: '1' };
-  if (label === CAREER_TYPE_LABELS.any) return { type: 'any', years: '1' };
+  if (label === CAREER_TYPE_LABELS.new) return { type: 'new', years: '' };
+  if (label === '경력무관') return { type: '', years: '' };
   const match = /경력\s*(\d+)\s*년/.exec(label);
-  if (match) return { type: 'experienced', years: match[1] ?? '1' };
-  if (label === CAREER_TYPE_LABELS.experienced || label.includes('경력')) {
-    return { type: 'experienced', years: '1' };
+  if (match) {
+    const years = parseCareerYears(match[1]);
+    return { type: 'experienced', years: years ? String(years) : '' };
   }
-  return { type: '', years: '1' };
-}
-
-function normalizePortfolioUrl(value: string): string | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  if (label === CAREER_TYPE_LABELS.experienced || label.includes('경력')) {
+    return { type: 'experienced', years: '' };
+  }
+  return { type: '', years: '' };
 }
 
 function parseTags(value: string): string[] {
@@ -249,47 +196,6 @@ function parseTags(value: string): string[] {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
-}
-
-function ChoiceGroup<T extends string>({
-  legend,
-  options,
-  selected,
-  isActive,
-  onToggle,
-}: {
-  legend: string;
-  options: readonly T[];
-  selected: T[];
-  isActive?: (value: T) => boolean;
-  onToggle: (value: T) => void;
-}) {
-  return (
-    <fieldset>
-      <FieldLabel>{legend}</FieldLabel>
-      <div className="flex flex-wrap gap-1.5">
-        {options.map((item) => {
-          const active = isActive ? isActive(item) : selected.includes(item);
-          return (
-            <button
-              key={item}
-              type="button"
-              aria-pressed={active}
-              onClick={() => onToggle(item)}
-              className={cn(
-                'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
-                active
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'border border-border-strong bg-surface text-foreground hover:bg-neutral-50',
-              )}
-            >
-              {item}
-            </button>
-          );
-        })}
-      </div>
-    </fieldset>
-  );
 }
 
 export default function ResumeRegisterForm({
@@ -326,19 +232,11 @@ export default function ResumeRegisterForm({
   const [school, setSchool] = useState('');
   const [major, setMajor] = useState('');
   const [careerType, setCareerType] = useState<JobCareerType | ''>('');
-  const [careerMinYears, setCareerMinYears] = useState('1');
+  const [careerMinYears, setCareerMinYears] = useState('');
   const [careerHistory, setCareerHistory] = useState('');
   const [experience, setExperience] = useState('');
   const [languages, setLanguages] = useState('');
   const [tags, setTags] = useState('');
-  const [portfolioUrl, setPortfolioUrl] = useState('');
-  const [workType, setWorkType] = useState<JobWorkType | ''>('');
-  const [available, setAvailable] = useState('');
-  const [payType, setPayType] = useState<JobPayType | ''>('');
-  const [payAmount, setPayAmount] = useState('');
-  const [payNegotiable, setPayNegotiable] = useState(false);
-  const [regions, setRegions] = useState<RegionOption[]>([]);
-  const [occupations, setOccupations] = useState<OccupationOption[]>([]);
   const [summary, setSummary] = useState('');
   const [savingSection, setSavingSection] = useState<SectionId | null>(null);
   const [savedSection, setSavedSection] = useState<SectionId | null>(null);
@@ -347,9 +245,6 @@ export default function ResumeRegisterForm({
 
   useEffect(() => {
     const existing = getMyTalentProfile(userId, resumeId);
-    const prefs = loadWorkPreferences(userId);
-    const prefsRegions = prefs?.regions ?? [];
-    const prefsOccupations = prefs?.occupations ?? [];
 
     if (!existing) {
       setTitle('');
@@ -368,19 +263,11 @@ export default function ResumeRegisterForm({
       setSchool('');
       setMajor('');
       setCareerType('');
-      setCareerMinYears('1');
+      setCareerMinYears('');
       setCareerHistory('');
       setExperience('');
       setLanguages('');
       setTags('');
-      setPortfolioUrl('');
-      setWorkType('');
-      setAvailable('');
-      setPayType('');
-      setPayAmount('');
-      setPayNegotiable(false);
-      setRegions(prefsRegions);
-      setOccupations(prefsOccupations);
       setSummary('');
       setSavedSnapshots(
         snapshotsFromValues({
@@ -400,19 +287,11 @@ export default function ResumeRegisterForm({
           school: '',
           major: '',
           careerType: '',
-          careerMinYears: '1',
+          careerMinYears: '',
           careerHistory: '',
           experience: '',
           languages: '',
           tags: '',
-          portfolioUrl: '',
-          workType: '',
-          available: '',
-          payType: '',
-          payAmount: '',
-          payNegotiable: false,
-          regions: prefsRegions,
-          occupations: prefsOccupations,
           summary: '',
         }),
       );
@@ -422,15 +301,6 @@ export default function ResumeRegisterForm({
     const birth = splitBirthDate(existing.birthDate ?? '');
     const residence = parseResidence(existing.address ?? '');
     const career = parseCareer(existing.careerLabel);
-    const pay = existing.payType
-      ? {
-          payType: existing.payType,
-          amount: existing.payAmount ?? '',
-          negotiable: Boolean(existing.payNegotiable),
-        }
-      : parsePayLabel(existing.desiredPay);
-    const fromLocation = regionsFromLocationText(existing.location);
-    const nextRegions = fromLocation.length > 0 ? fromLocation : prefsRegions;
     const nextTitle = existing.title || existing.headline || '';
     const nextName = existing.name || nickname;
     const nextPhoto = existing.photoUrl ?? '';
@@ -444,7 +314,6 @@ export default function ResumeRegisterForm({
     const nextCareerHistory = existing.careerHistory ?? '';
     const nextLanguages = existing.languages ?? '';
     const nextTags = existing.tags.join(', ');
-    const nextPortfolio = existing.portfolioUrl ?? '';
 
     setTitle(nextTitle);
     setName(nextName);
@@ -467,25 +336,17 @@ export default function ResumeRegisterForm({
     setExperience(existing.experience);
     setLanguages(nextLanguages);
     setTags(nextTags);
-    setPortfolioUrl(nextPortfolio);
-    setWorkType(existing.workType);
-    setAvailable(existing.available);
-    setPayType(pay.payType);
-    setPayAmount(pay.amount);
-    setPayNegotiable(pay.negotiable);
-    setRegions(nextRegions);
-    setOccupations(prefsOccupations);
     setSummary(existing.summary);
     setSavedSnapshots(
       snapshotsFromValues({
-        title: nextTitle,
-        name: nextName,
+        title: existing.title || '',
+        name: existing.name,
         photoUrl: nextPhoto,
         birthYear: birth.year,
         birthMonth: birth.month,
         gender: nextGender,
         phone: nextPhone,
-        email: nextEmail,
+        email: existing.email ?? '',
         residenceCity: residence.city,
         residenceDistrict: residence.district,
         homepage: nextHomepage,
@@ -499,14 +360,6 @@ export default function ResumeRegisterForm({
         experience: existing.experience,
         languages: nextLanguages,
         tags: nextTags,
-        portfolioUrl: nextPortfolio,
-        workType: existing.workType,
-        available: existing.available,
-        payType: pay.payType,
-        payAmount: pay.amount,
-        payNegotiable: pay.negotiable,
-        regions: nextRegions,
-        occupations: prefsOccupations,
         summary: existing.summary,
       }),
     );
@@ -535,14 +388,6 @@ export default function ResumeRegisterForm({
       experience,
       languages,
       tags,
-      portfolioUrl,
-      workType,
-      available,
-      payType,
-      payAmount,
-      payNegotiable,
-      regions,
-      occupations,
       summary,
     };
   }
@@ -573,34 +418,19 @@ export default function ResumeRegisterForm({
       );
       setResidenceDistrict(String(parsed.residenceDistrict ?? ''));
       setHomepage(String(parsed.homepage ?? ''));
+      setHeadline(String(parsed.headline ?? ''));
     } else if (id === 'education') {
       setEducation(normalizeEducation(parsed.education));
       setSchool(String(parsed.school ?? ''));
       setMajor(String(parsed.major ?? ''));
     } else if (id === 'career') {
       setCareerType(isJobCareerType(String(parsed.careerType ?? '')) ? parsed.careerType as JobCareerType : '');
-      setCareerMinYears(String(parsed.careerMinYears ?? '1'));
+      setCareerMinYears(formatCareerYearsInput(String(parsed.careerMinYears ?? '')));
       setCareerHistory(String(parsed.careerHistory ?? ''));
     } else if (id === 'skills') {
       setExperience(String(parsed.experience ?? ''));
       setLanguages(String(parsed.languages ?? ''));
       setTags(String(parsed.tags ?? ''));
-      setPortfolioUrl(String(parsed.portfolioUrl ?? ''));
-    } else if (id === 'conditions') {
-      setHeadline(String(parsed.headline ?? ''));
-      setWorkType(isJobWorkType(String(parsed.workType ?? '')) ? parsed.workType as JobWorkType : '');
-      setAvailable(String(parsed.available ?? ''));
-      setPayType(isJobPayType(String(parsed.payType ?? '')) ? parsed.payType as JobPayType : '');
-      setPayAmount(String(parsed.payAmount ?? ''));
-      setPayNegotiable(Boolean(parsed.payNegotiable));
-      setRegions(Array.isArray(parsed.regions) ? parsed.regions.filter(isRegionOption) : []);
-      setOccupations(
-        Array.isArray(parsed.occupations)
-          ? parsed.occupations.filter((item): item is OccupationOption =>
-              (OCCUPATION_OPTIONS as readonly string[]).includes(String(item)),
-            )
-          : [],
-      );
     } else {
       setSummary(String(parsed.summary ?? ''));
     }
@@ -635,47 +465,32 @@ export default function ResumeRegisterForm({
     })();
   }
 
+  function rejectSave(section: SectionId, message: string) {
+    setSavedSection(null);
+    setError({ section, message });
+  }
+
   function saveBasics(event: React.FormEvent) {
     event.preventDefault();
-    if (!title.trim()) {
-      setSavedSection(null);
-      setError({ section: 'basics', message: '이력서 제목을 입력해 주세요.' });
-      return;
-    }
-    if (!name.trim()) {
-      setSavedSection(null);
-      setError({ section: 'basics', message: '이름을 입력해 주세요.' });
-      return;
-    }
     const birthDate = composeBirthDate(birthYear, birthMonth);
     const thisMonth = getKoreaDateLocalToday().slice(0, 7);
-    if (!birthDate || birthDate > thisMonth) {
-      setSavedSection(null);
-      setError({ section: 'basics', message: '생년월을 선택해 주세요.' });
+    const requiredError = firstRequiredError([
+      { ok: Boolean(title.trim()), message: '이력서 제목을 입력해 주세요.' },
+      { ok: Boolean(name.trim()), message: '이름을 입력해 주세요.' },
+      { ok: Boolean(birthDate) && birthDate <= thisMonth, message: '생년월을 선택해 주세요.' },
+      { ok: isTalentGender(gender), message: '성별을 선택해 주세요.' },
+      { ok: Boolean(phone.trim()) && isValidPhone(phone), message: '휴대폰 번호를 입력해 주세요.' },
+      { ok: Boolean(email.trim()) && isValidEmail(email), message: '이메일을 입력해 주세요.' },
+      { ok: isCompleteResidence(residenceCity, residenceDistrict), message: '거주 지역을 선택해 주세요.' },
+    ]);
+    if (requiredError) {
+      rejectSave('basics', requiredError);
       return;
     }
-    if (!isTalentGender(gender)) {
-      setSavedSection(null);
-      setError({ section: 'basics', message: '성별을 선택해 주세요.' });
-      return;
-    }
-    if (!phone.trim() || !isValidPhone(phone)) {
-      setSavedSection(null);
-      setError({ section: 'basics', message: '휴대폰 번호를 입력해 주세요.' });
-      return;
-    }
-    if (!email.trim() || !isValidEmail(email)) {
-      setSavedSection(null);
-      setError({ section: 'basics', message: '이메일을 입력해 주세요.' });
-      return;
-    }
-    if (!isCompleteResidence(residenceCity, residenceDistrict)) {
-      setSavedSection(null);
-      setError({ section: 'basics', message: '거주 지역을 선택해 주세요.' });
-      return;
-    }
+    if (!isTalentGender(gender)) return;
     mergeAndSave('basics', {
       title: title.trim(),
+      headline: headline.trim(),
       name: name.trim(),
       photoUrl: photoUrl || undefined,
       birthDate,
@@ -707,17 +522,38 @@ export default function ResumeRegisterForm({
 
   function saveEducation(event: React.FormEvent) {
     event.preventDefault();
+    const requiredError = firstRequiredError([
+      { ok: isEducationLevel(education), message: '최종 학력을 선택해 주세요.' },
+      { ok: Boolean(school.trim()), message: '학교를 입력해 주세요.' },
+    ]);
+    if (requiredError) {
+      rejectSave('education', requiredError);
+      return;
+    }
+    if (!isEducationLevel(education)) return;
     mergeAndSave('education', {
       education,
-      school: school.trim() || undefined,
+      school: school.trim(),
       major: major.trim() || undefined,
     });
   }
 
   function saveCareer(event: React.FormEvent) {
     event.preventDefault();
+    const requiredError = firstRequiredError([
+      { ok: isJobCareerType(careerType), message: '경력 유무를 선택해 주세요.' },
+      {
+        ok: careerType !== 'experienced' || Boolean(parseCareerYears(careerMinYears)),
+        message: '경력 연수를 입력해 주세요.',
+      },
+    ]);
+    if (requiredError) {
+      rejectSave('career', requiredError);
+      return;
+    }
+    if (!isJobCareerType(careerType)) return;
     mergeAndSave('career', {
-      careerLabel: isJobCareerType(careerType) ? careerLabelFrom(careerType, careerMinYears) : '',
+      careerLabel: careerLabelFrom(careerType, careerMinYears),
       careerHistory: careerHistory.trim() || undefined,
     });
   }
@@ -728,44 +564,18 @@ export default function ResumeRegisterForm({
       experience: experience.trim(),
       languages: languages.trim() || undefined,
       tags: parseTags(tags),
-      portfolioUrl: normalizePortfolioUrl(portfolioUrl),
-    });
-  }
-
-  function saveConditions(event: React.FormEvent) {
-    event.preventDefault();
-    const hasPayInput = Boolean(payType) || Boolean(payAmount.replace(/[^\d]/g, '')) || payNegotiable;
-    let desiredPay = '';
-    if (hasPayInput) {
-      if (!isJobPayType(payType)) {
-        setSavedSection(null);
-        setError({ section: 'conditions', message: '희망 급여 지급 기준을 선택해 주세요.' });
-        return;
-      }
-      desiredPay = formatJobPayLabel(payType, payAmount, payNegotiable);
-      if (!desiredPay) {
-        setSavedSection(null);
-        setError({ section: 'conditions', message: '희망 급여를 입력하거나 협의 가능을 선택해 주세요.' });
-        return;
-      }
-    }
-    if (regions.length > 0 && occupations.length > 0) {
-      saveWorkPreferences(userId, { regions, occupations });
-    }
-    mergeAndSave('conditions', {
-      headline: headline.trim(),
-      workType,
-      location: locationLabelFromRegions(regions),
-      available: available.trim(),
-      desiredPay,
-      payType: isJobPayType(payType) ? payType : undefined,
-      payAmount: payAmount.replace(/[^\d]/g, ''),
-      payNegotiable,
     });
   }
 
   function saveSummary(event: React.FormEvent) {
     event.preventDefault();
+    const requiredError = firstRequiredError([
+      { ok: Boolean(summary.trim()), message: '자기 소개를 입력해 주세요.' },
+    ]);
+    if (requiredError) {
+      rejectSave('summary', requiredError);
+      return;
+    }
     mergeAndSave('summary', { summary: summary.trim() });
   }
 
@@ -793,6 +603,11 @@ export default function ResumeRegisterForm({
   }
 
   const values = currentValues();
+  const tabsComplete = SECTIONS.every((item) => isSectionComplete(item.id, values));
+  const storedProfile = getMyTalentProfile(userId, resumeId);
+  const storedPublishReady = storedProfile ? canPublishMyTalentProfile(userId, storedProfile) : false;
+  const workTypeReady = isWorkPreferencesComplete(userId);
+  const unsavedComplete = tabsComplete && SECTIONS.some((item) => isDirty(item.id));
 
   return (
     <div className="space-y-4">
@@ -825,16 +640,39 @@ export default function ResumeRegisterForm({
           })}
         </div>
       </nav>
-      {SECTIONS.every((item) => isSectionComplete(item.id, values)) ? (
-        <p className="text-sm text-success">모든 탭이 완료되었습니다. 내 정보의 이력서 관리에서 공개할 수 있습니다.</p>
+      {storedPublishReady ? (
+        <p className="text-sm text-success">모든 탭이 저장되었습니다. 마이페이지의 이력서 관리에서 공개할 수 있습니다.</p>
+      ) : tabsComplete && !workTypeReady ? (
+        <p className="text-sm text-muted">
+          이력서 탭은 완료되었습니다. 공개하려면{' '}
+          <Link href="/mypage?tab=resume" className="font-semibold text-primary hover:underline">
+            마이페이지의 희망 근무 조건
+          </Link>
+          을 저장해 주세요.
+        </p>
+      ) : tabsComplete ? (
+        <p className="text-sm text-muted">
+          {unsavedComplete
+            ? '입력은 끝났습니다. 각 탭에서 저장을 눌러야 공개할 수 있습니다.'
+            : storedProfile
+              ? `공개하려면 다음을 저장해 주세요. ${missingPublishRequirements(userId, storedProfile).join(', ')}`
+              : '각 탭에서 저장을 눌러야 공개할 수 있습니다.'}
+        </p>
       ) : (
         <p className="text-sm text-muted">모든 탭이 완료되어야 공개할 수 있습니다. 지금은 작성 중으로만 저장됩니다.</p>
       )}
+      <p className="text-sm text-muted">
+        근무 형태·지역·직종·근무 가능은{' '}
+        <Link href="/mypage?tab=resume" className="font-semibold text-primary hover:underline">
+          마이페이지의 희망 근무 조건
+        </Link>
+        에서 입력합니다.
+      </p>
 
       <Card
         id="resume-basics"
         title="기본 정보"
-        description="이력서 제목과 기본 정보를 입력합니다."
+        description="이력서 제목과 직무, 기본 정보를 입력합니다."
         className="scroll-mt-[7.5rem]"
       >
         <form className="space-y-4" onSubmit={saveBasics} noValidate>
@@ -849,6 +687,18 @@ export default function ResumeRegisterForm({
               className={authInputClassName}
               placeholder="예: 웹 개발자 지원용"
               required
+            />
+          </div>
+          <div>
+            <FieldLabel htmlFor="talent-headline" optional>
+              직무
+            </FieldLabel>
+            <input
+              id="talent-headline"
+              value={headline}
+              onChange={(event) => setHeadline(event.target.value)}
+              placeholder="비우면 희망 근무 조건의 직종을 씁니다"
+              className={authInputClassName}
             />
           </div>
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
@@ -1102,7 +952,7 @@ export default function ResumeRegisterForm({
         <form className="space-y-4" onSubmit={saveEducation} noValidate>
           <div>
             <FieldLabel htmlFor="talent-education" required>
-              학력
+              최종 학력
             </FieldLabel>
             <select
               id="talent-education"
@@ -1112,6 +962,7 @@ export default function ResumeRegisterForm({
                 setEducation(isEducationLevel(next) ? next : '');
               }}
               className={cn(controlClassName, 'w-full md:w-52', !education && 'font-normal text-subtle')}
+              required
             >
               <PlaceholderOption />
               {EDUCATION_OPTIONS.map((item) => (
@@ -1123,7 +974,7 @@ export default function ResumeRegisterForm({
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <FieldLabel htmlFor="talent-school" optional>
+              <FieldLabel htmlFor="talent-school" required>
                 학교
               </FieldLabel>
               <input
@@ -1132,6 +983,7 @@ export default function ResumeRegisterForm({
                 onChange={(event) => setSchool(event.target.value)}
                 placeholder="예: 한국대학교"
                 className={authInputClassName}
+                required
               />
             </div>
             <div>
@@ -1155,15 +1007,15 @@ export default function ResumeRegisterForm({
       <Card
         id="resume-career"
         title="경력 정보"
-        description="경력 구분과 주요 경력을 입력합니다."
+        description="경력 유무와 주요 경력을 입력합니다."
         className="scroll-mt-[7.5rem]"
       >
         <form className="space-y-4" onSubmit={saveCareer} noValidate>
           <div>
             <FieldLabel htmlFor="talent-career" required>
-              경력
+              경력 유무
             </FieldLabel>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <select
                 id="talent-career"
                 value={careerType}
@@ -1171,7 +1023,8 @@ export default function ResumeRegisterForm({
                   const next = event.target.value;
                   setCareerType(isJobCareerType(next) ? next : '');
                 }}
-                className={cn(controlClassName, 'w-full md:w-32', !careerType && 'font-normal text-subtle')}
+                className={cn(controlClassName, 'min-w-[7.5rem] flex-1 md:flex-none md:w-32', !careerType && 'font-normal text-subtle')}
+                required
               >
                 <PlaceholderOption />
                 {JOB_CAREER_TYPES.map((item) => (
@@ -1181,26 +1034,27 @@ export default function ResumeRegisterForm({
                 ))}
               </select>
               {careerType === 'experienced' ? (
-                <>
+                <div className="flex shrink-0 items-center gap-2">
                   <input
                     id="talent-career-years"
-                    type="number"
-                    min={1}
-                    max={40}
+                    inputMode="numeric"
+                    maxLength={2}
+                    placeholder="00"
                     value={careerMinYears}
-                    onChange={(event) => setCareerMinYears(event.target.value)}
-                    className={cn(controlClassName, 'w-16 text-right tabular-nums')}
+                    onChange={(event) => setCareerMinYears(formatCareerYearsInput(event.target.value))}
+                    className={cn(controlClassName, 'w-[3.25rem] px-2 text-center tabular-nums')}
+                    required
                   />
-                  <span className="shrink-0 text-sm text-muted">년</span>
-                </>
+                  <span className="whitespace-nowrap text-sm text-muted">년</span>
+                </div>
               ) : null}
             </div>
           </div>
           <div>
             <FieldLabel htmlFor="talent-career-history" optional>
-              경력 사항
+              경력 내역
             </FieldLabel>
-            <textarea
+            <AutoGrowTextarea
               id="talent-career-history"
               value={careerHistory}
               onChange={(event) => setCareerHistory(event.target.value)}
@@ -1215,14 +1069,14 @@ export default function ResumeRegisterForm({
 
       <Card
         id="resume-skills"
-        title="보유 역량 / 자격증"
-        description="자격증, 어학, 스킬, 포트폴리오를 입력합니다."
+        title="보유 역량"
+        description="자격증, 어학, 스킬을 입력합니다. 비워 두어도 됩니다."
         className="scroll-mt-[7.5rem]"
       >
         <form className="space-y-4" onSubmit={saveSkills} noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <FieldLabel htmlFor="talent-experience" required>
+              <FieldLabel htmlFor="talent-experience" optional>
                 자격증
               </FieldLabel>
               <input
@@ -1234,7 +1088,7 @@ export default function ResumeRegisterForm({
               />
             </div>
             <div>
-              <FieldLabel htmlFor="talent-languages" required>
+              <FieldLabel htmlFor="talent-languages" optional>
                 어학
               </FieldLabel>
               <input
@@ -1246,154 +1100,20 @@ export default function ResumeRegisterForm({
               />
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <FieldLabel htmlFor="talent-tags" required>
-                스킬
-              </FieldLabel>
-              <input
-                id="talent-tags"
-                value={tags}
-                onChange={(event) => setTags(event.target.value)}
-                placeholder="쉼표로 구분 (예: Excel, 고객상담)"
-                className={authInputClassName}
-              />
-            </div>
-            <div>
-              <FieldLabel htmlFor="talent-portfolio" required>
-                포트폴리오
-              </FieldLabel>
-              <input
-                id="talent-portfolio"
-                value={portfolioUrl}
-                onChange={(event) => setPortfolioUrl(event.target.value)}
-                placeholder="예: https://portfolio.example.com"
-                className={authInputClassName}
-              />
-            </div>
+          <div>
+            <FieldLabel htmlFor="talent-tags" optional>
+              스킬
+            </FieldLabel>
+            <input
+              id="talent-tags"
+              value={tags}
+              onChange={(event) => setTags(event.target.value)}
+              placeholder="쉼표로 구분 (예: Excel, 고객상담)"
+              className={authInputClassName}
+            />
           </div>
           {sectionStatus('skills')}
           {saveButton('skills')}
-        </form>
-      </Card>
-
-      <Card
-        id="resume-conditions"
-        title="희망 근무 조건"
-        description="희망 직무와 근무 형태, 지역, 직종, 급여를 입력합니다."
-        className="scroll-mt-[7.5rem]"
-      >
-        <form className="space-y-5" onSubmit={saveConditions} noValidate>
-          <div>
-            <FieldLabel htmlFor="talent-headline" required>
-              직무
-            </FieldLabel>
-            <input
-              id="talent-headline"
-              value={headline}
-              onChange={(event) => setHeadline(event.target.value)}
-              placeholder="예: 프론트엔드 개발"
-              className={authInputClassName}
-            />
-          </div>
-          <div>
-            <FieldLabel htmlFor="talent-work-type" required>
-              희망 근무 형태
-            </FieldLabel>
-            <select
-              id="talent-work-type"
-              value={workType}
-              onChange={(event) => {
-                const next = event.target.value;
-                setWorkType(isJobWorkType(next) ? next : '');
-              }}
-              className={cn(controlClassName, 'w-full md:w-40', !workType && 'font-normal text-subtle')}
-            >
-              <PlaceholderOption />
-              {WORK_TYPES.map((item) => (
-                <option key={item} value={item}>
-                  {WORK_TYPE_LABELS[item]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <ChoiceGroup
-            legend="희망 지역"
-            options={REGION_OPTIONS}
-            selected={regions}
-            isActive={(value) =>
-              value === NATIONWIDE_REGION ? isNationwideSelection(regions) : regions.includes(value)
-            }
-            onToggle={(value) => setRegions((current) => toggleRegionSelection(current, value))}
-          />
-          <ChoiceGroup
-            legend="희망 직종"
-            options={OCCUPATION_OPTIONS}
-            selected={occupations}
-            onToggle={(value) =>
-              setOccupations((current) =>
-                current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
-              )
-            }
-          />
-          <div>
-            <FieldLabel htmlFor="talent-available" optional>
-              가능 시기
-            </FieldLabel>
-            <input
-              id="talent-available"
-              value={available}
-              onChange={(event) => setAvailable(event.target.value)}
-              placeholder="예: 즉시 가능"
-              className={authInputClassName}
-            />
-          </div>
-          <div>
-            <FieldLabel htmlFor="talent-pay-type" optional>
-              희망 급여
-            </FieldLabel>
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                id="talent-pay-type"
-                value={payType}
-                onChange={(event) => {
-                  const next = event.target.value;
-                  setPayType(isJobPayType(next) ? next : '');
-                  setPayAmount('');
-                }}
-                className={cn(controlClassName, 'w-28', !payType && 'font-normal text-subtle')}
-              >
-                <PlaceholderOption />
-                {PAY_TYPES.map((item) => (
-                  <option key={item} value={item}>
-                    {PAY_TYPE_LABELS[item]}
-                  </option>
-                ))}
-              </select>
-              <input
-                id="talent-pay"
-                inputMode="numeric"
-                value={formatPayAmountInput(payAmount)}
-                onChange={(event) => setPayAmount(event.target.value.replace(/[^\d]/g, ''))}
-                className={amountInputClassName}
-                placeholder="금액"
-              />
-              <span className="shrink-0 whitespace-nowrap text-sm text-muted">
-                {payType ? PAY_UNIT_LABELS[payType] : '원'}
-              </span>
-              <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-foreground">
-                <input
-                  type="checkbox"
-                  checked={payNegotiable}
-                  onChange={(event) => setPayNegotiable(event.target.checked)}
-                  className="size-4 accent-primary"
-                />
-                협의 가능
-              </label>
-            </div>
-          </div>
-          {sectionStatus('conditions')}
-          {saveButton('conditions')}
         </form>
       </Card>
 
@@ -1408,11 +1128,12 @@ export default function ResumeRegisterForm({
             <FieldLabel htmlFor="talent-summary" required>
               자기 소개
             </FieldLabel>
-            <textarea
+            <AutoGrowTextarea
               id="talent-summary"
               value={summary}
               onChange={(event) => setSummary(event.target.value)}
               className={`${authInputClassName} min-h-28`}
+              required
             />
           </div>
           {sectionStatus('summary')}

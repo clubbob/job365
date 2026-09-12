@@ -5,6 +5,7 @@ import PageHeader from '@/components/navigation/PageHeader';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
 import { useAdminAuth } from '@/features/admin/admin-auth-context';
 import { authInputClassName } from '@/lib/auth-ui';
+import { firstRequiredError } from '@/lib/form-required';
 
 export default function AdminLoginForm() {
   const { login } = useAdminAuth();
@@ -15,6 +16,14 @@ export default function AdminLoginForm() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    const requiredError = firstRequiredError([
+      { ok: Boolean(username.trim()), message: '아이디를 입력해 주세요.' },
+      { ok: Boolean(password), message: '비밀번호를 입력해 주세요.' },
+    ]);
+    if (requiredError) {
+      setError(requiredError);
+      return;
+    }
     setError('');
     setPending(true);
     const result = await login(username, password);
@@ -33,7 +42,7 @@ export default function AdminLoginForm() {
         homeOpenInNewWindow
       />
       <Card>
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           <div>
             <FieldLabel htmlFor="admin-username" required>
               아이디

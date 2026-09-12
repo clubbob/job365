@@ -17,6 +17,17 @@ export const USER_MODE_PATHS: Record<UserMode, string> = {
   recruiter: '/',
 };
 
+export const HEADER_NAV_JOBS = { href: '/jobs', label: '채용 정보', exact: false } as const;
+export const HEADER_NAV_TALENTS = { href: '/talents', label: '인재 정보', exact: false } as const;
+
+export type HeaderNavItem = typeof HEADER_NAV_JOBS | typeof HEADER_NAV_TALENTS;
+
+export function getHeaderNavItems(mode: UserMode | null): HeaderNavItem[] {
+  if (mode === 'jobseeker') return [HEADER_NAV_JOBS];
+  if (mode === 'recruiter') return [HEADER_NAV_TALENTS];
+  return [];
+}
+
 export function clearUserMode(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(USER_MODE_KEY);

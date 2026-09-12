@@ -7,10 +7,12 @@ export default function JobCard({
   job,
   onNavigate,
   className,
+  badge,
 }: {
   job: JobPosting;
   onNavigate?: () => void;
   className?: string;
+  badge?: string;
 }) {
   return (
     <Link
@@ -25,6 +27,11 @@ export default function JobCard({
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
           {WORK_TYPE_LABELS[job.workType]}
         </span>
+        {badge ? (
+          <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-primary ring-1 ring-inset ring-primary/30">
+            {badge}
+          </span>
+        ) : null}
         <span className="text-xs text-subtle">{job.createdAt}</span>
       </div>
       <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">{job.title}</h3>

@@ -66,7 +66,7 @@ const JOBS: JobPosting[] = [
     payType: 'monthly',
     payLabel: '월급 270만원',
     location: '서울 마포구',
-    summary: '홀 운영과 파트타임 스케줄 관리. 카페 근무 1년 이상이면 지원 가능합니다.',
+    summary: '홀 운영과 알바 스케줄 관리. 카페 근무 1년 이상이면 지원 가능합니다.',
     createdAt: '2026-08-20',
   },
   {
@@ -269,7 +269,7 @@ const JOBS: JobPosting[] = [
   },
   {
     id: 'sample-5',
-    title: '주말 카페 홀 파트타임',
+    title: '주말 카페 홀 알바',
     companyName: '블루빈커피',
     workType: 'parttime',
     payType: 'hourly',
@@ -280,7 +280,7 @@ const JOBS: JobPosting[] = [
   },
   {
     id: 'sample-28',
-    title: '평일 오전 매장 파트타임',
+    title: '평일 오전 매장 알바',
     companyName: '블루빈커피',
     workType: 'parttime',
     payType: 'hourly',
@@ -291,7 +291,7 @@ const JOBS: JobPosting[] = [
   },
   {
     id: 'sample-29',
-    title: '온라인 문의 응대 파트타임',
+    title: '온라인 문의 응대 알바',
     companyName: '하모니커머스',
     workType: 'parttime',
     payType: 'hourly',
@@ -313,7 +313,7 @@ const JOBS: JobPosting[] = [
   },
   {
     id: 'sample-31',
-    title: '물류 포장 파트타임',
+    title: '물류 포장 알바',
     companyName: '오름로지스',
     workType: 'parttime',
     payType: 'hourly',
@@ -324,7 +324,7 @@ const JOBS: JobPosting[] = [
   },
   {
     id: 'sample-32',
-    title: '학원 데스크 파트타임',
+    title: '학원 데스크 알바',
     companyName: '한빛학습센터',
     workType: 'parttime',
     payType: 'hourly',
@@ -398,6 +398,28 @@ const JOBS: JobPosting[] = [
     location: '서울 종로구',
     summary: '전표 입력 파견. 6개월, 세무 프로그램 교육 후 투입합니다.',
     createdAt: '2026-08-14',
+  },
+  {
+    id: 'sample-50',
+    title: '보험 설계 위촉',
+    companyName: '바른세무그룹',
+    workType: 'commission',
+    payType: 'per_task',
+    payLabel: '건별 협의',
+    location: '서울 종로구',
+    summary: '개인·법인 보험 설계 위촉. 교육 제공, 기존 고객 유무는 무관합니다.',
+    createdAt: '2026-09-03',
+  },
+  {
+    id: 'sample-51',
+    title: '산업기능요원 생산직',
+    companyName: '오름로지스',
+    workType: 'military',
+    payType: 'monthly',
+    payLabel: '월급 280만원',
+    location: '경기 이천시',
+    summary: '병역특례 산업기능요원. 주 5일 주간, 기숙사 가능합니다.',
+    createdAt: '2026-09-02',
   },
   {
     id: 'sample-7',
@@ -474,6 +496,8 @@ const EXTRA_JOB_TITLES: Record<JobWorkType, string[]> = {
   freelance: ['카드뉴스 제작', '블로그 원고 작성', '상세페이지 디자인', '고객 후기 편집'],
   parttime: ['주말 매장 지원', '저녁 전화 상담', '오전 진열 보조', '주중 포장 알바'],
   dispatch: ['사무 보조 파견', '물류 검수 파견', '매장 진열 파견', '행사 안내 파견'],
+  commission: ['학습지 교사 위촉', '부동산 중개 위촉', '방문판매 위촉', '상조 상담 위촉'],
+  military: ['전문연구요원 채용', '병역특례 개발', '병역특례 품질관리', '산업기능요원 물류'],
   project: ['쇼핑몰 개편 프로젝트', '채용 사이트 제작', '브랜드 촬영 프로젝트', '프로모션 운영 프로젝트'],
 };
 
@@ -489,6 +513,7 @@ function padJobsPerType(jobs: JobPosting[], perType = CATEGORY_ITEM_COUNT): JobP
 
   for (const workType of JOB_WORK_TYPES) {
     const ofType = jobs.filter((job) => job.workType === workType);
+    if (ofType.length === 0) continue;
     const titles = EXTRA_JOB_TITLES[workType];
     const needed = Math.max(0, perType - ofType.length);
 

@@ -12,7 +12,7 @@ import {
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
 import { deleteMyTalentProfileById, listMyTalentProfilesWithOwners } from '@/lib/my-talent-profile';
-import { talentEducation, talentRecentDate, talentResumeTitle, talentWorkTypeLabel } from '@/lib/talent-display';
+import { talentEducation, talentRecentDate, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
 import type { TalentProfile } from '@/types/talent';
 
 type TalentRow = { ownerId: string; profile: TalentProfile };
@@ -90,7 +90,7 @@ export default function AdminTalentsClient() {
                   <th className="py-2 pr-4 font-semibold">제목</th>
                   <th className="py-2 pr-4 font-semibold">이름</th>
                   <th className="py-2 pr-4 font-semibold">직무</th>
-                  <th className="py-2 pr-4 font-semibold">희망 근무</th>
+                  <th className="py-2 pr-4 font-semibold">근무 형태</th>
                   <th className="py-2 pr-4 font-semibold">최근 저장</th>
                   <th className="py-2 font-semibold">관리</th>
                 </tr>
@@ -102,7 +102,7 @@ export default function AdminTalentsClient() {
                     <td className="py-2.5 pr-4 font-medium text-foreground">{row.profile.name}</td>
                     <td className="py-2.5 pr-4 text-muted">{row.profile.headline}</td>
                     <td className="py-2.5 pr-4 text-muted">
-                      {talentWorkTypeLabel(row.profile.workType)} · {talentEducation(row.profile)}
+                      {talentWorkTypesLabel(row.profile)} · {talentEducation(row.profile)}
                     </td>
                     <td className="py-2.5 pr-4 whitespace-nowrap text-muted">{talentRecentDate(row.profile)}</td>
                     <td className="py-2.5">

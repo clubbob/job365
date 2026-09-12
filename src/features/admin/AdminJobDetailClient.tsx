@@ -19,7 +19,7 @@ import {
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
 import { formatBusinessNumber } from '@/lib/business-number';
-import { jobCareerLabel, jobDeadlineLabel, jobHeadcountLabel } from '@/lib/job-display';
+import { jobCareerLabel, jobDeadlineLabel, jobEducationLabel, jobHeadcountLabel } from '@/lib/job-display';
 import { deleteMyJobPostingById, findMyJobPosting, saveMyJobPosting } from '@/lib/my-job-posts';
 import { WORK_TYPE_LABELS, type JobPosting } from '@/types/job';
 
@@ -87,6 +87,7 @@ export default function AdminJobDetailClient({ jobId }: { jobId: string }) {
 
   const { job } = item;
   const career = jobCareerLabel(job);
+  const education = jobEducationLabel(job.education);
   const headcount = jobHeadcountLabel(job.headcount);
   const workType = WORK_TYPE_LABELS[job.workType];
   const deadline = job.deadline ? jobDeadlineLabel(job.deadline) : null;
@@ -114,7 +115,7 @@ export default function AdminJobDetailClient({ jobId }: { jobId: string }) {
             <>
               <DetailBadge tone="primary">{workType}</DetailBadge>
               {career ? <DetailBadge>{career}</DetailBadge> : null}
-              {job.education ? <DetailBadge>{job.education}</DetailBadge> : null}
+              {education ? <DetailBadge>{education}</DetailBadge> : null}
             </>
           }
           highlightLabel="지급 기준"
@@ -131,8 +132,8 @@ export default function AdminJobDetailClient({ jobId }: { jobId: string }) {
             { label: '사업자등록번호', value: businessNumber },
             { label: '근무 형태', value: workType },
             { label: '모집 인원', value: headcount },
-            { label: '경력', value: career },
-            { label: '학력', value: job.education },
+            { label: '경력 유무', value: career },
+            { label: '학력', value: education },
             { label: '직급/직책', value: job.positionLevel },
             { label: '수습 기간', value: job.probation },
             { label: '근무지', value: job.location },

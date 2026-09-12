@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { maskTalentName, talentEducation, talentWorkTypeLabel } from '@/lib/talent-display';
+import { maskTalentName, talentCareerLabel, talentEducation, talentWorkTypesLabel } from '@/lib/talent-display';
 import type { TalentProfile } from '@/types/talent';
 
 export default function TalentCard({
@@ -27,9 +27,9 @@ export default function TalentCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-              {talentWorkTypeLabel(talent.workType)}
+              {talentWorkTypesLabel(talent)}
             </span>
-            <span className="text-xs text-subtle">{talent.careerLabel}</span>
+            <span className="text-xs text-subtle">{talentCareerLabel(talent)}</span>
             <span className="text-xs text-subtle">{talentEducation(talent)}</span>
           </div>
           <h3 className="mt-1.5 line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">
@@ -42,13 +42,8 @@ export default function TalentCard({
       ) : null}
       <p className="mt-2 line-clamp-2 text-xs text-muted sm:text-sm">{talent.summary}</p>
       <div className="mt-auto flex flex-col gap-2 pt-3">
-        {talent.desiredPay || talent.available ? (
-          <div className="flex flex-wrap items-end justify-between gap-1 text-sm">
-            {talent.desiredPay ? (
-              <span className="font-semibold text-primary">{talent.desiredPay}</span>
-            ) : null}
-            {talent.available ? <span className="text-xs text-subtle">{talent.available}</span> : null}
-          </div>
+        {talent.available ? (
+          <p className="text-xs text-subtle">{talent.available}</p>
         ) : null}
         <div className="flex flex-wrap gap-1.5">
           {talent.tags.map((tag) => (

@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
+import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
 import { authInputClassName } from '@/lib/auth-ui';
 import { addDaysToKoreaDate, getKoreaDateLocalToday } from '@/lib/datetime';
 import { formatJobPayLabel, formatPayAmountInput, parsePayLabel, PAY_UNIT_LABELS } from '@/lib/job-display';
+import { firstRequiredError } from '@/lib/form-required';
 import { saveMyJobPosting } from '@/lib/my-job-posts';
 import { syncMyJobPosting } from '@/lib/posting-sync';
 import { cn } from '@/lib/utils';
@@ -19,10 +21,12 @@ import {
   JOB_WORK_TYPES,
   PAY_TYPE_LABELS,
   WORK_TYPE_LABELS,
+  formatCareerYearsInput,
   isJobCareerType,
   isJobEducation,
   isJobPayType,
   isJobWorkType,
+  parseCareerYears,
   type JobCareerType,
   type JobEducation,
   type JobPayType,
@@ -41,7 +45,7 @@ function PlaceholderOption() {
   return <option value="">선택</option>;
 }
 
-const textareaClassName = `${authInputClassName} min-h-36 resize-y leading-relaxed`;
+const textareaClassName = `${authInputClassName} min-h-36 leading-relaxed`;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -117,8 +121,8 @@ export default function JobCreateForm({
     title: initialJob?.title ?? '',
     workType: initialJob?.workType ?? '',
     headcount: String(initialJob?.headcount || 1),
-    careerType: initialJob?.careerType ?? '',
-    careerMinYears: String(initialJob?.careerMinYears || 1),
+    careerType: initialJob?.careerType && isJobCareerType(initialJob.careerType) ? initialJob.careerType : '',
+    careerMinYears: initialJob?.careerMinYears ? String(parseCareerYears(initialJob.careerMinYears) ?? '') : '',
     education: initialJob?.education && isJobEducation(initialJob.education) ? initialJob.education : '',
     location: initialJob?.location ?? '',
     workDays: initialJob?.workDays ?? '',
@@ -203,9 +207,9 @@ export default function JobCreateForm({
     setTitle(draft.title);
     setWorkType(draft.workType);
     setHeadcount(draft.headcount);
-    setCareerType(draft.careerType);
-    setCareerMinYears(draft.careerMinYears);
-    setEducation(draft.education);
+    setCareerType(isJobCareerType(draft.careerType) ? draft.careerType : '');
+    setCareerMinYears(formatCareerYearsInput(draft.careerMinYears));
+    setEducation(isJobEducation(draft.education) ? draft.education : '');
     setLocation(draft.location);
     setWorkDays(draft.workDays);
     setWorkHours(draft.workHours);
@@ -228,17 +232,33 @@ export default function JobCreateForm({
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    const count = Math.floor(Number(headcount));
+    const payLabel = isJobPayType(payType) ? formatJobPayLabel(payType, payAmount, payNegotiable) : '';
+    const requiredError = firstRequiredError([
+      { ok: !companyEditable || Boolean(company.trim()), message: '회사명을 입력해 주세요.' },
+      { ok: Boolean(title.trim()), message: '채용 제목을 입력해 주세요.' },
+      { ok: isJobWorkType(workType), message: '근무 형태를 선택해 주세요.' },
+      { ok: Number.isFinite(count) && count >= 1, message: '모집 인원을 입력해 주세요.' },
+      { ok: isJobPayType(payType), message: '지급 기준을 선택해 주세요.' },
+      { ok: Boolean(payLabel), message: '급여를 입력하거나 협의 가능을 선택해 주세요.' },
+      { ok: isJobCareerType(careerType), message: '경력 유무를 선택해 주세요.' },
+      {
+        ok: careerType !== 'experienced' || Boolean(parseCareerYears(careerMinYears)),
+        message: '경력 연수를 입력해 주세요.',
+      },
+      { ok: isJobEducation(education), message: '학력을 선택해 주세요.' },
+      { ok: Boolean(location.trim()), message: '근무지를 입력해 주세요.' },
+      { ok: alwaysOpen || Boolean(deadline), message: '접수 마감을 선택해 주세요.' },
+      { ok: Boolean(summary.trim()), message: '담당 업무를 입력해 주세요.' },
+    ]);
+    if (requiredError) {
+      setError(requiredError);
+      return;
+    }
     if (!isJobWorkType(workType) || !isJobCareerType(careerType) || !isJobEducation(education) || !isJobPayType(payType)) {
-      setError('근무 형태, 경력, 학력, 지급 기준을 선택해 주세요.');
       return;
     }
-    const payLabel = formatJobPayLabel(payType, payAmount, payNegotiable);
-    if (!payLabel) {
-      setError('급여를 입력하거나 협의 가능을 선택해 주세요.');
-      return;
-    }
-    const count = Math.max(1, Math.floor(Number(headcount) || 1));
-    const years = Math.max(1, Math.floor(Number(careerMinYears) || 1));
+    const years = parseCareerYears(careerMinYears);
     setError('');
     setSaving(true);
     const job: JobPosting = {
@@ -263,7 +283,7 @@ export default function JobCreateForm({
       process: process.trim() || undefined,
       headcount: count,
       careerType,
-      careerMinYears: careerType === 'experienced' ? years : undefined,
+      careerMinYears: careerType === 'experienced' ? years ?? undefined : undefined,
       education,
       deadline: alwaysOpen ? 'open' : deadline,
       createdAt: initialJob?.createdAt ?? today,
@@ -294,7 +314,7 @@ export default function JobCreateForm({
         </Button>
       }
     >
-      <form className="space-y-0" onSubmit={handleSubmit}>
+      <form className="space-y-0" onSubmit={handleSubmit} noValidate>
         <Section title="회사 정보">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -381,7 +401,7 @@ export default function JobCreateForm({
                 </div>
               </div>
               <div className="col-span-2 min-w-0 md:flex-1">
-                <FieldLabel htmlFor="job-pay-type" required={!payNegotiable}>
+                <FieldLabel htmlFor="job-pay-type" required>
                   지급 기준
                 </FieldLabel>
                 <div className="flex flex-wrap items-center gap-2">
@@ -428,11 +448,11 @@ export default function JobCreateForm({
               </div>
             </div>
             <div className="grid grid-cols-2 items-end gap-4 sm:grid-cols-4">
-              <div className="min-w-0">
+              <div className="min-w-0 sm:col-span-2">
                 <FieldLabel htmlFor="job-career" required>
-                  경력
+                  경력 유무
                 </FieldLabel>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <select
                     id="job-career"
                     value={careerType}
@@ -440,7 +460,7 @@ export default function JobCreateForm({
                       const next = event.target.value;
                       setCareerType(isJobCareerType(next) ? next : '');
                     }}
-                    className={cn(controlClassName, 'w-full min-w-0', !careerType && 'font-normal text-subtle')}
+                    className={cn(controlClassName, 'min-w-[7.5rem] flex-1', !careerType && 'font-normal text-subtle')}
                     required
                   >
                     <PlaceholderOption />
@@ -451,19 +471,19 @@ export default function JobCreateForm({
                     ))}
                   </select>
                   {careerType === 'experienced' ? (
-                    <>
+                    <div className="flex shrink-0 items-center gap-2">
                       <input
                         id="job-career-years"
-                        type="number"
-                        min={1}
-                        max={40}
+                        inputMode="numeric"
+                        maxLength={2}
+                        placeholder="00"
                         value={careerMinYears}
-                        onChange={(event) => setCareerMinYears(event.target.value)}
-                        className={cn(controlClassName, 'w-14 shrink-0 text-right tabular-nums')}
+                        onChange={(event) => setCareerMinYears(formatCareerYearsInput(event.target.value))}
+                        className={cn(controlClassName, 'w-[3.25rem] px-2 text-center tabular-nums')}
                         required
                       />
-                      <span className="shrink-0 text-sm text-muted">년</span>
-                    </>
+                      <span className="whitespace-nowrap text-sm text-muted">년</span>
+                    </div>
                   ) : null}
                 </div>
               </div>
@@ -572,7 +592,7 @@ export default function JobCreateForm({
               />
             </div>
             <div className="shrink-0">
-              <FieldLabel htmlFor="job-deadline">접수 마감</FieldLabel>
+              <FieldLabel htmlFor="job-deadline" required={!alwaysOpen}>접수 마감</FieldLabel>
               <div className="flex flex-wrap items-center gap-3">
                 <input
                   id="job-deadline"
@@ -603,7 +623,7 @@ export default function JobCreateForm({
             <FieldLabel htmlFor="job-summary" required>
               담당 업무
             </FieldLabel>
-            <textarea
+            <AutoGrowTextarea
               id="job-summary"
               value={summary}
               onChange={(event) => setSummary(event.target.value)}
@@ -616,7 +636,7 @@ export default function JobCreateForm({
             <FieldLabel htmlFor="job-requirements" optional>
               자격 요건
             </FieldLabel>
-            <textarea
+            <AutoGrowTextarea
               id="job-requirements"
               value={requirements}
               onChange={(event) => setRequirements(event.target.value)}
@@ -628,7 +648,7 @@ export default function JobCreateForm({
             <FieldLabel htmlFor="job-preferred" optional>
               우대 사항
             </FieldLabel>
-            <textarea
+            <AutoGrowTextarea
               id="job-preferred"
               value={preferred}
               onChange={(event) => setPreferred(event.target.value)}
@@ -640,7 +660,7 @@ export default function JobCreateForm({
             <FieldLabel htmlFor="job-benefits" optional>
               복리후생
             </FieldLabel>
-            <textarea
+            <AutoGrowTextarea
               id="job-benefits"
               value={benefits}
               onChange={(event) => setBenefits(event.target.value)}

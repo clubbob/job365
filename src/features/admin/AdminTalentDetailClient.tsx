@@ -20,7 +20,7 @@ import {
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
 import { deleteMyTalentProfileById, findMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
-import { displayTalentName, talentBasicInfoItems, talentEducation, talentResumeTitle, talentWorkTypeLabel } from '@/lib/talent-display';
+import { displayTalentName, talentBasicInfoItems, talentCareerLabel, talentEducation, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
 import { isPublishedTalent, type TalentProfile } from '@/types/talent';
 
 type ItemResponse =
@@ -40,7 +40,7 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
         const data = await adminJson<ItemResponse>(`/api/admin/talents/${encodeURIComponent(talentId)}`);
         if (!cancelled && data.ok && data.data.item) {
           setItem(data.data.item);
-          saveMyTalentProfile(data.data.item.ownerId, data.data.item.profile);
+          saveMyTalentProfile(data.data.item.ownerId, data.data.item.profile, { applyWorkPreferences: false });
           setReady(true);
           return;
         }
@@ -86,7 +86,7 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
   }
 
   const talent = item.profile;
-  const workType = talentWorkTypeLabel(talent.workType);
+  const workType = talentWorkTypesLabel(talent);
   const displayName = displayTalentName(talent.name, true);
 
   return (
@@ -114,26 +114,24 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
           badges={
             <>
               <DetailBadge tone="primary">{workType}</DetailBadge>
-              <DetailBadge>{talent.careerLabel}</DetailBadge>
+              <DetailBadge>{talentCareerLabel(talent)}</DetailBadge>
               <DetailBadge>{talentEducation(talent)}</DetailBadge>
             </>
           }
-          highlightLabel={talent.desiredPay ? '희망 급여' : undefined}
-          highlightValue={talent.desiredPay || undefined}
           facts={[
-            { label: '희망 근무지', value: talent.location || '—' },
-            { label: '가능 시기', value: talent.available || '—' },
-            { label: '경력', value: talent.careerLabel },
+            { label: '지역', value: talent.location || '—' },
+            { label: '근무 가능', value: talent.available || '—' },
+            { label: '경력 유무', value: talentCareerLabel(talent) },
           ]}
         />
         <DetailStatGrid
           items={[
             ...talentBasicInfoItems(talent, true),
-            { label: '희망 근무 형태', value: workType },
-            { label: '경력', value: talent.careerLabel },
-            { label: '학력', value: talentEducation(talent) },
-            { label: '희망 근무지', value: talent.location },
-            { label: '가능 시기', value: talent.available },
+            { label: '근무 형태', value: workType },
+            { label: '경력 유무', value: talentCareerLabel(talent) },
+            { label: '최종 학력', value: talentEducation(talent) },
+            { label: '지역', value: talent.location },
+            { label: '근무 가능', value: talent.available },
             { label: '학교', value: talent.school },
             { label: '전공', value: talent.major },
           ]}
@@ -141,7 +139,7 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
         <DetailSection title="자기 소개">
           <DetailText value={talent.summary} />
         </DetailSection>
-        <DetailSection title="경력 사항">
+        <DetailSection title="경력 내역">
           <DetailText value={talent.careerHistory} />
         </DetailSection>
         <DetailSection title="자격증">
@@ -152,20 +150,6 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
         </DetailSection>
         <DetailSection title="스킬">
           <DetailTags items={talent.tags} />
-        </DetailSection>
-        <DetailSection title="포트폴리오">
-          {talent.portfolioUrl ? (
-            <a
-              href={talent.portfolioUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex max-w-full break-all rounded-lg bg-primary/10 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/15"
-            >
-              {talent.portfolioUrl}
-            </a>
-          ) : (
-            <p className="text-subtle">—</p>
-          )}
         </DetailSection>
       </article>
     </div>

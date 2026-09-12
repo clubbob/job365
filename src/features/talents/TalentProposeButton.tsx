@@ -81,6 +81,25 @@ export default function TalentProposeButton({
     );
   }
 
+  if (status === 'rejected') {
+    return (
+      <div className="space-y-2">
+        <p className="rounded-lg bg-neutral-50 px-4 py-3 text-sm text-muted">구직자가 이 제안을 거절했습니다.</p>
+        <button
+          type="button"
+          className={cn(buttonBaseClassName, buttonSizeDefaultClassName, buttonPrimaryClassName, 'w-full')}
+          onClick={() => {
+            saveTalentProposal(user.uid, talentId, 'pending');
+            setStatus('pending');
+            onStatusChange('pending');
+          }}
+        >
+          다시 제안하기
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <p className="text-sm text-muted">제안하면 면접·채용 의사를 전달합니다. 구직자가 이 제안을 수락하면 실명이 공개됩니다.</p>

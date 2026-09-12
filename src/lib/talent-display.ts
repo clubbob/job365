@@ -1,9 +1,15 @@
 import { formatBirthDate, privateContactValue } from '@/lib/talent-contact';
 import { WORK_TYPE_LABELS, type JobWorkType } from '@/types/job';
-import { normalizeEducation, type TalentProfile } from '@/types/talent';
+import { normalizeEducation, talentWorkTypes, type TalentProfile } from '@/types/talent';
 
 export function talentWorkTypeLabel(workType: JobWorkType | ''): string {
   return workType ? WORK_TYPE_LABELS[workType] : '미입력';
+}
+
+export function talentWorkTypesLabel(talent: Pick<TalentProfile, 'workType' | 'workTypes'>): string {
+  const types = talentWorkTypes(talent);
+  if (types.length === 0) return '미입력';
+  return types.map((item) => WORK_TYPE_LABELS[item]).join(', ');
 }
 
 export function talentResumeTitle(talent: Pick<TalentProfile, 'title' | 'name' | 'headline'>): string {
@@ -24,8 +30,14 @@ export function talentRecentDate(talent: Pick<TalentProfile, 'createdAt' | 'upda
   return talent.updatedAt || talent.createdAt;
 }
 
+export function talentCareerLabel(talent: Pick<TalentProfile, 'careerLabel'>): string {
+  const label = talent.careerLabel?.trim() ?? '';
+  if (!label || label === '경력무관') return '미입력';
+  return label;
+}
+
 export function talentEducation(talent: Pick<TalentProfile, 'education'>): string {
-  return normalizeEducation(talent.education) || talent.education || '미입력';
+  return normalizeEducation(talent.education) || '미입력';
 }
 
 export function talentBasicInfoItems(

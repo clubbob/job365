@@ -10,7 +10,7 @@ import JobCreateForm from '@/features/jobs/JobCreateForm';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
 import { authInputClassName } from '@/lib/auth-ui';
-import { formatBusinessNumber } from '@/lib/business-number';
+import { digitsOnly, formatBusinessNumber } from '@/lib/business-number';
 import { NTS_STATUS_SOURCE } from '@/lib/company';
 import {
   loadBizVerify,
@@ -37,7 +37,7 @@ export default function JobNewPageClient() {
   const { mode } = useUserMode();
   const editId = searchParams.get('edit');
   const fromMypage = searchParams.get('from') === 'mypage';
-  const returnPath = fromMypage ? '/mypage?tab=jobs' : undefined;
+  const returnPath = fromMypage ? '/mypage?tab=jobs&sub=jobs' : undefined;
   const nextPath = `/jobs/new${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
   const [companyName, setCompanyName] = useState('');
   const [businessNumber, setBusinessNumber] = useState('');
@@ -79,6 +79,10 @@ export default function JobNewPageClient() {
   async function handleVerifyNumber(event: React.FormEvent) {
     event.preventDefault();
     if (!user) return;
+    if (digitsOnly(businessNumber).length !== 10) {
+      setError('사업자등록번호를 입력해 주세요.');
+      return;
+    }
     setError('');
     setPending(true);
     try {
@@ -163,7 +167,7 @@ export default function JobNewPageClient() {
         <Card title="채용 정보를 찾을 수 없습니다">
           <p className="text-sm text-muted">마이페이지에서 등록한 채용 정보만 수정할 수 있습니다.</p>
           <Link
-            href={returnPath || '/mypage?tab=jobs'}
+            href={returnPath || '/mypage?tab=jobs&sub=jobs'}
             className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
           >
             마이페이지로
@@ -241,7 +245,7 @@ export default function JobNewPageClient() {
           description="계속·휴업·폐업·미등록만 조회합니다."
         >
           {!numberCheck ? (
-            <form className="space-y-4" onSubmit={handleVerifyNumber}>
+            <form className="space-y-4" onSubmit={handleVerifyNumber} noValidate>
               <div>
                 <FieldLabel htmlFor="biz-number" required>
                   사업자등록번호
@@ -267,7 +271,7 @@ export default function JobNewPageClient() {
               </Button>
             </form>
           ) : (
-            <form className="space-y-4" onSubmit={handleVerifyName}>
+            <form className="space-y-4" onSubmit={handleVerifyName} noValidate>
               <div>
                 <FieldLabel htmlFor="biz-number-confirmed">사업자등록번호</FieldLabel>
                 <input

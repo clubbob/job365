@@ -13,6 +13,14 @@ const HIDE_CONTENT_AD = new Set([
   '/marketing',
 ]);
 
+function isPostingDetailPath(pathname: string): boolean {
+  const job = pathname.match(/^\/jobs\/([^/]+)$/);
+  if (job && job[1] !== 'new') return true;
+  const talent = pathname.match(/^\/talents\/([^/]+)$/);
+  if (talent && talent[1] !== 'new') return true;
+  return false;
+}
+
 export default function LayoutMain({
   children,
 }: {
@@ -21,7 +29,10 @@ export default function LayoutMain({
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin');
   const showContentAd =
-    !isAdmin && !pathname.startsWith('/reset-password') && !HIDE_CONTENT_AD.has(pathname);
+    !isAdmin &&
+    !pathname.startsWith('/reset-password') &&
+    !HIDE_CONTENT_AD.has(pathname) &&
+    !isPostingDetailPath(pathname);
 
   return (
     <main

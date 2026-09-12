@@ -5,13 +5,14 @@ export type JobWorkType =
   | 'freelance'
   | 'parttime'
   | 'dispatch'
+  | 'commission'
+  | 'military'
   | 'project';
 export type JobPayType = 'hourly' | 'daily' | 'monthly' | 'yearly' | 'per_task';
-export type JobCareerType = 'new' | 'experienced' | 'any';
+export type JobCareerType = 'new' | 'experienced';
 export type JobStatus = 'draft' | 'pending' | 'published' | 'closed' | 'rejected';
 
 export const JOB_EDUCATION_OPTIONS = [
-  '학력무관',
   '고등학교 졸업 이상',
   '전문대학 졸업 이상',
   '대학교 졸업 이상',
@@ -33,7 +34,7 @@ export type JobPosting = {
   createdAt: string;
   businessNumber?: string;
   headcount?: number;
-  careerType?: JobCareerType;
+  careerType?: JobCareerType | string;
   careerMinYears?: number;
   education?: JobEducation | string;
   workHours?: string;
@@ -54,8 +55,10 @@ export const WORK_TYPE_LABELS: Record<JobWorkType, string> = {
   contract: '계약직',
   intern: '인턴',
   freelance: '프리랜서',
-  parttime: '파트타임',
-  dispatch: '파견·도급',
+  parttime: '알바',
+  dispatch: '파견직',
+  commission: '위촉직',
+  military: '병역특례',
   project: '프로젝트',
 };
 
@@ -69,8 +72,10 @@ export const WORK_TYPE_FILTERS: Array<{
   { id: 'contract', label: '계약직', types: ['contract'] },
   { id: 'intern', label: '인턴', types: ['intern'] },
   { id: 'freelance', label: '프리랜서', types: ['freelance'] },
-  { id: 'parttime', label: '파트타임', types: ['parttime'] },
-  { id: 'dispatch', label: '파견·도급', types: ['dispatch'] },
+  { id: 'parttime', label: '알바', types: ['parttime'] },
+  { id: 'dispatch', label: '파견직', types: ['dispatch'] },
+  { id: 'commission', label: '위촉직', types: ['commission'] },
+  { id: 'military', label: '병역특례', types: ['military'] },
   { id: 'project', label: '프로젝트', types: ['project'] },
 ];
 
@@ -105,10 +110,21 @@ export const PAY_TYPE_LABELS: Record<JobPayType, string> = {
 export const CAREER_TYPE_LABELS: Record<JobCareerType, string> = {
   new: '신입',
   experienced: '경력',
-  any: '경력무관',
 };
 
 export const JOB_CAREER_TYPES = Object.keys(CAREER_TYPE_LABELS) as JobCareerType[];
+
+export function formatCareerYearsInput(value: string): string {
+  return value.replace(/\D/g, '').slice(0, 2);
+}
+
+export function parseCareerYears(value: string | number | undefined): number | null {
+  const digits = String(value ?? '').replace(/\D/g, '').slice(0, 2);
+  if (!digits) return null;
+  const years = Number(digits);
+  if (!Number.isFinite(years) || years < 1) return null;
+  return Math.min(99, years);
+}
 
 export const JOB_POSITION_OPTIONS = [
   '직급무관',

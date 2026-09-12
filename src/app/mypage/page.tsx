@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import MyPageClient from '@/features/mypage/MyPageClient';
 
 export const metadata: Metadata = {
-  title: '내 정보',
+  title: '마이페이지',
 };
 
 export default function MyPage() {

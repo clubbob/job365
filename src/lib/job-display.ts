@@ -2,10 +2,17 @@ import { formatKoreaDateWithWeekday } from '@/lib/datetime';
 import {
   CAREER_TYPE_LABELS,
   PAY_TYPE_LABELS,
-  type JobCareerType,
+  isJobCareerType,
+  isJobEducation,
+  parseCareerYears,
   type JobPayType,
   type JobPosting,
 } from '@/types/job';
+
+export function jobEducationLabel(value?: string): string | undefined {
+  if (!value || !isJobEducation(value)) return undefined;
+  return value;
+}
 
 export function formatJobPayLabel(
   payType: JobPayType,
@@ -66,9 +73,10 @@ export function formatPayAmountInput(digits: string): string {
 }
 
 export function jobCareerLabel(job: Pick<JobPosting, 'careerType' | 'careerMinYears'>): string | null {
-  if (!job.careerType) return null;
-  if (job.careerType === 'experienced' && job.careerMinYears && job.careerMinYears > 0) {
-    return `경력 ${job.careerMinYears}년 이상`;
+  if (!job.careerType || !isJobCareerType(job.careerType)) return null;
+  if (job.careerType === 'experienced') {
+    const years = parseCareerYears(job.careerMinYears);
+    return years ? `경력 ${years}년 이상` : CAREER_TYPE_LABELS.experienced;
   }
   return CAREER_TYPE_LABELS[job.careerType];
 }
@@ -92,7 +100,7 @@ export function jobSearchText(job: JobPosting): string {
     job.payLabel,
     job.workHours,
     job.workDays,
-    job.education,
+    jobEducationLabel(job.education),
     job.positionLevel,
     job.probation,
     job.requirements,

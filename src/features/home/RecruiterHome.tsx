@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import AdSlot from '@/components/ads/AdSlot';
-import { Card } from '@/components/ui/Card';
+import TalentList from '@/features/talents/TalentList';
 
 export default function RecruiterHome() {
   return (
@@ -11,7 +11,7 @@ export default function RecruiterHome() {
           지금 채용할 수 있는 인재를 찾아 보세요
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-blue-100 sm:text-base">
-          채용 정보를 올리고 지원자를 한 곳에서 관리합니다. 이용료는 없습니다.
+          공개된 이력서를 살펴보고 맞는 인재에게 면접을 제안할 수 있습니다. 이용료는 없습니다.
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
@@ -31,13 +31,17 @@ export default function RecruiterHome() {
 
       <AdSlot placement="header" />
 
-      <Card title="내 채용 정보" description="등록한 채용 정보와 지원 현황이 여기에 모입니다.">
-        <p className="text-sm text-muted">아직 등록된 채용 정보가 없습니다. 첫 채용 정보는 다음 단계에서 작성할 수 있습니다.</p>
-      </Card>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-foreground">최근 인재 정보</h2>
+          <p className="mt-1 text-sm text-muted">관심 있는 근무 형태를 골라 보세요.</p>
+        </div>
+        <Link href="/talents" className="text-sm font-semibold text-primary hover:underline">
+          전체 보기
+        </Link>
+      </div>
 
-      <Card title="최근 지원자">
-        <p className="text-sm text-muted">지원자가 생기면 열람과 합/불 처리를 여기서 하게 됩니다.</p>
-      </Card>
+      <TalentList limit={6} showSearch={false} showCount={false} />
     </div>
   );
 }

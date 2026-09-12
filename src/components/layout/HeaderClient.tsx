@@ -9,7 +9,7 @@ import Logo from '@/components/brand/Logo';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
 import { getUserNicknameFallback } from '@/lib/user-display';
-import { USER_MODE_SHORT_LABELS } from '@/lib/user-mode';
+import { getHeaderNavItems } from '@/lib/user-mode';
 import { cn } from '@/lib/utils';
 
 function MenuIcon({ open }: { open: boolean }) {
@@ -37,16 +37,6 @@ function MenuIcon({ open }: { open: boolean }) {
   );
 }
 
-function ModeStatusBadge() {
-  const { mode } = useUserMode();
-  if (!mode) return null;
-  return (
-    <span className="inline-flex shrink-0 items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
-      {USER_MODE_SHORT_LABELS[mode]}
-    </span>
-  );
-}
-
 function isNavActive(pathname: string, href: string, exact: boolean): boolean {
   if (exact) return pathname === href;
   if (href === '/jobs' && pathname.startsWith('/jobs/new')) return false;
@@ -56,13 +46,12 @@ function isNavActive(pathname: string, href: string, exact: boolean): boolean {
 
 export default function HeaderClient() {
   const { user, loading } = useAuth();
+  const { mode, ready: modeReady } = useUserMode();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const navItems = [
-    { href: '/jobs', label: '채용 정보', exact: false },
-    { href: '/talents', label: '인재 정보', exact: false },
-  ];
+  const navReady = mounted && modeReady;
+  const navItems = navReady ? getHeaderNavItems(mode) : [];
 
   useEffect(() => {
     setMounted(true);
@@ -125,13 +114,11 @@ export default function HeaderClient() {
           {!accountReady ? (
             <div className="h-9 w-44 rounded-lg bg-neutral-100" aria-hidden="true" />
           ) : user ? (
-            <>
-              <span className="inline-flex max-w-[9.5rem] truncate px-1 text-sm font-semibold text-foreground">
-                {getUserNicknameFallback(user)}
-              </span>
-              <ModeStatusBadge />
-              <HeaderModeMenu align="right" showLogout />
-            </>
+              <HeaderModeMenu
+                nickname={getUserNicknameFallback(user)}
+                align="right"
+                showLogout
+              />
           ) : (
             <Link
               href="/login"
@@ -163,11 +150,7 @@ export default function HeaderClient() {
           <div className="mx-auto max-w-4xl space-y-3 px-4 py-3 sm:px-6">
             {!accountReady ? null : user ? (
               <div className="border-b border-border pb-3">
-                <p className="mb-2 flex items-center gap-2 px-1 text-sm font-semibold text-foreground">
-                  <span className="truncate">{getUserNicknameFallback(user)}</span>
-                  <ModeStatusBadge />
-                </p>
-                <HeaderModeMenu showLogout />
+                <HeaderModeMenu nickname={getUserNicknameFallback(user)} showLogout />
               </div>
             ) : null}
 

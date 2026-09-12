@@ -3,35 +3,32 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
+import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
 import { authInputClassName } from '@/lib/auth-ui';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
-import { formatJobPayLabel, formatPayAmountInput, parsePayLabel, PAY_UNIT_LABELS } from '@/lib/job-display';
+import { firstRequiredError } from '@/lib/form-required';
 import { createTalentProfileId, getMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
 import { syncMyTalentProfile } from '@/lib/posting-sync';
 import { cn } from '@/lib/utils';
+import { AVAILABLE_OPTIONS, isAvailableOption, normalizeAvailable } from '@/lib/work-preferences';
 import {
   CAREER_TYPE_LABELS,
   JOB_CAREER_TYPES,
-  PAY_TYPE_LABELS,
   WORK_TYPE_FILTERS,
   WORK_TYPE_LABELS,
+  formatCareerYearsInput,
   isJobCareerType,
-  isJobPayType,
-  isJobWorkType,
+  parseCareerYears,
   type JobCareerType,
-  type JobPayType,
   type JobWorkType,
 } from '@/types/job';
-import { EDUCATION_OPTIONS, isEducationLevel, normalizeEducation, type EducationLevel, type TalentProfile } from '@/types/talent';
+import { EDUCATION_OPTIONS, isEducationLevel, normalizeEducation, talentWorkTypes, type EducationLevel, type TalentProfile } from '@/types/talent';
 
 const WORK_TYPES: JobWorkType[] = WORK_TYPE_FILTERS.flatMap((item) =>
   item.id === 'all' ? [] : [item.id],
 );
-const PAY_TYPES = Object.keys(PAY_TYPE_LABELS) as JobPayType[];
-
 const controlClassName =
   'rounded-xl border border-border-strong bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition placeholder:text-subtle placeholder:font-normal focus:border-primary focus:ring-2 focus:ring-primary/25 sm:text-base';
-const amountInputClassName = cn(controlClassName, 'w-28 text-right tabular-nums sm:w-32');
 
 function PlaceholderOption() {
   return <option value="">선택</option>;
@@ -39,35 +36,35 @@ function PlaceholderOption() {
 
 function careerLabelFrom(type: JobCareerType, years: string): string {
   if (type === 'experienced') {
-    const count = Math.max(1, Math.floor(Number(years) || 1));
-    return `경력 ${count}년`;
+    const count = parseCareerYears(years);
+    return count ? `경력 ${count}년` : CAREER_TYPE_LABELS.experienced;
   }
   return CAREER_TYPE_LABELS[type];
 }
 
 function parseCareer(label: string): { type: JobCareerType | ''; years: string } {
-  if (label === CAREER_TYPE_LABELS.new) return { type: 'new', years: '1' };
-  if (label === CAREER_TYPE_LABELS.any) return { type: 'any', years: '1' };
+  if (label === CAREER_TYPE_LABELS.new) return { type: 'new', years: '' };
+  if (label === '경력무관') return { type: '', years: '' };
   const match = /경력\s*(\d+)\s*년/.exec(label);
-  if (match) return { type: 'experienced', years: match[1] ?? '1' };
-  if (label === CAREER_TYPE_LABELS.experienced || label.includes('경력')) {
-    return { type: 'experienced', years: '1' };
+  if (match) {
+    const years = parseCareerYears(match[1]);
+    return { type: 'experienced', years: years ? String(years) : '' };
   }
-  return { type: '', years: '1' };
+  if (label === CAREER_TYPE_LABELS.experienced || label.includes('경력')) {
+    return { type: 'experienced', years: '' };
+  }
+  return { type: '', years: '' };
 }
 
 type TalentDraft = {
   title: string;
   name: string;
   headline: string;
-  workType: JobWorkType | '';
+  workTypes: JobWorkType[];
   careerType: JobCareerType | '';
   careerMinYears: string;
   education: EducationLevel | '';
   location: string;
-  payType: JobPayType | '';
-  payAmount: string;
-  payNegotiable: boolean;
   available: string;
   summary: string;
   experience: string;
@@ -75,7 +72,6 @@ type TalentDraft = {
   school: string;
   major: string;
   languages: string;
-  portfolioUrl: string;
   tags: string;
 };
 
@@ -101,14 +97,11 @@ export default function MyTalentProfileForm({
   const [title, setTitle] = useState(initialProfile?.title ?? '');
   const [name, setName] = useState(nickname);
   const [headline, setHeadline] = useState('');
-  const [workType, setWorkType] = useState<JobWorkType | ''>('');
+  const [workTypes, setWorkTypes] = useState<JobWorkType[]>([]);
   const [careerType, setCareerType] = useState<JobCareerType | ''>('');
-  const [careerMinYears, setCareerMinYears] = useState('1');
+  const [careerMinYears, setCareerMinYears] = useState('');
   const [education, setEducation] = useState<EducationLevel | ''>('');
   const [location, setLocation] = useState('');
-  const [payType, setPayType] = useState<JobPayType | ''>('');
-  const [payAmount, setPayAmount] = useState('');
-  const [payNegotiable, setPayNegotiable] = useState(false);
   const [available, setAvailable] = useState('');
   const [summary, setSummary] = useState('');
   const [experience, setExperience] = useState('');
@@ -116,7 +109,6 @@ export default function MyTalentProfileForm({
   const [school, setSchool] = useState('');
   const [major, setMajor] = useState('');
   const [languages, setLanguages] = useState('');
-  const [portfolioUrl, setPortfolioUrl] = useState('');
   const [tags, setTags] = useState('');
   const [createdAt, setCreatedAt] = useState<string | null>(() => initialProfile?.createdAt ?? null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
@@ -132,14 +124,11 @@ export default function MyTalentProfileForm({
         title: '',
         name: nickname,
         headline: '',
-        workType: '',
+        workTypes: [],
         careerType: '',
-        careerMinYears: '1',
+        careerMinYears: '',
         education: '',
         location: '',
-        payType: '',
-        payAmount: '',
-        payNegotiable: false,
         available: '',
         summary: '',
         experience: '',
@@ -147,20 +136,16 @@ export default function MyTalentProfileForm({
         school: '',
         major: '',
         languages: '',
-        portfolioUrl: '',
         tags: '',
       };
       setTitle(empty.title);
       setName(empty.name);
       setHeadline(empty.headline);
-      setWorkType(empty.workType);
+      setWorkTypes(empty.workTypes);
       setCareerType(empty.careerType);
       setCareerMinYears(empty.careerMinYears);
       setEducation(empty.education);
       setLocation(empty.location);
-      setPayType(empty.payType);
-      setPayAmount(empty.payAmount);
-      setPayNegotiable(empty.payNegotiable);
       setAvailable(empty.available);
       setSummary(empty.summary);
       setExperience(empty.experience);
@@ -168,7 +153,6 @@ export default function MyTalentProfileForm({
       setSchool(empty.school);
       setMajor(empty.major);
       setLanguages(empty.languages);
-      setPortfolioUrl(empty.portfolioUrl);
       setTags(empty.tags);
       setCreatedAt(null);
       setUpdatedAt(null);
@@ -176,46 +160,32 @@ export default function MyTalentProfileForm({
       return;
     }
     const career = parseCareer(existing.careerLabel);
-    const pay = existing.payType
-      ? {
-          payType: existing.payType,
-          amount: existing.payAmount ?? '',
-          negotiable: Boolean(existing.payNegotiable),
-        }
-      : parsePayLabel(existing.desiredPay);
     const next: TalentDraft = {
       title: existing.title || existing.headline || '',
       name: existing.name,
       headline: existing.headline,
-      workType: existing.workType,
+      workTypes: talentWorkTypes(existing),
       careerType: career.type,
       careerMinYears: career.years,
       education: normalizeEducation(existing.education),
       location: existing.location,
-      payType: pay.payType,
-      payAmount: pay.amount,
-      payNegotiable: pay.negotiable,
-      available: existing.available,
+      available: normalizeAvailable(existing.available),
       summary: existing.summary,
       experience: existing.experience,
       careerHistory: existing.careerHistory ?? '',
       school: existing.school ?? '',
       major: existing.major ?? '',
       languages: existing.languages ?? '',
-      portfolioUrl: existing.portfolioUrl ?? '',
       tags: existing.tags.join(', '),
     };
     setTitle(next.title);
     setName(next.name);
     setHeadline(next.headline);
-    setWorkType(next.workType);
+    setWorkTypes(next.workTypes);
     setCareerType(next.careerType);
     setCareerMinYears(next.careerMinYears);
     setEducation(next.education);
     setLocation(next.location);
-    setPayType(next.payType);
-    setPayAmount(next.payAmount);
-    setPayNegotiable(next.payNegotiable);
     setAvailable(next.available);
     setSummary(next.summary);
     setExperience(next.experience);
@@ -223,7 +193,6 @@ export default function MyTalentProfileForm({
     setSchool(next.school);
     setMajor(next.major);
     setLanguages(next.languages);
-    setPortfolioUrl(next.portfolioUrl);
     setTags(next.tags);
     setCreatedAt(existing.createdAt);
     setUpdatedAt(existing.updatedAt);
@@ -235,14 +204,11 @@ export default function MyTalentProfileForm({
       title,
       name,
       headline,
-      workType,
+      workTypes,
       careerType,
       careerMinYears,
       education,
       location,
-      payType,
-      payAmount,
-      payNegotiable,
       available,
       summary,
       experience,
@@ -250,7 +216,6 @@ export default function MyTalentProfileForm({
       school,
       major,
       languages,
-      portfolioUrl,
       tags,
     };
   }
@@ -263,14 +228,11 @@ export default function MyTalentProfileForm({
     setTitle(draft.title);
     setName(draft.name);
     setHeadline(draft.headline);
-    setWorkType(draft.workType);
+    setWorkTypes(draft.workTypes);
     setCareerType(draft.careerType);
-    setCareerMinYears(draft.careerMinYears);
+    setCareerMinYears(formatCareerYearsInput(draft.careerMinYears));
     setEducation(draft.education);
     setLocation(draft.location);
-    setPayType(draft.payType);
-    setPayAmount(draft.payAmount);
-    setPayNegotiable(draft.payNegotiable);
     setAvailable(draft.available);
     setSummary(draft.summary);
     setExperience(draft.experience);
@@ -278,7 +240,6 @@ export default function MyTalentProfileForm({
     setSchool(draft.school);
     setMajor(draft.major);
     setLanguages(draft.languages);
-    setPortfolioUrl(draft.portfolioUrl);
     setTags(draft.tags);
     setError('');
     setSaved(false);
@@ -286,45 +247,27 @@ export default function MyTalentProfileForm({
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!title.trim() || !name.trim() || !headline.trim()) {
+    const requiredError = firstRequiredError([
+      { ok: Boolean(title.trim()), message: '이력서 제목을 입력해 주세요.' },
+      { ok: Boolean(name.trim()), message: '이름을 입력해 주세요.' },
+      { ok: workTypes.length > 0, message: '근무 형태를 하나 이상 선택해 주세요.' },
+      { ok: isAvailableOption(available), message: '근무 가능을 선택해 주세요.' },
+      { ok: isJobCareerType(careerType), message: '경력 유무를 선택해 주세요.' },
+      {
+        ok: careerType !== 'experienced' || Boolean(parseCareerYears(careerMinYears)),
+        message: '경력 연수를 입력해 주세요.',
+      },
+      { ok: isEducationLevel(education), message: '최종 학력을 선택해 주세요.' },
+      { ok: Boolean(school.trim()), message: '학교를 입력해 주세요.' },
+      { ok: Boolean(summary.trim()), message: '자기 소개를 입력해 주세요.' },
+    ]);
+    if (requiredError) {
       setSaved(false);
-      setError('이력서 제목, 이름, 직무를 입력해 주세요.');
+      setError(requiredError);
       return;
     }
-    if (!isJobWorkType(workType)) {
-      setSaved(false);
-      setError('희망 근무 형태를 선택해 주세요.');
+    if (workTypes.length === 0 || !isAvailableOption(available) || !isJobCareerType(careerType) || !isEducationLevel(education)) {
       return;
-    }
-    if (!isJobCareerType(careerType)) {
-      setSaved(false);
-      setError('경력을 선택해 주세요.');
-      return;
-    }
-    if (!isEducationLevel(education)) {
-      setSaved(false);
-      setError('학력은 필수 등록 항목입니다.');
-      return;
-    }
-    if (!summary.trim()) {
-      setSaved(false);
-      setError('자기 소개를 입력해 주세요.');
-      return;
-    }
-    const hasPayInput = Boolean(payType) || Boolean(payAmount.replace(/[^\d]/g, '')) || payNegotiable;
-    let desiredPay = '';
-    if (hasPayInput) {
-      if (!isJobPayType(payType)) {
-        setSaved(false);
-        setError('희망 급여 지급 기준을 선택해 주세요.');
-        return;
-      }
-      desiredPay = formatJobPayLabel(payType, payAmount, payNegotiable);
-      if (!desiredPay) {
-        setSaved(false);
-        setError('희망 급여를 입력하거나 협의 가능을 선택해 주세요.');
-        return;
-      }
     }
     setError('');
     const today = getKoreaDateLocalToday();
@@ -335,14 +278,15 @@ export default function MyTalentProfileForm({
       title: title.trim(),
       name: name.trim(),
       headline: headline.trim(),
-      workType,
+      workType: workTypes[0] ?? '',
+      workTypes,
       careerLabel: careerLabelFrom(careerType, careerMinYears),
       education,
       location: location.trim(),
-      desiredPay,
-      payType: isJobPayType(payType) ? payType : undefined,
-      payAmount: payAmount.replace(/[^\d]/g, ''),
-      payNegotiable,
+      desiredPay: '',
+      payType: undefined,
+      payAmount: '',
+      payNegotiable: false,
       available: available.trim(),
       summary: summary.trim(),
       experience: experience.trim(),
@@ -350,11 +294,6 @@ export default function MyTalentProfileForm({
       school: school.trim() || undefined,
       major: major.trim() || undefined,
       languages: languages.trim() || undefined,
-      portfolioUrl: portfolioUrl.trim()
-        ? /^https?:\/\//i.test(portfolioUrl.trim())
-          ? portfolioUrl.trim()
-          : `https://${portfolioUrl.trim()}`
-        : undefined,
       tags: tags
         .split(',')
         .map((item) => item.trim())
@@ -363,7 +302,7 @@ export default function MyTalentProfileForm({
       updatedAt: today,
     };
     setSaving(true);
-    const savedProfile = saveMyTalentProfile(userId, profile);
+    const savedProfile = saveMyTalentProfile(userId, profile, { applyWorkPreferences: false });
     void (async () => {
       try {
         if (onSave) await onSave(savedProfile);
@@ -426,47 +365,52 @@ export default function MyTalentProfileForm({
             />
           </div>
           <div>
-            <FieldLabel htmlFor="talent-headline" required>
+            <FieldLabel htmlFor="talent-headline" optional>
               직무
             </FieldLabel>
             <input
               id="talent-headline"
               value={headline}
               onChange={(event) => setHeadline(event.target.value)}
-              placeholder="예: 프론트엔드 개발"
+              placeholder="비우면 희망 근무 조건의 직종을 씁니다"
               className={authInputClassName}
-              required
             />
+          </div>
+        </div>
+        <div>
+          <FieldLabel required>근무 형태</FieldLabel>
+          <div className="flex flex-wrap gap-1.5">
+            {WORK_TYPES.map((item) => {
+              const active = workTypes.includes(item);
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() =>
+                    setWorkTypes((current) =>
+                      current.includes(item) ? current.filter((value) => value !== item) : [...current, item],
+                    )
+                  }
+                  className={cn(
+                    'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
+                    active
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'border border-border-strong bg-surface text-foreground hover:bg-neutral-50',
+                  )}
+                >
+                  {WORK_TYPE_LABELS[item]}
+                </button>
+              );
+            })}
           </div>
         </div>
         <div className="grid grid-cols-2 items-end gap-4 md:flex md:flex-nowrap">
           <div className="min-w-0">
-            <FieldLabel htmlFor="talent-work-type" required>
-              희망 근무 형태
-            </FieldLabel>
-            <select
-              id="talent-work-type"
-              value={workType}
-              onChange={(event) => {
-                const next = event.target.value;
-                setWorkType(isJobWorkType(next) ? next : '');
-              }}
-              className={cn(controlClassName, 'w-full md:w-40', !workType && 'font-normal text-subtle')}
-              required
-            >
-              <PlaceholderOption />
-              {WORK_TYPES.map((item) => (
-                <option key={item} value={item}>
-                  {WORK_TYPE_LABELS[item]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="min-w-0">
             <FieldLabel htmlFor="talent-career" required>
-              경력
+              경력 유무
             </FieldLabel>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <select
                 id="talent-career"
                 value={careerType}
@@ -474,7 +418,7 @@ export default function MyTalentProfileForm({
                   const next = event.target.value;
                   setCareerType(isJobCareerType(next) ? next : '');
                 }}
-                className={cn(controlClassName, 'w-full md:w-32', !careerType && 'font-normal text-subtle')}
+                className={cn(controlClassName, 'min-w-[7.5rem] flex-1 md:flex-none md:w-32', !careerType && 'font-normal text-subtle')}
                 required
               >
                 <PlaceholderOption />
@@ -485,25 +429,25 @@ export default function MyTalentProfileForm({
                 ))}
               </select>
               {careerType === 'experienced' ? (
-                <>
+                <div className="flex shrink-0 items-center gap-2">
                   <input
                     id="talent-career-years"
-                    type="number"
-                    min={1}
-                    max={40}
+                    inputMode="numeric"
+                    maxLength={2}
+                    placeholder="00"
                     value={careerMinYears}
-                    onChange={(event) => setCareerMinYears(event.target.value)}
-                    className={cn(controlClassName, 'w-16 text-right tabular-nums')}
+                    onChange={(event) => setCareerMinYears(formatCareerYearsInput(event.target.value))}
+                    className={cn(controlClassName, 'w-[3.25rem] px-2 text-center tabular-nums')}
                     required
                   />
-                  <span className="shrink-0 text-sm text-muted">년</span>
-                </>
+                  <span className="whitespace-nowrap text-sm text-muted">년</span>
+                </div>
               ) : null}
             </div>
           </div>
           <div className="col-span-2 min-w-0 md:flex-1">
             <FieldLabel htmlFor="talent-education" required>
-              학력
+              최종 학력
             </FieldLabel>
             <select
               id="talent-education"
@@ -528,7 +472,7 @@ export default function MyTalentProfileForm({
           <FieldLabel htmlFor="talent-summary" required>
             자기 소개
           </FieldLabel>
-          <textarea
+          <AutoGrowTextarea
             id="talent-summary"
             value={summary}
             onChange={(event) => setSummary(event.target.value)}
@@ -536,78 +480,44 @@ export default function MyTalentProfileForm({
             required
           />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <FieldLabel htmlFor="talent-location" optional>
-              희망 근무지
-            </FieldLabel>
-            <input
-              id="talent-location"
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              className={authInputClassName}
-            />
-          </div>
-          <div>
-            <FieldLabel htmlFor="talent-available" optional>
-              가능 시기
-            </FieldLabel>
-            <input
-              id="talent-available"
-              value={available}
-              onChange={(event) => setAvailable(event.target.value)}
-              placeholder="예: 즉시 가능"
-              className={authInputClassName}
-            />
+        <div>
+          <FieldLabel required>근무 가능</FieldLabel>
+          <div className="flex flex-wrap gap-1.5">
+            {AVAILABLE_OPTIONS.map((item) => {
+              const active = available === item;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setAvailable((current) => (current === item ? '' : item))}
+                  className={cn(
+                    'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
+                    active
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'border border-border-strong bg-surface text-foreground hover:bg-neutral-50',
+                  )}
+                >
+                  {item}
+                </button>
+              );
+            })}
           </div>
         </div>
         <div>
-          <FieldLabel htmlFor="talent-pay-type" optional>
-            희망 급여
+          <FieldLabel htmlFor="talent-location" optional>
+            지역
           </FieldLabel>
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              id="talent-pay-type"
-              value={payType}
-              onChange={(event) => {
-                const next = event.target.value;
-                setPayType(isJobPayType(next) ? next : '');
-                setPayAmount('');
-              }}
-              className={cn(controlClassName, 'w-28', !payType && 'font-normal text-subtle')}
-            >
-              <PlaceholderOption />
-              {PAY_TYPES.map((item) => (
-                <option key={item} value={item}>
-                  {PAY_TYPE_LABELS[item]}
-                </option>
-              ))}
-            </select>
-            <input
-              id="talent-pay"
-              inputMode="numeric"
-              value={formatPayAmountInput(payAmount)}
-              onChange={(event) => setPayAmount(event.target.value.replace(/[^\d]/g, ''))}
-              className={amountInputClassName}
-              placeholder="금액"
-            />
-            <span className="shrink-0 whitespace-nowrap text-sm text-muted">
-              {payType ? PAY_UNIT_LABELS[payType] : '원'}
-            </span>
-            <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-foreground">
-              <input
-                type="checkbox"
-                checked={payNegotiable}
-                onChange={(event) => setPayNegotiable(event.target.checked)}
-                className="size-4 accent-primary"
-              />
-              협의 가능
-            </label>
-          </div>
+          <input
+            id="talent-location"
+            value={location}
+            onChange={(event) => setLocation(event.target.value)}
+            className={authInputClassName}
+          />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <FieldLabel htmlFor="talent-school" optional>
+            <FieldLabel htmlFor="talent-school" required>
               학교
             </FieldLabel>
             <input
@@ -616,6 +526,7 @@ export default function MyTalentProfileForm({
               onChange={(event) => setSchool(event.target.value)}
               placeholder="예: 한국대학교"
               className={authInputClassName}
+              required
             />
           </div>
           <div>
@@ -633,9 +544,9 @@ export default function MyTalentProfileForm({
         </div>
         <div>
           <FieldLabel htmlFor="talent-career-history" optional>
-            경력 사항
+            경력 내역
           </FieldLabel>
-          <textarea
+          <AutoGrowTextarea
             id="talent-career-history"
             value={careerHistory}
             onChange={(event) => setCareerHistory(event.target.value)}
@@ -669,31 +580,17 @@ export default function MyTalentProfileForm({
             />
           </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <FieldLabel htmlFor="talent-tags" optional>
-              스킬
-            </FieldLabel>
-            <input
-              id="talent-tags"
-              value={tags}
-              onChange={(event) => setTags(event.target.value)}
-              placeholder="쉼표로 구분 (예: Excel, 고객상담)"
-              className={authInputClassName}
-            />
-          </div>
-          <div>
-            <FieldLabel htmlFor="talent-portfolio" optional>
-              포트폴리오
-            </FieldLabel>
-            <input
-              id="talent-portfolio"
-              value={portfolioUrl}
-              onChange={(event) => setPortfolioUrl(event.target.value)}
-              placeholder="예: https://portfolio.example.com"
-              className={authInputClassName}
-            />
-          </div>
+        <div>
+          <FieldLabel htmlFor="talent-tags" optional>
+            스킬
+          </FieldLabel>
+          <input
+            id="talent-tags"
+            value={tags}
+            onChange={(event) => setTags(event.target.value)}
+            placeholder="쉼표로 구분 (예: Excel, 고객상담)"
+            className={authInputClassName}
+          />
         </div>
         {error ? <p className="text-sm text-danger">{error}</p> : null}
         {updatedAt ? <p className="text-sm text-muted">프로필 최근일 {updatedAt}</p> : null}

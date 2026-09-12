@@ -3,10 +3,13 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import AdSlot from '@/components/ads/AdSlot';
 import TalentCard from '@/features/talents/TalentCard';
+import { useAuth } from '@/features/auth/auth-context';
+import { useUserMode } from '@/features/mode/mode-context';
 import { loadListRestore, saveListRestore, saveListScroll } from '@/lib/list-restore';
 import { listTalents } from '@/lib/talent-catalog';
 import { cn } from '@/lib/utils';
 import { WORK_TYPE_FILTERS, type JobWorkType } from '@/types/job';
+import { talentWorkTypes } from '@/types/talent';
 
 type FilterId = (typeof WORK_TYPE_FILTERS)[number]['id'];
 
@@ -37,16 +40,20 @@ export default function TalentList({
   const [page, setPage] = useState(1);
   const [ready, setReady] = useState(!persistKey);
   const skipPageReset = useRef(Boolean(persistKey));
+  const { user } = useAuth();
+  const { mode } = useUserMode();
+  const viewerId = mode === 'recruiter' ? user?.uid : undefined;
 
   const filtered = useMemo(() => {
     const selected = WORK_TYPE_FILTERS.find((item) => item.id === filter);
     const keyword = query.trim().toLowerCase();
 
-    return listTalents().filter((talent) => {
+    return listTalents(viewerId).filter((talent) => {
+      const types = talentWorkTypes(talent);
       if (workType) {
-        if (talent.workType !== workType) return false;
+        if (!types.includes(workType)) return false;
       } else if (selected?.types) {
-        if (!talent.workType || !selected.types.includes(talent.workType)) return false;
+        if (!types.some((item) => selected.types?.includes(item))) return false;
       }
       if (!keyword) return true;
 
@@ -54,7 +61,6 @@ export default function TalentList({
         talent.headline,
         talent.location,
         talent.summary,
-        talent.desiredPay,
         talent.careerLabel,
         talent.education,
         talent.school,
@@ -62,14 +68,13 @@ export default function TalentList({
         talent.experience,
         talent.careerHistory,
         talent.languages,
-        talent.portfolioUrl,
         ...talent.tags,
       ]
         .join(' ')
         .toLowerCase();
       return haystack.includes(keyword);
     });
-  }, [filter, query, workType]);
+  }, [filter, query, viewerId, workType]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 

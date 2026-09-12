@@ -12,16 +12,18 @@ const MODES: UserMode[] = ['recruiter', 'jobseeker'];
 const itemClassName = 'block w-full px-3 py-2 text-left text-sm hover:bg-neutral-50';
 
 export default function HeaderModeMenu({
+  nickname,
   className,
   align = 'left',
   showLogout = false,
 }: {
+  nickname: string;
   className?: string;
   align?: 'left' | 'center' | 'right';
   showLogout?: boolean;
 }) {
   const { logout } = useAuth();
-  const { mode, setMode } = useUserMode();
+  const { mode, setMode, resetMode } = useUserMode();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -40,13 +42,18 @@ export default function HeaderModeMenu({
     <div ref={rootRef} className={cn('relative', className)}>
       <button
         type="button"
-        className="inline-flex items-center gap-1 rounded-lg bg-neutral-100 px-2.5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-neutral-200"
+        className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-neutral-100 px-2.5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-neutral-200"
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label={mode ? `마이페이지, 현재 ${USER_MODE_SHORT_LABELS[mode]}` : '마이페이지'}
+        aria-label={mode ? `계정 메뉴, 현재 ${USER_MODE_SHORT_LABELS[mode]}` : '계정 메뉴'}
         onClick={() => setOpen((value) => !value)}
       >
-        마이페이지
+        <span className="max-w-[7.5rem] truncate font-semibold">{nickname}</span>
+        {mode ? (
+          <span className="inline-flex shrink-0 items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+            {USER_MODE_SHORT_LABELS[mode]}
+          </span>
+        ) : null}
         <span aria-hidden className="text-subtle">
           ▾
         </span>
@@ -80,6 +87,19 @@ export default function HeaderModeMenu({
               {USER_MODE_LABELS[item]}
             </button>
           ))}
+          {mode ? (
+            <button
+              type="button"
+              role="menuitem"
+              className={cn(itemClassName, 'text-muted')}
+              onClick={() => {
+                setOpen(false);
+                resetMode({ navigate: true });
+              }}
+            >
+              선택 해제
+            </button>
+          ) : null}
           {showLogout ? (
             <>
               {mode ? (
@@ -89,7 +109,7 @@ export default function HeaderModeMenu({
                   className={cn(itemClassName, 'border-t border-border text-foreground')}
                   onClick={() => setOpen(false)}
                 >
-                  내 정보
+                  마이페이지
                 </Link>
               ) : null}
               <button
