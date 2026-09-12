@@ -138,6 +138,8 @@ export default function JobNewPageClient() {
             ? '등록한 채용 정보를 수정하면 목록과 마이페이지에 바로 반영됩니다.'
             : '채용 정보를 등록할 때마다 국세청 사업자등록 상태조회를 합니다.'
         }
+        homeHref={returnPath || '/'}
+        homeLabel={returnPath ? '돌아가기' : '홈으로'}
       />
       <AdSlot placement="header" />
 
@@ -229,7 +231,7 @@ export default function JobNewPageClient() {
               다시 조회
             </Button>
             <Button type="button" variant="secondary" onClick={() => router.push(returnPath || '/jobs')}>
-              취소
+              돌아가기
             </Button>
           </div>
         </Card>

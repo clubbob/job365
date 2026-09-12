@@ -89,7 +89,7 @@ export default function HeaderModeMenu({
                   className={cn(itemClassName, 'border-t border-border text-foreground')}
                   onClick={() => setOpen(false)}
                 >
-                  이용 현황
+                  내 정보
                 </Link>
               ) : null}
               <button

@@ -8,11 +8,13 @@ import {
   deleteMyTalentProfileById,
   duplicateMyTalentProfile,
   listMyTalentProfilesForUser,
+  publishMyTalentProfile,
+  unpublishMyTalentProfile,
 } from '@/lib/my-talent-profile';
 import { syncDeleteTalentProfile, syncMyTalentProfile } from '@/lib/posting-sync';
 import { talentEducation, talentRecentDate, talentResumeTitle, talentWorkTypeLabel } from '@/lib/talent-display';
 import { cn } from '@/lib/utils';
-import { isPublishedTalent, type TalentProfile } from '@/types/talent';
+import { isCompleteTalentProfile, isPublishedTalent, type TalentProfile } from '@/types/talent';
 
 export const JOBSEEKER_SUB_TABS = [
   { id: 'conditions', label: '희망 근무 조건' },
@@ -32,7 +34,9 @@ export function isJobseekerSubTab(value: string | null): value is JobseekerSubTa
 const primaryLinkClassName =
   'inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover';
 const rowActionClassName =
-  'inline-flex rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-semibold text-foreground hover:bg-neutral-50';
+  'inline-flex rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-semibold text-foreground hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45';
+const publishActionClassName =
+  'inline-flex rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-muted disabled:hover:bg-neutral-200';
 const dangerActionClassName =
   'inline-flex rounded-lg border border-danger/30 px-3 py-2 text-sm font-semibold text-danger hover:bg-red-50';
 
@@ -68,6 +72,35 @@ export default function JobseekerManagePanel({
       await syncMyTalentProfile(copied);
       refresh();
     }
+    setBusyId(null);
+  }
+
+  async function syncAll() {
+    const next = listMyTalentProfilesForUser(userId);
+    await Promise.all(next.map((item) => syncMyTalentProfile(item)));
+    onResumesChange(next);
+  }
+
+  async function handlePublish(resume: TalentProfile) {
+    if (!isCompleteTalentProfile(resume)) return;
+    const currentPublished = resumes.find((item) => item.id !== resume.id && isPublishedTalent(item));
+    if (currentPublished) {
+      const nextTitle = talentResumeTitle(resume);
+      const currentTitle = talentResumeTitle(currentPublished);
+      if (!window.confirm(`공개는 이력서 1건만 할 수 있습니다. 「${nextTitle}」를 공개하면 「${currentTitle}」 공개는 해제됩니다.`)) {
+        return;
+      }
+    }
+    setBusyId(resume.id);
+    if (publishMyTalentProfile(userId, resume.id)) await syncAll();
+    setBusyId(null);
+  }
+
+  async function handleUnpublish(resume: TalentProfile) {
+    const title = talentResumeTitle(resume);
+    if (!window.confirm(`「${title}」 이력서 공개를 해제할까요?`)) return;
+    setBusyId(resume.id);
+    if (unpublishMyTalentProfile(userId, resume.id)) await syncAll();
     setBusyId(null);
   }
 
@@ -117,8 +150,8 @@ export default function JobseekerManagePanel({
           title="이력서 관리"
           description={
             ready && resumes.length > 0
-              ? `${resumes.length}건이 등록되어 있습니다. 지원 회사별로 내용을 나눠 등록하거나 복사해 새로 만들 수 있습니다.`
-              : '지원 회사별로 내용을 나눠 등록하고, 복사해서 새 이력서를 만들 수 있습니다.'
+              ? `${resumes.length}건이 등록되어 있습니다. 공개는 모든 탭이 완료된 이력서 1건만 할 수 있습니다.`
+              : '지원 회사별로 내용을 나눠 등록하고, 복사해서 새 이력서를 만들 수 있습니다. 공개는 모든 탭이 완료된 이력서 1건만 할 수 있습니다.'
           }
           action={
             <Link href="/talents/new?from=mypage" className={primaryLinkClassName}>
@@ -179,6 +212,30 @@ export default function JobseekerManagePanel({
                         <p className="mt-1 text-xs text-subtle">최근 저장일 {talentRecentDate(resume)}</p>
                       </div>
                       <div className="flex flex-wrap gap-1.5 sm:justify-end">
+                        {published ? (
+                          <button
+                            type="button"
+                            className={rowActionClassName}
+                            disabled={busy}
+                            onClick={() => void handleUnpublish(resume)}
+                          >
+                            공개 취소
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={publishActionClassName}
+                            disabled={busy || !isCompleteTalentProfile(resume)}
+                            title={
+                              isCompleteTalentProfile(resume)
+                                ? '이 이력서를 인재 정보에 공개합니다.'
+                                : '모든 탭을 완료해야 공개할 수 있습니다.'
+                            }
+                            onClick={() => void handlePublish(resume)}
+                          >
+                            공개
+                          </button>
+                        )}
                         <Link
                           href={`/talents/new?edit=${encodeURIComponent(resume.id)}&from=mypage`}
                           className={rowActionClassName}
@@ -233,8 +290,8 @@ export default function JobseekerManagePanel({
       {subTab === 'privacy' ? (
         <Card title="이력서 열람 제한" description="이력서를 볼 수 있는 범위를 설정합니다.">
           <p className="text-sm text-muted">
-            특정 회사의 이력서 열람을 제한하는 기능은 준비 중입니다. 지금은 인재 정보에 올린 이력서가 구인자에게
-            공개됩니다.
+            특정 회사의 이력서 열람을 제한하는 기능은 준비 중입니다. 지금은 공개한 이력서 1건이 인재 정보에서 구인자에게
+            보입니다.
           </p>
         </Card>
       ) : null}

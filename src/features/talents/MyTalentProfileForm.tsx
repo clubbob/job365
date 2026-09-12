@@ -56,6 +56,33 @@ function parseCareer(label: string): { type: JobCareerType | ''; years: string }
   return { type: '', years: '1' };
 }
 
+type TalentDraft = {
+  title: string;
+  name: string;
+  headline: string;
+  workType: JobWorkType | '';
+  careerType: JobCareerType | '';
+  careerMinYears: string;
+  education: EducationLevel | '';
+  location: string;
+  payType: JobPayType | '';
+  payAmount: string;
+  payNegotiable: boolean;
+  available: string;
+  summary: string;
+  experience: string;
+  careerHistory: string;
+  school: string;
+  major: string;
+  languages: string;
+  portfolioUrl: string;
+  tags: string;
+};
+
+function encodeTalentDraft(draft: TalentDraft): string {
+  return JSON.stringify(draft);
+}
+
 export default function MyTalentProfileForm({
   userId,
   nickname,
@@ -96,31 +123,59 @@ export default function MyTalentProfileForm({
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [savedDraft, setSavedDraft] = useState<string | null>(null);
 
   useEffect(() => {
     const existing = initialProfile ?? getMyTalentProfile(userId, profileId);
     if (!existing) {
-      setTitle('');
-      setName(nickname);
-      setWorkType('');
-      setCareerType('');
-      setEducation('');
-      setPayType('');
-      setPayAmount('');
-      setPayNegotiable(false);
+      const empty: TalentDraft = {
+        title: '',
+        name: nickname,
+        headline: '',
+        workType: '',
+        careerType: '',
+        careerMinYears: '1',
+        education: '',
+        location: '',
+        payType: '',
+        payAmount: '',
+        payNegotiable: false,
+        available: '',
+        summary: '',
+        experience: '',
+        careerHistory: '',
+        school: '',
+        major: '',
+        languages: '',
+        portfolioUrl: '',
+        tags: '',
+      };
+      setTitle(empty.title);
+      setName(empty.name);
+      setHeadline(empty.headline);
+      setWorkType(empty.workType);
+      setCareerType(empty.careerType);
+      setCareerMinYears(empty.careerMinYears);
+      setEducation(empty.education);
+      setLocation(empty.location);
+      setPayType(empty.payType);
+      setPayAmount(empty.payAmount);
+      setPayNegotiable(empty.payNegotiable);
+      setAvailable(empty.available);
+      setSummary(empty.summary);
+      setExperience(empty.experience);
+      setCareerHistory(empty.careerHistory);
+      setSchool(empty.school);
+      setMajor(empty.major);
+      setLanguages(empty.languages);
+      setPortfolioUrl(empty.portfolioUrl);
+      setTags(empty.tags);
       setCreatedAt(null);
       setUpdatedAt(null);
+      setSavedDraft(encodeTalentDraft(empty));
       return;
     }
-    setTitle(existing.title || existing.headline || '');
-    setName(existing.name);
-    setHeadline(existing.headline);
-    setWorkType(existing.workType);
     const career = parseCareer(existing.careerLabel);
-    setCareerType(career.type);
-    setCareerMinYears(career.years);
-    setEducation(normalizeEducation(existing.education));
-    setLocation(existing.location);
     const pay = existing.payType
       ? {
           payType: existing.payType,
@@ -128,21 +183,106 @@ export default function MyTalentProfileForm({
           negotiable: Boolean(existing.payNegotiable),
         }
       : parsePayLabel(existing.desiredPay);
-    setPayType(pay.payType);
-    setPayAmount(pay.amount);
-    setPayNegotiable(pay.negotiable);
-    setAvailable(existing.available);
-    setSummary(existing.summary);
-    setExperience(existing.experience);
-    setCareerHistory(existing.careerHistory ?? '');
-    setSchool(existing.school ?? '');
-    setMajor(existing.major ?? '');
-    setLanguages(existing.languages ?? '');
-    setPortfolioUrl(existing.portfolioUrl ?? '');
-    setTags(existing.tags.join(', '));
+    const next: TalentDraft = {
+      title: existing.title || existing.headline || '',
+      name: existing.name,
+      headline: existing.headline,
+      workType: existing.workType,
+      careerType: career.type,
+      careerMinYears: career.years,
+      education: normalizeEducation(existing.education),
+      location: existing.location,
+      payType: pay.payType,
+      payAmount: pay.amount,
+      payNegotiable: pay.negotiable,
+      available: existing.available,
+      summary: existing.summary,
+      experience: existing.experience,
+      careerHistory: existing.careerHistory ?? '',
+      school: existing.school ?? '',
+      major: existing.major ?? '',
+      languages: existing.languages ?? '',
+      portfolioUrl: existing.portfolioUrl ?? '',
+      tags: existing.tags.join(', '),
+    };
+    setTitle(next.title);
+    setName(next.name);
+    setHeadline(next.headline);
+    setWorkType(next.workType);
+    setCareerType(next.careerType);
+    setCareerMinYears(next.careerMinYears);
+    setEducation(next.education);
+    setLocation(next.location);
+    setPayType(next.payType);
+    setPayAmount(next.payAmount);
+    setPayNegotiable(next.payNegotiable);
+    setAvailable(next.available);
+    setSummary(next.summary);
+    setExperience(next.experience);
+    setCareerHistory(next.careerHistory);
+    setSchool(next.school);
+    setMajor(next.major);
+    setLanguages(next.languages);
+    setPortfolioUrl(next.portfolioUrl);
+    setTags(next.tags);
     setCreatedAt(existing.createdAt);
     setUpdatedAt(existing.updatedAt);
+    setSavedDraft(encodeTalentDraft(next));
   }, [initialProfile, nickname, profileId, userId]);
+
+  function currentDraft(): TalentDraft {
+    return {
+      title,
+      name,
+      headline,
+      workType,
+      careerType,
+      careerMinYears,
+      education,
+      location,
+      payType,
+      payAmount,
+      payNegotiable,
+      available,
+      summary,
+      experience,
+      careerHistory,
+      school,
+      major,
+      languages,
+      portfolioUrl,
+      tags,
+    };
+  }
+
+  const dirty = savedDraft !== null && encodeTalentDraft(currentDraft()) !== savedDraft;
+
+  function restoreDraft() {
+    if (!savedDraft) return;
+    const draft = JSON.parse(savedDraft) as TalentDraft;
+    setTitle(draft.title);
+    setName(draft.name);
+    setHeadline(draft.headline);
+    setWorkType(draft.workType);
+    setCareerType(draft.careerType);
+    setCareerMinYears(draft.careerMinYears);
+    setEducation(draft.education);
+    setLocation(draft.location);
+    setPayType(draft.payType);
+    setPayAmount(draft.payAmount);
+    setPayNegotiable(draft.payNegotiable);
+    setAvailable(draft.available);
+    setSummary(draft.summary);
+    setExperience(draft.experience);
+    setCareerHistory(draft.careerHistory);
+    setSchool(draft.school);
+    setMajor(draft.major);
+    setLanguages(draft.languages);
+    setPortfolioUrl(draft.portfolioUrl);
+    setTags(draft.tags);
+    setError('');
+    setSaved(false);
+  }
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -230,6 +370,7 @@ export default function MyTalentProfileForm({
         else await syncMyTalentProfile(savedProfile);
         setCreatedAt(savedProfile.createdAt);
         setUpdatedAt(savedProfile.updatedAt);
+        setSavedDraft(encodeTalentDraft(currentDraft()));
         setSaved(true);
         router.push(returnPath || `/talents/${profile.id}`);
       } catch {
@@ -248,6 +389,13 @@ export default function MyTalentProfileForm({
         editing
           ? '수정한 내용은 인재 정보와 마이페이지에 바로 반영됩니다. 파란 ‘필수’ 항목은 반드시 입력하고, ‘(선택)’은 비워 두어도 됩니다.'
           : '파란 ‘필수’ 항목은 반드시 입력하고, ‘(선택)’은 비워 두어도 됩니다. 저장하면 인재 정보에 반영됩니다.'
+      }
+      action={
+        returnPath ? (
+          <Button type="button" variant="secondary" disabled={saving} onClick={() => router.push(returnPath)}>
+            돌아가기
+          </Button>
+        ) : null
       }
     >
       <form className="space-y-4" onSubmit={handleSubmit} noValidate>
@@ -555,12 +703,17 @@ export default function MyTalentProfileForm({
           </p>
         ) : null}
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button type="submit" fullWidth disabled={saving}>
-            {saving ? '저장 중…' : editing ? '수정 반영' : '이력서 등록'}
+          <Button type="submit" fullWidth disabled={!dirty || saving}>
+            {saving ? '저장 중…' : '저장'}
           </Button>
-          {returnPath ? (
-            <Button type="button" variant="secondary" fullWidth onClick={() => router.push(returnPath)}>
+          {dirty ? (
+            <Button type="button" variant="secondary" fullWidth disabled={saving} onClick={restoreDraft}>
               취소
+            </Button>
+          ) : null}
+          {returnPath ? (
+            <Button type="button" variant="secondary" fullWidth disabled={saving} onClick={() => router.push(returnPath)}>
+              돌아가기
             </Button>
           ) : null}
         </div>

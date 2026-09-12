@@ -68,6 +68,17 @@ export type TalentProfile = {
   draft?: boolean;
 };
 
+export function isTalentSkillsComplete(
+  profile: Pick<TalentProfile, 'experience' | 'languages' | 'tags' | 'portfolioUrl'>,
+): boolean {
+  return Boolean(
+    profile.experience?.trim() &&
+      profile.languages?.trim() &&
+      profile.portfolioUrl?.trim() &&
+      profile.tags?.some((item) => item.trim()),
+  );
+}
+
 export function isCompleteTalentProfile(profile: TalentProfile): boolean {
   const residence = parseResidence(profile.address ?? '');
   return (
@@ -82,7 +93,8 @@ export function isCompleteTalentProfile(profile: TalentProfile): boolean {
     Boolean(profile.summary.trim()) &&
     Boolean(profile.careerLabel.trim()) &&
     isEducationLevel(profile.education) &&
-    isJobWorkType(profile.workType)
+    isJobWorkType(profile.workType) &&
+    isTalentSkillsComplete(profile)
   );
 }
 
@@ -100,14 +112,20 @@ export function missingTalentPublishFields(profile: TalentProfile): string[] {
   if (!isJobWorkType(profile.workType)) missing.push('희망 근무 형태');
   if (!profile.careerLabel.trim()) missing.push('경력');
   if (!isEducationLevel(profile.education)) missing.push('학력');
+  if (!isTalentSkillsComplete(profile)) missing.push('보유 역량 / 자격증');
   if (!profile.summary.trim()) missing.push('자기 소개');
   return missing;
 }
 
+export function withSavedTalentState(profile: TalentProfile): TalentProfile {
+  if (!isCompleteTalentProfile(profile)) return { ...profile, draft: true };
+  return { ...profile, draft: profile.draft === false ? false : true };
+}
+
 export function withTalentPublishState(profile: TalentProfile): TalentProfile {
-  return { ...profile, draft: !isCompleteTalentProfile(profile) };
+  return withSavedTalentState(profile);
 }
 
 export function isPublishedTalent(profile: TalentProfile): boolean {
-  return profile.draft !== true && isCompleteTalentProfile(profile);
+  return profile.draft === false && isCompleteTalentProfile(profile);
 }

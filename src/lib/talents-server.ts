@@ -1,7 +1,7 @@
 import type { DocumentData, DocumentReference } from 'firebase-admin/firestore';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { omitUndefined } from '@/lib/omit-undefined';
-import type { TalentProfile } from '@/types/talent';
+import { withSavedTalentState, type TalentProfile } from '@/types/talent';
 
 const COLLECTION = 'talentProfiles';
 
@@ -50,7 +50,9 @@ export async function upsertStoredTalentProfile(ownerId: string, profile: Talent
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
   const record = {
     ownerId,
-    profile: omitUndefined({ ...profile, title: profile.title ?? '' } as Record<string, unknown>),
+    profile: omitUndefined({
+      ...withSavedTalentState({ ...profile, title: profile.title ?? '' }),
+    } as Record<string, unknown>),
     updatedAt: new Date().toISOString(),
   };
   await db.collection(COLLECTION).doc(profile.id).set(record);

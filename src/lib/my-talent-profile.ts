@@ -1,5 +1,11 @@
 import { getKoreaDateLocalToday } from '@/lib/datetime';
-import { withTalentPublishState, type TalentProfile } from '@/types/talent';
+import {
+  isCompleteTalentProfile,
+  isPublishedTalent,
+  withSavedTalentState,
+  withTalentPublishState,
+  type TalentProfile,
+} from '@/types/talent';
 
 const STORAGE_KEY = 'job365.myTalentProfiles';
 
@@ -115,12 +121,37 @@ export function saveMyTalentProfile(
   profile: TalentProfile,
   options?: { asDraft?: boolean },
 ): TalentProfile {
-  const next = options?.asDraft ? { ...withTitle(profile), draft: true } : withTalentPublishState(withTitle(profile));
+  const titled = withTitle(profile);
+  const next = options?.asDraft ? { ...titled, draft: true } : withSavedTalentState(titled);
   const store = readStore();
   const current = store[userId] ?? [];
-  store[userId] = [next, ...current.filter((item) => item.id !== next.id)];
+  const others = current
+    .filter((item) => item.id !== next.id)
+    .map((item) => (next.draft === false && isPublishedTalent(item) ? { ...item, draft: true } : item));
+  store[userId] = [next, ...others];
   writeStore(store);
   return next;
+}
+
+export function publishMyTalentProfile(userId: string, profileId: string): TalentProfile | null {
+  const target = getMyTalentProfile(userId, profileId);
+  if (!target || !isCompleteTalentProfile(target)) return null;
+  const store = readStore();
+  const current = store[userId] ?? [];
+  const today = getKoreaDateLocalToday();
+  store[userId] = current.map((item) => {
+    if (item.id === profileId) return { ...item, draft: false, updatedAt: today };
+    if (isPublishedTalent(item)) return { ...item, draft: true };
+    return item;
+  });
+  writeStore(store);
+  return store[userId].find((item) => item.id === profileId) ?? null;
+}
+
+export function unpublishMyTalentProfile(userId: string, profileId: string): TalentProfile | null {
+  const target = getMyTalentProfile(userId, profileId);
+  if (!target) return null;
+  return saveMyTalentProfile(userId, { ...target, draft: true }, { asDraft: true });
 }
 
 export function duplicateMyTalentProfile(userId: string, profileId: string): TalentProfile | null {

@@ -19,6 +19,17 @@ function toggleValue<T extends string>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
 }
 
+function sameValues<T extends string>(left: T[], right: T[]): boolean {
+  if (left.length !== right.length) return false;
+  const rightSet = new Set(right);
+  return left.every((item) => rightSet.has(item));
+}
+
+type PreferenceDraft = {
+  regions: RegionOption[];
+  occupations: OccupationOption[];
+};
+
 function ChoiceGroup<T extends string>({
   legend,
   hint,
@@ -66,16 +77,25 @@ function ChoiceGroup<T extends string>({
 export default function WorkPreferencesForm({ userId }: { userId: string }) {
   const [regions, setRegions] = useState<RegionOption[]>([]);
   const [occupations, setOccupations] = useState<OccupationOption[]>([]);
+  const [savedDraft, setSavedDraft] = useState<PreferenceDraft>({ regions: [], occupations: [] });
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const existing = loadWorkPreferences(userId);
-    setRegions(existing?.regions ?? []);
-    setOccupations(existing?.occupations ?? []);
+    const next: PreferenceDraft = {
+      regions: existing?.regions ?? [],
+      occupations: existing?.occupations ?? [],
+    };
+    setRegions(next.regions);
+    setOccupations(next.occupations);
+    setSavedDraft(next);
     setSaved(false);
     setError('');
   }, [userId]);
+
+  const dirty =
+    !sameValues(regions, savedDraft.regions) || !sameValues(occupations, savedDraft.occupations);
 
   function handleSave() {
     setError('');
@@ -84,12 +104,13 @@ export default function WorkPreferencesForm({ userId }: { userId: string }) {
       return;
     }
     saveWorkPreferences(userId, { regions, occupations });
+    setSavedDraft({ regions, occupations });
     setSaved(true);
   }
 
   function handleCancel() {
-    setRegions([]);
-    setOccupations([]);
+    setRegions(savedDraft.regions);
+    setOccupations(savedDraft.occupations);
     setSaved(false);
     setError('');
   }
@@ -124,13 +145,17 @@ export default function WorkPreferencesForm({ userId }: { userId: string }) {
             setOccupations((current) => toggleValue(current, value));
           }}
         />
-        {error ? <p className="text-sm text-red-700">{error}</p> : null}
-        {saved ? <p className="text-sm font-medium text-primary">희망 근무 조건을 저장했습니다.</p> : null}
+        {error ? <p className="text-sm text-danger">{error}</p> : null}
+        {saved && !dirty ? <p className="text-sm font-medium text-primary">희망 근무 조건을 저장했습니다.</p> : null}
         <div className="flex flex-wrap gap-2">
-          <Button type="submit">저장</Button>
-          <Button type="button" variant="secondary" onClick={handleCancel}>
-            취소
+          <Button type="submit" disabled={!dirty}>
+            저장
           </Button>
+          {dirty ? (
+            <Button type="button" variant="secondary" onClick={handleCancel}>
+              취소
+            </Button>
+          ) : null}
         </div>
       </form>
     </Card>

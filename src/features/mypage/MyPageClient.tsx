@@ -134,7 +134,7 @@ export default function MyPageClient() {
   if (!user) {
     return (
       <div className="space-y-4">
-        <PageHeader title="이용 현황" />
+        <PageHeader title="내 정보" />
         <Card title="내 계정">
           <p className="text-sm text-muted">로그인 후 이용할 수 있습니다.</p>
           <Link
@@ -152,9 +152,9 @@ export default function MyPageClient() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="이용 현황" description="계정 정보와 이용 현황을 확인하세요." />
+      <PageHeader title="내 정보" description="계정과 활동 내용을 확인하고 관리하세요." />
 
-      <div className="-mx-1 flex gap-1 overflow-x-auto px-1" role="tablist" aria-label="이용 현황 메뉴">
+      <div className="-mx-1 flex gap-1 overflow-x-auto px-1" role="tablist" aria-label="내 정보 메뉴">
         {tabs.map((item) => {
           const active = tab === item.id;
           return (

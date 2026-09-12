@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
 import MyTalentProfileForm from '@/features/talents/MyTalentProfileForm';
@@ -15,7 +14,6 @@ type ItemResponse =
   | { ok: false; error?: { message?: string } };
 
 export default function AdminTalentEditClient({ talentId }: { talentId: string }) {
-  const router = useRouter();
   const [item, setItem] = useState<{ ownerId: string; profile: TalentProfile } | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -61,7 +59,12 @@ export default function AdminTalentEditClient({ talentId }: { talentId: string }
 
   return (
     <div className="space-y-5">
-      <PageHeader title="이력서 수정" description={talentResumeTitle(item.profile)} homeHref="/admin/talents" homeLabel="목록으로" />
+      <PageHeader
+        title="이력서 수정"
+        description={talentResumeTitle(item.profile)}
+        homeHref={`/admin/talents/${encodeURIComponent(item.profile.id)}`}
+        homeLabel="돌아가기"
+      />
       <MyTalentProfileForm
         userId={item.ownerId}
         nickname={item.profile.name}
@@ -78,13 +81,6 @@ export default function AdminTalentEditClient({ talentId }: { talentId: string }
           }
         }}
       />
-      <button
-        type="button"
-        className="text-sm font-semibold text-muted hover:text-foreground"
-        onClick={() => router.push(`/admin/talents/${encodeURIComponent(item.profile.id)}`)}
-      >
-        취소하고 상세로
-      </button>
     </div>
   );
 }

@@ -26,6 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import {
   isNationwideSelection,
+  isRegionOption,
   loadWorkPreferences,
   locationLabelFromRegions,
   NATIONWIDE_REGION,
@@ -55,6 +56,7 @@ import {
   TALENT_GENDERS,
   isEducationLevel,
   isTalentGender,
+  isTalentSkillsComplete,
   normalizeEducation,
   type EducationLevel,
   type TalentGender,
@@ -76,6 +78,123 @@ const SECTIONS = [
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]['id'];
+type SectionSnapshots = Record<SectionId, string>;
+
+function encodeSorted(values: readonly string[]): string[] {
+  return [...values].sort();
+}
+
+type SectionValues = {
+  title: string;
+  name: string;
+  photoUrl: string;
+  birthYear: string;
+  birthMonth: string;
+  gender: string;
+  phone: string;
+  email: string;
+  residenceCity: string;
+  residenceDistrict: string;
+  homepage: string;
+  headline: string;
+  education: string;
+  school: string;
+  major: string;
+  careerType: string;
+  careerMinYears: string;
+  careerHistory: string;
+  experience: string;
+  languages: string;
+  tags: string;
+  portfolioUrl: string;
+  workType: string;
+  available: string;
+  payType: string;
+  payAmount: string;
+  payNegotiable: boolean;
+  regions: readonly string[];
+  occupations: readonly string[];
+  summary: string;
+};
+
+function snapshotsFromValues(values: SectionValues): SectionSnapshots {
+  return {
+    basics: JSON.stringify({
+      title: values.title,
+      name: values.name,
+      photoUrl: values.photoUrl,
+      birthYear: values.birthYear,
+      birthMonth: values.birthMonth,
+      gender: values.gender,
+      phone: values.phone,
+      email: values.email,
+      residenceCity: values.residenceCity,
+      residenceDistrict: values.residenceDistrict,
+      homepage: values.homepage,
+    }),
+    education: JSON.stringify({
+      education: values.education,
+      school: values.school,
+      major: values.major,
+    }),
+    career: JSON.stringify({
+      careerType: values.careerType,
+      careerMinYears: values.careerMinYears,
+      careerHistory: values.careerHistory,
+    }),
+    skills: JSON.stringify({
+      experience: values.experience,
+      languages: values.languages,
+      tags: values.tags,
+      portfolioUrl: values.portfolioUrl,
+    }),
+    conditions: JSON.stringify({
+      headline: values.headline,
+      workType: values.workType,
+      available: values.available,
+      payType: values.payType,
+      payAmount: values.payAmount,
+      payNegotiable: values.payNegotiable,
+      regions: encodeSorted(values.regions),
+      occupations: encodeSorted(values.occupations),
+    }),
+    summary: JSON.stringify({ summary: values.summary }),
+  };
+}
+
+function isSectionComplete(id: SectionId, values: SectionValues): boolean {
+  switch (id) {
+    case 'basics': {
+      const birthDate = composeBirthDate(values.birthYear, values.birthMonth);
+      const thisMonth = getKoreaDateLocalToday().slice(0, 7);
+      return (
+        Boolean(values.title.trim()) &&
+        Boolean(values.name.trim()) &&
+        Boolean(birthDate) &&
+        birthDate <= thisMonth &&
+        isTalentGender(values.gender) &&
+        isValidPhone(values.phone) &&
+        isValidEmail(values.email) &&
+        isCompleteResidence(values.residenceCity, values.residenceDistrict)
+      );
+    }
+    case 'education':
+      return isEducationLevel(values.education);
+    case 'career':
+      return isJobCareerType(values.careerType);
+    case 'skills':
+      return isTalentSkillsComplete({
+        experience: values.experience,
+        languages: values.languages,
+        tags: parseTags(values.tags),
+        portfolioUrl: values.portfolioUrl,
+      });
+    case 'conditions':
+      return Boolean(values.headline.trim()) && isJobWorkType(values.workType);
+    case 'summary':
+      return Boolean(values.summary.trim());
+  }
+}
 
 const controlClassName =
   'rounded-xl border border-border-strong bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition placeholder:text-subtle placeholder:font-normal focus:border-primary focus:ring-2 focus:ring-primary/25 sm:text-base';
@@ -224,10 +343,14 @@ export default function ResumeRegisterForm({
   const [savingSection, setSavingSection] = useState<SectionId | null>(null);
   const [savedSection, setSavedSection] = useState<SectionId | null>(null);
   const [error, setError] = useState<{ section: SectionId; message: string } | null>(null);
+  const [savedSnapshots, setSavedSnapshots] = useState<SectionSnapshots | null>(null);
 
   useEffect(() => {
     const existing = getMyTalentProfile(userId, resumeId);
     const prefs = loadWorkPreferences(userId);
+    const prefsRegions = prefs?.regions ?? [];
+    const prefsOccupations = prefs?.occupations ?? [];
+
     if (!existing) {
       setTitle('');
       setName(nickname);
@@ -241,37 +364,64 @@ export default function ResumeRegisterForm({
       setResidenceDistrict('');
       setHomepage('');
       setHeadline('');
-      setRegions(prefs?.regions ?? []);
-      setOccupations(prefs?.occupations ?? []);
+      setEducation('');
+      setSchool('');
+      setMajor('');
+      setCareerType('');
+      setCareerMinYears('1');
+      setCareerHistory('');
+      setExperience('');
+      setLanguages('');
+      setTags('');
+      setPortfolioUrl('');
+      setWorkType('');
+      setAvailable('');
+      setPayType('');
+      setPayAmount('');
+      setPayNegotiable(false);
+      setRegions(prefsRegions);
+      setOccupations(prefsOccupations);
+      setSummary('');
+      setSavedSnapshots(
+        snapshotsFromValues({
+          title: '',
+          name: nickname,
+          photoUrl: '',
+          birthYear: '',
+          birthMonth: '',
+          gender: '',
+          phone: '',
+          email: accountEmail ?? '',
+          residenceCity: '',
+          residenceDistrict: '',
+          homepage: '',
+          headline: '',
+          education: '',
+          school: '',
+          major: '',
+          careerType: '',
+          careerMinYears: '1',
+          careerHistory: '',
+          experience: '',
+          languages: '',
+          tags: '',
+          portfolioUrl: '',
+          workType: '',
+          available: '',
+          payType: '',
+          payAmount: '',
+          payNegotiable: false,
+          regions: prefsRegions,
+          occupations: prefsOccupations,
+          summary: '',
+        }),
+      );
       return;
     }
-    setTitle(existing.title || existing.headline || '');
-    setName(existing.name || nickname);
-    setPhotoUrl(existing.photoUrl ?? '');
+
     const birth = splitBirthDate(existing.birthDate ?? '');
-    setBirthYear(birth.year);
-    setBirthMonth(birth.month);
-    setGender(existing.gender ?? '');
-    setPhone(existing.phone ?? '');
-    setEmail(existing.email || accountEmail || '');
     const residence = parseResidence(existing.address ?? '');
-    setResidenceCity(residence.city);
-    setResidenceDistrict(residence.district);
-    setHomepage(existing.homepage ?? '');
-    setHeadline(existing.headline);
-    setEducation(normalizeEducation(existing.education));
-    setSchool(existing.school ?? '');
-    setMajor(existing.major ?? '');
     const career = parseCareer(existing.careerLabel);
-    setCareerType(career.type);
-    setCareerMinYears(career.years);
-    setCareerHistory(existing.careerHistory ?? '');
-    setExperience(existing.experience);
-    setLanguages(existing.languages ?? '');
-    setTags(existing.tags.join(', '));
-    setPortfolioUrl(existing.portfolioUrl ?? '');
-    setWorkType(existing.workType);
-    setAvailable(existing.available);
     const pay = existing.payType
       ? {
           payType: existing.payType,
@@ -279,14 +429,184 @@ export default function ResumeRegisterForm({
           negotiable: Boolean(existing.payNegotiable),
         }
       : parsePayLabel(existing.desiredPay);
+    const fromLocation = regionsFromLocationText(existing.location);
+    const nextRegions = fromLocation.length > 0 ? fromLocation : prefsRegions;
+    const nextTitle = existing.title || existing.headline || '';
+    const nextName = existing.name || nickname;
+    const nextPhoto = existing.photoUrl ?? '';
+    const nextGender = existing.gender ?? '';
+    const nextPhone = existing.phone ?? '';
+    const nextEmail = existing.email || accountEmail || '';
+    const nextHomepage = existing.homepage ?? '';
+    const nextEducation = normalizeEducation(existing.education);
+    const nextSchool = existing.school ?? '';
+    const nextMajor = existing.major ?? '';
+    const nextCareerHistory = existing.careerHistory ?? '';
+    const nextLanguages = existing.languages ?? '';
+    const nextTags = existing.tags.join(', ');
+    const nextPortfolio = existing.portfolioUrl ?? '';
+
+    setTitle(nextTitle);
+    setName(nextName);
+    setPhotoUrl(nextPhoto);
+    setBirthYear(birth.year);
+    setBirthMonth(birth.month);
+    setGender(nextGender);
+    setPhone(nextPhone);
+    setEmail(nextEmail);
+    setResidenceCity(residence.city);
+    setResidenceDistrict(residence.district);
+    setHomepage(nextHomepage);
+    setHeadline(existing.headline);
+    setEducation(nextEducation);
+    setSchool(nextSchool);
+    setMajor(nextMajor);
+    setCareerType(career.type);
+    setCareerMinYears(career.years);
+    setCareerHistory(nextCareerHistory);
+    setExperience(existing.experience);
+    setLanguages(nextLanguages);
+    setTags(nextTags);
+    setPortfolioUrl(nextPortfolio);
+    setWorkType(existing.workType);
+    setAvailable(existing.available);
     setPayType(pay.payType);
     setPayAmount(pay.amount);
     setPayNegotiable(pay.negotiable);
-    const fromLocation = regionsFromLocationText(existing.location);
-    setRegions(fromLocation.length > 0 ? fromLocation : (prefs?.regions ?? []));
-    setOccupations(prefs?.occupations ?? []);
+    setRegions(nextRegions);
+    setOccupations(prefsOccupations);
     setSummary(existing.summary);
+    setSavedSnapshots(
+      snapshotsFromValues({
+        title: nextTitle,
+        name: nextName,
+        photoUrl: nextPhoto,
+        birthYear: birth.year,
+        birthMonth: birth.month,
+        gender: nextGender,
+        phone: nextPhone,
+        email: nextEmail,
+        residenceCity: residence.city,
+        residenceDistrict: residence.district,
+        homepage: nextHomepage,
+        headline: existing.headline,
+        education: nextEducation,
+        school: nextSchool,
+        major: nextMajor,
+        careerType: career.type,
+        careerMinYears: career.years,
+        careerHistory: nextCareerHistory,
+        experience: existing.experience,
+        languages: nextLanguages,
+        tags: nextTags,
+        portfolioUrl: nextPortfolio,
+        workType: existing.workType,
+        available: existing.available,
+        payType: pay.payType,
+        payAmount: pay.amount,
+        payNegotiable: pay.negotiable,
+        regions: nextRegions,
+        occupations: prefsOccupations,
+        summary: existing.summary,
+      }),
+    );
   }, [accountEmail, nickname, resumeId, userId]);
+
+  function currentValues(): SectionValues {
+    return {
+      title,
+      name,
+      photoUrl,
+      birthYear,
+      birthMonth,
+      gender,
+      phone,
+      email,
+      residenceCity,
+      residenceDistrict,
+      homepage,
+      headline,
+      education,
+      school,
+      major,
+      careerType,
+      careerMinYears,
+      careerHistory,
+      experience,
+      languages,
+      tags,
+      portfolioUrl,
+      workType,
+      available,
+      payType,
+      payAmount,
+      payNegotiable,
+      regions,
+      occupations,
+      summary,
+    };
+  }
+
+  function currentSnapshots(): SectionSnapshots {
+    return snapshotsFromValues(currentValues());
+  }
+
+  function isDirty(id: SectionId) {
+    if (!savedSnapshots) return false;
+    return currentSnapshots()[id] !== savedSnapshots[id];
+  }
+
+  function restoreSection(id: SectionId) {
+    if (!savedSnapshots) return;
+    const parsed = JSON.parse(savedSnapshots[id]) as Record<string, unknown>;
+    if (id === 'basics') {
+      setTitle(String(parsed.title ?? ''));
+      setName(String(parsed.name ?? ''));
+      setPhotoUrl(String(parsed.photoUrl ?? ''));
+      setBirthYear(String(parsed.birthYear ?? ''));
+      setBirthMonth(String(parsed.birthMonth ?? ''));
+      setGender(isTalentGender(parsed.gender) ? parsed.gender : '');
+      setPhone(String(parsed.phone ?? ''));
+      setEmail(String(parsed.email ?? ''));
+      setResidenceCity(
+        typeof parsed.residenceCity === 'string' && parsed.residenceCity ? (parsed.residenceCity as ResidenceCity) : '',
+      );
+      setResidenceDistrict(String(parsed.residenceDistrict ?? ''));
+      setHomepage(String(parsed.homepage ?? ''));
+    } else if (id === 'education') {
+      setEducation(normalizeEducation(parsed.education));
+      setSchool(String(parsed.school ?? ''));
+      setMajor(String(parsed.major ?? ''));
+    } else if (id === 'career') {
+      setCareerType(isJobCareerType(String(parsed.careerType ?? '')) ? parsed.careerType as JobCareerType : '');
+      setCareerMinYears(String(parsed.careerMinYears ?? '1'));
+      setCareerHistory(String(parsed.careerHistory ?? ''));
+    } else if (id === 'skills') {
+      setExperience(String(parsed.experience ?? ''));
+      setLanguages(String(parsed.languages ?? ''));
+      setTags(String(parsed.tags ?? ''));
+      setPortfolioUrl(String(parsed.portfolioUrl ?? ''));
+    } else if (id === 'conditions') {
+      setHeadline(String(parsed.headline ?? ''));
+      setWorkType(isJobWorkType(String(parsed.workType ?? '')) ? parsed.workType as JobWorkType : '');
+      setAvailable(String(parsed.available ?? ''));
+      setPayType(isJobPayType(String(parsed.payType ?? '')) ? parsed.payType as JobPayType : '');
+      setPayAmount(String(parsed.payAmount ?? ''));
+      setPayNegotiable(Boolean(parsed.payNegotiable));
+      setRegions(Array.isArray(parsed.regions) ? parsed.regions.filter(isRegionOption) : []);
+      setOccupations(
+        Array.isArray(parsed.occupations)
+          ? parsed.occupations.filter((item): item is OccupationOption =>
+              (OCCUPATION_OPTIONS as readonly string[]).includes(String(item)),
+            )
+          : [],
+      );
+    } else {
+      setSummary(String(parsed.summary ?? ''));
+    }
+    setError(null);
+    if (savedSection === id) setSavedSection(null);
+  }
 
   function mergeAndSave(section: SectionId, partial: Partial<TalentProfile>) {
     const today = getKoreaDateLocalToday();
@@ -300,9 +620,11 @@ export default function ResumeRegisterForm({
     });
     setSavingSection(section);
     setError(null);
+    const encoded = currentSnapshots()[section];
     void (async () => {
       try {
         await syncMyTalentProfile(next);
+        setSavedSnapshots((current) => (current ? { ...current, [section]: encoded } : current));
         setSavedSection(section);
         onSaved?.(next);
       } catch {
@@ -449,18 +771,28 @@ export default function ResumeRegisterForm({
 
   function sectionStatus(id: SectionId) {
     if (error?.section === id) return <p className="text-sm text-danger">{error.message}</p>;
-    if (savedSection === id) return <p className="text-sm text-success">저장했습니다.</p>;
+    if (savedSection === id && !isDirty(id)) return <p className="text-sm text-success">저장했습니다.</p>;
     return null;
   }
 
   function saveButton(id: SectionId) {
     const saving = savingSection === id;
+    const dirty = isDirty(id);
     return (
-      <Button type="submit" disabled={Boolean(savingSection)}>
-        {saving ? '저장 중…' : '이 항목 저장'}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={!dirty || Boolean(savingSection)}>
+          {saving ? '저장 중…' : '저장'}
+        </Button>
+        {dirty ? (
+          <Button type="button" variant="secondary" disabled={Boolean(savingSection)} onClick={() => restoreSection(id)}>
+            취소
+          </Button>
+        ) : null}
+      </div>
     );
   }
+
+  const values = currentValues();
 
   return (
     <div className="space-y-4">
@@ -469,17 +801,35 @@ export default function ResumeRegisterForm({
         aria-label="이력서 항목"
       >
         <div className="flex gap-1">
-          {SECTIONS.map((item) => (
-            <a
-              key={item.id}
-              href={`#resume-${item.id}`}
-              className="shrink-0 rounded-lg px-3 py-2 text-sm font-semibold text-muted hover:bg-neutral-100 hover:text-foreground"
-            >
-              {item.label}
-            </a>
-          ))}
+          {SECTIONS.map((item) => {
+            const complete = isSectionComplete(item.id, values);
+            return (
+              <a
+                key={item.id}
+                href={`#resume-${item.id}`}
+                aria-label={`${item.label}, ${complete ? '완료' : '미입력'}`}
+                className={cn(
+                  'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-neutral-100',
+                  complete ? 'text-foreground hover:text-foreground' : 'text-muted hover:text-foreground',
+                )}
+              >
+                {item.label}
+                <span
+                  className={cn('text-[11px] font-semibold', complete ? 'text-success' : 'text-subtle')}
+                  aria-hidden
+                >
+                  {complete ? '완료' : '미입력'}
+                </span>
+              </a>
+            );
+          })}
         </div>
       </nav>
+      {SECTIONS.every((item) => isSectionComplete(item.id, values)) ? (
+        <p className="text-sm text-success">모든 탭이 완료되었습니다. 내 정보의 이력서 관리에서 공개할 수 있습니다.</p>
+      ) : (
+        <p className="text-sm text-muted">모든 탭이 완료되어야 공개할 수 있습니다. 지금은 작성 중으로만 저장됩니다.</p>
+      )}
 
       <Card
         id="resume-basics"
@@ -872,7 +1222,7 @@ export default function ResumeRegisterForm({
         <form className="space-y-4" onSubmit={saveSkills} noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <FieldLabel htmlFor="talent-experience" optional>
+              <FieldLabel htmlFor="talent-experience" required>
                 자격증
               </FieldLabel>
               <input
@@ -884,7 +1234,7 @@ export default function ResumeRegisterForm({
               />
             </div>
             <div>
-              <FieldLabel htmlFor="talent-languages" optional>
+              <FieldLabel htmlFor="talent-languages" required>
                 어학
               </FieldLabel>
               <input
@@ -898,7 +1248,7 @@ export default function ResumeRegisterForm({
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <FieldLabel htmlFor="talent-tags" optional>
+              <FieldLabel htmlFor="talent-tags" required>
                 스킬
               </FieldLabel>
               <input
@@ -910,7 +1260,7 @@ export default function ResumeRegisterForm({
               />
             </div>
             <div>
-              <FieldLabel htmlFor="talent-portfolio" optional>
+              <FieldLabel htmlFor="talent-portfolio" required>
                 포트폴리오
               </FieldLabel>
               <input
@@ -1070,13 +1420,11 @@ export default function ResumeRegisterForm({
         </form>
       </Card>
 
-      {returnPath ? (
-        <div className="flex justify-end">
-          <Button type="button" variant="secondary" onClick={() => router.push(returnPath)}>
-            돌아가기
-          </Button>
-        </div>
-      ) : null}
+      <div className="flex">
+        <Button type="button" variant="secondary" onClick={() => router.push(returnPath || '/')}>
+          돌아가기
+        </Button>
+      </div>
     </div>
   );
 }

@@ -57,11 +57,9 @@ export default function TalentNewPageClient({
     <div className="space-y-6">
       <PageHeader
         title={editing ? '이력서 수정' : '이력서 등록'}
-        description={
-          editing
-            ? '항목별로 나눠 수정하고, 각 항목에서 바로 저장할 수 있습니다.'
-            : '항목별로 나눠 입력하고, 각 항목에서 바로 저장할 수 있습니다.'
-        }
+        description="모든 탭이 완료된 뒤, 내 정보의 이력서 관리에서 한 건만 공개할 수 있습니다."
+        homeHref={returnPath || '/'}
+        homeLabel={returnPath ? '돌아가기' : '홈으로'}
       />
       <AdSlot placement="header" />
 

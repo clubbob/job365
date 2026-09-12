@@ -52,6 +52,36 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+type JobDraft = {
+  title: string;
+  workType: JobWorkType | '';
+  headcount: string;
+  careerType: JobCareerType | '';
+  careerMinYears: string;
+  education: JobEducation | '';
+  location: string;
+  workDays: string;
+  workHours: string;
+  positionLevel: string;
+  probation: string;
+  alwaysOpen: boolean;
+  deadline: string;
+  payType: JobPayType | '';
+  payAmount: string;
+  payNegotiable: boolean;
+  summary: string;
+  requirements: string;
+  preferred: string;
+  benefits: string;
+  process: string;
+  company: string;
+  bizNumber: string;
+};
+
+function encodeJobDraft(draft: JobDraft): string {
+  return JSON.stringify(draft);
+}
+
 export default function JobCreateForm({
   userId,
   companyName,
@@ -83,37 +113,118 @@ export default function JobCreateForm({
         }
       : parsePayLabel(initialJob.payLabel)
     : { payType: '' as JobPayType | '', amount: '', negotiable: false };
-  const [title, setTitle] = useState(initialJob?.title ?? '');
-  const [workType, setWorkType] = useState<JobWorkType | ''>(initialJob?.workType ?? '');
-  const [headcount, setHeadcount] = useState(String(initialJob?.headcount || 1));
-  const [careerType, setCareerType] = useState<JobCareerType | ''>(initialJob?.careerType ?? '');
-  const [careerMinYears, setCareerMinYears] = useState(String(initialJob?.careerMinYears || 1));
-  const [education, setEducation] = useState<JobEducation | ''>(
-    initialJob?.education && isJobEducation(initialJob.education) ? initialJob.education : '',
-  );
-  const [location, setLocation] = useState(initialJob?.location ?? '');
-  const [workDays, setWorkDays] = useState(initialJob?.workDays ?? '');
-  const [workHours, setWorkHours] = useState(initialJob?.workHours ?? '');
-  const [positionLevel, setPositionLevel] = useState(initialJob?.positionLevel ?? '');
-  const [probation, setProbation] = useState(initialJob?.probation ?? '');
-  const [alwaysOpen, setAlwaysOpen] = useState(initialJob?.deadline === 'open');
-  const [deadline, setDeadline] = useState(
-    initialJob?.deadline && initialJob.deadline !== 'open'
-      ? initialJob.deadline
-      : addDaysToKoreaDate(today, 30),
-  );
-  const [payType, setPayType] = useState<JobPayType | ''>(initialPay.payType);
-  const [payAmount, setPayAmount] = useState(initialPay.amount);
-  const [payNegotiable, setPayNegotiable] = useState(initialPay.negotiable);
-  const [summary, setSummary] = useState(initialJob?.summary ?? '');
-  const [requirements, setRequirements] = useState(initialJob?.requirements ?? '');
-  const [preferred, setPreferred] = useState(initialJob?.preferred ?? '');
-  const [benefits, setBenefits] = useState(initialJob?.benefits ?? '');
-  const [process, setProcess] = useState(initialJob?.process ?? '');
-  const [company, setCompany] = useState(companyName);
-  const [bizNumber, setBizNumber] = useState(businessNumber);
+  const initialDraft: JobDraft = {
+    title: initialJob?.title ?? '',
+    workType: initialJob?.workType ?? '',
+    headcount: String(initialJob?.headcount || 1),
+    careerType: initialJob?.careerType ?? '',
+    careerMinYears: String(initialJob?.careerMinYears || 1),
+    education: initialJob?.education && isJobEducation(initialJob.education) ? initialJob.education : '',
+    location: initialJob?.location ?? '',
+    workDays: initialJob?.workDays ?? '',
+    workHours: initialJob?.workHours ?? '',
+    positionLevel: initialJob?.positionLevel ?? '',
+    probation: initialJob?.probation ?? '',
+    alwaysOpen: initialJob?.deadline === 'open',
+    deadline:
+      initialJob?.deadline && initialJob.deadline !== 'open'
+        ? initialJob.deadline
+        : addDaysToKoreaDate(today, 30),
+    payType: initialPay.payType,
+    payAmount: initialPay.amount,
+    payNegotiable: initialPay.negotiable,
+    summary: initialJob?.summary ?? '',
+    requirements: initialJob?.requirements ?? '',
+    preferred: initialJob?.preferred ?? '',
+    benefits: initialJob?.benefits ?? '',
+    process: initialJob?.process ?? '',
+    company: companyName,
+    bizNumber: businessNumber,
+  };
+  const [title, setTitle] = useState(initialDraft.title);
+  const [workType, setWorkType] = useState<JobWorkType | ''>(initialDraft.workType);
+  const [headcount, setHeadcount] = useState(initialDraft.headcount);
+  const [careerType, setCareerType] = useState<JobCareerType | ''>(initialDraft.careerType);
+  const [careerMinYears, setCareerMinYears] = useState(initialDraft.careerMinYears);
+  const [education, setEducation] = useState<JobEducation | ''>(initialDraft.education);
+  const [location, setLocation] = useState(initialDraft.location);
+  const [workDays, setWorkDays] = useState(initialDraft.workDays);
+  const [workHours, setWorkHours] = useState(initialDraft.workHours);
+  const [positionLevel, setPositionLevel] = useState(initialDraft.positionLevel);
+  const [probation, setProbation] = useState(initialDraft.probation);
+  const [alwaysOpen, setAlwaysOpen] = useState(initialDraft.alwaysOpen);
+  const [deadline, setDeadline] = useState(initialDraft.deadline);
+  const [payType, setPayType] = useState<JobPayType | ''>(initialDraft.payType);
+  const [payAmount, setPayAmount] = useState(initialDraft.payAmount);
+  const [payNegotiable, setPayNegotiable] = useState(initialDraft.payNegotiable);
+  const [summary, setSummary] = useState(initialDraft.summary);
+  const [requirements, setRequirements] = useState(initialDraft.requirements);
+  const [preferred, setPreferred] = useState(initialDraft.preferred);
+  const [benefits, setBenefits] = useState(initialDraft.benefits);
+  const [process, setProcess] = useState(initialDraft.process);
+  const [company, setCompany] = useState(initialDraft.company);
+  const [bizNumber, setBizNumber] = useState(initialDraft.bizNumber);
+  const [savedDraft, setSavedDraft] = useState(() => encodeJobDraft(initialDraft));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  function currentDraft(): JobDraft {
+    return {
+      title,
+      workType,
+      headcount,
+      careerType,
+      careerMinYears,
+      education,
+      location,
+      workDays,
+      workHours,
+      positionLevel,
+      probation,
+      alwaysOpen,
+      deadline,
+      payType,
+      payAmount,
+      payNegotiable,
+      summary,
+      requirements,
+      preferred,
+      benefits,
+      process,
+      company,
+      bizNumber,
+    };
+  }
+
+  const dirty = encodeJobDraft(currentDraft()) !== savedDraft;
+
+  function restoreDraft() {
+    const draft = JSON.parse(savedDraft) as JobDraft;
+    setTitle(draft.title);
+    setWorkType(draft.workType);
+    setHeadcount(draft.headcount);
+    setCareerType(draft.careerType);
+    setCareerMinYears(draft.careerMinYears);
+    setEducation(draft.education);
+    setLocation(draft.location);
+    setWorkDays(draft.workDays);
+    setWorkHours(draft.workHours);
+    setPositionLevel(draft.positionLevel);
+    setProbation(draft.probation);
+    setAlwaysOpen(draft.alwaysOpen);
+    setDeadline(draft.deadline);
+    setPayType(draft.payType);
+    setPayAmount(draft.payAmount);
+    setPayNegotiable(draft.payNegotiable);
+    setSummary(draft.summary);
+    setRequirements(draft.requirements);
+    setPreferred(draft.preferred);
+    setBenefits(draft.benefits);
+    setProcess(draft.process);
+    setCompany(draft.company);
+    setBizNumber(draft.bizNumber);
+    setError('');
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -161,6 +272,7 @@ export default function JobCreateForm({
     try {
       if (onSave) await onSave(job);
       else await syncMyJobPosting(job);
+      setSavedDraft(encodeJobDraft(currentDraft()));
       router.push(returnPath || `/jobs/${job.id}`);
     } catch {
       setSaving(false);
@@ -175,6 +287,11 @@ export default function JobCreateForm({
         editing
           ? '수정한 내용은 채용 정보와 마이페이지에 바로 반영됩니다.'
           : '구직자에게 보이는 채용 정보를 입력합니다. 등록하면 채용 정보 목록에 바로 게시됩니다.'
+      }
+      action={
+        <Button type="button" variant="secondary" disabled={saving} onClick={onCancel}>
+          돌아가기
+        </Button>
       }
     >
       <form className="space-y-0" onSubmit={handleSubmit}>
@@ -548,11 +665,16 @@ export default function JobCreateForm({
         {error ? <p className="pt-4 text-sm text-danger">{error}</p> : null}
 
         <div className="mt-6 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row">
-          <Button type="submit" fullWidth disabled={saving}>
-            {saving ? '저장 중…' : editing ? '수정 반영' : '채용 정보 등록'}
+          <Button type="submit" fullWidth disabled={!dirty || saving}>
+            {saving ? '저장 중…' : '저장'}
           </Button>
-          <Button type="button" variant="secondary" fullWidth onClick={onCancel}>
-            취소
+          {dirty ? (
+            <Button type="button" variant="secondary" fullWidth disabled={saving} onClick={restoreDraft}>
+              취소
+            </Button>
+          ) : null}
+          <Button type="button" variant="secondary" fullWidth disabled={saving} onClick={onCancel}>
+            돌아가기
           </Button>
         </div>
       </form>
