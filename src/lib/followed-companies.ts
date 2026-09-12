@@ -88,7 +88,7 @@ export function unfollowCompany(userId: string, key: string): boolean {
 
 export function jobMatchesFollowedCompany(
   job: Pick<JobPosting, 'companyName' | 'businessNumber'>,
-  company: FollowedCompany,
+  company: Pick<FollowedCompany, 'companyName' | 'businessNumber'>,
 ): boolean {
   const jobBiz = digitsOnly(job.businessNumber ?? '');
   const followedBiz = digitsOnly(company.businessNumber ?? '');
