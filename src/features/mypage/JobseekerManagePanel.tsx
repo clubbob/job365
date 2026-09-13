@@ -43,7 +43,7 @@ import { syncDeleteTalentProfile, syncMyTalentProfile } from '@/lib/posting-sync
 import { talentCareerLabel, talentEducation, talentRecentDate, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
 import { cn } from '@/lib/utils';
 import { isWorkPreferencesComplete } from '@/lib/work-preferences';
-import { WORK_TYPE_LABELS, type JobPosting } from '@/types/job';
+import { jobWorkTypesLabel, type JobPosting } from '@/types/job';
 import { isPublishedTalent, type TalentProfile } from '@/types/talent';
 
 export const JOBSEEKER_SUB_TABS = [
@@ -65,12 +65,18 @@ const primaryLinkClassName =
   'inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover';
 const rowActionClassName =
   'inline-flex rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-semibold text-foreground hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45';
+const compactActionClassName =
+  'inline-flex shrink-0 whitespace-nowrap rounded-lg border border-border-strong bg-surface px-2 py-1.5 text-xs font-semibold text-foreground hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45';
 const publishActionClassName =
   'inline-flex rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-muted disabled:hover:bg-neutral-200';
+const compactPublishClassName =
+  'inline-flex shrink-0 whitespace-nowrap rounded-lg bg-primary px-2 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-muted disabled:hover:bg-neutral-200';
 const disabledPrimaryClassName =
   'inline-flex cursor-not-allowed rounded-lg bg-neutral-200 px-4 py-2.5 text-sm font-semibold text-muted';
 const dangerActionClassName =
   'inline-flex rounded-lg border border-danger/30 px-3 py-2 text-sm font-semibold text-danger hover:bg-red-50';
+const compactDangerClassName =
+  'inline-flex shrink-0 whitespace-nowrap rounded-lg border border-danger/30 px-2 py-1.5 text-xs font-semibold text-danger hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45';
 
 export default function JobseekerManagePanel({
   userId,
@@ -167,6 +173,16 @@ export default function JobseekerManagePanel({
     setBusyId(null);
   }
 
+  async function handleSaveFile(resume: TalentProfile) {
+    setBusyId(resume.id);
+    try {
+      const { downloadResumeFile } = await import('@/lib/resume-file');
+      await downloadResumeFile(resume, userId);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   function handleHideApplication(application: JobApplication) {
     if (
       !window.confirm(
@@ -186,7 +202,10 @@ export default function JobseekerManagePanel({
 
   function handleRespondProposal(proposal: ReceivedProposal, status: 'accepted' | 'rejected') {
     const action = status === 'accepted' ? '수락' : '거절';
-    if (!window.confirm(`「${proposal.companyName}」의 면접 제안을 ${action}할까요?`)) return;
+    const target = proposal.jobTitle
+      ? `「${proposal.companyName}」의 「${proposal.jobTitle}」 면접 제안`
+      : `「${proposal.companyName}」의 면접 제안`;
+    if (!window.confirm(`${target}을 ${action}할까요?`)) return;
     saveTalentProposal(proposal.recruiterId, proposal.talentId, status);
     setProposals(listReceivedProposals(userId));
   }
@@ -351,11 +370,11 @@ export default function JobseekerManagePanel({
                         공개하려면 다음을 저장해 주세요. {missing.join(', ')}
                       </p>
                     ) : null}
-                    <div className="mt-auto flex flex-wrap gap-1.5 pt-3">
+                    <div className="mt-auto flex flex-nowrap items-center gap-1 overflow-x-auto pt-3">
                       {published ? (
                         <button
                           type="button"
-                          className={rowActionClassName}
+                          className={compactActionClassName}
                           disabled={busy}
                           onClick={() => void handleUnpublish(resume)}
                         >
@@ -364,7 +383,7 @@ export default function JobseekerManagePanel({
                       ) : (
                         <button
                           type="button"
-                          className={publishActionClassName}
+                          className={compactPublishClassName}
                           disabled={busy || !canPublish}
                           title={
                             canPublish
@@ -378,26 +397,34 @@ export default function JobseekerManagePanel({
                       )}
                       <Link
                         href={`/talents/new?edit=${encodeURIComponent(resume.id)}&from=mypage`}
-                        className={rowActionClassName}
+                        className={compactActionClassName}
                       >
                         수정
                       </Link>
                       <button
                         type="button"
-                        className={rowActionClassName}
+                        className={compactActionClassName}
                         disabled={busy}
                         onClick={() => void handleCopy(resume)}
                       >
                         복사
                       </button>
+                      <button
+                        type="button"
+                        className={compactActionClassName}
+                        disabled={busy}
+                        onClick={() => void handleSaveFile(resume)}
+                      >
+                        파일 저장
+                      </button>
                       {published ? (
-                        <Link href={`/talents/${resume.id}`} className={rowActionClassName}>
+                        <Link href={`/talents/${resume.id}?from=mypage`} className={compactActionClassName}>
                           보기
                         </Link>
                       ) : null}
                       <button
                         type="button"
-                        className={dangerActionClassName}
+                        className={compactDangerClassName}
                         disabled={busy}
                         onClick={() => void handleDelete(resume)}
                       >
@@ -429,7 +456,7 @@ export default function JobseekerManagePanel({
             <ul className="grid grid-cols-2 gap-2 sm:gap-3">
               {applications.map((application) => {
                 const job = getJobById(application.jobId);
-                const workType = job ? WORK_TYPE_LABELS[job.workType] : null;
+                const workType = job ? jobWorkTypesLabel(job) : null;
                 const followed = followedCompanies.some((company) =>
                   job
                     ? jobMatchesFollowedCompany(job, company)
@@ -527,6 +554,9 @@ export default function JobseekerManagePanel({
                   <p className="mt-2 line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">
                     {proposal.companyName}
                   </p>
+                  {proposal.jobTitle ? (
+                    <p className="mt-1 truncate text-sm font-medium text-muted">{proposal.jobTitle}</p>
+                  ) : null}
                   <p className="mt-1 truncate text-sm font-medium text-muted">{proposal.resumeTitle}</p>
                   <p className="mt-1 text-xs text-subtle">제안일 {proposalDateLabel(proposal.proposedAt)}</p>
                   {proposal.status === 'pending' ? (
@@ -545,13 +575,25 @@ export default function JobseekerManagePanel({
                       >
                         거절
                       </button>
+                      {proposal.jobId && getJobById(proposal.jobId) ? (
+                        <Link href={`/jobs/${encodeURIComponent(proposal.jobId)}`} className={rowActionClassName}>
+                          채용 정보
+                        </Link>
+                      ) : null}
                     </div>
                   ) : (
-                    <p className="mt-auto pt-3 text-sm text-muted">
-                      {proposal.status === 'accepted'
-                        ? '이 구인자에게만 실명이 공개됩니다.'
-                        : '거절한 제안입니다.'}
-                    </p>
+                    <div className="mt-auto space-y-3 pt-3">
+                      <p className="text-sm text-muted">
+                        {proposal.status === 'accepted'
+                          ? '이 구인자에게만 실명이 공개됩니다.'
+                          : '거절한 제안입니다.'}
+                      </p>
+                      {proposal.jobId && getJobById(proposal.jobId) ? (
+                        <Link href={`/jobs/${encodeURIComponent(proposal.jobId)}`} className={rowActionClassName}>
+                          채용 정보
+                        </Link>
+                      ) : null}
+                    </div>
                   )}
                 </li>
               ))}

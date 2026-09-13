@@ -15,16 +15,10 @@ export default function JobseekerHome() {
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
-            href="/jobs"
+            href="/mypage?tab=resume"
             className="inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition hover:bg-blue-50"
           >
-            채용 정보
-          </Link>
-          <Link
-            href="/talents/new"
-            className="inline-flex rounded-lg border border-white/40 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
-          >
-            이력서 등록
+            취업 관리
           </Link>
         </div>
       </section>

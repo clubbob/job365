@@ -9,7 +9,7 @@ import { listJobs } from '@/lib/job-catalog';
 import { jobSearchText } from '@/lib/job-display';
 import { SAMPLE_JOBS } from '@/lib/sample-jobs';
 import { cn } from '@/lib/utils';
-import { WORK_TYPE_FILTERS, type JobWorkType } from '@/types/job';
+import { WORK_TYPE_FILTERS, jobMatchesWorkType, type JobWorkType } from '@/types/job';
 
 type FilterId = (typeof WORK_TYPE_FILTERS)[number]['id'];
 
@@ -50,8 +50,8 @@ export default function JobList({
 
     return allJobs.filter((job) => {
       if (workType) {
-        if (job.workType !== workType) return false;
-      } else if (selected?.types && !selected.types.includes(job.workType)) {
+        if (!jobMatchesWorkType(job, workType)) return false;
+      } else if (selected?.types && !selected.types.some((item) => jobMatchesWorkType(job, item))) {
         return false;
       }
       if (!keyword) return true;

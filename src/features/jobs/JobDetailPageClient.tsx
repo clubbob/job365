@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
 import {
@@ -11,18 +12,17 @@ import {
   DetailStatGrid,
   DetailText,
 } from '@/components/ui/PostingDetail';
+import JobCompanySection from '@/features/jobs/JobCompanySection';
 import JobDetailActions from '@/features/jobs/JobDetailActions';
-import { formatBusinessNumber } from '@/lib/business-number';
 import { getJobById } from '@/lib/job-catalog';
-import {
-  jobCareerLabel,
-  jobDeadlineLabel,
-  jobEducationLabel,
-  jobHeadcountLabel,
-} from '@/lib/job-display';
-import { WORK_TYPE_LABELS, type JobPosting } from '@/types/job';
+import { jobCareerLabel, jobDeadlineLabel, jobEducationLabel, jobHeadcountLabel } from '@/lib/job-display';
+import { jobPositionLabel, jobWorkTypesLabel, type JobPosting } from '@/types/job';
 
 export default function JobDetailPageClient({ jobId }: { jobId: string }) {
+  const searchParams = useSearchParams();
+  const fromMypage = searchParams.get('from') === 'mypage';
+  const listHref = fromMypage ? '/mypage?tab=jobs&sub=jobs' : '/jobs';
+  const listLabel = fromMypage ? '돌아가기' : '이전 목록으로';
   const [job, setJob] = useState<JobPosting | null | undefined>(undefined);
 
   useEffect(() => {
@@ -36,11 +36,11 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
   if (!job) {
     return (
       <div className="space-y-5">
-        <PageHeader title="채용 정보" homeHref="/jobs" homeLabel="이전 목록으로" />
+        <PageHeader title="채용 정보" homeHref={listHref} homeLabel={listLabel} />
         <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-card">
           <p className="text-sm text-muted">채용 정보를 찾을 수 없습니다.</p>
-          <Link href="/jobs" className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">
-            이전 목록으로
+          <Link href={listHref} className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">
+            {listLabel}
           </Link>
         </div>
       </div>
@@ -50,13 +50,12 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
   const career = jobCareerLabel(job);
   const education = jobEducationLabel(job.education);
   const headcount = jobHeadcountLabel(job.headcount);
-  const workType = WORK_TYPE_LABELS[job.workType];
+  const workType = jobWorkTypesLabel(job);
   const deadline = job.deadline ? jobDeadlineLabel(job.deadline) : null;
-  const businessNumber = job.businessNumber ? formatBusinessNumber(job.businessNumber) : '';
 
   return (
     <div className="space-y-5">
-      <PageHeader title="채용 정보" description={job.companyName} homeHref="/jobs" homeLabel="이전 목록으로" />
+      <PageHeader title="채용 정보" description={job.companyName} homeHref={listHref} homeLabel={listLabel} />
       <AdSlot placement="header" />
 
       <article className="space-y-4">
@@ -79,15 +78,15 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
           ]}
         />
 
+        <JobCompanySection job={job} />
+
         <DetailStatGrid
           items={[
-            { label: '회사명', value: job.companyName },
-            { label: '사업자등록번호', value: businessNumber },
             { label: '근무 형태', value: workType },
             { label: '모집 인원', value: headcount },
             { label: '경력 유무', value: career },
             { label: '학력', value: education },
-            { label: '직급/직책', value: job.positionLevel },
+            { label: '직급/직책', value: jobPositionLabel(job.positionLevel) },
             { label: '수습 기간', value: job.probation },
             { label: '근무지', value: job.location },
             { label: '근무 요일', value: job.workDays },

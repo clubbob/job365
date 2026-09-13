@@ -22,6 +22,7 @@ import {
 import { deleteMyTalentProfileById, findMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
 import { displayTalentName, talentBasicInfoItems, talentCareerLabel, talentEducation, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
 import { isPublishedTalent, type TalentProfile } from '@/types/talent';
+import AdminPublishBadge from '@/features/admin/AdminPublishBadge';
 
 type ItemResponse =
   | { ok: true; data: { item: { ownerId: string; profile: TalentProfile } | null } }
@@ -92,7 +93,8 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
   return (
     <div className="space-y-5">
       <PageHeader title="이력서" description={talentResumeTitle(talent)} homeHref="/admin/talents" homeLabel="목록으로" />
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <AdminPublishBadge published={isPublishedTalent(talent)} />
         {isPublishedTalent(talent) ? (
           <Link href={`/talents/${talent.id}`} className={adminSecondaryActionClassName}>
             사이트에서 보기
@@ -113,7 +115,8 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
           photoAlt={displayName}
           badges={
             <>
-              <DetailBadge tone="primary">{workType}</DetailBadge>
+              <DetailBadge tone="primary">{isPublishedTalent(talent) ? '공개' : '작성 중'}</DetailBadge>
+              <DetailBadge>{workType}</DetailBadge>
               <DetailBadge>{talentCareerLabel(talent)}</DetailBadge>
               <DetailBadge>{talentEducation(talent)}</DetailBadge>
             </>

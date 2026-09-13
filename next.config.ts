@@ -4,7 +4,7 @@ const firebaseProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
 const nextConfig: NextConfig = {
   distDir: process.env.JOB365_NEXT_DIST_DIR || '.next',
-  serverExternalPackages: ['firebase-admin'],
+  serverExternalPackages: ['firebase-admin', 'jspdf', 'html2canvas'],
   async rewrites() {
     if (!firebaseProjectId) return [];
 

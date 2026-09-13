@@ -1,7 +1,9 @@
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
+import { isCompanyInfoComplete, parseBizVerifyRecord, type BizVerifyRecord } from '@/lib/biz-verify-store';
 import { getAdminApp, getAdminFirestore } from '@/lib/firebaseAdmin';
 import { deleteStoredJobPostingsByOwner } from '@/lib/jobs-server';
+import { omitUndefined } from '@/lib/omit-undefined';
 import { deleteStoredTalentProfilesByOwner } from '@/lib/talents-server';
 import type { UserProfile, UserProvider, UserSettings, AdminUserListItem } from '@/types/user';
 
@@ -9,6 +11,7 @@ export type UserAccount = {
   profile: UserProfile;
   settings: UserSettings;
   marketingAgreed: boolean;
+  company: BizVerifyRecord | null;
 };
 
 export async function getUserAccount(uid: string): Promise<UserAccount | null> {
@@ -45,6 +48,7 @@ export async function getUserAccount(uid: string): Promise<UserAccount | null> {
     profile,
     settings,
     marketingAgreed: userData.marketingAgreed === true,
+    company: parseBizVerifyRecord(userData.company),
   };
 }
 
@@ -52,6 +56,7 @@ export type UpdateUserAccountInput = {
   nickname?: string;
   marketingAgreed?: boolean;
   notifyEmailAgreed?: boolean;
+  company?: BizVerifyRecord;
 };
 
 export async function updateUserAccount(
@@ -88,6 +93,10 @@ export async function updateUserAccount(
   if (input.marketingAgreed !== undefined) {
     userUpdates.marketingAgreed = input.marketingAgreed === true;
     userUpdates.marketingAgreedAt = input.marketingAgreed ? now : null;
+  }
+
+  if (input.company !== undefined) {
+    userUpdates.company = omitUndefined({ ...input.company } as Record<string, unknown>);
   }
 
   const batch = db.batch();
@@ -150,6 +159,7 @@ export async function listUserAccounts(limit = 200): Promise<AdminUserListItem[]
   const snap = await db.collection('users').limit(limit).get();
   const items = snap.docs.map((doc) => {
     const data = doc.data();
+    const company = parseBizVerifyRecord(data.company);
     return {
       id: doc.id,
       email: (data.email as string | null) ?? null,
@@ -159,6 +169,8 @@ export async function listUserAccounts(limit = 200): Promise<AdminUserListItem[]
       role: (data.role as UserProfile['role']) ?? 'user',
       status: (data.status as UserProfile['status']) ?? 'active',
       createdAt: serializeTimestamp(data.createdAt),
+      companyName: company?.companyName?.trim() || null,
+      companyReady: isCompanyInfoComplete(company),
     } satisfies AdminUserListItem;
   });
 

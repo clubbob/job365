@@ -4,6 +4,8 @@ import {
   PAY_TYPE_LABELS,
   isJobCareerType,
   isJobEducation,
+  jobPositionLabel,
+  jobWorkTypesLabel,
   parseCareerYears,
   type JobPayType,
   type JobPosting,
@@ -101,13 +103,14 @@ export function jobSearchText(job: JobPosting): string {
     job.workHours,
     job.workDays,
     jobEducationLabel(job.education),
-    job.positionLevel,
+    jobPositionLabel(job.positionLevel),
     job.probation,
     job.requirements,
     job.preferred,
     job.benefits,
     job.process,
     jobCareerLabel(job),
+    jobWorkTypesLabel(job),
   ]
     .filter(Boolean)
     .join(' ');

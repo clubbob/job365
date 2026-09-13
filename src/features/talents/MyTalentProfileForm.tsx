@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { AVAILABLE_OPTIONS, isAvailableOption, normalizeAvailable } from '@/lib/work-preferences';
 import {
   CAREER_TYPE_LABELS,
-  JOB_CAREER_TYPES,
+  JOBSEEKER_CAREER_TYPES,
   WORK_TYPE_FILTERS,
   WORK_TYPE_LABELS,
   formatCareerYearsInput,
@@ -422,7 +422,7 @@ export default function MyTalentProfileForm({
                 required
               >
                 <PlaceholderOption />
-                {JOB_CAREER_TYPES.map((item) => (
+                {JOBSEEKER_CAREER_TYPES.map((item) => (
                   <option key={item} value={item}>
                     {CAREER_TYPE_LABELS[item]}
                   </option>

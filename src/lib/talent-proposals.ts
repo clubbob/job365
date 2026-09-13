@@ -1,10 +1,14 @@
 import { digitsOnly } from '@/lib/business-number';
 import { getKoreaDateTimeLocalMin } from '@/lib/datetime';
 import { followedCompanyKey } from '@/lib/followed-companies';
+import { getJobById } from '@/lib/job-catalog';
+import { listPublishedMyJobPostings } from '@/lib/my-job-posts';
 import { findMyTalentProfile, getMyTalentProfile, listMyTalentProfilesForUser } from '@/lib/my-talent-profile';
 import { recruiterCompanyFromJobs } from '@/lib/resume-view-blocks';
+import { missingProposeRequirements } from '@/lib/recruiter-ready';
 import { getTalentById } from '@/lib/talent-catalog';
 import { talentResumeTitle } from '@/lib/talent-display';
+import type { JobPosting } from '@/types/job';
 import type { TalentProfile } from '@/types/talent';
 
 export type TalentProposalStatus = 'none' | 'pending' | 'accepted' | 'rejected';
@@ -31,9 +35,17 @@ export type ReceivedProposal = {
   companyName: string;
   businessNumber?: string;
   resumeTitle: string;
+  jobId?: string;
+  jobTitle: string;
   proposedAt: string;
   status: Exclude<TalentProposalStatus, 'none'>;
   resumeMissing: boolean;
+};
+
+export type TalentProposalView = {
+  status: TalentProposalStatus;
+  jobId?: string;
+  jobTitle: string;
 };
 
 type ProposalRecord = {
@@ -43,11 +55,13 @@ type ProposalRecord = {
   businessNumber?: string;
   proposedAt?: string;
   resumeTitle?: string;
+  jobId?: string;
+  jobTitle?: string;
   hiddenFromSenderList?: boolean;
 };
 
 const STORAGE_KEY = 'job365.talentProposals';
-const STORE_RESET_AT = '20260913-clear-sent-proposals';
+const STORE_RESET_AT = '20260913-clear-all-proposals';
 const STORE_RESET_KEY = 'job365.talentProposals.resetAt';
 
 type ProposalStore = Record<string, Record<string, ProposalRecord | Exclude<TalentProposalStatus, 'none'>>>;
@@ -99,20 +113,56 @@ function companyForRecruiter(
   return { companyName: companyName || '회사명 없음', businessNumber };
 }
 
+function linkedJob(record: ProposalRecord): { jobId?: string; jobTitle: string } {
+  const storedTitle = record.jobTitle?.trim() ?? '';
+  if (!record.jobId) return { jobTitle: storedTitle };
+  const live = getJobById(record.jobId);
+  return {
+    jobId: record.jobId,
+    jobTitle: live?.title?.trim() || storedTitle,
+  };
+}
+
+export function resolveProposeJob(recruiterId: string, jobId?: string): JobPosting | null {
+  const jobs = listPublishedMyJobPostings(recruiterId);
+  if (jobs.length === 0) return null;
+  if (jobId) return jobs.find((job) => job.id === jobId) ?? null;
+  if (jobs.length === 1) return jobs[0] ?? null;
+  return null;
+}
+
 export function getTalentProposalStatus(recruiterId: string, talentId: string): TalentProposalStatus {
-  return asRecord(readStore()[recruiterId]?.[talentId])?.status ?? 'none';
+  return getTalentProposalView(recruiterId, talentId).status;
+}
+
+export function getTalentProposalView(recruiterId: string, talentId: string): TalentProposalView {
+  const record = asRecord(readStore()[recruiterId]?.[talentId]);
+  if (!record) return { status: 'none', jobTitle: '' };
+  const job = linkedJob(record);
+  return { status: record.status, jobId: job.jobId, jobTitle: job.jobTitle };
 }
 
 export function saveTalentProposal(
   recruiterId: string,
   talentId: string,
   status: Exclude<TalentProposalStatus, 'none'>,
+  jobId?: string,
 ): void {
+  if (status === 'pending' && missingProposeRequirements(recruiterId).length > 0) return;
   const owned = findMyTalentProfile(talentId);
+  if (status === 'pending' && owned?.userId === recruiterId) return;
   const talent = resolveProposalTalent(talentId);
   const identity = recruiterCompanyFromJobs(recruiterId);
   const current = asRecord(readStore()[recruiterId]?.[talentId]);
   const sendingAgain = status === 'pending' && current?.status === 'rejected';
+  let nextJobId = current?.jobId;
+  let nextJobTitle = current?.jobTitle;
+  if (status === 'pending') {
+    const job = resolveProposeJob(recruiterId, jobId);
+    if (!job) return;
+    nextJobId = job.id;
+    nextJobTitle = job.title;
+  }
   const record: ProposalRecord = {
     status,
     talentOwnerId: owned?.userId ?? current?.talentOwnerId,
@@ -120,6 +170,8 @@ export function saveTalentProposal(
     businessNumber: digitsOnly(identity?.businessNumber ?? current?.businessNumber ?? '') || undefined,
     proposedAt: sendingAgain ? getKoreaDateTimeLocalMin() : current?.proposedAt ?? getKoreaDateTimeLocalMin(),
     resumeTitle: talent ? talentResumeTitle(talent) : current?.resumeTitle,
+    jobId: nextJobId,
+    jobTitle: nextJobTitle,
     hiddenFromSenderList: sendingAgain ? undefined : current?.hiddenFromSenderList,
   };
   const store = readStore();
@@ -161,6 +213,7 @@ export function listReceivedProposals(jobseekerId: string): ReceivedProposal[] {
 
       const company = companyForRecruiter(recruiterId, record);
       const resume = owned?.userId === jobseekerId ? owned.profile : getMyTalentProfile(jobseekerId, talentId);
+      const job = linkedJob(record);
       items.push({
         id: `${recruiterId}:${talentId}`,
         recruiterId,
@@ -168,6 +221,8 @@ export function listReceivedProposals(jobseekerId: string): ReceivedProposal[] {
         companyName: company.companyName,
         businessNumber: company.businessNumber,
         resumeTitle: resume ? talentResumeTitle(resume) : record.resumeTitle?.trim() || '삭제된 이력서',
+        jobId: job.jobId,
+        jobTitle: job.jobTitle,
         proposedAt: record.proposedAt ?? '',
         status: record.status,
         resumeMissing: !resume,
@@ -192,6 +247,7 @@ export function listSentProposals(recruiterId: string): ReceivedProposal[] {
     if (!record || record.hiddenFromSenderList) continue;
     const resume = resolveProposalTalent(talentId);
     const company = companyForRecruiter(recruiterId, record);
+    const job = linkedJob(record);
     items.push({
       id: `${recruiterId}:${talentId}`,
       recruiterId,
@@ -199,6 +255,8 @@ export function listSentProposals(recruiterId: string): ReceivedProposal[] {
       companyName: company.companyName,
       businessNumber: company.businessNumber,
       resumeTitle: resume ? talentResumeTitle(resume) : record.resumeTitle?.trim() || '삭제된 이력서',
+      jobId: job.jobId,
+      jobTitle: job.jobTitle,
       proposedAt: record.proposedAt ?? '',
       status: record.status,
       resumeMissing: !resume,

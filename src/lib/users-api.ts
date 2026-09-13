@@ -1,4 +1,5 @@
 import type { User } from 'firebase/auth';
+import type { BizVerifyRecord } from '@/lib/biz-verify-store';
 import type { UserProfile, UserSettings } from '@/types/user';
 
 type ApiResponse<T> = { ok: true; data: T } | { ok: false; error: { code: string; message?: string } };
@@ -7,12 +8,14 @@ export type UserAccountData = {
   profile: UserProfile;
   settings: UserSettings;
   marketingAgreed: boolean;
+  company: BizVerifyRecord | null;
 };
 
 export type UpdateUserAccountPayload = {
   nickname?: string;
   marketingAgreed?: boolean;
   notifyEmailAgreed?: boolean;
+  company?: BizVerifyRecord;
 };
 
 async function authFetch<T>(
@@ -30,7 +33,11 @@ async function authFetch<T>(
     },
   });
 
-  return res.json() as Promise<ApiResponse<T>>;
+  try {
+    return (await res.json()) as ApiResponse<T>;
+  } catch {
+    return { ok: false, error: { code: 'REQUEST_FAILED', message: '요청을 처리하지 못했습니다.' } };
+  }
 }
 
 export async function fetchUserAccount(user: User) {

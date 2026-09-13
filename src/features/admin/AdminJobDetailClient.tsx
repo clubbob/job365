@@ -12,16 +12,17 @@ import {
   DetailText,
 } from '@/components/ui/PostingDetail';
 import { Card } from '@/components/ui/Card';
+import JobCompanySection from '@/features/jobs/JobCompanySection';
 import {
   adminDangerActionClassName,
   adminJson,
   adminPrimaryActionClassName,
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
-import { formatBusinessNumber } from '@/lib/business-number';
 import { jobCareerLabel, jobDeadlineLabel, jobEducationLabel, jobHeadcountLabel } from '@/lib/job-display';
 import { deleteMyJobPostingById, findMyJobPosting, saveMyJobPosting } from '@/lib/my-job-posts';
-import { WORK_TYPE_LABELS, type JobPosting } from '@/types/job';
+import { isPublishedJob, jobPositionLabel, jobWorkTypesLabel, type JobPosting } from '@/types/job';
+import AdminPublishBadge from '@/features/admin/AdminPublishBadge';
 
 type ItemResponse =
   | { ok: true; data: { item: { ownerId: string; job: JobPosting } | null } }
@@ -89,17 +90,19 @@ export default function AdminJobDetailClient({ jobId }: { jobId: string }) {
   const career = jobCareerLabel(job);
   const education = jobEducationLabel(job.education);
   const headcount = jobHeadcountLabel(job.headcount);
-  const workType = WORK_TYPE_LABELS[job.workType];
+  const workType = jobWorkTypesLabel(job);
   const deadline = job.deadline ? jobDeadlineLabel(job.deadline) : null;
-  const businessNumber = job.businessNumber ? formatBusinessNumber(job.businessNumber) : '';
 
   return (
     <div className="space-y-5">
       <PageHeader title="채용 정보" description={job.companyName} homeHref="/admin/jobs" homeLabel="목록으로" />
-      <div className="flex flex-wrap gap-2">
-        <Link href={`/jobs/${job.id}`} className={adminSecondaryActionClassName}>
-          사이트에서 보기
-        </Link>
+      <div className="flex flex-wrap items-center gap-2">
+        <AdminPublishBadge published={isPublishedJob(job)} />
+        {isPublishedJob(job) ? (
+          <Link href={`/jobs/${job.id}`} className={adminSecondaryActionClassName}>
+            사이트에서 보기
+          </Link>
+        ) : null}
         <Link href={`/admin/jobs/${encodeURIComponent(job.id)}/edit`} className={adminPrimaryActionClassName}>
           수정
         </Link>
@@ -113,7 +116,8 @@ export default function AdminJobDetailClient({ jobId }: { jobId: string }) {
           title={job.title}
           badges={
             <>
-              <DetailBadge tone="primary">{workType}</DetailBadge>
+              <DetailBadge tone="primary">{isPublishedJob(job) ? '공개' : '작성 중'}</DetailBadge>
+              <DetailBadge>{workType}</DetailBadge>
               {career ? <DetailBadge>{career}</DetailBadge> : null}
               {education ? <DetailBadge>{education}</DetailBadge> : null}
             </>
@@ -126,15 +130,14 @@ export default function AdminJobDetailClient({ jobId }: { jobId: string }) {
             { label: '모집 인원', value: headcount || '—' },
           ]}
         />
+        <JobCompanySection job={job} ownerId={item.ownerId} />
         <DetailStatGrid
           items={[
-            { label: '회사명', value: job.companyName },
-            { label: '사업자등록번호', value: businessNumber },
             { label: '근무 형태', value: workType },
             { label: '모집 인원', value: headcount },
             { label: '경력 유무', value: career },
             { label: '학력', value: education },
-            { label: '직급/직책', value: job.positionLevel },
+            { label: '직급/직책', value: jobPositionLabel(job.positionLevel) },
             { label: '수습 기간', value: job.probation },
             { label: '근무지', value: job.location },
             { label: '근무 요일', value: job.workDays },

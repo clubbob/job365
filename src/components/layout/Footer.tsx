@@ -19,7 +19,7 @@ export default function Footer() {
             개인정보처리방침
           </Link>
           <Link href="/marketing" className={navLinkClassName}>
-            마케팅수신동의
+            마케팅 수신 동의
           </Link>
           <Link href="/inquiry" className={navLinkClassName}>
             문의하기

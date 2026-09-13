@@ -9,7 +9,7 @@ export type JobWorkType =
   | 'military'
   | 'project';
 export type JobPayType = 'hourly' | 'daily' | 'monthly' | 'yearly' | 'per_task';
-export type JobCareerType = 'new' | 'experienced';
+export type JobCareerType = 'new' | 'experienced' | 'any';
 export type JobStatus = 'draft' | 'pending' | 'published' | 'closed' | 'rejected';
 
 export const JOB_EDUCATION_OPTIONS = [
@@ -27,6 +27,7 @@ export type JobPosting = {
   title: string;
   companyName: string;
   workType: JobWorkType;
+  workTypes?: JobWorkType[];
   payType: JobPayType;
   payLabel: string;
   location: string;
@@ -48,7 +49,31 @@ export type JobPosting = {
   requirements?: string;
   preferred?: string;
   benefits?: string;
+  status?: JobStatus;
+  company?: JobCompanyInfo;
 };
+
+export type JobCompanyInfo = {
+  companyName?: string;
+  businessNumber?: string;
+  ceo?: string;
+  address?: string;
+  phone?: string;
+  fax?: string;
+  foundedOn?: string;
+  employeeCount?: string;
+  lastYearRevenue?: string;
+  website?: string;
+  intro?: string;
+};
+
+export function isJobStatus(value: string): value is JobStatus {
+  return value === 'draft' || value === 'pending' || value === 'published' || value === 'closed' || value === 'rejected';
+}
+
+export function isPublishedJob(job: Pick<JobPosting, 'status'>): boolean {
+  return !job.status || job.status === 'published';
+}
 
 export const WORK_TYPE_LABELS: Record<JobWorkType, string> = {
   fulltime: '정규직',
@@ -87,6 +112,22 @@ export function isJobWorkType(value: string): value is JobWorkType {
   return JOB_WORK_TYPES.includes(value as JobWorkType);
 }
 
+export function jobWorkTypes(job: Pick<JobPosting, 'workType' | 'workTypes'>): JobWorkType[] {
+  const fromList = [...new Set((job.workTypes ?? []).filter(isJobWorkType))];
+  if (fromList.length > 0) return JOB_WORK_TYPES.filter((item) => fromList.includes(item));
+  return isJobWorkType(job.workType) ? [job.workType] : [];
+}
+
+export function jobWorkTypesLabel(job: Pick<JobPosting, 'workType' | 'workTypes'>): string {
+  return jobWorkTypes(job)
+    .map((item) => WORK_TYPE_LABELS[item])
+    .join(', ');
+}
+
+export function jobMatchesWorkType(job: Pick<JobPosting, 'workType' | 'workTypes'>, workType: JobWorkType): boolean {
+  return jobWorkTypes(job).includes(workType);
+}
+
 export function isJobPayType(value: string): value is JobPayType {
   return value in PAY_TYPE_LABELS;
 }
@@ -110,9 +151,11 @@ export const PAY_TYPE_LABELS: Record<JobPayType, string> = {
 export const CAREER_TYPE_LABELS: Record<JobCareerType, string> = {
   new: '신입',
   experienced: '경력',
+  any: '경력 무관',
 };
 
 export const JOB_CAREER_TYPES = Object.keys(CAREER_TYPE_LABELS) as JobCareerType[];
+export const JOBSEEKER_CAREER_TYPES: JobCareerType[] = ['new', 'experienced'];
 
 export function formatCareerYearsInput(value: string): string {
   return value.replace(/\D/g, '').slice(0, 2);
@@ -127,7 +170,6 @@ export function parseCareerYears(value: string | number | undefined): number | n
 }
 
 export const JOB_POSITION_OPTIONS = [
-  '직급무관',
   '사원',
   '주임·계장',
   '대리',
@@ -135,7 +177,13 @@ export const JOB_POSITION_OPTIONS = [
   '차장',
   '부장',
   '임원',
+  '직급 무관',
 ] as const;
+
+export function jobPositionLabel(value?: string): string | undefined {
+  if (!value?.trim()) return undefined;
+  return value === '직급무관' ? '직급 무관' : value;
+}
 
 export const JOB_PROBATION_OPTIONS = ['없음', '1개월', '2개월', '3개월', '6개월', '협의'] as const;
 

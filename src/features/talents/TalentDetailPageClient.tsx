@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
 import {
@@ -22,6 +23,10 @@ import type { TalentProposalStatus } from '@/lib/talent-proposals';
 import type { TalentProfile } from '@/types/talent';
 
 export default function TalentDetailPageClient({ talentId }: { talentId: string }) {
+  const searchParams = useSearchParams();
+  const fromMypage = searchParams.get('from') === 'mypage';
+  const listHref = fromMypage ? '/mypage?tab=resume&sub=resume' : '/talents';
+  const listLabel = fromMypage ? '돌아가기' : '이전 목록으로';
   const { user, loading } = useAuth();
   const { mode, ready: modeReady } = useUserMode();
   const [proposalStatus, setProposalStatus] = useState<TalentProposalStatus>('none');
@@ -52,13 +57,13 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
   if (!talent) {
     return (
       <div className="space-y-5">
-        <PageHeader title="인재 정보" homeHref="/talents" homeLabel="이전 목록으로" />
+        <PageHeader title="인재 정보" homeHref={listHref} homeLabel={listLabel} />
         <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-card">
           <p className="text-sm text-muted">
             {blocked ? '이 이력서는 열람이 제한되어 있습니다.' : '인재 정보를 찾을 수 없습니다.'}
           </p>
-          <Link href="/talents" className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">
-            이전 목록으로
+          <Link href={listHref} className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">
+            {listLabel}
           </Link>
         </div>
       </div>
@@ -71,7 +76,7 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
 
   return (
     <div className="space-y-5">
-      <PageHeader title="인재 정보" description={talent.headline} homeHref="/talents" homeLabel="이전 목록으로" />
+      <PageHeader title="인재 정보" description={talent.headline} homeHref={listHref} homeLabel={listLabel} />
       <AdSlot placement="header" />
 
       <article className="space-y-4">

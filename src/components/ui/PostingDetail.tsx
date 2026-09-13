@@ -90,13 +90,15 @@ export function DetailHero({
 }
 
 export function DetailStatGrid({
+  title = '핵심 정보',
   items,
 }: {
-  items: Array<{ label: string; value?: string | null }>;
+  title?: string;
+  items: Array<{ label: string; value?: string | null; href?: string }>;
 }) {
   return (
     <section>
-      <h3 className="mb-2.5 text-sm font-bold text-foreground">핵심 정보</h3>
+      <h3 className="mb-2.5 text-sm font-bold text-foreground">{title}</h3>
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {items.map((item) => {
           const value = item.value?.trim() ? item.value : '—';
@@ -105,11 +107,22 @@ export function DetailStatGrid({
               <dt className="text-[11px] font-medium tracking-wide text-subtle">{item.label}</dt>
               <dd
                 className={cn(
-                  'mt-1 whitespace-pre-wrap text-sm font-semibold leading-snug',
+                  'mt-1 min-w-0 break-words whitespace-pre-wrap text-sm font-semibold leading-snug',
                   value === '—' ? 'text-subtle' : 'text-foreground',
                 )}
               >
-                {value}
+                {item.href && value !== '—' ? (
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-all text-primary underline decoration-primary/30 underline-offset-[3px] hover:decoration-primary/60"
+                  >
+                    {value}
+                  </a>
+                ) : (
+                  value
+                )}
               </dd>
             </div>
           );

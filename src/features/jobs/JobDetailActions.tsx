@@ -115,7 +115,8 @@ export default function JobDetailActions({ job }: { job: JobPosting }) {
     const resume = findApplyReadyResume(user!.uid);
     if (!resume) return;
     if (!window.confirm(`「${job.title}」에 지원할까요?`)) return;
-    setApplication(applyToJob(user!.uid, job, resume));
+    const next = applyToJob(user!.uid, job, resume);
+    if (next) setApplication(next);
   }
 
   return (

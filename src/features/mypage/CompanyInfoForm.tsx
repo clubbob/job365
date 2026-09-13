@@ -1,19 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
 import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
+import { useAuth } from '@/features/auth/auth-context';
 import { authInputClassName } from '@/lib/auth-ui';
 import { digitsOnly, formatBusinessNumber } from '@/lib/business-number';
 import {
   isCompanyInfoComplete,
   loadBizVerify,
+  missingCompanyInfoMessage,
   saveBizVerify,
   type BizVerifyRecord,
 } from '@/lib/biz-verify-store';
 import { NTS_STATUS_SOURCE } from '@/lib/company';
 import { firstRequiredError } from '@/lib/form-required';
-import { formatPhoneInput, isValidPhone } from '@/lib/talent-contact';
+import { formatPhoneInput } from '@/lib/talent-contact';
+import { fetchUserAccount, updateUserAccount } from '@/lib/users-api';
+import { getUserNicknameFallback } from '@/lib/user-display';
 
 type NumberCheck = {
   businessNumber: string;
@@ -43,8 +47,24 @@ type CompanyDraft = {
   website: string;
   intro: string;
   registrantName: string;
+  registrantEmail: string;
   registrantMobile: string;
 };
+
+function FieldAlert({ message }: { message: string | null | undefined }) {
+  if (!message) return null;
+  return (
+    <p className="mt-1 text-sm text-danger" role="alert">
+      {message}
+    </p>
+  );
+}
+
+function formatRevenueAmountInput(value: string): string {
+  const digits = value.replace(/[^\d]/g, '');
+  if (!digits) return '';
+  return Number(digits).toLocaleString('ko-KR');
+}
 
 function emptyDraft(): CompanyDraft {
   return {
@@ -60,7 +80,16 @@ function emptyDraft(): CompanyDraft {
     website: '',
     intro: '',
     registrantName: '',
+    registrantEmail: '',
     registrantMobile: '',
+  };
+}
+
+function withAccountContact(draft: CompanyDraft, name: string, email: string): CompanyDraft {
+  return {
+    ...draft,
+    registrantName: name.trim() || draft.registrantName,
+    registrantEmail: email.trim() || draft.registrantEmail,
   };
 }
 
@@ -75,10 +104,11 @@ function draftFromRecord(record: BizVerifyRecord | null): CompanyDraft {
     fax: record.fax ?? '',
     foundedOn: record.foundedOn ?? '',
     employeeCount: record.employeeCount ?? '',
-    lastYearRevenue: record.lastYearRevenue ?? '',
+    lastYearRevenue: (record.lastYearRevenue ?? '').replace(/[^\d]/g, ''),
     website: record.website ?? '',
     intro: record.intro ?? '',
     registrantName: record.registrantName ?? '',
+    registrantEmail: record.registrantEmail ?? '',
     registrantMobile: record.registrantMobile ?? '',
   };
 }
@@ -94,10 +124,11 @@ function encodeDraft(draft: CompanyDraft, verifiedDigits: string): string {
     fax: draft.fax.trim(),
     foundedOn: draft.foundedOn.trim(),
     employeeCount: draft.employeeCount.trim(),
-    lastYearRevenue: draft.lastYearRevenue.trim(),
+    lastYearRevenue: draft.lastYearRevenue.replace(/[^\d]/g, ''),
     website: draft.website.trim(),
     intro: draft.intro.trim(),
     registrantName: draft.registrantName.trim(),
+    registrantEmail: draft.registrantEmail.trim(),
     registrantMobile: draft.registrantMobile.trim(),
     verifiedDigits,
   });
@@ -110,34 +141,53 @@ export default function CompanyInfoForm({
   userId: string;
   onSaved?: () => void;
 }) {
+  const { user } = useAuth();
   const [saved, setSaved] = useState<BizVerifyRecord | null>(null);
   const [draft, setDraft] = useState<CompanyDraft>(emptyDraft);
+  const [accountName, setAccountName] = useState('');
+  const [accountEmail, setAccountEmail] = useState('');
   const [numberCheck, setNumberCheck] = useState<NumberCheck | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
-  const [contactError, setContactError] = useState('');
   const [lookupError, setLookupError] = useState('');
   const [didSave, setDidSave] = useState(false);
+  const [retryServer, setRetryServer] = useState(false);
+  const accountRef = useRef({ name: '', email: '' });
+  const dirtyRef = useRef(false);
+  const onSavedRef = useRef(onSaved);
+  accountRef.current = { name: accountName, email: accountEmail };
+  onSavedRef.current = onSaved;
 
   useEffect(() => {
-    const existing = loadBizVerify(userId);
-    setSaved(existing);
-    setDraft(draftFromRecord(existing));
-    setNumberCheck(
-      existing
-        ? {
-            businessNumber: existing.businessNumber,
-            status: 'active',
-            statusLabel: existing.statusLabel,
-            taxType: existing.taxType,
-          }
-        : null,
-    );
+    if (!user) {
+      setAccountName('');
+      setAccountEmail('');
+      return;
+    }
+    setAccountName(getUserNicknameFallback(user));
+    setAccountEmail(user.email?.trim() ?? '');
+    void fetchUserAccount(user).then((result) => {
+      if (!result.ok) return;
+      setAccountName(result.data.profile.nickname || getUserNicknameFallback(user));
+      setAccountEmail(result.data.profile.email?.trim() || user.email?.trim() || '');
+      if (!result.data.company || dirtyRef.current) return;
+      applyRecord(saveBizVerify(userId, result.data.company));
+      onSavedRef.current?.();
+    });
+  }, [user, userId]);
+
+  useEffect(() => {
+    applyRecord(loadBizVerify(userId));
     setError('');
-    setContactError('');
     setLookupError('');
     setDidSave(false);
+    setRetryServer(false);
   }, [userId]);
+
+  useEffect(() => {
+    if (!accountName && !accountEmail) return;
+    setDraft((current) => withAccountContact(current, accountName, accountEmail));
+  }, [accountEmail, accountName]);
 
   const verifiedDigits = numberCheck ? digitsOnly(numberCheck.businessNumber) : '';
   const savedVerifiedDigits = saved ? digitsOnly(saved.businessNumber) : '';
@@ -146,19 +196,30 @@ export default function CompanyInfoForm({
     verifiedDigits.length === 10 &&
     verifiedDigits === digitsOnly(draft.businessNumber);
   const dirty = encodeDraft(draft, verifiedDigits) !== encodeDraft(draftFromRecord(saved), savedVerifiedDigits);
+  dirtyRef.current = dirty;
   const complete = isCompanyInfoComplete(saved);
-  const canSave =
-    dirty &&
-    canEditCompany &&
-    Boolean(draft.companyName.trim()) &&
-    Boolean(draft.registrantName.trim()) &&
-    isValidPhone(draft.registrantMobile);
+  const canSave = canEditCompany && (dirty || retryServer);
   const lockedInputClassName = `${authInputClassName} disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-muted`;
+  const accountInputClassName = `${authInputClassName} bg-neutral-50`;
+
+  function applyRecord(record: BizVerifyRecord | null) {
+    setSaved(record);
+    setDraft(withAccountContact(draftFromRecord(record), accountRef.current.name, accountRef.current.email));
+    setNumberCheck(
+      record
+        ? {
+            businessNumber: record.businessNumber,
+            status: 'active',
+            statusLabel: record.statusLabel || '계속사업자',
+            taxType: record.taxType,
+          }
+        : null,
+    );
+  }
 
   function patchDraft(patch: Partial<CompanyDraft>) {
     setDraft((current) => ({ ...current, ...patch }));
     setError('');
-    setContactError('');
     setDidSave(false);
   }
 
@@ -218,30 +279,23 @@ export default function CompanyInfoForm({
   }
 
   function handleSave() {
-    const missing = firstRequiredError([
-      { ok: digitsOnly(draft.businessNumber).length === 10, message: '사업자등록번호를 입력해 주세요.' },
-      { ok: canEditCompany, message: '계속사업자로 조회된 경우에만 회사 정보를 저장할 수 있습니다.' },
-      { ok: Boolean(draft.companyName.trim()), message: '회사명을 입력해 주세요.' },
-      { ok: Boolean(draft.registrantName.trim()), message: '등록자 이름을 입력해 주세요.' },
-      { ok: isValidPhone(draft.registrantMobile), message: '핸드폰 번호를 입력해 주세요.' },
-    ]);
+    const missing =
+      firstRequiredError([
+        { ok: digitsOnly(draft.businessNumber).length === 10, message: '사업자등록번호를 입력해 주세요.' },
+        { ok: canEditCompany, message: '계속사업자로 조회된 경우에만 회사 정보를 저장할 수 있습니다.' },
+      ]) ?? missingCompanyInfoMessage(draft);
     if (missing) {
-      if (missing === '회사명을 입력해 주세요.') {
-        setError(missing);
-        setContactError('');
-        setLookupError('');
-      } else if (missing.startsWith('등록자') || missing.startsWith('핸드폰')) {
-        setContactError(missing);
-        setError('');
-        setLookupError('');
-      } else {
+      if (missing === '사업자등록번호를 입력해 주세요.' || missing.startsWith('계속사업자')) {
         setLookupError(missing);
         setError('');
-        setContactError('');
+      } else {
+        setError(missing);
+        setLookupError('');
       }
       return;
     }
-    if (!canEditCompany || !numberCheck || !dirty) return;
+    if (!canEditCompany || !numberCheck) return;
+    if (!dirty && !retryServer) return;
     const record: BizVerifyRecord = {
       businessNumber: numberCheck.businessNumber,
       companyName: draft.companyName.trim(),
@@ -250,29 +304,58 @@ export default function CompanyInfoForm({
       taxType: numberCheck.taxType,
       verifiedAt: new Date().toISOString(),
       source: 'nts',
-      ceo: draft.ceo.trim() || undefined,
-      address: draft.address.trim() || undefined,
-      phone: draft.phone.trim() || undefined,
+      ceo: draft.ceo.trim(),
+      address: draft.address.trim(),
+      phone: draft.phone.trim(),
       fax: draft.fax.trim() || undefined,
-      foundedOn: draft.foundedOn.trim() || undefined,
-      employeeCount: draft.employeeCount.trim() || undefined,
-      lastYearRevenue: draft.lastYearRevenue.trim() || undefined,
+      foundedOn: draft.foundedOn.trim(),
+      employeeCount: draft.employeeCount.replace(/[^\d]/g, ''),
+      lastYearRevenue: draft.lastYearRevenue.replace(/[^\d]/g, ''),
       website: draft.website.trim() || undefined,
-      intro: draft.intro.trim() || undefined,
+      intro: draft.intro.trim(),
       registrantName: draft.registrantName.trim(),
+      registrantEmail: draft.registrantEmail.trim(),
       registrantMobile: draft.registrantMobile.trim(),
     };
-    saveBizVerify(userId, record);
-    setSaved(record);
-    setDraft(draftFromRecord(record));
+    const persisted = saveBizVerify(userId, record);
+    const nextDraft = withAccountContact(draftFromRecord(persisted), accountRef.current.name, accountRef.current.email);
+    setSaved({
+      ...persisted,
+      registrantName: nextDraft.registrantName,
+      registrantEmail: nextDraft.registrantEmail,
+    });
+    setDraft(nextDraft);
+    setNumberCheck({
+      businessNumber: persisted.businessNumber,
+      status: 'active',
+      statusLabel: persisted.statusLabel || '계속사업자',
+      taxType: persisted.taxType,
+    });
     setError('');
-    setContactError('');
+    setLookupError('');
     setDidSave(true);
+    setRetryServer(false);
     onSaved?.();
+    if (!user) return;
+    void updateUserAccount(user, { company: persisted })
+      .then((result) => {
+        if (!result.ok) {
+          if (result.error?.code === 'ADMIN_NOT_CONFIGURED') return;
+          setError(result.error?.message || '이 기기에는 저장했습니다. 서버 저장에 실패해 다시 저장해 주세요.');
+          setRetryServer(true);
+          return;
+        }
+        if (result.data.company) saveBizVerify(userId, result.data.company);
+        onSaved?.();
+      })
+      .catch(() => {
+        setError('이 기기에는 저장했습니다. 서버 저장에 실패해 다시 저장해 주세요.');
+        setRetryServer(true);
+      });
   }
 
   function handleCancel() {
-    setDraft(draftFromRecord(saved));
+    setDraft(withAccountContact(draftFromRecord(saved), accountName, accountEmail));
     setNumberCheck(
       saved
         ? {
@@ -284,7 +367,6 @@ export default function CompanyInfoForm({
         : null,
     );
     setError('');
-    setContactError('');
     setLookupError('');
     setDidSave(false);
   }
@@ -360,14 +442,10 @@ export default function CompanyInfoForm({
               placeholder="사업자 상호를 입력해 주세요"
               disabled={!canEditCompany}
             />
-            {error ? (
-              <p className="mt-1 text-sm text-danger" role="alert">
-                {error}
-              </p>
-            ) : null}
+            {error === '회사명을 입력해 주세요.' ? <FieldAlert message={error} /> : null}
           </div>
           <div>
-            <FieldLabel htmlFor="company-ceo" optional>
+            <FieldLabel htmlFor="company-ceo" required>
               대표자명
             </FieldLabel>
             <input
@@ -378,12 +456,13 @@ export default function CompanyInfoForm({
               placeholder="대표자 성명"
               disabled={!canEditCompany}
             />
+            {error === '대표자명을 입력해 주세요.' ? <FieldAlert message={error} /> : null}
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <FieldLabel htmlFor="company-phone" optional>
+            <FieldLabel htmlFor="company-phone" required>
               전화번호
             </FieldLabel>
             <input
@@ -395,6 +474,7 @@ export default function CompanyInfoForm({
               placeholder="02-0000-0000"
               disabled={!canEditCompany}
             />
+            {error === '전화번호를 입력해 주세요.' ? <FieldAlert message={error} /> : null}
           </div>
           <div>
             <FieldLabel htmlFor="company-fax" optional>
@@ -413,8 +493,8 @@ export default function CompanyInfoForm({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <FieldLabel htmlFor="company-founded-on" optional>
+          <div className="min-w-0">
+            <FieldLabel htmlFor="company-founded-on" required>
               설립일
             </FieldLabel>
             <input
@@ -425,41 +505,48 @@ export default function CompanyInfoForm({
               className={lockedInputClassName}
               disabled={!canEditCompany}
             />
+            {error === '설립일을 입력해 주세요.' ? <FieldAlert message={error} /> : null}
           </div>
-          <div>
-            <FieldLabel htmlFor="company-employee-count" optional>
+          <div className="min-w-0">
+            <FieldLabel htmlFor="company-employee-count" required>
               직원 수
             </FieldLabel>
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <input
                 id="company-employee-count"
                 inputMode="numeric"
                 value={draft.employeeCount}
                 onChange={(event) => patchDraft({ employeeCount: event.target.value.replace(/[^\d]/g, '') })}
-                className={`${lockedInputClassName} text-right tabular-nums`}
+                className={`${lockedInputClassName} min-w-0 flex-1 text-right tabular-nums`}
                 placeholder="0"
                 disabled={!canEditCompany}
               />
-              <span className="shrink-0 text-sm text-muted">명</span>
+              <span className="shrink-0 whitespace-nowrap text-sm text-muted">명</span>
             </div>
+            {error === '직원 수를 입력해 주세요.' ? <FieldAlert message={error} /> : null}
           </div>
-          <div>
-            <FieldLabel htmlFor="company-revenue" optional>
+          <div className="min-w-0">
+            <FieldLabel htmlFor="company-revenue" required>
               전년 매출액
             </FieldLabel>
-            <input
-              id="company-revenue"
-              value={draft.lastYearRevenue}
-              onChange={(event) => patchDraft({ lastYearRevenue: event.target.value })}
-              className={lockedInputClassName}
-              placeholder="예: 12억 원"
-              disabled={!canEditCompany}
-            />
+            <div className="flex min-w-0 items-center gap-2">
+              <input
+                id="company-revenue"
+                inputMode="numeric"
+                value={formatRevenueAmountInput(draft.lastYearRevenue)}
+                onChange={(event) => patchDraft({ lastYearRevenue: event.target.value.replace(/[^\d]/g, '') })}
+                className={`${lockedInputClassName} min-w-0 flex-1 text-right tabular-nums`}
+                placeholder="0"
+                disabled={!canEditCompany}
+              />
+              <span className="shrink-0 whitespace-nowrap text-sm text-muted">백만 원</span>
+            </div>
+            {error === '전년 매출액을 입력해 주세요.' ? <FieldAlert message={error} /> : null}
           </div>
         </div>
 
         <div>
-          <FieldLabel htmlFor="company-address" optional>
+          <FieldLabel htmlFor="company-address" required>
             사업장 주소
           </FieldLabel>
           <input
@@ -470,6 +557,7 @@ export default function CompanyInfoForm({
             placeholder="본사 또는 사업장 주소"
             disabled={!canEditCompany}
           />
+          {error === '사업장 주소를 입력해 주세요.' ? <FieldAlert message={error} /> : null}
         </div>
 
         <div>
@@ -488,7 +576,7 @@ export default function CompanyInfoForm({
         </div>
 
         <div>
-          <FieldLabel htmlFor="company-intro" optional>
+          <FieldLabel htmlFor="company-intro" required>
             회사 소개
           </FieldLabel>
           <AutoGrowTextarea
@@ -500,29 +588,41 @@ export default function CompanyInfoForm({
             rows={3}
             disabled={!canEditCompany}
           />
+          {error === '회사 소개를 입력해 주세요.' ? <FieldAlert message={error} /> : null}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <FieldLabel htmlFor="company-registrant-name" required>
-              등록자 이름
-            </FieldLabel>
-            <input
-              id="company-registrant-name"
-              value={draft.registrantName}
-              onChange={(event) => patchDraft({ registrantName: event.target.value })}
-              className={lockedInputClassName}
-              placeholder="담당자 이름"
-              autoComplete="name"
-              disabled={!canEditCompany}
-            />
-            {contactError === '등록자 이름을 입력해 주세요.' ? (
-              <p className="mt-1 text-sm text-danger" role="alert">
-                {contactError}
-              </p>
-            ) : null}
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <FieldLabel htmlFor="company-registrant-name" required>
+                등록자 이름
+              </FieldLabel>
+              <input
+                id="company-registrant-name"
+                value={draft.registrantName}
+                readOnly
+                className={accountInputClassName}
+                autoComplete="name"
+              />
+            {error.startsWith('등록자 이름') ? <FieldAlert message={error} /> : null}
+              </div>
+              <div>
+              <FieldLabel htmlFor="company-registrant-email" required>
+                이메일
+              </FieldLabel>
+              <input
+                id="company-registrant-email"
+                type="email"
+                value={draft.registrantEmail}
+                readOnly
+                className={accountInputClassName}
+                autoComplete="email"
+              />
+            {error.startsWith('로그인 이메일') ? <FieldAlert message={error} /> : null}
+            </div>
           </div>
-          <div>
+          <p className="text-xs text-subtle">로그인 계정의 이름과 이메일을 보여 줍니다.</p>
+          <div className="max-w-md">
             <FieldLabel htmlFor="company-registrant-mobile" required>
               핸드폰 번호
             </FieldLabel>
@@ -537,15 +637,21 @@ export default function CompanyInfoForm({
               placeholder="010-0000-0000"
               disabled={!canEditCompany}
             />
-            {contactError === '핸드폰 번호를 입력해 주세요.' ? (
-              <p className="mt-1 text-sm text-danger" role="alert">
-                {contactError}
-              </p>
-            ) : null}
+            {error === '핸드폰 번호를 입력해 주세요.' ? <FieldAlert message={error} /> : null}
           </div>
         </div>
 
-        {didSave && !dirty ? <p className="text-sm font-medium text-primary">회사 정보를 저장했습니다.</p> : null}
+        {error ? (
+          <p className="text-sm text-danger" role="alert">
+            {error}
+          </p>
+        ) : lookupError ? (
+          <p className="text-sm text-danger" role="alert">
+            {lookupError}
+          </p>
+        ) : didSave && !dirty ? (
+          <p className="text-sm font-medium text-primary">회사 정보를 저장했습니다.</p>
+        ) : null}
 
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={!canSave}>

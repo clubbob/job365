@@ -24,4 +24,6 @@ export type AdminUserListItem = {
   role: UserRole;
   status: UserStatus;
   createdAt: string | null;
+  companyName: string | null;
+  companyReady: boolean;
 };

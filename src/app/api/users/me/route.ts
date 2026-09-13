@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { upsertUserFromAuth, verifyIdToken } from '@/lib/auth-server';
+import { parseBizVerifyRecord } from '@/lib/biz-verify-store';
 import { isFirebaseAdminReady } from '@/lib/firebaseAdmin';
 import { notifyAdminNewSignup } from '@/lib/signup-email-server';
 import {
@@ -99,6 +100,12 @@ function parseUpdateBody(body: unknown): UpdateUserAccountInput | null {
   if (data.notifyEmailAgreed !== undefined) {
     if (typeof data.notifyEmailAgreed !== 'boolean') return null;
     patch.notifyEmailAgreed = data.notifyEmailAgreed;
+  }
+
+  if (data.company !== undefined) {
+    const company = parseBizVerifyRecord(data.company);
+    if (!company) return null;
+    patch.company = company;
   }
 
   if (Object.keys(patch).length === 0) return null;

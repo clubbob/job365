@@ -14,7 +14,11 @@ export function LegalP({ children }: { children: ReactNode }) {
 }
 
 export function LegalOl({ children }: { children: ReactNode }) {
-  return <ol className="list-none space-y-3 [&>li]:leading-relaxed">{children}</ol>;
+  return (
+    <ol className="list-decimal space-y-2 pl-5 marker:font-semibold marker:text-foreground [&>li]:pl-1 [&>li]:leading-relaxed">
+      {children}
+    </ol>
+  );
 }
 
 export function LegalUl({ children }: { children: ReactNode }) {

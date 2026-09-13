@@ -151,7 +151,7 @@ export default function SignupConsent({ value, onChange, className }: SignupCons
         <>
           마케팅 활용 및 광고성 정보 수신에 동의합니다.{' '}
           <Link href="/marketing" target="_blank" rel="noopener noreferrer" className={linkClassName}>
-            자세히
+            마케팅 수신 동의
           </Link>
         </>
       </ConsentRow>

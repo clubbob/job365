@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import type { JobPosting } from '@/types/job';
-import { WORK_TYPE_LABELS } from '@/types/job';
+import { jobWorkTypesLabel } from '@/types/job';
 
 export default function JobCard({
   job,
@@ -25,7 +25,7 @@ export default function JobCard({
     >
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-          {WORK_TYPE_LABELS[job.workType]}
+          {jobWorkTypesLabel(job)}
         </span>
         {badge ? (
           <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-primary ring-1 ring-inset ring-primary/30">

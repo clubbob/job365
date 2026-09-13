@@ -7,13 +7,15 @@ import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
-import { listMyJobPostings } from '@/lib/my-job-posts';
+import { applyCompanyToMyJobPostings, listMyJobPostings } from '@/lib/my-job-posts';
+import { loadBizVerify } from '@/lib/biz-verify-store';
 import { applyWorkPreferencesToMyProfiles, unpublishPublishedIfWorkPreferencesIncomplete } from '@/lib/my-talent-profile';
 import { syncMyJobPosting, syncMyTalentProfile } from '@/lib/posting-sync';
 import JobseekerManagePanel, {
   isJobseekerSubTab,
   type JobseekerSubTab,
 } from '@/features/mypage/JobseekerManagePanel';
+import AccountMarketingConsent from '@/features/mypage/AccountMarketingConsent';
 import RecruiterManagePanel, {
   isRecruiterSubTab,
   type RecruiterSubTab,
@@ -72,6 +74,8 @@ export default function MyPageClient() {
       setMineReady(false);
       return;
     }
+    const company = loadBizVerify(user.uid);
+    if (company) applyCompanyToMyJobPostings(user.uid, company);
     const jobs = listMyJobPostings(user.uid);
     applyWorkPreferencesToMyProfiles(user.uid);
     const resumes = unpublishPublishedIfWorkPreferencesIncomplete(user.uid);
@@ -192,18 +196,27 @@ export default function MyPageClient() {
       </div>
 
       {tab === 'account' ? (
-        <Card title="내 계정">
-          <dl className="space-y-2 text-sm">
-            <div className="flex items-baseline gap-3">
-              <dt className="w-16 shrink-0 text-subtle">이름</dt>
-              <dd className="min-w-0 font-semibold text-foreground">{nickname}</dd>
-            </div>
-            <div className="flex items-baseline gap-3">
-              <dt className="w-16 shrink-0 text-subtle">이메일</dt>
-              <dd className="min-w-0 break-all text-foreground">{user.email ?? '-'}</dd>
-            </div>
-          </dl>
-        </Card>
+        <>
+          <Card title="내 계정">
+            <dl className="space-y-2 text-sm">
+              <div className="flex items-baseline gap-3">
+                <dt className="w-16 shrink-0 text-subtle">이름</dt>
+                <dd className="min-w-0 font-semibold text-foreground">{nickname}</dd>
+              </div>
+              <div className="flex items-baseline gap-3">
+                <dt className="w-16 shrink-0 text-subtle">이메일</dt>
+                <dd className="min-w-0 break-all text-foreground">{user.email ?? '-'}</dd>
+              </div>
+            </dl>
+          </Card>
+          {account ? (
+            <AccountMarketingConsent
+              user={user}
+              agreed={account.marketingAgreed}
+              onSaved={(marketingAgreed) => setAccount({ ...account, marketingAgreed })}
+            />
+          ) : null}
+        </>
       ) : null}
 
       {tab === 'resume' ? (
@@ -224,6 +237,7 @@ export default function MyPageClient() {
           ready={mineReady}
           subTab={recruiterSubTab}
           onSelectSubTab={selectRecruiterSubTab}
+          onJobsChange={setMyJobs}
         />
       ) : null}
     </div>

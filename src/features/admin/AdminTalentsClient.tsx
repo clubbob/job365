@@ -13,7 +13,8 @@ import {
 } from '@/lib/admin-ui';
 import { deleteMyTalentProfileById, listMyTalentProfilesWithOwners } from '@/lib/my-talent-profile';
 import { talentEducation, talentRecentDate, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
-import type { TalentProfile } from '@/types/talent';
+import { isPublishedTalent, type TalentProfile } from '@/types/talent';
+import AdminPublishBadge from '@/features/admin/AdminPublishBadge';
 
 type TalentRow = { ownerId: string; profile: TalentProfile };
 
@@ -70,7 +71,7 @@ export default function AdminTalentsClient() {
     <div className="space-y-5">
       <PageHeader
         title="이력서"
-        description="등록된 이력서를 확인하고 수정·삭제합니다."
+        description="공개·작성 중 이력서를 확인하고 수정·삭제합니다."
         homeHref="/admin"
         homeLabel="관리 홈"
       />
@@ -87,6 +88,7 @@ export default function AdminTalentsClient() {
             <table className="min-w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border text-subtle">
+                  <th className="py-2 pr-4 font-semibold">상태</th>
                   <th className="py-2 pr-4 font-semibold">제목</th>
                   <th className="py-2 pr-4 font-semibold">이름</th>
                   <th className="py-2 pr-4 font-semibold">직무</th>
@@ -98,6 +100,9 @@ export default function AdminTalentsClient() {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.profile.id} className="border-b border-border last:border-0">
+                    <td className="py-2.5 pr-4">
+                      <AdminPublishBadge published={isPublishedTalent(row.profile)} />
+                    </td>
                     <td className="py-2.5 pr-4 font-medium text-foreground">{talentResumeTitle(row.profile)}</td>
                     <td className="py-2.5 pr-4 font-medium text-foreground">{row.profile.name}</td>
                     <td className="py-2.5 pr-4 text-muted">{row.profile.headline}</td>

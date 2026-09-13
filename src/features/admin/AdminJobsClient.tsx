@@ -12,7 +12,8 @@ import {
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
 import { deleteMyJobPostingById, listMyJobPostingsWithOwners } from '@/lib/my-job-posts';
-import { WORK_TYPE_LABELS, type JobPosting } from '@/types/job';
+import { isPublishedJob, jobWorkTypesLabel, type JobPosting } from '@/types/job';
+import AdminPublishBadge from '@/features/admin/AdminPublishBadge';
 
 type JobRow = { ownerId: string; job: JobPosting };
 
@@ -69,7 +70,7 @@ export default function AdminJobsClient() {
     <div className="space-y-5">
       <PageHeader
         title="채용 정보"
-        description="등록된 채용 정보를 확인하고 수정·삭제합니다."
+        description="공개·작성 중 채용 정보를 확인하고 수정·삭제합니다."
         homeHref="/admin"
         homeLabel="관리 홈"
       />
@@ -86,6 +87,7 @@ export default function AdminJobsClient() {
             <table className="min-w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border text-subtle">
+                  <th className="py-2 pr-4 font-semibold">상태</th>
                   <th className="py-2 pr-4 font-semibold">제목</th>
                   <th className="py-2 pr-4 font-semibold">회사</th>
                   <th className="py-2 pr-4 font-semibold">근무 형태</th>
@@ -96,9 +98,12 @@ export default function AdminJobsClient() {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.job.id} className="border-b border-border last:border-0">
+                    <td className="py-2.5 pr-4">
+                      <AdminPublishBadge published={isPublishedJob(row.job)} />
+                    </td>
                     <td className="py-2.5 pr-4 font-medium text-foreground">{row.job.title}</td>
                     <td className="py-2.5 pr-4 text-muted">{row.job.companyName}</td>
-                    <td className="py-2.5 pr-4 text-muted">{WORK_TYPE_LABELS[row.job.workType]}</td>
+                    <td className="py-2.5 pr-4 text-muted">{jobWorkTypesLabel(row.job)}</td>
                     <td className="py-2.5 pr-4 whitespace-nowrap text-muted">{row.job.createdAt}</td>
                     <td className="py-2.5">
                       <div className="flex flex-wrap gap-1.5">

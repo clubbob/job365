@@ -2,7 +2,7 @@ export const COMPANY = {
   name: '새봄인터내셔널',
   ceo: '박진희',
   businessNumber: '129-09-53285',
-  email: 'job365.admin@gmail.com',
+  email: 'pollntalk1004@gmail.com',
   serviceName: 'JobLink 365',
   website: 'https://joblink365.com',
 } as const;

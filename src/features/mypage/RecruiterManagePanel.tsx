@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
-import JobCard from '@/features/jobs/JobCard';
 import CompanyInfoForm from '@/features/mypage/CompanyInfoForm';
 import { isCompanyInfoComplete, loadBizVerify } from '@/lib/biz-verify-store';
 import {
@@ -15,7 +14,19 @@ import {
   type JobApplication,
   type JobApplicationStatus,
 } from '@/lib/job-applications';
+import { jobCareerLabel, jobEducationLabel } from '@/lib/job-display';
 import { findMyTalentProfile } from '@/lib/my-talent-profile';
+import {
+  applyCompanyToMyJobPostings,
+  canPublishMyJobPosting,
+  deleteMyJobPosting,
+  duplicateMyJobPosting,
+  listMyJobPostings,
+  missingJobPublishRequirements,
+  publishMyJobPosting,
+  unpublishMyJobPosting,
+} from '@/lib/my-job-posts';
+import { syncDeleteJobPosting, syncMyJobPosting } from '@/lib/posting-sync';
 import {
   hideSentProposalFromList,
   listSentProposals,
@@ -24,9 +35,10 @@ import {
   TALENT_PROPOSAL_STATUS_LABELS,
   type ReceivedProposal,
 } from '@/lib/talent-proposals';
+import { getJobById } from '@/lib/job-catalog';
 import { displayTalentName } from '@/lib/talent-display';
 import { cn } from '@/lib/utils';
-import type { JobPosting } from '@/types/job';
+import { jobWorkTypesLabel, isPublishedJob, type JobPosting } from '@/types/job';
 import { isPublishedTalent } from '@/types/talent';
 
 export const RECRUITER_SUB_TABS = [
@@ -46,10 +58,16 @@ const primaryLinkClassName =
   'inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover';
 const rowActionClassName =
   'inline-flex rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-semibold text-foreground hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45';
+const compactActionClassName =
+  'inline-flex shrink-0 whitespace-nowrap rounded-lg border border-border-strong bg-surface px-2 py-1.5 text-xs font-semibold text-foreground hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45';
 const publishActionClassName =
   'inline-flex rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-muted disabled:hover:bg-neutral-200';
+const compactPublishClassName =
+  'inline-flex shrink-0 whitespace-nowrap rounded-lg bg-primary px-2 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-muted disabled:hover:bg-neutral-200';
 const dangerActionClassName =
   'inline-flex rounded-lg border border-danger/30 px-3 py-2 text-sm font-semibold text-danger hover:bg-red-50';
+const compactDangerClassName =
+  'inline-flex shrink-0 whitespace-nowrap rounded-lg border border-danger/30 px-2 py-1.5 text-xs font-semibold text-danger hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45';
 
 export default function RecruiterManagePanel({
   userId,
@@ -57,16 +75,23 @@ export default function RecruiterManagePanel({
   ready,
   subTab,
   onSelectSubTab,
+  onJobsChange,
 }: {
   userId: string;
   jobs: JobPosting[];
   ready: boolean;
   subTab: RecruiterSubTab;
   onSelectSubTab: (id: RecruiterSubTab) => void;
+  onJobsChange: (jobs: JobPosting[]) => void;
 }) {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [proposals, setProposals] = useState<ReceivedProposal[]>([]);
   const [companyReady, setCompanyReady] = useState(() => isCompanyInfoComplete(loadBizVerify(userId)));
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setBusyId(null);
+  }, [jobs]);
 
   useEffect(() => {
     setApplications(listApplicationsForJobs(jobs.map((job) => job.id)));
@@ -103,6 +128,59 @@ export default function RecruiterManagePanel({
     }
     hideSentProposalFromList(userId, proposal.talentId);
     setProposals(listSentProposals(userId));
+  }
+
+  function refreshJobs() {
+    onJobsChange(listMyJobPostings(userId));
+  }
+
+  async function syncAllJobs() {
+    const next = listMyJobPostings(userId);
+    await Promise.all(next.map((item) => syncMyJobPosting(item)));
+    onJobsChange(next);
+  }
+
+  async function handleCopyJob(job: JobPosting) {
+    setBusyId(job.id);
+    const copied = duplicateMyJobPosting(userId, job.id);
+    if (copied) {
+      await syncMyJobPosting(copied);
+      refreshJobs();
+    }
+    setBusyId(null);
+  }
+
+  async function handlePublishJob(job: JobPosting) {
+    if (!canPublishMyJobPosting(userId, job)) return;
+    setBusyId(job.id);
+    if (publishMyJobPosting(userId, job.id)) await syncAllJobs();
+    setBusyId(null);
+  }
+
+  async function handleUnpublishJob(job: JobPosting) {
+    if (!window.confirm(`「${job.title}」 채용 정보 공개를 해제할까요?`)) return;
+    setBusyId(job.id);
+    if (unpublishMyJobPosting(userId, job.id)) await syncAllJobs();
+    setBusyId(null);
+  }
+
+  async function handleSaveJobFile(job: JobPosting) {
+    setBusyId(job.id);
+    try {
+      const { downloadJobFile } = await import('@/lib/job-file');
+      await downloadJobFile(job, userId);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDeleteJob(job: JobPosting) {
+    if (!window.confirm(`「${job.title}」 채용 정보를 삭제할까요?`)) return;
+    setBusyId(job.id);
+    deleteMyJobPosting(userId, job.id);
+    await syncDeleteJobPosting(job.id);
+    refreshJobs();
+    setBusyId(null);
   }
 
   return (
@@ -150,12 +228,20 @@ export default function RecruiterManagePanel({
         })}
       </div>
 
-      {subTab === 'company' ? (
+      <div className={subTab === 'company' ? undefined : 'hidden'}>
         <CompanyInfoForm
           userId={userId}
-          onSaved={() => setCompanyReady(isCompanyInfoComplete(loadBizVerify(userId)))}
+          onSaved={() => {
+            const company = loadBizVerify(userId);
+            if (company) {
+              const updated = applyCompanyToMyJobPostings(userId, company);
+              updated.forEach((job) => void syncMyJobPosting(job));
+              onJobsChange(updated);
+            }
+            setCompanyReady(isCompanyInfoComplete(company));
+          }}
         />
-      ) : null}
+      </div>
 
       {subTab === 'jobs' ? (
         <Card
@@ -175,22 +261,121 @@ export default function RecruiterManagePanel({
             <p className="text-sm text-muted">불러오는 중…</p>
           ) : jobs.length > 0 ? (
             <ul className="grid grid-cols-2 gap-2 sm:gap-3">
-              {jobs.map((job) => (
-                <li key={job.id} className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
-                  <JobCard
-                    job={job}
-                    className="rounded-none border-0 shadow-none hover:border-0 hover:shadow-none"
-                  />
-                  <div className="border-t border-border bg-neutral-50 p-2">
-                    <Link
-                      href={`/jobs/new?edit=${encodeURIComponent(job.id)}&from=mypage`}
-                      className={`${rowActionClassName} w-full`}
-                    >
-                      수정
-                    </Link>
-                  </div>
-                </li>
-              ))}
+              {jobs.map((job) => {
+                const workTypesLabel = jobWorkTypesLabel(job);
+                const career = jobCareerLabel(job);
+                const education = jobEducationLabel(job.education);
+                const busy = busyId === job.id;
+                const published = isPublishedJob(job);
+                const missing = missingJobPublishRequirements(userId, job);
+                const canPublish = missing.length === 0;
+                return (
+                  <li
+                    key={job.id}
+                    className="flex h-full flex-col rounded-xl border border-border bg-surface p-3 shadow-card sm:p-4"
+                  >
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {published ? (
+                        <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white">
+                          공개
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold text-muted">
+                          작성 중
+                        </span>
+                      )}
+                      {workTypesLabel ? (
+                        <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-muted">
+                          {workTypesLabel}
+                        </span>
+                      ) : null}
+                      {career ? (
+                        <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-muted">
+                          {career}
+                        </span>
+                      ) : null}
+                      {education ? (
+                        <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-muted">
+                          {education}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">
+                      {job.title}
+                    </p>
+                    {job.location.trim() ? (
+                      <p className="mt-1 line-clamp-2 text-sm text-muted">{job.location}</p>
+                    ) : null}
+                    <p className="mt-1 text-xs text-subtle">최근 저장일 {job.createdAt}</p>
+                    {!published && missing.length > 0 ? (
+                      <p className="mt-2 text-sm text-muted">
+                        공개하려면 다음을 저장해 주세요. {missing.join(', ')}
+                      </p>
+                    ) : null}
+                    <div className="mt-auto flex flex-nowrap items-center gap-1 overflow-x-auto pt-3">
+                      {published ? (
+                        <button
+                          type="button"
+                          className={compactActionClassName}
+                          disabled={busy}
+                          onClick={() => void handleUnpublishJob(job)}
+                        >
+                          공개 취소
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className={compactPublishClassName}
+                          disabled={busy || !canPublish}
+                          title={
+                            canPublish
+                              ? '이 채용 정보를 채용 정보 목록에 공개합니다.'
+                              : `공개하려면 다음을 저장해 주세요. ${missing.join(', ')}`
+                          }
+                          onClick={() => void handlePublishJob(job)}
+                        >
+                          공개
+                        </button>
+                      )}
+                      <Link
+                        href={`/jobs/new?edit=${encodeURIComponent(job.id)}&from=mypage`}
+                        className={compactActionClassName}
+                      >
+                        수정
+                      </Link>
+                      <button
+                        type="button"
+                        className={compactActionClassName}
+                        disabled={busy}
+                        onClick={() => void handleCopyJob(job)}
+                      >
+                        복사
+                      </button>
+                      <button
+                        type="button"
+                        className={compactActionClassName}
+                        disabled={busy}
+                        onClick={() => void handleSaveJobFile(job)}
+                      >
+                        파일 저장
+                      </button>
+                      {published ? (
+                        <Link href={`/jobs/${job.id}?from=mypage`} className={compactActionClassName}>
+                          보기
+                        </Link>
+                      ) : null}
+                      <button
+                        type="button"
+                        className={compactDangerClassName}
+                        disabled={busy}
+                        onClick={() => void handleDeleteJob(job)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="text-sm text-muted">아직 등록한 채용 정보가 없습니다.</p>
@@ -325,6 +510,9 @@ export default function RecruiterManagePanel({
                     <p className="mt-2 line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">
                       {name}
                     </p>
+                    {proposal.jobTitle ? (
+                      <p className="mt-1 truncate text-sm font-medium text-muted">{proposal.jobTitle}</p>
+                    ) : null}
                     {proposal.resumeMissing ? (
                       <p className="mt-1 text-sm text-muted">이력서가 삭제되었거나 더 이상 공개되지 않습니다.</p>
                     ) : proposal.resumeTitle && proposal.resumeTitle !== name ? (
@@ -334,6 +522,11 @@ export default function RecruiterManagePanel({
                       <p className="mt-1 text-xs text-subtle">제안일 {proposalDateLabel(proposal.proposedAt)}</p>
                     ) : null}
                     <div className="mt-auto flex flex-wrap gap-1.5 pt-3">
+                      {proposal.jobId && getJobById(proposal.jobId) ? (
+                        <Link href={`/jobs/${encodeURIComponent(proposal.jobId)}`} className={rowActionClassName}>
+                          채용 정보
+                        </Link>
+                      ) : null}
                       {proposal.resumeMissing ? null : (
                         <Link href={`/talents/${encodeURIComponent(proposal.talentId)}`} className={rowActionClassName}>
                           이력서
