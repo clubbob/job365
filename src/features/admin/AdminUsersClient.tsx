@@ -23,18 +23,21 @@ type FirebaseAdminCheck = {
   privateKeyHasBegin?: boolean;
   privateKeyHasEnd?: boolean;
   privateKeyChars?: number;
+  initError?: string | null;
 };
 
 function formatAdminCheck(check?: FirebaseAdminCheck | null): string {
   if (!check) return '';
   const flag = (ok: boolean | undefined) => (ok ? '있음' : '없음');
-  return [
+  const parts = [
     `프로젝트 ID ${flag(check.hasProjectId)}`,
     `서비스 계정 이메일 ${flag(check.hasClientEmail)}`,
     `개인키 ${check.hasPrivateKey ? `${check.privateKeyChars ?? 0}자` : '없음'}`,
     `BEGIN ${check.privateKeyHasBegin ? '있음' : '없음'}`,
     `END ${check.privateKeyHasEnd ? '있음' : '없음'}`,
-  ].join(' · ');
+  ];
+  if (check.initError) parts.push(check.initError);
+  return parts.join(' · ');
 }
 
 type DeleteResponse =

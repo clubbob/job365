@@ -1,7 +1,6 @@
-import { cert, getApp, getApps, initializeApp, type App } from 'firebase-admin/app';
+import { cert, getApps, initializeApp, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getStorage, type Storage } from 'firebase-admin/storage';
-import { hasFirebaseAdminConfig } from '@/lib/firebase-config';
 
 const APP_NAME = 'job365-admin';
 
@@ -15,6 +14,7 @@ export type FirebaseAdminCheck = {
   privateKeyHasEnd: boolean;
   privateKeyChars: number;
   issue: FirebaseAdminIssue | null;
+  initError: string | null;
 };
 
 export type FirebaseAdminStatus = {
@@ -32,7 +32,8 @@ const INIT_FAILED_MESSAGE =
 let lastInitError: string | null = null;
 
 function envValue(name: string): string {
-  return process.env[name] ?? '';
+  const env = process.env as Record<string, string | undefined>;
+  return env[name] ?? '';
 }
 
 function stripWrappingQuotes(value: string): string {
@@ -91,7 +92,11 @@ function normalizePrivateKey(raw?: string): string {
     }
   }
 
-  return formatPem(key);
+  if (!key.includes('\n')) {
+    key = formatPem(key);
+  }
+
+  return key.endsWith('\n') ? key : `${key}\n`;
 }
 
 function readPrivateKey(): string {
@@ -148,6 +153,7 @@ export function getFirebaseAdminCheck(issue: FirebaseAdminIssue | null = null): 
     hasClientEmail: Boolean(trimEnv('FIREBASE_CLIENT_EMAIL')),
     ...inspectPrivateKeySource(),
     issue,
+    initError: lastInitError,
   };
 }
 
@@ -215,18 +221,15 @@ export function getAdminStorageBucket() {
 }
 
 export function getFirebaseAdminStatus(): FirebaseAdminStatus {
-  if (!hasFirebaseAdminConfig()) {
+  const app = getAdminApp();
+  if (app) return { ready: true, issue: null, message: null };
+
+  const check = getFirebaseAdminCheck();
+  if (!check.hasProjectId || !check.hasClientEmail || !check.hasPrivateKey) {
     return { ready: false, issue: 'missing_config', message: MISSING_CONFIG_MESSAGE };
   }
 
-  try {
-    getApp(APP_NAME);
-    return { ready: true, issue: null, message: null };
-  } catch {
-    const app = getAdminApp();
-    if (app) return { ready: true, issue: null, message: null };
-    return { ready: false, issue: 'init_failed', message: INIT_FAILED_MESSAGE };
-  }
+  return { ready: false, issue: 'init_failed', message: INIT_FAILED_MESSAGE };
 }
 
 export function firebaseAdminListFields() {
