@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/admin-auth';
-import { isFirebaseAdminReady } from '@/lib/firebaseAdmin';
+import { firebaseAdminListFields, isFirebaseAdminReady } from '@/lib/firebaseAdmin';
 import { listStoredInquiries } from '@/lib/inquiries-server';
 
 export async function GET() {
@@ -10,7 +10,7 @@ export async function GET() {
   if (!isFirebaseAdminReady()) {
     return NextResponse.json({
       ok: true,
-      data: { inquiries: [], firebaseReady: false },
+      data: { inquiries: [], ...firebaseAdminListFields() },
     });
   }
 
@@ -18,7 +18,7 @@ export async function GET() {
     const inquiries = await listStoredInquiries();
     return NextResponse.json({
       ok: true,
-      data: { inquiries, firebaseReady: true },
+      data: { inquiries, ...firebaseAdminListFields() },
     });
   } catch {
     return NextResponse.json(

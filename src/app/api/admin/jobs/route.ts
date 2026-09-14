@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/admin-auth';
-import { isFirebaseAdminReady } from '@/lib/firebaseAdmin';
+import { firebaseAdminListFields, isFirebaseAdminReady } from '@/lib/firebaseAdmin';
 import { listStoredJobPostings } from '@/lib/jobs-server';
 
 export async function GET() {
@@ -8,9 +8,9 @@ export async function GET() {
   if (unauthorized) return unauthorized;
 
   if (!isFirebaseAdminReady()) {
-    return NextResponse.json({ ok: true, data: { jobs: [], firebaseReady: false } });
+    return NextResponse.json({ ok: true, data: { jobs: [], ...firebaseAdminListFields() } });
   }
 
   const jobs = await listStoredJobPostings();
-  return NextResponse.json({ ok: true, data: { jobs, firebaseReady: true } });
+  return NextResponse.json({ ok: true, data: { jobs, ...firebaseAdminListFields() } });
 }

@@ -9,12 +9,13 @@ import {
   adminDangerActionClassName,
   adminJson,
   adminPrimaryActionClassName,
+  firebaseAdminUnavailableText,
 } from '@/lib/admin-ui';
 import { deleteInquiry, listInquiries } from '@/lib/inquiries-store';
 import type { Inquiry } from '@/lib/inquiry';
 
 type ListResponse =
-  | { ok: true; data: { inquiries: Inquiry[]; firebaseReady?: boolean } }
+  | { ok: true; data: { inquiries: Inquiry[]; firebaseReady?: boolean; firebaseAdminMessage?: string | null } }
   | { ok: false; error?: { message?: string } };
 
 function mergeInquiries(remote: Inquiry[], local: Inquiry[]): Inquiry[] {
@@ -47,6 +48,7 @@ export default function AdminInquiriesClient() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [firebaseAdminMessage, setFirebaseAdminMessage] = useState('');
   const [rows, setRows] = useState<Inquiry[]>([]);
 
   async function load() {
@@ -57,6 +59,7 @@ export default function AdminInquiriesClient() {
       const data = await adminJson<ListResponse>('/api/admin/inquiries');
       if (!data.ok) throw new Error(data.error?.message || '문의를 불러오지 못했습니다.');
       setRows(mergeInquiries(data.data.inquiries, local));
+      setFirebaseAdminMessage(data.data.firebaseReady === false ? data.data.firebaseAdminMessage ?? '' : '');
     } catch (err) {
       setRows(local);
       setError(err instanceof Error ? err.message : '문의를 불러오지 못했습니다.');
@@ -94,10 +97,15 @@ export default function AdminInquiriesClient() {
           <p className="text-sm text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted">
-            {error || '접수된 문의가 없습니다. 회원이 문의하면 여기에 나타납니다.'}
+            {firebaseAdminMessage
+              ? firebaseAdminUnavailableText(firebaseAdminMessage)
+              : error || '접수된 문의가 없습니다. 회원이 문의하면 여기에 나타납니다.'}
           </p>
         ) : (
           <div className="overflow-x-auto">
+            {firebaseAdminMessage ? (
+              <p className="mb-3 text-sm text-muted">{firebaseAdminUnavailableText(firebaseAdminMessage)}</p>
+            ) : null}
             {error ? <p className="mb-3 text-sm text-muted">{error}</p> : null}
             <table className="min-w-full text-left text-sm">
               <thead>

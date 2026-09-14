@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
-import { adminDangerActionClassName, adminJson } from '@/lib/admin-ui';
+import { adminDangerActionClassName, adminJson, firebaseAdminUnavailableText } from '@/lib/admin-ui';
 import { clearBizVerify } from '@/lib/biz-verify-store';
 import { deleteAllMyJobPostings } from '@/lib/my-job-posts';
 import { deleteMyTalentProfile } from '@/lib/my-talent-profile';
@@ -15,6 +15,27 @@ const STATUS_LABELS: Record<UserStatus, string> = {
   suspended: '이용중단',
   deleted: '탈퇴',
 };
+
+type FirebaseAdminCheck = {
+  hasProjectId?: boolean;
+  hasClientEmail?: boolean;
+  hasPrivateKey?: boolean;
+  privateKeyHasBegin?: boolean;
+  privateKeyHasEnd?: boolean;
+  privateKeyChars?: number;
+};
+
+function formatAdminCheck(check?: FirebaseAdminCheck | null): string {
+  if (!check) return '';
+  const flag = (ok: boolean | undefined) => (ok ? '있음' : '없음');
+  return [
+    `프로젝트 ID ${flag(check.hasProjectId)}`,
+    `서비스 계정 이메일 ${flag(check.hasClientEmail)}`,
+    `개인키 ${check.hasPrivateKey ? `${check.privateKeyChars ?? 0}자` : '없음'}`,
+    `BEGIN ${check.privateKeyHasBegin ? '있음' : '없음'}`,
+    `END ${check.privateKeyHasEnd ? '있음' : '없음'}`,
+  ].join(' · ');
+}
 
 type DeleteResponse =
   | { ok: true; data: { deleted: true } }
@@ -39,6 +60,8 @@ export default function AdminUsersClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [firebaseReady, setFirebaseReady] = useState(true);
+  const [firebaseAdminMessage, setFirebaseAdminMessage] = useState('');
+  const [firebaseAdminCheck, setFirebaseAdminCheck] = useState('');
   const [users, setUsers] = useState<AdminUserListItem[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -53,7 +76,12 @@ export default function AdminUsersClient() {
         const data = (await res.json()) as {
           ok?: boolean;
           error?: { message?: string };
-          data?: { users?: AdminUserListItem[]; firebaseReady?: boolean };
+          data?: {
+            users?: AdminUserListItem[];
+            firebaseReady?: boolean;
+            firebaseAdminMessage?: string | null;
+            firebaseAdminCheck?: FirebaseAdminCheck;
+          };
         };
         if (!res.ok || !data.ok) {
           throw new Error(data.error?.message || '회원 목록을 불러오지 못했습니다.');
@@ -61,6 +89,8 @@ export default function AdminUsersClient() {
         if (cancelled) return;
         setUsers(data.data?.users ?? []);
         setFirebaseReady(data.data?.firebaseReady !== false);
+        setFirebaseAdminMessage(data.data?.firebaseAdminMessage ?? '');
+        setFirebaseAdminCheck(formatAdminCheck(data.data?.firebaseAdminCheck));
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : '회원 목록을 불러오지 못했습니다.');
@@ -115,7 +145,10 @@ export default function AdminUsersClient() {
         {loading ? (
           <p className="text-sm text-muted">불러오는 중…</p>
         ) : !firebaseReady ? (
-          <p className="text-sm text-muted">Firebase Admin 설정이 없어 회원 목록을 불러올 수 없습니다.</p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted">{firebaseAdminUnavailableText(firebaseAdminMessage)}</p>
+            {firebaseAdminCheck ? <p className="text-xs text-subtle">{firebaseAdminCheck}</p> : null}
+          </div>
         ) : users.length === 0 && !error ? (
           <p className="text-sm text-muted">가입한 회원이 없습니다.</p>
         ) : (

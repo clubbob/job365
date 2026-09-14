@@ -10,6 +10,7 @@ import {
   adminJson,
   adminPrimaryActionClassName,
   adminSecondaryActionClassName,
+  firebaseAdminUnavailableText,
 } from '@/lib/admin-ui';
 import { deleteMyJobPostingById, listMyJobPostingsWithOwners } from '@/lib/my-job-posts';
 import { isPublishedJob, jobWorkTypesLabel, type JobPosting } from '@/types/job';
@@ -18,7 +19,7 @@ import AdminPublishBadge from '@/features/admin/AdminPublishBadge';
 type JobRow = { ownerId: string; job: JobPosting };
 
 type ListResponse =
-  | { ok: true; data: { jobs: JobRow[]; firebaseReady?: boolean } }
+  | { ok: true; data: { jobs: JobRow[]; firebaseReady?: boolean; firebaseAdminMessage?: string | null } }
   | { ok: false; error?: { message?: string } };
 
 function mergeRows(remote: JobRow[], local: JobRow[]): JobRow[] {
@@ -32,6 +33,7 @@ export default function AdminJobsClient() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [firebaseAdminMessage, setFirebaseAdminMessage] = useState('');
   const [rows, setRows] = useState<JobRow[]>([]);
 
   async function load() {
@@ -42,6 +44,7 @@ export default function AdminJobsClient() {
       const data = await adminJson<ListResponse>('/api/admin/jobs');
       if (!data.ok) throw new Error(data.error?.message || '채용 정보를 불러오지 못했습니다.');
       setRows(mergeRows(data.data.jobs, local));
+      setFirebaseAdminMessage(data.data.firebaseReady === false ? data.data.firebaseAdminMessage ?? '' : '');
     } catch (err) {
       setRows(local);
       setError(err instanceof Error ? err.message : '채용 정보를 불러오지 못했습니다.');
@@ -79,10 +82,15 @@ export default function AdminJobsClient() {
           <p className="text-sm text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted">
-            {error || '등록된 채용 정보가 없습니다. 회원이 등록하면 여기에 나타납니다.'}
+            {firebaseAdminMessage
+              ? firebaseAdminUnavailableText(firebaseAdminMessage)
+              : error || '등록된 채용 정보가 없습니다. 회원이 등록하면 여기에 나타납니다.'}
           </p>
         ) : (
           <div className="overflow-x-auto">
+            {firebaseAdminMessage ? (
+              <p className="mb-3 text-sm text-muted">{firebaseAdminUnavailableText(firebaseAdminMessage)}</p>
+            ) : null}
             {error ? <p className="mb-3 text-sm text-muted">{error}</p> : null}
             <table className="min-w-full text-left text-sm">
               <thead>

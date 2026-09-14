@@ -1,3 +1,10 @@
+export function firebaseAdminUnavailableText(message?: string | null) {
+  return (
+    message?.trim() ||
+    '운영 서버에 Firebase Admin 설정이 없어 목록을 불러올 수 없습니다. Vercel Production 환경 변수를 확인해 주세요.'
+  );
+}
+
 export async function adminJson<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     credentials: 'include',

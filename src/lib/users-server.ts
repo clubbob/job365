@@ -152,15 +152,25 @@ function serializeTimestamp(value: unknown): string | null {
   return null;
 }
 
-export async function listUserAccounts(limit = 200): Promise<AdminUserListItem[]> {
-  const db = getAdminFirestore();
-  if (!db) return [];
+function providerFromAuthUser(providerData: Array<{ providerId: string }> | undefined): UserProvider {
+  const ids = providerData?.map((item) => item.providerId) ?? [];
+  if (ids.includes('google.com')) return 'google';
+  if (ids.some((id) => id.includes('kakao'))) return 'kakao';
+  if (ids.some((id) => id.includes('naver'))) return 'naver';
+  return 'email';
+}
 
+export async function listUserAccounts(limit = 200): Promise<AdminUserListItem[]> {
+  const app = getAdminApp();
+  const db = getAdminFirestore();
+  if (!app || !db) return [];
+
+  const byId = new Map<string, AdminUserListItem>();
   const snap = await db.collection('users').limit(limit).get();
-  const items = snap.docs.map((doc) => {
+  for (const doc of snap.docs) {
     const data = doc.data();
     const company = parseBizVerifyRecord(data.company);
-    return {
+    byId.set(doc.id, {
       id: doc.id,
       email: (data.email as string | null) ?? null,
       nickname:
@@ -171,9 +181,34 @@ export async function listUserAccounts(limit = 200): Promise<AdminUserListItem[]
       createdAt: serializeTimestamp(data.createdAt),
       companyName: company?.companyName?.trim() || null,
       companyReady: isCompanyInfoComplete(company),
-    } satisfies AdminUserListItem;
-  });
+    });
+  }
 
-  items.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
-  return items;
+  try {
+    const authUsers = await getAuth(app).listUsers(limit);
+    for (const user of authUsers.users) {
+      const existing = byId.get(user.uid);
+      if (existing) {
+        if (!existing.email && user.email) existing.email = user.email;
+        continue;
+      }
+      byId.set(user.uid, {
+        id: user.uid,
+        email: user.email ?? null,
+        nickname: user.displayName?.trim() || user.email?.split('@')[0] || '사용자',
+        provider: providerFromAuthUser(user.providerData),
+        role: 'user',
+        status: user.disabled ? 'suspended' : 'active',
+        createdAt: user.metadata.creationTime
+          ? new Date(user.metadata.creationTime).toISOString()
+          : null,
+        companyName: null,
+        companyReady: false,
+      });
+    }
+  } catch (error) {
+    console.error('[admin-users] list Auth users failed', error);
+  }
+
+  return [...byId.values()].sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
 }

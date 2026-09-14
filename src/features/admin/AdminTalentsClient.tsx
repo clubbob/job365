@@ -10,6 +10,7 @@ import {
   adminJson,
   adminPrimaryActionClassName,
   adminSecondaryActionClassName,
+  firebaseAdminUnavailableText,
 } from '@/lib/admin-ui';
 import { deleteMyTalentProfileById, listMyTalentProfilesWithOwners } from '@/lib/my-talent-profile';
 import { talentEducation, talentOccupationsLabel, talentRecentDate, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
@@ -19,7 +20,7 @@ import AdminPublishBadge from '@/features/admin/AdminPublishBadge';
 type TalentRow = { ownerId: string; profile: TalentProfile };
 
 type ListResponse =
-  | { ok: true; data: { talents: TalentRow[]; firebaseReady?: boolean } }
+  | { ok: true; data: { talents: TalentRow[]; firebaseReady?: boolean; firebaseAdminMessage?: string | null } }
   | { ok: false; error?: { message?: string } };
 
 function mergeRows(remote: TalentRow[], local: TalentRow[]): TalentRow[] {
@@ -33,6 +34,7 @@ export default function AdminTalentsClient() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [firebaseAdminMessage, setFirebaseAdminMessage] = useState('');
   const [rows, setRows] = useState<TalentRow[]>([]);
 
   async function load() {
@@ -43,6 +45,7 @@ export default function AdminTalentsClient() {
       const data = await adminJson<ListResponse>('/api/admin/talents');
       if (!data.ok) throw new Error(data.error?.message || '이력서를 불러오지 못했습니다.');
       setRows(mergeRows(data.data.talents, local));
+      setFirebaseAdminMessage(data.data.firebaseReady === false ? data.data.firebaseAdminMessage ?? '' : '');
     } catch (err) {
       setRows(local);
       setError(err instanceof Error ? err.message : '이력서를 불러오지 못했습니다.');
@@ -80,10 +83,15 @@ export default function AdminTalentsClient() {
           <p className="text-sm text-muted">불러오는 중…</p>
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted">
-            {error || '등록된 이력서가 없습니다. 회원이 등록하면 여기에 나타납니다.'}
+            {firebaseAdminMessage
+              ? firebaseAdminUnavailableText(firebaseAdminMessage)
+              : error || '등록된 이력서가 없습니다. 회원이 등록하면 여기에 나타납니다.'}
           </p>
         ) : (
           <div className="overflow-x-auto">
+            {firebaseAdminMessage ? (
+              <p className="mb-3 text-sm text-muted">{firebaseAdminUnavailableText(firebaseAdminMessage)}</p>
+            ) : null}
             {error ? <p className="mb-3 text-sm text-muted">{error}</p> : null}
             <table className="min-w-full text-left text-sm">
               <thead>

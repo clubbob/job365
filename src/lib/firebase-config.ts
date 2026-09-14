@@ -37,10 +37,20 @@ export function hasFirebaseClientConfig(): boolean {
   );
 }
 
+function envText(name: string): string {
+  const raw = process.env[name]?.trim() ?? '';
+  if (
+    (raw.startsWith('"') && raw.endsWith('"')) ||
+    (raw.startsWith("'") && raw.endsWith("'"))
+  ) {
+    return raw.slice(1, -1).trim();
+  }
+  return raw;
+}
+
 export function hasFirebaseAdminConfig(): boolean {
-  return Boolean(
-    process.env.FIREBASE_PROJECT_ID &&
-      process.env.FIREBASE_CLIENT_EMAIL &&
-      process.env.FIREBASE_PRIVATE_KEY,
-  );
+  const projectId = envText('FIREBASE_PROJECT_ID') || envText('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
+  const clientEmail = envText('FIREBASE_CLIENT_EMAIL');
+  const hasPrivateKey = Boolean(envText('FIREBASE_PRIVATE_KEY') || envText('FIREBASE_PRIVATE_KEY_BASE64'));
+  return Boolean(projectId && clientEmail && hasPrivateKey);
 }
