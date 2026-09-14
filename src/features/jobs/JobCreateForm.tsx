@@ -294,7 +294,7 @@ export default function JobCreateForm({
     return {
       id: jobId,
       title: '',
-      companyName: existing?.companyName || companyName,
+      companyName,
       workType: '' as JobWorkType,
       workTypes: [],
       payType: '' as JobPayType,
