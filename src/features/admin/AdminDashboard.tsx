@@ -9,13 +9,13 @@ export default function AdminDashboard() {
     <div className="space-y-5">
       <PageHeader
         title="관리자"
-        description="회원, 채용 정보, 이력서를 확인하고 수정·삭제합니다."
+        description="회원, 채용 정보, 이력서, 문의를 확인하고 수정·삭제합니다."
         homeHref="/"
         homeLabel="사이트로"
         homeOpenInNewWindow
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card title="회원" description="가입한 회원과 회사 정보 등록 여부를 확인하고 삭제합니다.">
           <Link
             href="/admin/users"
@@ -38,6 +38,14 @@ export default function AdminDashboard() {
             className="inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
           >
             이력서 보기
+          </Link>
+        </Card>
+        <Card title="문의" description="회원이 보낸 문의를 확인하고 삭제합니다.">
+          <Link
+            href="/admin/inquiries"
+            className="inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
+          >
+            문의 보기
           </Link>
         </Card>
       </div>

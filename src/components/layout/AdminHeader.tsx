@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/admin/users', label: '회원', exact: false },
   { href: '/admin/jobs', label: '채용 정보', exact: false },
   { href: '/admin/talents', label: '이력서', exact: false },
+  { href: '/admin/inquiries', label: '문의', exact: false },
 ];
 
 function isActive(pathname: string, href: string, exact: boolean): boolean {
