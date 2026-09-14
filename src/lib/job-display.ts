@@ -93,6 +93,33 @@ export function jobHeadcountLabel(headcount?: number): string | null {
   return `${headcount}명`;
 }
 
+export function jobOutlineItems(job: JobPosting): Array<{ label: string; value?: string | null }> {
+  return [
+    { label: '채용 제목', value: job.title },
+    { label: '근무 형태', value: jobWorkTypesLabel(job) },
+    { label: '모집 인원', value: jobHeadcountLabel(job.headcount) },
+    { label: '지급 기준', value: job.payLabel },
+    { label: '경력 유무', value: jobCareerLabel(job) },
+    { label: '학력', value: jobEducationLabel(job.education) },
+    { label: '직급/직책', value: jobPositionLabel(job.positionLevel) },
+    { label: '수습 기간', value: job.probation },
+    { label: '근무지', value: job.location },
+    { label: '근무 요일', value: job.workDays },
+    { label: '근무 시간', value: job.workHours },
+    { label: '접수 마감', value: jobDeadlineLabel(job.deadline) },
+  ];
+}
+
+export function jobDetailItems(job: JobPosting): Array<{ label: string; value?: string | null }> {
+  return [
+    { label: '담당 업무', value: job.summary },
+    { label: '자격 요건', value: job.requirements },
+    { label: '우대 사항', value: job.preferred },
+    { label: '복리후생', value: job.benefits },
+    { label: '전형 절차', value: job.process },
+  ];
+}
+
 export function jobSearchText(job: JobPosting): string {
   return [
     job.title,

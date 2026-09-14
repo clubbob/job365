@@ -1,5 +1,4 @@
 import { getKoreaDateTimeLocalMin } from '@/lib/datetime';
-import { findMyJobPosting } from '@/lib/my-job-posts';
 import { talentResumeTitle } from '@/lib/talent-display';
 import type { JobPosting } from '@/types/job';
 import type { TalentProfile } from '@/types/talent';
@@ -180,7 +179,6 @@ export function applyToJob(
 ): JobApplication | null {
   const existing = getJobApplication(userId, job.id);
   if (existing) return existing;
-  if (findMyJobPosting(job.id)?.userId === userId) return null;
 
   const application: JobApplication = {
     id: createJobApplicationId(),

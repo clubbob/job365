@@ -10,6 +10,7 @@ import {
   isCompanyInfoComplete,
   loadBizVerify,
   missingCompanyInfoMessage,
+  parseBizVerifyRecord,
   saveBizVerify,
   type BizVerifyRecord,
 } from '@/lib/biz-verify-store';
@@ -18,6 +19,7 @@ import { firstRequiredError } from '@/lib/form-required';
 import { formatPhoneInput } from '@/lib/talent-contact';
 import { fetchUserAccount, updateUserAccount } from '@/lib/users-api';
 import { getUserNicknameFallback } from '@/lib/user-display';
+import type { JobCompanyInfo } from '@/types/job';
 
 type NumberCheck = {
   businessNumber: string;
@@ -134,12 +136,38 @@ function encodeDraft(draft: CompanyDraft, verifiedDigits: string): string {
   });
 }
 
+function draftFromCompany(company?: JobCompanyInfo | null, fallback?: BizVerifyRecord | null): CompanyDraft {
+  if (!company?.companyName?.trim() && !company?.businessNumber?.trim()) return draftFromRecord(fallback ?? null);
+  return {
+    companyName: company.companyName ?? '',
+    businessNumber: company.businessNumber ?? fallback?.businessNumber ?? '',
+    ceo: company.ceo ?? '',
+    address: company.address ?? '',
+    phone: company.phone ?? '',
+    fax: company.fax ?? '',
+    foundedOn: company.foundedOn ?? '',
+    employeeCount: (company.employeeCount ?? '').replace(/[^\d]/g, ''),
+    lastYearRevenue: (company.lastYearRevenue ?? '').replace(/[^\d]/g, ''),
+    website: company.website ?? '',
+    intro: company.intro ?? '',
+    registrantName: company.registrantName ?? fallback?.registrantName ?? '',
+    registrantEmail: company.registrantEmail ?? fallback?.registrantEmail ?? '',
+    registrantMobile: company.registrantMobile ?? fallback?.registrantMobile ?? '',
+  };
+}
+
 export default function CompanyInfoForm({
   userId,
   onSaved,
+  onStatusChange,
+  hideCard = false,
+  initialCompany,
 }: {
   userId: string;
-  onSaved?: () => void;
+  onSaved?: (record: BizVerifyRecord) => void;
+  onStatusChange?: (status: { complete: boolean }) => void;
+  hideCard?: boolean;
+  initialCompany?: JobCompanyInfo | null;
 }) {
   const { user } = useAuth();
   const [saved, setSaved] = useState<BizVerifyRecord | null>(null);
@@ -155,8 +183,10 @@ export default function CompanyInfoForm({
   const accountRef = useRef({ name: '', email: '' });
   const dirtyRef = useRef(false);
   const onSavedRef = useRef(onSaved);
+  const onStatusChangeRef = useRef(onStatusChange);
   accountRef.current = { name: accountName, email: accountEmail };
   onSavedRef.current = onSaved;
+  onStatusChangeRef.current = onStatusChange;
 
   useEffect(() => {
     if (!user) {
@@ -172,17 +202,30 @@ export default function CompanyInfoForm({
       setAccountEmail(result.data.profile.email?.trim() || user.email?.trim() || '');
       if (!result.data.company || dirtyRef.current) return;
       applyRecord(saveBizVerify(userId, result.data.company));
-      onSavedRef.current?.();
     });
   }, [user, userId]);
 
   useEffect(() => {
-    applyRecord(loadBizVerify(userId));
+    const account = loadBizVerify(userId);
+    const fromJob = initialCompany
+      ? {
+          ...account,
+          ...draftFromCompany(initialCompany, account),
+          businessNumber: initialCompany.businessNumber || account?.businessNumber || '',
+          companyName: initialCompany.companyName || account?.companyName || '',
+          status: account?.status ?? 'active',
+          statusLabel: account?.statusLabel || '계속사업자',
+          taxType: account?.taxType ?? null,
+          verifiedAt: account?.verifiedAt || new Date().toISOString(),
+          source: 'nts' as const,
+        }
+      : account;
+    applyRecord(fromJob ? parseBizVerifyRecord(fromJob) ?? account : account);
     setError('');
     setLookupError('');
     setDidSave(false);
     setRetryServer(false);
-  }, [userId]);
+  }, [initialCompany, userId]);
 
   useEffect(() => {
     if (!accountName && !accountEmail) return;
@@ -198,9 +241,14 @@ export default function CompanyInfoForm({
   const dirty = encodeDraft(draft, verifiedDigits) !== encodeDraft(draftFromRecord(saved), savedVerifiedDigits);
   dirtyRef.current = dirty;
   const complete = isCompanyInfoComplete(saved);
+  const draftComplete = Boolean(canEditCompany && !missingCompanyInfoMessage(draft));
   const canSave = canEditCompany && (dirty || retryServer);
   const lockedInputClassName = `${authInputClassName} disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-muted`;
   const accountInputClassName = `${authInputClassName} bg-neutral-50`;
+
+  useEffect(() => {
+    onStatusChangeRef.current?.({ complete: draftComplete });
+  }, [draftComplete]);
 
   function applyRecord(record: BizVerifyRecord | null) {
     setSaved(record);
@@ -335,7 +383,7 @@ export default function CompanyInfoForm({
     setLookupError('');
     setDidSave(true);
     setRetryServer(false);
-    onSaved?.();
+    onSaved?.(persisted);
     if (!user) return;
     void updateUserAccount(user, { company: persisted })
       .then((result) => {
@@ -346,7 +394,7 @@ export default function CompanyInfoForm({
           return;
         }
         if (result.data.company) saveBizVerify(userId, result.data.company);
-        onSaved?.();
+        onSaved?.(result.data.company ?? persisted);
       })
       .catch(() => {
         setError('이 기기에는 저장했습니다. 서버 저장에 실패해 다시 저장해 주세요.');
@@ -371,18 +419,7 @@ export default function CompanyInfoForm({
     setDidSave(false);
   }
 
-  return (
-    <Card
-      title={
-        <span className="inline-flex flex-wrap items-center gap-2">
-          회사 정보
-          {complete ? (
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">완료</span>
-          ) : null}
-        </span>
-      }
-      description="채용 정보에 쓸 회사 정보를 등록합니다. 국세청 상태조회에서 계속사업자로 나온 경우에만 입력하고 저장할 수 있습니다. 조회 시점의 상태이며, 국세청 인증이나 회사의 보증이 아닙니다."
-    >
+  const form = (
       <form
         className="space-y-4"
         onSubmit={(event) => {
@@ -664,6 +701,23 @@ export default function CompanyInfoForm({
           ) : null}
         </div>
       </form>
+  );
+
+  if (hideCard) return form;
+
+  return (
+    <Card
+      title={
+        <span className="inline-flex flex-wrap items-center gap-2">
+          회사 정보
+          {complete ? (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">완료</span>
+          ) : null}
+        </span>
+      }
+      description="채용 정보에 쓸 회사 정보를 등록합니다. 국세청 상태조회에서 계속사업자로 나온 경우에만 입력하고 저장할 수 있습니다. 조회 시점의 상태이며, 국세청 인증이나 회사의 보증이 아닙니다."
+    >
+      {form}
     </Card>
   );
 }

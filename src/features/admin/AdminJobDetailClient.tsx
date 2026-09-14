@@ -4,24 +4,17 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import PageHeader from '@/components/navigation/PageHeader';
-import {
-  DetailBadge,
-  DetailHero,
-  DetailSection,
-  DetailStatGrid,
-  DetailText,
-} from '@/components/ui/PostingDetail';
 import { Card } from '@/components/ui/Card';
-import JobCompanySection from '@/features/jobs/JobCompanySection';
+import { DetailBadge } from '@/components/ui/PostingDetail';
+import JobPostingArticle from '@/features/jobs/JobPostingArticle';
 import {
   adminDangerActionClassName,
   adminJson,
   adminPrimaryActionClassName,
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
-import { jobCareerLabel, jobDeadlineLabel, jobEducationLabel, jobHeadcountLabel } from '@/lib/job-display';
 import { deleteMyJobPostingById, findMyJobPosting, saveMyJobPosting } from '@/lib/my-job-posts';
-import { isPublishedJob, jobPositionLabel, jobWorkTypesLabel, type JobPosting } from '@/types/job';
+import { isPublishedJob, type JobPosting } from '@/types/job';
 import AdminPublishBadge from '@/features/admin/AdminPublishBadge';
 
 type ItemResponse =
@@ -87,11 +80,6 @@ export default function AdminJobDetailClient({ jobId }: { jobId: string }) {
   }
 
   const { job } = item;
-  const career = jobCareerLabel(job);
-  const education = jobEducationLabel(job.education);
-  const headcount = jobHeadcountLabel(job.headcount);
-  const workType = jobWorkTypesLabel(job);
-  const deadline = job.deadline ? jobDeadlineLabel(job.deadline) : null;
 
   return (
     <div className="space-y-5">
@@ -111,55 +99,11 @@ export default function AdminJobDetailClient({ jobId }: { jobId: string }) {
         </button>
       </div>
       <article className="space-y-4">
-        <DetailHero
-          eyebrow={job.companyName}
-          title={job.title}
-          badges={
-            <>
-              <DetailBadge tone="primary">{isPublishedJob(job) ? '공개' : '작성 중'}</DetailBadge>
-              <DetailBadge>{workType}</DetailBadge>
-              {career ? <DetailBadge>{career}</DetailBadge> : null}
-              {education ? <DetailBadge>{education}</DetailBadge> : null}
-            </>
-          }
-          highlightLabel="지급 기준"
-          highlightValue={job.payLabel}
-          facts={[
-            { label: '근무지', value: job.location },
-            { label: '접수 마감', value: deadline || '—' },
-            { label: '모집 인원', value: headcount || '—' },
-          ]}
+        <JobPostingArticle
+          job={job}
+          ownerId={item.ownerId}
+          extraBadges={<DetailBadge tone="primary">{isPublishedJob(job) ? '공개' : '작성 중'}</DetailBadge>}
         />
-        <JobCompanySection job={job} ownerId={item.ownerId} />
-        <DetailStatGrid
-          items={[
-            { label: '근무 형태', value: workType },
-            { label: '모집 인원', value: headcount },
-            { label: '경력 유무', value: career },
-            { label: '학력', value: education },
-            { label: '직급/직책', value: jobPositionLabel(job.positionLevel) },
-            { label: '수습 기간', value: job.probation },
-            { label: '근무지', value: job.location },
-            { label: '근무 요일', value: job.workDays },
-            { label: '근무 시간', value: job.workHours },
-            { label: '접수 마감', value: deadline },
-          ]}
-        />
-        <DetailSection title="담당 업무">
-          <DetailText value={job.summary} />
-        </DetailSection>
-        <DetailSection title="자격 요건">
-          <DetailText value={job.requirements} />
-        </DetailSection>
-        <DetailSection title="우대 사항">
-          <DetailText value={job.preferred} />
-        </DetailSection>
-        <DetailSection title="복리후생">
-          <DetailText value={job.benefits} />
-        </DetailSection>
-        <DetailSection title="전형 절차">
-          <DetailText value={job.process} />
-        </DetailSection>
       </article>
     </div>
   );

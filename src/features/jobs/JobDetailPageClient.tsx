@@ -5,18 +5,10 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
-import {
-  DetailBadge,
-  DetailHero,
-  DetailSection,
-  DetailStatGrid,
-  DetailText,
-} from '@/components/ui/PostingDetail';
-import JobCompanySection from '@/features/jobs/JobCompanySection';
 import JobDetailActions from '@/features/jobs/JobDetailActions';
+import JobPostingArticle from '@/features/jobs/JobPostingArticle';
 import { getJobById } from '@/lib/job-catalog';
-import { jobCareerLabel, jobDeadlineLabel, jobEducationLabel, jobHeadcountLabel } from '@/lib/job-display';
-import { jobPositionLabel, jobWorkTypesLabel, type JobPosting } from '@/types/job';
+import type { JobPosting } from '@/types/job';
 
 export default function JobDetailPageClient({ jobId }: { jobId: string }) {
   const searchParams = useSearchParams();
@@ -47,70 +39,13 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
     );
   }
 
-  const career = jobCareerLabel(job);
-  const education = jobEducationLabel(job.education);
-  const headcount = jobHeadcountLabel(job.headcount);
-  const workType = jobWorkTypesLabel(job);
-  const deadline = job.deadline ? jobDeadlineLabel(job.deadline) : null;
-
   return (
     <div className="space-y-5">
       <PageHeader title="채용 정보" description={job.companyName} homeHref={listHref} homeLabel={listLabel} />
       <AdSlot placement="header" />
 
       <article className="space-y-4">
-        <DetailHero
-          eyebrow={job.companyName}
-          title={job.title}
-          badges={
-            <>
-              <DetailBadge tone="primary">{workType}</DetailBadge>
-              {career ? <DetailBadge>{career}</DetailBadge> : null}
-              {education ? <DetailBadge>{education}</DetailBadge> : null}
-            </>
-          }
-          highlightLabel="지급 기준"
-          highlightValue={job.payLabel}
-          facts={[
-            { label: '근무지', value: job.location },
-            { label: '접수 마감', value: deadline || '—' },
-            { label: '모집 인원', value: headcount || '—' },
-          ]}
-        />
-
-        <JobCompanySection job={job} />
-
-        <DetailStatGrid
-          items={[
-            { label: '근무 형태', value: workType },
-            { label: '모집 인원', value: headcount },
-            { label: '경력 유무', value: career },
-            { label: '학력', value: education },
-            { label: '직급/직책', value: jobPositionLabel(job.positionLevel) },
-            { label: '수습 기간', value: job.probation },
-            { label: '근무지', value: job.location },
-            { label: '근무 요일', value: job.workDays },
-            { label: '근무 시간', value: job.workHours },
-            { label: '접수 마감', value: deadline },
-          ]}
-        />
-
-        <DetailSection title="담당 업무">
-          <DetailText value={job.summary} />
-        </DetailSection>
-        <DetailSection title="자격 요건">
-          <DetailText value={job.requirements} />
-        </DetailSection>
-        <DetailSection title="우대 사항">
-          <DetailText value={job.preferred} />
-        </DetailSection>
-        <DetailSection title="복리후생">
-          <DetailText value={job.benefits} />
-        </DetailSection>
-        <DetailSection title="전형 절차">
-          <DetailText value={job.process} />
-        </DetailSection>
-
+        <JobPostingArticle job={job} />
         <JobDetailActions key={job.id} job={job} />
       </article>
 

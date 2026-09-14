@@ -150,7 +150,6 @@ export function saveTalentProposal(
 ): void {
   if (status === 'pending' && missingProposeRequirements(recruiterId).length > 0) return;
   const owned = findMyTalentProfile(talentId);
-  if (status === 'pending' && owned?.userId === recruiterId) return;
   const talent = resolveProposalTalent(talentId);
   const identity = recruiterCompanyFromJobs(recruiterId);
   const current = asRecord(readStore()[recruiterId]?.[talentId]);

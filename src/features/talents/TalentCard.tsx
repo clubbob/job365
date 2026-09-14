@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { maskTalentName, talentCareerLabel, talentEducation, talentWorkTypesLabel } from '@/lib/talent-display';
+import { maskTalentName, talentCareerLabel, talentEducation, talentOccupationsLabel, talentWorkTypesLabel } from '@/lib/talent-display';
 import type { TalentProfile } from '@/types/talent';
 
 export default function TalentCard({
@@ -33,7 +33,7 @@ export default function TalentCard({
             <span className="text-xs text-subtle">{talentEducation(talent)}</span>
           </div>
           <h3 className="mt-1.5 line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">
-            {maskTalentName(talent.name)} · {talent.headline}
+            {maskTalentName(talent.name)} · {talentOccupationsLabel(talent) || '직종 미입력'}
           </h3>
         </div>
       </div>

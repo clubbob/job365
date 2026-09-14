@@ -15,7 +15,6 @@ import {
   followCompany,
   isCompanyFollowed,
 } from '@/lib/followed-companies';
-import { findMyJobPosting } from '@/lib/my-job-posts';
 import { findApplyReadyResume, missingApplyRequirements } from '@/lib/my-talent-profile';
 import { cn } from '@/lib/utils';
 import {
@@ -75,7 +74,7 @@ export default function JobDetailActions({ job }: { job: JobPosting }) {
   if (!user) {
     return (
       <div className="space-y-2">
-        <p className="text-sm text-muted">희망 근무 조건과 이력서를 완성한 뒤 지원할 수 있습니다.</p>
+        <p className="text-sm text-muted">이력서를 완성한 뒤 지원할 수 있습니다.</p>
         <div className="grid grid-cols-1 gap-2">
           <Link href={loginHref} className={followButtonClassName}>
             관심 회사로 저장
@@ -92,14 +91,6 @@ export default function JobDetailActions({ job }: { job: JobPosting }) {
     return (
       <p className="rounded-lg bg-neutral-50 px-4 py-3 text-sm text-muted">
         지원은 구직자로 이용할 때 할 수 있습니다.
-      </p>
-    );
-  }
-
-  if (findMyJobPosting(job.id)?.userId === user.uid) {
-    return (
-      <p className="rounded-lg bg-neutral-50 px-4 py-3 text-sm text-muted">
-        내가 등록한 채용 정보에는 지원할 수 없습니다.
       </p>
     );
   }
@@ -126,22 +117,10 @@ export default function JobDetailActions({ job }: { job: JobPosting }) {
       ) : null}
       {!application && missing.length > 0 ? (
         <p className="rounded-lg bg-neutral-50 px-4 py-3 text-sm text-muted">
-          {missing.length > 1
-            ? '희망 근무 조건과 이력서를 모두 저장해야 지원할 수 있습니다.'
-            : missing[0] === '희망 근무 조건'
-              ? '희망 근무 조건을 저장해야 지원할 수 있습니다.'
-              : '이력서를 완성해야 지원할 수 있습니다.'}{' '}
-          {missing.includes('희망 근무 조건') ? (
-            <Link href="/mypage?tab=resume" className="font-semibold text-primary hover:underline">
-              희망 근무 조건
-            </Link>
-          ) : null}
-          {missing.length > 1 ? ' · ' : null}
-          {missing.includes('이력서') ? (
-            <Link href="/mypage?tab=resume&sub=resume" className="font-semibold text-primary hover:underline">
-              이력서 관리
-            </Link>
-          ) : null}
+          이력서를 완성해야 지원할 수 있습니다.{' '}
+          <Link href="/mypage?tab=resume&sub=resume" className="font-semibold text-primary hover:underline">
+            이력서 관리
+          </Link>
         </p>
       ) : null}
 

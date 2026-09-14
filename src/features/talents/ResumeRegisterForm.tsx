@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
 import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
 import { authInputClassName } from '@/lib/auth-ui';
@@ -26,15 +25,45 @@ import {
   normalizeWebsite,
 } from '@/lib/talent-contact';
 import { cn } from '@/lib/utils';
-import { isWorkPreferencesComplete } from '@/lib/work-preferences';
+import {
+  AVAILABLE_OPTIONS,
+  NATIONWIDE_REGION,
+  OCCUPATION_OPTIONS,
+  REGION_OPTIONS,
+  isAvailableOption,
+  isNationwideSelection,
+  isOccupationOption,
+  isRegionOption,
+  headlineFromOccupations,
+  loadWorkPreferences,
+  locationLabelFromRegions,
+  normalizeAvailable,
+  toggleRegionSelection,
+  workPreferencesAreComplete,
+  workPreferencesFromTalent,
+  type AvailableOption,
+  type OccupationOption,
+  type RegionOption,
+} from '@/lib/work-preferences';
 import {
   CAREER_TYPE_LABELS,
   JOBSEEKER_CAREER_TYPES,
+  JOB_WORK_TYPES,
+  WORK_TYPE_LABELS,
   formatCareerYearsInput,
   isJobCareerType,
+  isJobWorkType,
   parseCareerYears,
   type JobCareerType,
+  type JobWorkType,
 } from '@/types/job';
+import TalentSchoolFields, {
+  emptySchoolDraft,
+  schoolDraftsFromProfile,
+  schoolDraftsFromUnknown,
+  schoolFieldsFromDrafts,
+  type SchoolDraft,
+} from '@/features/talents/TalentSchoolFields';
 import {
   EDUCATION_OPTIONS,
   TALENT_GENDERS,
@@ -48,6 +77,7 @@ import {
 
 const SECTIONS = [
   { id: 'basics', label: '기본 정보' },
+  { id: 'conditions', label: '희망 근무 조건' },
   { id: 'education', label: '학력 정보' },
   { id: 'career', label: '경력 정보' },
   { id: 'skills', label: '보유 역량' },
@@ -69,10 +99,12 @@ type SectionValues = {
   residenceCity: string;
   residenceDistrict: string;
   homepage: string;
-  headline: string;
+  workTypes: JobWorkType[];
+  regions: RegionOption[];
+  occupations: OccupationOption[];
+  available: AvailableOption | '';
   education: string;
-  school: string;
-  major: string;
+  schools: Array<{ school: string; major: string }>;
   careerType: string;
   careerMinYears: string;
   careerHistory: string;
@@ -96,12 +128,16 @@ function snapshotsFromValues(values: SectionValues): SectionSnapshots {
       residenceCity: values.residenceCity,
       residenceDistrict: values.residenceDistrict,
       homepage: values.homepage,
-      headline: values.headline,
+    }),
+    conditions: JSON.stringify({
+      workTypes: values.workTypes,
+      regions: values.regions,
+      occupations: values.occupations,
+      available: values.available,
     }),
     education: JSON.stringify({
       education: values.education,
-      school: values.school,
-      major: values.major,
+      schools: values.schools,
     }),
     career: JSON.stringify({
       careerType: values.careerType,
@@ -128,13 +164,20 @@ function isSectionComplete(id: SectionId, values: SectionValues): boolean {
         Boolean(birthDate) &&
         birthDate <= thisMonth &&
         isTalentGender(values.gender) &&
-        isValidPhone(values.phone) &&
+        (!values.phone.trim() || isValidPhone(values.phone)) &&
         isValidEmail(values.email) &&
         isCompleteResidence(values.residenceCity, values.residenceDistrict)
       );
     }
+    case 'conditions':
+      return workPreferencesAreComplete({
+        workTypes: values.workTypes,
+        regions: values.regions,
+        occupations: values.occupations,
+        available: values.available,
+      });
     case 'education':
-      return isEducationLevel(values.education) && Boolean(values.school.trim());
+      return isEducationLevel(values.education) && values.schools.some((item) => item.school.trim());
     case 'career':
       return (
         isJobCareerType(values.careerType) &&
@@ -152,6 +195,87 @@ const controlClassName =
 
 function PlaceholderOption() {
   return <option value="">선택</option>;
+}
+
+function toggleValue<T extends string>(list: T[], value: T): T[] {
+  return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
+}
+
+function ChoiceGroup<T extends string>({
+  legend,
+  options,
+  selected,
+  required,
+  isActive,
+  labelOf,
+  onToggle,
+}: {
+  legend: string;
+  options: readonly T[];
+  selected: T[];
+  required?: boolean;
+  isActive?: (value: T) => boolean;
+  labelOf?: (value: T) => string;
+  onToggle: (value: T) => void;
+}) {
+  return (
+    <fieldset>
+      <FieldLabel required={required}>{legend}</FieldLabel>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((item) => {
+          const active = isActive ? isActive(item) : selected.includes(item);
+          return (
+            <button
+              key={item}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onToggle(item)}
+              className={cn(
+                'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
+                active
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'border border-border-strong bg-surface text-foreground hover:bg-neutral-50',
+              )}
+            >
+              {labelOf ? labelOf(item) : item}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+function emptyConditions() {
+  return {
+    workTypes: [] as JobWorkType[],
+    regions: [] as RegionOption[],
+    occupations: [] as OccupationOption[],
+    available: '' as AvailableOption | '',
+  };
+}
+
+function seedConditions(existing: TalentProfile | null, userId: string) {
+  const prefs = loadWorkPreferences(userId);
+  const fromProfile = existing ? workPreferencesFromTalent(existing) : emptyConditions();
+  return {
+    workTypes: fromProfile.workTypes.length ? fromProfile.workTypes : prefs?.workTypes ?? [],
+    regions: fromProfile.regions.length ? fromProfile.regions : prefs?.regions ?? [],
+    occupations: fromProfile.occupations.length ? fromProfile.occupations : prefs?.occupations ?? [],
+    available: normalizeAvailable(fromProfile.available || prefs?.available || ''),
+  };
+}
+
+function asWorkTypes(value: unknown): JobWorkType[] {
+  return Array.isArray(value) ? value.filter(isJobWorkType) : [];
+}
+
+function asRegions(value: unknown): RegionOption[] {
+  return Array.isArray(value) ? value.filter(isRegionOption) : [];
+}
+
+function asOccupations(value: unknown): OccupationOption[] {
+  return Array.isArray(value) ? value.filter(isOccupationOption) : [];
 }
 
 const CURRENT_YEAR = Number(getKoreaDateLocalToday().slice(0, 4));
@@ -227,10 +351,12 @@ export default function ResumeRegisterForm({
   const [residenceCity, setResidenceCity] = useState<ResidenceCity | ''>('');
   const [residenceDistrict, setResidenceDistrict] = useState('');
   const [homepage, setHomepage] = useState('');
-  const [headline, setHeadline] = useState('');
+  const [workTypes, setWorkTypes] = useState<JobWorkType[]>([]);
+  const [regions, setRegions] = useState<RegionOption[]>([]);
+  const [occupations, setOccupations] = useState<OccupationOption[]>([]);
+  const [available, setAvailable] = useState<AvailableOption | ''>('');
   const [education, setEducation] = useState<EducationLevel | ''>('');
-  const [school, setSchool] = useState('');
-  const [major, setMajor] = useState('');
+  const [schools, setSchools] = useState<SchoolDraft[]>(() => [emptySchoolDraft()]);
   const [careerType, setCareerType] = useState<JobCareerType | ''>('');
   const [careerMinYears, setCareerMinYears] = useState('');
   const [careerHistory, setCareerHistory] = useState('');
@@ -245,6 +371,8 @@ export default function ResumeRegisterForm({
 
   useEffect(() => {
     const existing = getMyTalentProfile(userId, resumeId);
+    const conditions = seedConditions(existing, userId);
+    const storedConditions = existing ? workPreferencesFromTalent(existing) : emptyConditions();
 
     if (!existing) {
       setTitle('');
@@ -258,10 +386,12 @@ export default function ResumeRegisterForm({
       setResidenceCity('');
       setResidenceDistrict('');
       setHomepage('');
-      setHeadline('');
+      setWorkTypes(conditions.workTypes);
+      setRegions(conditions.regions);
+      setOccupations(conditions.occupations);
+      setAvailable(conditions.available);
       setEducation('');
-      setSchool('');
-      setMajor('');
+      setSchools([emptySchoolDraft()]);
       setCareerType('');
       setCareerMinYears('');
       setCareerHistory('');
@@ -282,10 +412,12 @@ export default function ResumeRegisterForm({
           residenceCity: '',
           residenceDistrict: '',
           homepage: '',
-          headline: '',
+          workTypes: storedConditions.workTypes,
+          regions: storedConditions.regions,
+          occupations: storedConditions.occupations,
+          available: storedConditions.available,
           education: '',
-          school: '',
-          major: '',
+          schools: [emptySchoolDraft()],
           careerType: '',
           careerMinYears: '',
           careerHistory: '',
@@ -309,8 +441,7 @@ export default function ResumeRegisterForm({
     const nextEmail = existing.email || accountEmail || '';
     const nextHomepage = existing.homepage ?? '';
     const nextEducation = normalizeEducation(existing.education);
-    const nextSchool = existing.school ?? '';
-    const nextMajor = existing.major ?? '';
+    const nextSchools = schoolDraftsFromProfile(existing);
     const nextCareerHistory = existing.careerHistory ?? '';
     const nextLanguages = existing.languages ?? '';
     const nextTags = existing.tags.join(', ');
@@ -326,10 +457,12 @@ export default function ResumeRegisterForm({
     setResidenceCity(residence.city);
     setResidenceDistrict(residence.district);
     setHomepage(nextHomepage);
-    setHeadline(existing.headline);
+    setWorkTypes(conditions.workTypes);
+    setRegions(conditions.regions);
+    setOccupations(conditions.occupations);
+    setAvailable(conditions.available);
     setEducation(nextEducation);
-    setSchool(nextSchool);
-    setMajor(nextMajor);
+    setSchools(nextSchools);
     setCareerType(career.type);
     setCareerMinYears(career.years);
     setCareerHistory(nextCareerHistory);
@@ -350,10 +483,12 @@ export default function ResumeRegisterForm({
         residenceCity: residence.city,
         residenceDistrict: residence.district,
         homepage: nextHomepage,
-        headline: existing.headline,
+        workTypes: storedConditions.workTypes,
+        regions: storedConditions.regions,
+        occupations: storedConditions.occupations,
+        available: storedConditions.available,
         education: nextEducation,
-        school: nextSchool,
-        major: nextMajor,
+        schools: nextSchools,
         careerType: career.type,
         careerMinYears: career.years,
         careerHistory: nextCareerHistory,
@@ -378,10 +513,12 @@ export default function ResumeRegisterForm({
       residenceCity,
       residenceDistrict,
       homepage,
-      headline,
+      workTypes,
+      regions,
+      occupations,
+      available,
       education,
-      school,
-      major,
+      schools,
       careerType,
       careerMinYears,
       careerHistory,
@@ -418,11 +555,14 @@ export default function ResumeRegisterForm({
       );
       setResidenceDistrict(String(parsed.residenceDistrict ?? ''));
       setHomepage(String(parsed.homepage ?? ''));
-      setHeadline(String(parsed.headline ?? ''));
+    } else if (id === 'conditions') {
+      setWorkTypes(asWorkTypes(parsed.workTypes));
+      setRegions(asRegions(parsed.regions));
+      setOccupations(asOccupations(parsed.occupations));
+      setAvailable(normalizeAvailable(String(parsed.available ?? '')));
     } else if (id === 'education') {
       setEducation(normalizeEducation(parsed.education));
-      setSchool(String(parsed.school ?? ''));
-      setMajor(String(parsed.major ?? ''));
+      setSchools(schoolDraftsFromUnknown(parsed.schools));
     } else if (id === 'career') {
       setCareerType(isJobCareerType(String(parsed.careerType ?? '')) ? parsed.careerType as JobCareerType : '');
       setCareerMinYears(formatCareerYearsInput(String(parsed.careerMinYears ?? '')));
@@ -479,7 +619,7 @@ export default function ResumeRegisterForm({
       { ok: Boolean(name.trim()), message: '이름을 입력해 주세요.' },
       { ok: Boolean(birthDate) && birthDate <= thisMonth, message: '생년월을 선택해 주세요.' },
       { ok: isTalentGender(gender), message: '성별을 선택해 주세요.' },
-      { ok: Boolean(phone.trim()) && isValidPhone(phone), message: '휴대폰 번호를 입력해 주세요.' },
+      { ok: !phone.trim() || isValidPhone(phone), message: '휴대폰 번호를 확인해 주세요.' },
       { ok: Boolean(email.trim()) && isValidEmail(email), message: '이메일을 입력해 주세요.' },
       { ok: isCompleteResidence(residenceCity, residenceDistrict), message: '거주 지역을 선택해 주세요.' },
     ]);
@@ -490,7 +630,6 @@ export default function ResumeRegisterForm({
     if (!isTalentGender(gender)) return;
     mergeAndSave('basics', {
       title: title.trim(),
-      headline: headline.trim(),
       name: name.trim(),
       photoUrl: photoUrl || undefined,
       birthDate,
@@ -499,6 +638,29 @@ export default function ResumeRegisterForm({
       email: email.trim(),
       address: formatResidence(residenceCity, residenceDistrict),
       homepage: normalizeWebsite(homepage),
+    });
+
+  }
+
+  function saveConditions(event: React.FormEvent) {
+    event.preventDefault();
+    const requiredError = firstRequiredError([
+      { ok: workTypes.length > 0, message: '근무 형태를 하나 이상 선택해 주세요.' },
+      { ok: regions.length > 0, message: '지역을 하나 이상 선택해 주세요.' },
+      { ok: occupations.length > 0, message: '직종을 하나 이상 선택해 주세요.' },
+      { ok: isAvailableOption(available), message: '근무 가능을 선택해 주세요.' },
+    ]);
+    if (requiredError) {
+      rejectSave('conditions', requiredError);
+      return;
+    }
+    mergeAndSave('conditions', {
+      workType: workTypes[0] ?? '',
+      workTypes,
+      location: locationLabelFromRegions(regions),
+      occupations,
+      available,
+      headline: headlineFromOccupations(occupations),
     });
   }
 
@@ -524,7 +686,11 @@ export default function ResumeRegisterForm({
     event.preventDefault();
     const requiredError = firstRequiredError([
       { ok: isEducationLevel(education), message: '최종 학력을 선택해 주세요.' },
-      { ok: Boolean(school.trim()), message: '학교를 입력해 주세요.' },
+      { ok: schools.some((item) => item.school.trim()), message: '학교를 입력해 주세요.' },
+      {
+        ok: schools.every((item) => !item.major.trim() || item.school.trim()),
+        message: '전공만 있는 학교는 학교 이름을 입력해 주세요.',
+      },
     ]);
     if (requiredError) {
       rejectSave('education', requiredError);
@@ -533,8 +699,7 @@ export default function ResumeRegisterForm({
     if (!isEducationLevel(education)) return;
     mergeAndSave('education', {
       education,
-      school: school.trim(),
-      major: major.trim() || undefined,
+      ...schoolFieldsFromDrafts(schools),
     });
   }
 
@@ -606,7 +771,6 @@ export default function ResumeRegisterForm({
   const tabsComplete = SECTIONS.every((item) => isSectionComplete(item.id, values));
   const storedProfile = getMyTalentProfile(userId, resumeId);
   const storedPublishReady = storedProfile ? canPublishMyTalentProfile(userId, storedProfile) : false;
-  const workTypeReady = isWorkPreferencesComplete(userId);
   const unsavedComplete = tabsComplete && SECTIONS.some((item) => isDirty(item.id));
 
   return (
@@ -642,14 +806,6 @@ export default function ResumeRegisterForm({
       </nav>
       {storedPublishReady ? (
         <p className="text-sm text-success">모든 탭이 저장되었습니다. 마이페이지의 이력서 관리에서 공개할 수 있습니다.</p>
-      ) : tabsComplete && !workTypeReady ? (
-        <p className="text-sm text-muted">
-          이력서 탭은 완료되었습니다. 공개하려면{' '}
-          <Link href="/mypage?tab=resume" className="font-semibold text-primary hover:underline">
-            마이페이지의 희망 근무 조건
-          </Link>
-          을 저장해 주세요.
-        </p>
       ) : tabsComplete ? (
         <p className="text-sm text-muted">
           {unsavedComplete
@@ -661,18 +817,11 @@ export default function ResumeRegisterForm({
       ) : (
         <p className="text-sm text-muted">모든 탭이 완료되어야 공개할 수 있습니다. 지금은 작성 중으로만 저장됩니다.</p>
       )}
-      <p className="text-sm text-muted">
-        근무 형태·지역·직종·근무 가능은{' '}
-        <Link href="/mypage?tab=resume" className="font-semibold text-primary hover:underline">
-          마이페이지의 희망 근무 조건
-        </Link>
-        에서 입력합니다.
-      </p>
 
       <Card
         id="resume-basics"
         title="기본 정보"
-        description="이력서 제목과 직무, 기본 정보를 입력합니다."
+        description="이력서 제목과 기본 정보를 입력합니다."
         className="scroll-mt-[7.5rem]"
       >
         <form className="space-y-4" onSubmit={saveBasics} noValidate>
@@ -687,18 +836,6 @@ export default function ResumeRegisterForm({
               className={authInputClassName}
               placeholder="예: 웹 개발자 지원용"
               required
-            />
-          </div>
-          <div>
-            <FieldLabel htmlFor="talent-headline" optional>
-              직무
-            </FieldLabel>
-            <input
-              id="talent-headline"
-              value={headline}
-              onChange={(event) => setHeadline(event.target.value)}
-              placeholder="비우면 희망 근무 조건의 직종을 씁니다"
-              className={authInputClassName}
             />
           </div>
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
@@ -836,7 +973,7 @@ export default function ResumeRegisterForm({
                 </div>
               </div>
               <div>
-                <FieldLabel htmlFor="talent-phone" required>
+                <FieldLabel htmlFor="talent-phone" optional>
                   휴대폰
                 </FieldLabel>
                 <input
@@ -848,7 +985,6 @@ export default function ResumeRegisterForm({
                   onChange={(event) => setPhone(formatPhoneInput(event.target.value))}
                   placeholder="010-0000-0000"
                   className={authInputClassName}
-                  required
                 />
               </div>
               <div>
@@ -944,9 +1080,53 @@ export default function ResumeRegisterForm({
       </Card>
 
       <Card
+        id="resume-conditions"
+        title="희망 근무 조건"
+        description="이 이력서로 찾고 싶은 근무 형태, 지역, 직종, 근무 가능을 고릅니다."
+        className="scroll-mt-[7.5rem]"
+      >
+        <form className="space-y-5" onSubmit={saveConditions} noValidate>
+          <ChoiceGroup
+            legend="근무 형태"
+            required
+            options={JOB_WORK_TYPES}
+            selected={workTypes}
+            labelOf={(value) => WORK_TYPE_LABELS[value]}
+            onToggle={(value) => setWorkTypes((current) => toggleValue(current, value))}
+          />
+          <ChoiceGroup
+            legend="지역"
+            required
+            options={REGION_OPTIONS}
+            selected={regions}
+            isActive={(value) =>
+              value === NATIONWIDE_REGION ? isNationwideSelection(regions) : regions.includes(value)
+            }
+            onToggle={(value) => setRegions((current) => toggleRegionSelection(current, value))}
+          />
+          <ChoiceGroup
+            legend="직종"
+            required
+            options={OCCUPATION_OPTIONS}
+            selected={occupations}
+            onToggle={(value) => setOccupations((current) => toggleValue(current, value))}
+          />
+          <ChoiceGroup
+            legend="근무 가능"
+            required
+            options={AVAILABLE_OPTIONS}
+            selected={available ? [available] : []}
+            onToggle={(value) => setAvailable((current) => (current === value ? '' : value))}
+          />
+          {sectionStatus('conditions')}
+          {saveButton('conditions')}
+        </form>
+      </Card>
+
+      <Card
         id="resume-education"
         title="학력 정보"
-        description="최종 학력과 학교, 전공을 입력합니다."
+        description="최종 학력과 학교를 입력합니다. 학교는 여러 곳을 추가할 수 있습니다."
         className="scroll-mt-[7.5rem]"
       >
         <form className="space-y-4" onSubmit={saveEducation} noValidate>
@@ -972,33 +1152,7 @@ export default function ResumeRegisterForm({
               ))}
             </select>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <FieldLabel htmlFor="talent-school" required>
-                학교
-              </FieldLabel>
-              <input
-                id="talent-school"
-                value={school}
-                onChange={(event) => setSchool(event.target.value)}
-                placeholder="예: 한국대학교"
-                className={authInputClassName}
-                required
-              />
-            </div>
-            <div>
-              <FieldLabel htmlFor="talent-major" optional>
-                전공
-              </FieldLabel>
-              <input
-                id="talent-major"
-                value={major}
-                onChange={(event) => setMajor(event.target.value)}
-                placeholder="예: 컴퓨터공학"
-                className={authInputClassName}
-              />
-            </div>
-          </div>
+          <TalentSchoolFields schools={schools} onChange={setSchools} />
           {sectionStatus('education')}
           {saveButton('education')}
         </form>

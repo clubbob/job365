@@ -1,5 +1,5 @@
 import { isJobWorkType, type JobWorkType } from '@/types/job';
-import type { TalentProfile } from '@/types/talent';
+import { talentWorkTypes, type TalentProfile } from '@/types/talent';
 
 const STORAGE_KEY = 'job365.workPreferences';
 
@@ -163,7 +163,7 @@ export function isRegionOption(value: unknown): value is RegionOption {
   return typeof value === 'string' && (REGION_OPTIONS as readonly string[]).includes(value);
 }
 
-function isOccupationOption(value: unknown): value is OccupationOption {
+export function isOccupationOption(value: unknown): value is OccupationOption {
   return typeof value === 'string' && (OCCUPATION_OPTIONS as readonly string[]).includes(value);
 }
 
@@ -253,4 +253,28 @@ export function workPreferencesAreComplete(
 
 export function isWorkPreferencesComplete(userId: string): boolean {
   return workPreferencesAreComplete(loadWorkPreferences(userId));
+}
+
+export function occupationsFromTalent(profile: Pick<TalentProfile, 'occupations' | 'headline'>): OccupationOption[] {
+  const fromList = profile.occupations?.map(normalizeOccupation).filter((item): item is OccupationOption => Boolean(item)) ?? [];
+  if (fromList.length > 0) return [...new Set(fromList)];
+  return [...new Set(
+    (profile.headline ?? '')
+      .split(',')
+      .map((item) => normalizeOccupation(item.trim()))
+      .filter((item): item is OccupationOption => Boolean(item)),
+  )];
+}
+
+export function workPreferencesFromTalent(profile: TalentProfile): WorkPreferenceInput {
+  return {
+    workTypes: talentWorkTypes(profile),
+    regions: regionsFromLocationText(profile.location ?? ''),
+    occupations: occupationsFromTalent(profile),
+    available: normalizeAvailable(profile.available ?? ''),
+  };
+}
+
+export function talentHasCompleteWorkPreferences(profile: TalentProfile): boolean {
+  return workPreferencesAreComplete(workPreferencesFromTalent(profile));
 }

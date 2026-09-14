@@ -131,6 +131,9 @@ export function toJobCompanyInfo(record: BizVerifyRecord | null | undefined): Jo
     lastYearRevenue: record.lastYearRevenue,
     website: record.website,
     intro: record.intro,
+    registrantName: record.registrantName,
+    registrantEmail: record.registrantEmail,
+    registrantMobile: record.registrantMobile,
   };
 }
 
@@ -140,6 +143,23 @@ function hasText(value?: string | null): boolean {
 
 function hasDigits(value?: string | null): boolean {
   return Boolean(value?.replace(/[^\d]/g, ''));
+}
+
+export function missingJobCompanyMessage(input?: JobCompanyInfo | null): string | null {
+  return firstRequiredError([
+    { ok: hasText(input?.companyName), message: '회사명을 입력해 주세요.' },
+    { ok: hasText(input?.ceo), message: '대표자명을 입력해 주세요.' },
+    { ok: hasText(input?.phone), message: '전화번호를 입력해 주세요.' },
+    { ok: hasText(input?.foundedOn), message: '설립일을 입력해 주세요.' },
+    { ok: hasDigits(input?.employeeCount), message: '직원 수를 입력해 주세요.' },
+    { ok: hasDigits(input?.lastYearRevenue), message: '전년 매출액을 입력해 주세요.' },
+    { ok: hasText(input?.address), message: '사업장 주소를 입력해 주세요.' },
+    { ok: hasText(input?.intro), message: '회사 소개를 입력해 주세요.' },
+  ]);
+}
+
+export function isJobCompanyComplete(company?: JobCompanyInfo | null): boolean {
+  return !missingJobCompanyMessage(company);
 }
 
 export function missingCompanyInfoMessage(input: {

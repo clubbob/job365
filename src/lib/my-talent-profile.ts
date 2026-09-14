@@ -1,5 +1,11 @@
 import { getKoreaDateLocalToday } from '@/lib/datetime';
-import { headlineFromOccupations, isWorkPreferencesComplete, loadWorkPreferences, talentFieldsFromWorkPreferences } from '@/lib/work-preferences';
+import {
+  headlineFromOccupations,
+  loadWorkPreferences,
+  occupationsFromTalent,
+  talentFieldsFromWorkPreferences,
+  talentHasCompleteWorkPreferences,
+} from '@/lib/work-preferences';
 import {
   isCompleteTalentProfile,
   isPublishedTalent,
@@ -113,24 +119,45 @@ export function createEmptyTalentProfile(_userId: string, nickname = '', profile
     summary: '',
     experience: '',
     available: '',
+    occupations: [],
+    schools: [],
     tags: [],
     createdAt: today,
     updatedAt: today,
   });
 }
 
-function withWorkPreferences(userId: string, profile: TalentProfile): TalentProfile {
+function withAccountWorkPreferencesIfMissing(userId: string, profile: TalentProfile): TalentProfile {
   const prefs = loadWorkPreferences(userId);
-  if (!prefs) return profile;
-  const headline = profile.headline?.trim() || headlineFromOccupations(prefs.occupations);
-  return { ...profile, ...talentFieldsFromWorkPreferences(prefs), ...(headline ? { headline } : {}) };
+  let next = profile;
+
+  if (!talentHasCompleteWorkPreferences(profile) && prefs) {
+    const headline = profile.headline?.trim() || headlineFromOccupations(prefs.occupations);
+    next = {
+      ...profile,
+      ...talentFieldsFromWorkPreferences(prefs),
+      occupations: profile.occupations?.length ? profile.occupations : prefs.occupations,
+      ...(headline ? { headline } : {}),
+    };
+  }
+
+  const occupations = occupationsFromTalent(next);
+  const fallback = occupations.length > 0 ? occupations : prefs?.occupations ?? [];
+  if (fallback.length > 0 && !next.occupations?.some((item) => item.trim())) {
+    next = {
+      ...next,
+      occupations: fallback,
+      headline: next.headline?.trim() || headlineFromOccupations(fallback),
+    };
+  }
+  return next;
 }
 
-export function applyWorkPreferencesToMyProfiles(userId: string): TalentProfile[] {
+export function hydrateMissingWorkPreferencesFromAccount(userId: string): TalentProfile[] {
   const store = readStore();
   const current = store[userId] ?? [];
   if (current.length === 0) return [];
-  const next = current.map((item) => withWorkPreferences(userId, withTitle(item)));
+  const next = current.map((item) => withAccountWorkPreferencesIfMissing(userId, withTitle(item)));
   store[userId] = next;
   writeStore(store);
   return next;
@@ -139,11 +166,10 @@ export function applyWorkPreferencesToMyProfiles(userId: string): TalentProfile[
 export function saveMyTalentProfile(
   userId: string,
   profile: TalentProfile,
-  options?: { asDraft?: boolean; applyWorkPreferences?: boolean },
+  options?: { asDraft?: boolean },
 ): TalentProfile {
   const titled = withTitle(profile);
-  const merged = options?.applyWorkPreferences === false ? titled : withWorkPreferences(userId, titled);
-  const next = options?.asDraft ? { ...merged, draft: true } : withSavedTalentState(merged);
+  const next = options?.asDraft ? { ...titled, draft: true } : withSavedTalentState(titled);
   const store = readStore();
   const current = store[userId] ?? [];
   const others = current
@@ -156,10 +182,7 @@ export function saveMyTalentProfile(
 
 export function missingPublishRequirements(userId: string, profile: TalentProfile): string[] {
   const latest = getMyTalentProfile(userId, profile.id) ?? profile;
-  const missing: string[] = [];
-  if (!isWorkPreferencesComplete(userId)) missing.push('희망 근무 조건');
-  missing.push(...missingTalentPublishFields(withWorkPreferences(userId, latest)));
-  return missing;
+  return missingTalentPublishFields(latest);
 }
 
 export function canPublishMyTalentProfile(userId: string, profile: TalentProfile): boolean {
@@ -167,43 +190,24 @@ export function canPublishMyTalentProfile(userId: string, profile: TalentProfile
 }
 
 export function missingApplyRequirements(userId: string): string[] {
-  const missing: string[] = [];
-  if (!isWorkPreferencesComplete(userId)) missing.push('희망 근무 조건');
-  const hasCompleteResume = listMyTalentProfilesForUser(userId).some((item) =>
-    isCompleteTalentProfile(withWorkPreferences(userId, item)),
-  );
-  if (!hasCompleteResume) missing.push('이력서');
-  return missing;
+  const hasCompleteResume = listMyTalentProfilesForUser(userId).some(isCompleteTalentProfile);
+  return hasCompleteResume ? [] : ['이력서'];
 }
 
 export function findApplyReadyResume(userId: string): TalentProfile | null {
   if (missingApplyRequirements(userId).length > 0) return null;
-  const complete = listMyTalentProfilesForUser(userId)
-    .map((item) => withWorkPreferences(userId, item))
-    .filter(isCompleteTalentProfile);
+  const complete = listMyTalentProfilesForUser(userId).filter(isCompleteTalentProfile);
   return complete.find(isPublishedTalent) ?? complete[0] ?? null;
-}
-
-export function unpublishPublishedIfWorkPreferencesIncomplete(userId: string): TalentProfile[] {
-  const current = listMyTalentProfilesForUser(userId);
-  if (isWorkPreferencesComplete(userId)) return current;
-  if (!current.some(isPublishedTalent)) return current;
-  const store = readStore();
-  store[userId] = current.map((item) => (isPublishedTalent(item) ? { ...item, draft: true } : item));
-  writeStore(store);
-  return listMyTalentProfilesForUser(userId);
 }
 
 export function publishMyTalentProfile(userId: string, profileId: string): TalentProfile | null {
   const target = getMyTalentProfile(userId, profileId);
-  if (!target) return null;
-  const ready = withWorkPreferences(userId, target);
-  if (!canPublishMyTalentProfile(userId, ready)) return null;
+  if (!target || !canPublishMyTalentProfile(userId, target)) return null;
   const store = readStore();
   const current = store[userId] ?? [];
   const today = getKoreaDateLocalToday();
   store[userId] = current.map((item) => {
-    if (item.id === profileId) return { ...ready, draft: false, updatedAt: today };
+    if (item.id === profileId) return { ...target, draft: false, updatedAt: today };
     if (isPublishedTalent(item)) return { ...item, draft: true };
     return item;
   });

@@ -4,14 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import PageHeader from '@/components/navigation/PageHeader';
-import {
-  DetailBadge,
-  DetailHero,
-  DetailSection,
-  DetailStatGrid,
-  DetailTags,
-  DetailText,
-} from '@/components/ui/PostingDetail';
+import { DetailBadge } from '@/components/ui/PostingDetail';
 import { Card } from '@/components/ui/Card';
 import {
   adminDangerActionClassName,
@@ -20,9 +13,10 @@ import {
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
 import { deleteMyTalentProfileById, findMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
-import { displayTalentName, talentBasicInfoItems, talentCareerLabel, talentEducation, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
+import { talentResumeTitle } from '@/lib/talent-display';
 import { isPublishedTalent, type TalentProfile } from '@/types/talent';
 import AdminPublishBadge from '@/features/admin/AdminPublishBadge';
+import TalentResumeArticle from '@/features/talents/TalentResumeArticle';
 
 type ItemResponse =
   | { ok: true; data: { item: { ownerId: string; profile: TalentProfile } | null } }
@@ -41,7 +35,7 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
         const data = await adminJson<ItemResponse>(`/api/admin/talents/${encodeURIComponent(talentId)}`);
         if (!cancelled && data.ok && data.data.item) {
           setItem(data.data.item);
-          saveMyTalentProfile(data.data.item.ownerId, data.data.item.profile, { applyWorkPreferences: false });
+          saveMyTalentProfile(data.data.item.ownerId, data.data.item.profile);
           setReady(true);
           return;
         }
@@ -87,8 +81,6 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
   }
 
   const talent = item.profile;
-  const workType = talentWorkTypesLabel(talent);
-  const displayName = displayTalentName(talent.name, true);
 
   return (
     <div className="space-y-5">
@@ -108,52 +100,13 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
         </button>
       </div>
       <article className="space-y-4">
-        <DetailHero
-          eyebrow={displayName}
-          title={talent.headline}
-          photoUrl={talent.photoUrl}
-          photoAlt={displayName}
-          badges={
-            <>
-              <DetailBadge tone="primary">{isPublishedTalent(talent) ? '공개' : '작성 중'}</DetailBadge>
-              <DetailBadge>{workType}</DetailBadge>
-              <DetailBadge>{talentCareerLabel(talent)}</DetailBadge>
-              <DetailBadge>{talentEducation(talent)}</DetailBadge>
-            </>
+        <TalentResumeArticle
+          talent={talent}
+          revealName
+          extraBadges={
+            <DetailBadge tone="primary">{isPublishedTalent(talent) ? '공개' : '작성 중'}</DetailBadge>
           }
-          facts={[
-            { label: '지역', value: talent.location || '—' },
-            { label: '근무 가능', value: talent.available || '—' },
-            { label: '경력 유무', value: talentCareerLabel(talent) },
-          ]}
         />
-        <DetailStatGrid
-          items={[
-            ...talentBasicInfoItems(talent, true),
-            { label: '근무 형태', value: workType },
-            { label: '경력 유무', value: talentCareerLabel(talent) },
-            { label: '최종 학력', value: talentEducation(talent) },
-            { label: '지역', value: talent.location },
-            { label: '근무 가능', value: talent.available },
-            { label: '학교', value: talent.school },
-            { label: '전공', value: talent.major },
-          ]}
-        />
-        <DetailSection title="자기 소개">
-          <DetailText value={talent.summary} />
-        </DetailSection>
-        <DetailSection title="경력 내역">
-          <DetailText value={talent.careerHistory} />
-        </DetailSection>
-        <DetailSection title="자격증">
-          <DetailText value={talent.experience} />
-        </DetailSection>
-        <DetailSection title="어학">
-          <DetailText value={talent.languages} />
-        </DetailSection>
-        <DetailSection title="스킬">
-          <DetailTags items={talent.tags} />
-        </DetailSection>
       </article>
     </div>
   );

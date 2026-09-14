@@ -92,42 +92,53 @@ export function DetailHero({
 export function DetailStatGrid({
   title = '핵심 정보',
   items,
+  embedded = false,
 }: {
   title?: string;
   items: Array<{ label: string; value?: string | null; href?: string }>;
+  embedded?: boolean;
 }) {
+  const list = (
+    <dl className={embedded ? 'grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3' : 'grid grid-cols-2 gap-2 sm:grid-cols-3'}>
+      {items.map((item) => {
+        const value = item.value?.trim() ? item.value : '—';
+        return (
+          <div
+            key={item.label}
+            className={embedded ? undefined : 'rounded-xl border border-border bg-surface px-3.5 py-3 shadow-sm'}
+          >
+            <dt className="text-[11px] font-medium tracking-wide text-subtle">{item.label}</dt>
+            <dd
+              className={cn(
+                'mt-1 min-w-0 break-words whitespace-pre-wrap text-sm font-semibold leading-snug',
+                value === '—' ? 'text-subtle' : 'text-foreground',
+              )}
+            >
+              {item.href && value !== '—' ? (
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="break-all text-primary underline decoration-primary/30 underline-offset-[3px] hover:decoration-primary/60"
+                >
+                  {value}
+                </a>
+              ) : (
+                value
+              )}
+            </dd>
+          </div>
+        );
+      })}
+    </dl>
+  );
+
+  if (embedded) return list;
+
   return (
     <section>
-      <h3 className="mb-2.5 text-sm font-bold text-foreground">{title}</h3>
-      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {items.map((item) => {
-          const value = item.value?.trim() ? item.value : '—';
-          return (
-            <div key={item.label} className="rounded-xl border border-border bg-surface px-3.5 py-3 shadow-sm">
-              <dt className="text-[11px] font-medium tracking-wide text-subtle">{item.label}</dt>
-              <dd
-                className={cn(
-                  'mt-1 min-w-0 break-words whitespace-pre-wrap text-sm font-semibold leading-snug',
-                  value === '—' ? 'text-subtle' : 'text-foreground',
-                )}
-              >
-                {item.href && value !== '—' ? (
-                  <a
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="break-all text-primary underline decoration-primary/30 underline-offset-[3px] hover:decoration-primary/60"
-                  >
-                    {value}
-                  </a>
-                ) : (
-                  value
-                )}
-              </dd>
-            </div>
-          );
-        })}
-      </dl>
+      {title ? <h3 className="mb-2.5 text-sm font-bold text-foreground">{title}</h3> : null}
+      {list}
     </section>
   );
 }

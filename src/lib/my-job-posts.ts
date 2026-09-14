@@ -1,4 +1,4 @@
-import { isCompanyInfoComplete, loadBizVerify, toJobCompanyInfo, type BizVerifyRecord } from '@/lib/biz-verify-store';
+import { isCompanyInfoComplete, isJobCompanyComplete, loadBizVerify, toJobCompanyInfo } from '@/lib/biz-verify-store';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 import {
   isJobCareerType,
@@ -55,16 +55,23 @@ export function saveMyJobPosting(userId: string, job: JobPosting): void {
   writeStore(store);
 }
 
-export function applyCompanyToMyJobPostings(userId: string, company: BizVerifyRecord): JobPosting[] {
+export function hydrateMissingCompanyFromAccount(userId: string): JobPosting[] {
+  const company = loadBizVerify(userId);
   const info = toJobCompanyInfo(company);
   const current = listMyJobPostings(userId);
-  if (current.length === 0) return [];
-  const next = current.map((job) => ({
-    ...job,
-    companyName: company.companyName.trim() || job.companyName,
-    businessNumber: company.businessNumber || job.businessNumber,
-    company: info,
-  }));
+  if (!info || current.length === 0) return current;
+  let changed = false;
+  const next = current.map((job) => {
+    if (job.company?.companyName?.trim() || job.companyName.trim()) return job;
+    changed = true;
+    return {
+      ...job,
+      companyName: info.companyName || job.companyName,
+      businessNumber: job.businessNumber || info.businessNumber,
+      company: info,
+    };
+  });
+  if (!changed) return current;
   const store = readStore();
   store[userId] = next;
   writeStore(store);
@@ -109,7 +116,7 @@ export function createJobPostingId(userId: string): string {
 export function missingJobPublishRequirements(userId: string, job: JobPosting): string[] {
   const latest = getMyJobPosting(userId, job.id) ?? job;
   const missing: string[] = [];
-  if (!isCompanyInfoComplete(loadBizVerify(userId))) missing.push('회사 정보');
+  if (!isJobCompanyComplete(latest.company) && !isCompanyInfoComplete(loadBizVerify(userId))) missing.push('회사 정보');
   if (!latest.title.trim()) missing.push('채용 제목');
   if (jobWorkTypes(latest).length === 0) missing.push('근무 형태');
   if (!latest.headcount || latest.headcount < 1) missing.push('모집 인원');
@@ -119,6 +126,7 @@ export function missingJobPublishRequirements(userId: string, job: JobPosting): 
   if (!latest.location.trim()) missing.push('근무지');
   if (!latest.deadline?.trim()) missing.push('접수 마감');
   if (!latest.summary.trim()) missing.push('담당 업무');
+  if (!latest.process?.trim()) missing.push('전형 절차');
   return missing;
 }
 
@@ -129,7 +137,7 @@ export function canPublishMyJobPosting(userId: string, job: JobPosting): boolean
 export function publishMyJobPosting(userId: string, jobId: string): JobPosting | null {
   const target = getMyJobPosting(userId, jobId);
   if (!target || !canPublishMyJobPosting(userId, target)) return null;
-  const company = toJobCompanyInfo(loadBizVerify(userId));
+  const company = target.company ?? toJobCompanyInfo(loadBizVerify(userId));
   const next = {
     ...target,
     status: 'published' as const,

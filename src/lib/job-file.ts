@@ -1,15 +1,20 @@
 'use client';
 
-import { formatBusinessNumber } from '@/lib/business-number';
-import { loadBizVerify, type BizVerifyRecord } from '@/lib/biz-verify-store';
-import { formatKoreaDateWithWeekday } from '@/lib/datetime';
+import { loadBizVerify } from '@/lib/biz-verify-store';
 import {
   jobCareerLabel,
   jobDeadlineLabel,
   jobEducationLabel,
   jobHeadcountLabel,
 } from '@/lib/job-display';
-import { jobPositionLabel, jobWorkTypesLabel, type JobPosting } from '@/types/job';
+import {
+  jobCompanyBusinessNumberLabel,
+  jobCompanyEmployeeCountLabel,
+  jobCompanyFoundedLabel,
+  jobCompanyRevenueLabel,
+  resolveJobCompany,
+} from '@/lib/job-company';
+import { jobPositionLabel, jobWorkTypesLabel, type JobCompanyInfo, type JobPosting } from '@/types/job';
 
 const PAGE_WIDTH_PX = 794;
 
@@ -49,27 +54,19 @@ function rows(items: Array<[string, string | null | undefined]>): string {
   return `<div class="rows">${items.map(([label, value]) => row(label, value)).join('')}</div>`;
 }
 
-function employeeCountLabel(value?: string): string {
-  const digits = value?.replace(/[^\d]/g, '');
-  if (!digits) return '';
-  return `${Number(digits).toLocaleString('ko-KR')}명`;
-}
-
-function revenueLabel(value?: string): string {
-  const digits = value?.replace(/[^\d]/g, '');
-  if (!digits) return '';
-  return `${Number(digits).toLocaleString('ko-KR')}백만 원`;
-}
-
-function buildJobFileHtml(job: JobPosting, company: BizVerifyRecord | null): string {
+function buildJobFileHtml(
+  job: JobPosting,
+  company: JobCompanyInfo,
+  registrant?: { name?: string; email?: string; mobile?: string },
+): string {
   const title = job.title.trim() || '채용 정보';
-  const companyName = (company?.companyName || job.companyName).trim() || '회사명 없음';
+  const companyName = (company.companyName || job.companyName).trim() || '회사명 없음';
   const workType = jobWorkTypesLabel(job);
   const career = jobCareerLabel(job);
   const education = jobEducationLabel(job.education);
   const headcount = jobHeadcountLabel(job.headcount);
-  const deadline = job.deadline ? jobDeadlineLabel(job.deadline) : '';
-  const businessNumber = formatBusinessNumber(company?.businessNumber || job.businessNumber || '');
+  const deadline = jobDeadlineLabel(job.deadline);
+  const businessNumber = jobCompanyBusinessNumberLabel(company.businessNumber || job.businessNumber);
 
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -87,9 +84,11 @@ function buildJobFileHtml(job: JobPosting, company: BizVerifyRecord | null): str
     h2 { margin: 28px 0 12px; font-size: 16px; }
     section:first-of-type h2 { margin-top: 20px; }
     .rows { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 32px; }
+    .rows + .rows { margin-top: 10px; }
     .row { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 10px; align-items: start; }
     dt { color: #737373; font-weight: 600; white-space: nowrap; }
     dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+    h3 { margin: 16px 0 8px; font-size: 14px; }
     p { margin: 0; }
     .empty { color: #a3a3a3; }
   </style>
@@ -106,23 +105,31 @@ function buildJobFileHtml(job: JobPosting, company: BizVerifyRecord | null): str
     ${section(
       '회사 정보',
       `${rows([
-        ['회사명', companyName],
         ['사업자등록번호', businessNumber],
-        ['대표자명', company?.ceo],
-        ['전화번호', company?.phone],
-        ['팩스번호', company?.fax],
-        ['설립일', company?.foundedOn ? formatKoreaDateWithWeekday(company.foundedOn) : ''],
-        ['직원 수', employeeCountLabel(company?.employeeCount)],
-        ['전년 매출액', revenueLabel(company?.lastYearRevenue)],
-        ['사업장 주소', company?.address],
-        ['홈페이지', company?.website],
-      ])}<h3 style="margin:16px 0 8px;font-size:14px">회사 소개</h3>${textHtml(company?.intro)}`,
+        ['회사명', companyName],
+        ['대표자명', company.ceo],
+        ['전화번호', company.phone],
+        ['팩스번호', company.fax],
+        ['설립일', jobCompanyFoundedLabel(company.foundedOn)],
+        ['직원 수', jobCompanyEmployeeCountLabel(company.employeeCount)],
+        ['전년 매출액', jobCompanyRevenueLabel(company.lastYearRevenue)],
+        ['사업장 주소', company.address],
+        ['홈페이지', company.website],
+      ])}
+      <h3>회사 소개</h3>${textHtml(company.intro)}
+      ${rows([
+        ['등록자 이름', registrant?.name],
+        ['이메일', registrant?.email],
+        ['핸드폰 번호', registrant?.mobile],
+      ])}`,
     )}
     ${section(
-      '모집 개요',
+      '모집 요강',
       rows([
+        ['채용 제목', title],
         ['근무 형태', workType],
         ['모집 인원', headcount],
+        ['지급 기준', job.payLabel],
         ['경력 유무', career],
         ['학력', education],
         ['직급/직책', jobPositionLabel(job.positionLevel)],
@@ -130,15 +137,17 @@ function buildJobFileHtml(job: JobPosting, company: BizVerifyRecord | null): str
         ['근무지', job.location],
         ['근무 요일', job.workDays],
         ['근무 시간', job.workHours],
-        ['지급 기준', job.payLabel],
         ['접수 마감', deadline],
       ]),
     )}
-    ${section('담당 업무', textHtml(job.summary))}
-    ${section('자격 요건', textHtml(job.requirements))}
-    ${section('우대 사항', textHtml(job.preferred))}
-    ${section('복리후생', textHtml(job.benefits))}
-    ${section('전형 절차', textHtml(job.process))}
+    ${section(
+      '상세 내용',
+      `<h3>담당 업무</h3>${textHtml(job.summary)}
+      <h3>자격 요건</h3>${textHtml(job.requirements)}
+      <h3>우대 사항</h3>${textHtml(job.preferred)}
+      <h3>복리후생</h3>${textHtml(job.benefits)}
+      <h3>전형 절차</h3>${textHtml(job.process)}`,
+    )}
   </main>
 </body>
 </html>`;
@@ -217,8 +226,16 @@ async function renderJobPdf(html: string, filename: string): Promise<void> {
 
 export async function downloadJobFile(job: JobPosting, userId?: string): Promise<void> {
   try {
-    const company = userId ? loadBizVerify(userId) : null;
-    await renderJobPdf(buildJobFileHtml(job, company), jobFileName(job.title));
+    const account = userId ? loadBizVerify(userId) : null;
+    const company = resolveJobCompany(job, userId);
+    await renderJobPdf(
+      buildJobFileHtml(job, company, {
+        name: company.registrantName || account?.registrantName,
+        email: company.registrantEmail || account?.registrantEmail,
+        mobile: company.registrantMobile || account?.registrantMobile,
+      }),
+      jobFileName(job.title),
+    );
   } catch {
     window.alert('채용 정보 PDF를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }

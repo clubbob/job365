@@ -9,7 +9,6 @@ import { useUserMode } from '@/features/mode/mode-context';
 import { authInputClassName } from '@/lib/auth-ui';
 import { firstRequiredError } from '@/lib/form-required';
 import { listPublishedMyJobPostings } from '@/lib/my-job-posts';
-import { findMyTalentProfile } from '@/lib/my-talent-profile';
 import { missingProposeRequirements, type ProposeRequirement } from '@/lib/recruiter-ready';
 import {
   getTalentProposalView,
@@ -87,14 +86,6 @@ export default function TalentProposeButton({
     );
   }
 
-  if (findMyTalentProfile(talentId)?.userId === user.uid) {
-    return (
-      <p className="rounded-lg bg-neutral-50 px-4 py-3 text-sm text-muted">
-        내가 등록한 이력서에는 면접 제안할 수 없습니다.
-      </p>
-    );
-  }
-
   if (status === 'accepted') {
     return (
       <p className="rounded-lg bg-primary/5 px-4 py-3 text-sm text-foreground">
@@ -125,7 +116,7 @@ export default function TalentProposeButton({
           ? '회사 정보를 등록해야 제안할 수 있습니다.'
           : '채용 정보를 등록해야 제안할 수 있습니다.'}{' '}
       {missing.includes('회사 정보') ? (
-        <Link href="/mypage?tab=jobs" className="font-semibold text-primary hover:underline">
+        <Link href="/jobs/new?from=mypage" className="font-semibold text-primary hover:underline">
           회사 정보
         </Link>
       ) : null}

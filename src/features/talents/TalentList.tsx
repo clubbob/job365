@@ -7,9 +7,10 @@ import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
 import { loadListRestore, saveListRestore, saveListScroll } from '@/lib/list-restore';
 import { listTalents } from '@/lib/talent-catalog';
+import { talentOccupationsLabel } from '@/lib/talent-display';
 import { cn } from '@/lib/utils';
 import { WORK_TYPE_FILTERS, type JobWorkType } from '@/types/job';
-import { talentWorkTypes } from '@/types/talent';
+import { talentSchools, talentWorkTypes, type TalentProfile } from '@/types/talent';
 
 type FilterId = (typeof WORK_TYPE_FILTERS)[number]['id'];
 
@@ -35,6 +36,7 @@ export default function TalentList({
   hideFilters?: boolean;
   showInfeed?: boolean;
 }) {
+  const [allTalents, setAllTalents] = useState<TalentProfile[]>([]);
   const [filter, setFilter] = useState<FilterId>(workType ?? 'all');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -48,7 +50,7 @@ export default function TalentList({
     const selected = WORK_TYPE_FILTERS.find((item) => item.id === filter);
     const keyword = query.trim().toLowerCase();
 
-    return listTalents(viewerId).filter((talent) => {
+    return allTalents.filter((talent) => {
       const types = talentWorkTypes(talent);
       if (workType) {
         if (!types.includes(workType)) return false;
@@ -58,13 +60,12 @@ export default function TalentList({
       if (!keyword) return true;
 
       const haystack = [
-        talent.headline,
+        talentOccupationsLabel(talent),
         talent.location,
         talent.summary,
         talent.careerLabel,
         talent.education,
-        talent.school,
-        talent.major,
+        ...talentSchools(talent).flatMap((item) => [item.school, item.major ?? '']),
         talent.experience,
         talent.careerHistory,
         talent.languages,
@@ -74,9 +75,13 @@ export default function TalentList({
         .toLowerCase();
       return haystack.includes(keyword);
     });
-  }, [filter, query, viewerId, workType]);
+  }, [allTalents, filter, query, workType]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  useEffect(() => {
+    setAllTalents(listTalents(viewerId));
+  }, [viewerId]);
 
   useEffect(() => {
     if (!persistKey) return;
@@ -156,7 +161,7 @@ export default function TalentList({
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="이름, 직무, 지역으로 검색"
+          placeholder="이름, 직종, 지역으로 검색"
           className="w-full rounded-xl border border-border-strong bg-surface px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-subtle focus:border-primary focus:ring-2 focus:ring-primary/25"
         />
       </div>

@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import JobCard from '@/features/jobs/JobCard';
-import WorkPreferencesForm from '@/features/mypage/WorkPreferencesForm';
 import ResumeViewLimitPanel from '@/features/mypage/ResumeViewLimitPanel';
 import {
   JOB_APPLICATION_STATUS_LABELS,
@@ -40,14 +39,12 @@ import {
   unpublishMyTalentProfile,
 } from '@/lib/my-talent-profile';
 import { syncDeleteTalentProfile, syncMyTalentProfile } from '@/lib/posting-sync';
-import { talentCareerLabel, talentEducation, talentRecentDate, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
+import { talentCareerLabel, talentEducation, talentOccupationsLabel, talentRecentDate, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
 import { cn } from '@/lib/utils';
-import { isWorkPreferencesComplete } from '@/lib/work-preferences';
 import { jobWorkTypesLabel, type JobPosting } from '@/types/job';
 import { isPublishedTalent, type TalentProfile } from '@/types/talent';
 
 export const JOBSEEKER_SUB_TABS = [
-  { id: 'conditions', label: '희망 근무 조건' },
   { id: 'resume', label: '이력서 관리' },
   { id: 'applications', label: '입사 지원 현황' },
   { id: 'proposals', label: '받은 면접 제안' },
@@ -64,19 +61,17 @@ export function isJobseekerSubTab(value: string | null): value is JobseekerSubTa
 const primaryLinkClassName =
   'inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover';
 const rowActionClassName =
-  'inline-flex rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-semibold text-foreground hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45';
+  'inline-flex rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-border-strong disabled:hover:bg-surface';
 const compactActionClassName =
-  'inline-flex shrink-0 whitespace-nowrap rounded-lg border border-border-strong bg-surface px-2 py-1.5 text-xs font-semibold text-foreground hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45';
+  'inline-flex shrink-0 whitespace-nowrap rounded-lg border border-border-strong bg-surface px-2 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-border-strong disabled:hover:bg-surface';
 const publishActionClassName =
   'inline-flex rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-muted disabled:hover:bg-neutral-200';
 const compactPublishClassName =
   'inline-flex shrink-0 whitespace-nowrap rounded-lg bg-primary px-2 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-muted disabled:hover:bg-neutral-200';
-const disabledPrimaryClassName =
-  'inline-flex cursor-not-allowed rounded-lg bg-neutral-200 px-4 py-2.5 text-sm font-semibold text-muted';
 const dangerActionClassName =
-  'inline-flex rounded-lg border border-danger/30 px-3 py-2 text-sm font-semibold text-danger hover:bg-red-50';
+  'inline-flex rounded-lg border border-danger/30 px-3 py-2 text-sm font-semibold text-danger transition-colors hover:border-danger hover:bg-red-50';
 const compactDangerClassName =
-  'inline-flex shrink-0 whitespace-nowrap rounded-lg border border-danger/30 px-2 py-1.5 text-xs font-semibold text-danger hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45';
+  'inline-flex shrink-0 whitespace-nowrap rounded-lg border border-danger/30 px-2 py-1.5 text-xs font-semibold text-danger transition-colors hover:border-danger hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-danger/30 disabled:hover:bg-transparent';
 
 export default function JobseekerManagePanel({
   userId,
@@ -100,7 +95,6 @@ export default function JobseekerManagePanel({
   const [followedJobs, setFollowedJobs] = useState<JobPosting[]>([]);
   const [blockedCompanyCount, setBlockedCompanyCount] = useState(0);
   const [proposals, setProposals] = useState<ReceivedProposal[]>([]);
-  const conditionsReady = isWorkPreferencesComplete(userId);
   const completeResumeCount = resumes.filter((item) => canPublishMyTalentProfile(userId, item)).length;
 
   useEffect(() => {
@@ -227,9 +221,7 @@ export default function JobseekerManagePanel({
         {JOBSEEKER_SUB_TABS.map((item) => {
           const active = subTab === item.id;
           const badge =
-            item.id === 'conditions' && conditionsReady
-              ? '완료'
-              : item.id === 'resume' && completeResumeCount > 0
+            item.id === 'resume' && completeResumeCount > 0
                 ? `${completeResumeCount}건`
                 : item.id === 'applications' && applications.length > 0
                   ? `${applications.length}건`
@@ -266,52 +258,24 @@ export default function JobseekerManagePanel({
         })}
       </div>
 
-      {subTab === 'conditions' ? <WorkPreferencesForm userId={userId} onSaved={refresh} /> : null}
-
       {subTab === 'resume' ? (
         <Card
           title="이력서 관리"
           description={
-            !conditionsReady
-              ? '근무 형태, 지역, 직종, 근무 가능을 모두 저장해야 이력서를 등록하고 공개할 수 있습니다.'
-              : ready && resumes.length > 0
-                ? `${resumes.length}건이 등록되어 있습니다. 공개는 희망 근무 조건과 이력서가 완료된 1건만 할 수 있습니다.`
-                : '지원 회사별로 내용을 나눠 등록하고, 복사해서 새 이력서를 만들 수 있습니다. 공개는 희망 근무 조건과 이력서가 완료된 1건만 할 수 있습니다.'
+            ready && resumes.length > 0
+              ? `${resumes.length}건이 등록되어 있습니다. 공개는 완료된 이력서 1건만 할 수 있습니다.`
+              : '지원 회사별로 내용을 나눠 등록하고, 복사해서 새 이력서를 만들 수 있습니다. 공개는 완료된 이력서 1건만 할 수 있습니다.'
           }
           action={
-            conditionsReady ? (
-              <Link href="/talents/new?from=mypage" className={primaryLinkClassName}>
-                이력서 등록
-              </Link>
-            ) : (
-              <button
-                type="button"
-                disabled
-                className={disabledPrimaryClassName}
-                title="희망 근무 조건을 먼저 저장해 주세요."
-              >
-                이력서 등록
-              </button>
-            )
+            <Link href="/talents/new?from=mypage" className={primaryLinkClassName}>
+              이력서 등록
+            </Link>
           }
         >
           {!ready ? (
             <p className="text-sm text-muted">불러오는 중…</p>
           ) : (
             <div className="space-y-4">
-              {!conditionsReady ? (
-                <p className="text-sm text-muted">
-                  이력서를 등록하거나 공개하려면{' '}
-                  <button
-                    type="button"
-                    className="font-semibold text-primary hover:underline"
-                    onClick={() => onSelectSubTab('conditions')}
-                  >
-                    희망 근무 조건
-                  </button>
-                  을 먼저 저장해 주세요.
-                </p>
-              ) : null}
               {resumes.length > 0 ? (
             <ul className="grid grid-cols-2 gap-2 sm:gap-3">
               {resumes.map((resume) => {
@@ -319,6 +283,7 @@ export default function JobseekerManagePanel({
                 const title = talentResumeTitle(resume);
                 const busy = busyId === resume.id;
                 const workTypesLabel = talentWorkTypesLabel(resume);
+                const occupationLabel = talentOccupationsLabel(resume);
                 const missing = missingPublishRequirements(userId, resume);
                 const canPublish = missing.length === 0;
                 return (
@@ -361,8 +326,8 @@ export default function JobseekerManagePanel({
                     >
                       {title}
                     </p>
-                    {resume.headline?.trim() && resume.headline.trim() !== title ? (
-                      <p className="mt-1 line-clamp-2 text-sm text-muted">{resume.headline}</p>
+                    {occupationLabel && occupationLabel !== title ? (
+                      <p className="mt-1 line-clamp-2 text-sm text-muted">{occupationLabel}</p>
                     ) : null}
                     <p className="mt-1 text-xs text-subtle">최근 저장일 {talentRecentDate(resume)}</p>
                     {!published && missing.length > 0 ? (
@@ -415,13 +380,8 @@ export default function JobseekerManagePanel({
                         disabled={busy}
                         onClick={() => void handleSaveFile(resume)}
                       >
-                        파일 저장
+                        이력서 출력
                       </button>
-                      {published ? (
-                        <Link href={`/talents/${resume.id}?from=mypage`} className={compactActionClassName}>
-                          보기
-                        </Link>
-                      ) : null}
                       <button
                         type="button"
                         className={compactDangerClassName}
@@ -435,9 +395,9 @@ export default function JobseekerManagePanel({
                 );
               })}
             </ul>
-              ) : conditionsReady ? (
+              ) : (
                 <p className="text-sm text-muted">아직 등록한 이력서가 없습니다.</p>
-              ) : null}
+              )}
             </div>
           )}
         </Card>

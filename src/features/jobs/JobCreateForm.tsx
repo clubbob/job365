@@ -1,16 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
 import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
+import CompanyInfoForm from '@/features/mypage/CompanyInfoForm';
 import { authInputClassName } from '@/lib/auth-ui';
-import { loadBizVerify } from '@/lib/biz-verify-store';
+import { isCompanyInfoComplete, isJobCompanyComplete, loadBizVerify, toJobCompanyInfo } from '@/lib/biz-verify-store';
 import { addDaysToKoreaDate, getKoreaDateLocalToday } from '@/lib/datetime';
 import { formatJobPayLabel, formatPayAmountInput, parsePayLabel, PAY_UNIT_LABELS } from '@/lib/job-display';
 import { firstRequiredError } from '@/lib/form-required';
 import { attachJobCompany } from '@/lib/job-company';
-import { createJobPostingId, saveMyJobPosting } from '@/lib/my-job-posts';
+import {
+  canPublishMyJobPosting,
+  createJobPostingId,
+  getMyJobPosting,
+  missingJobPublishRequirements,
+  saveMyJobPosting,
+} from '@/lib/my-job-posts';
 import { syncMyJobPosting } from '@/lib/posting-sync';
 import { cn } from '@/lib/utils';
 import {
@@ -37,6 +43,15 @@ import {
   type JobWorkType,
 } from '@/types/job';
 
+const SECTIONS = [
+  { id: 'company', label: '회사 정보' },
+  { id: 'outline', label: '모집 요강' },
+  { id: 'details', label: '상세 내용' },
+] as const;
+
+type SectionId = (typeof SECTIONS)[number]['id'];
+type SectionSnapshots = Record<SectionId, string>;
+
 const PAY_TYPES = Object.keys(PAY_TYPE_LABELS) as JobPayType[];
 
 const controlClassName =
@@ -44,19 +59,10 @@ const controlClassName =
 
 const amountInputClassName = cn(controlClassName, 'w-28 text-right tabular-nums sm:w-32');
 
-function PlaceholderOption() {
-  return <option value="">선택</option>;
-}
-
 const textareaClassName = `${authInputClassName} min-h-36 leading-relaxed`;
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-4 border-t border-border py-7 first:border-t-0 first:pt-0 last:pb-0">
-      <h3 className="text-sm font-bold text-foreground">{title}</h3>
-      {children}
-    </section>
-  );
+function PlaceholderOption() {
+  return <option value="">선택</option>;
 }
 
 type JobDraft = {
@@ -80,12 +86,63 @@ type JobDraft = {
   preferred: string;
   benefits: string;
   process: string;
-  company: string;
-  bizNumber: string;
 };
 
-function encodeJobDraft(draft: JobDraft): string {
-  return JSON.stringify(draft);
+function snapshotsFromValues(values: JobDraft): SectionSnapshots {
+  return {
+    company: '{}',
+    outline: JSON.stringify({
+      title: values.title,
+      workTypes: values.workTypes,
+      headcount: values.headcount,
+      careerType: values.careerType,
+      education: values.education,
+      location: values.location,
+      workDays: values.workDays,
+      workHours: values.workHours,
+      positionLevel: values.positionLevel,
+      probation: values.probation,
+      alwaysOpen: values.alwaysOpen,
+      deadline: values.deadline,
+      payType: values.payType,
+      payAmount: values.payAmount,
+      payNegotiable: values.payNegotiable,
+    }),
+    details: JSON.stringify({
+      summary: values.summary,
+      requirements: values.requirements,
+      preferred: values.preferred,
+      benefits: values.benefits,
+      process: values.process,
+    }),
+  };
+}
+
+function isSectionComplete(id: SectionId, values: JobDraft, companyComplete: boolean): boolean {
+  switch (id) {
+    case 'company':
+      return companyComplete;
+    case 'outline': {
+      const count = Math.floor(Number(values.headcount));
+      const payLabel = isJobPayType(values.payType)
+        ? formatJobPayLabel(values.payType, values.payAmount, values.payNegotiable)
+        : '';
+      return (
+        Boolean(values.title.trim()) &&
+        values.workTypes.length > 0 &&
+        Number.isFinite(count) &&
+        count >= 1 &&
+        isJobPayType(values.payType) &&
+        Boolean(payLabel) &&
+        isJobCareerType(values.careerType) &&
+        isJobEducation(values.education) &&
+        Boolean(values.location.trim()) &&
+        (values.alwaysOpen || Boolean(values.deadline))
+      );
+    }
+    case 'details':
+      return Boolean(values.summary.trim()) && Boolean(values.process.trim());
+  }
 }
 
 export default function JobCreateForm({
@@ -93,8 +150,6 @@ export default function JobCreateForm({
   companyName,
   businessNumber,
   initialJob,
-  returnPath,
-  companyEditable = false,
   onSave,
   onCancel,
 }: {
@@ -107,9 +162,8 @@ export default function JobCreateForm({
   onSave?: (job: JobPosting) => Promise<void>;
   onCancel: () => void;
 }) {
-  const router = useRouter();
   const today = getKoreaDateLocalToday();
-  const editing = Boolean(initialJob);
+  const [jobId] = useState(() => initialJob?.id ?? createJobPostingId(userId));
   const initialPay = initialJob
     ? initialJob.payType
       ? {
@@ -143,8 +197,6 @@ export default function JobCreateForm({
     preferred: initialJob?.preferred ?? '',
     benefits: initialJob?.benefits ?? '',
     process: initialJob?.process ?? '',
-    company: companyName,
-    bizNumber: businessNumber,
   };
   const [title, setTitle] = useState(initialDraft.title);
   const [workTypes, setWorkTypes] = useState<JobWorkType[]>(initialDraft.workTypes);
@@ -166,11 +218,13 @@ export default function JobCreateForm({
   const [preferred, setPreferred] = useState(initialDraft.preferred);
   const [benefits, setBenefits] = useState(initialDraft.benefits);
   const [process, setProcess] = useState(initialDraft.process);
-  const [company, setCompany] = useState(initialDraft.company);
-  const [bizNumber, setBizNumber] = useState(initialDraft.bizNumber);
-  const [savedDraft, setSavedDraft] = useState(() => encodeJobDraft(initialDraft));
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [companyComplete, setCompanyComplete] = useState(
+    () => isJobCompanyComplete(initialJob?.company) || isCompanyInfoComplete(loadBizVerify(userId)),
+  );
+  const [savedSnapshots, setSavedSnapshots] = useState<SectionSnapshots>(() => snapshotsFromValues(initialDraft));
+  const [savingSection, setSavingSection] = useState<SectionId | null>(null);
+  const [savedSection, setSavedSection] = useState<SectionId | null>(null);
+  const [error, setError] = useState<{ section: SectionId; message: string } | null>(null);
 
   function currentDraft(): JobDraft {
     return {
@@ -194,46 +248,105 @@ export default function JobCreateForm({
       preferred,
       benefits,
       process,
-      company,
-      bizNumber,
     };
   }
 
-  const dirty = encodeJobDraft(currentDraft()) !== savedDraft;
-
-  function restoreDraft() {
-    const draft = JSON.parse(savedDraft) as JobDraft;
-    setTitle(draft.title);
-    setWorkTypes(draft.workTypes.filter(isJobWorkType));
-    setHeadcount(draft.headcount);
-    setCareerType(isJobCareerType(draft.careerType) ? draft.careerType : '');
-    setEducation(isJobEducation(draft.education) ? draft.education : '');
-    setLocation(draft.location);
-    setWorkDays(draft.workDays);
-    setWorkHours(draft.workHours);
-    setPositionLevel(draft.positionLevel);
-    setProbation(draft.probation);
-    setAlwaysOpen(draft.alwaysOpen);
-    setDeadline(draft.deadline);
-    setPayType(draft.payType);
-    setPayAmount(draft.payAmount);
-    setPayNegotiable(draft.payNegotiable);
-    setSummary(draft.summary);
-    setRequirements(draft.requirements);
-    setPreferred(draft.preferred);
-    setBenefits(draft.benefits);
-    setProcess(draft.process);
-    setCompany(draft.company);
-    setBizNumber(draft.bizNumber);
-    setError('');
+  function currentSnapshots(): SectionSnapshots {
+    return snapshotsFromValues(currentDraft());
   }
 
-  async function handleSubmit(event: React.FormEvent) {
+  function isDirty(id: SectionId) {
+    return currentSnapshots()[id] !== savedSnapshots[id];
+  }
+
+  function restoreSection(id: SectionId) {
+    const parsed = JSON.parse(savedSnapshots[id]) as Record<string, unknown>;
+    if (id === 'outline') {
+      setTitle(String(parsed.title ?? ''));
+      setWorkTypes(Array.isArray(parsed.workTypes) ? parsed.workTypes.filter(isJobWorkType) : []);
+      setHeadcount(String(parsed.headcount ?? ''));
+      setCareerType(isJobCareerType(String(parsed.careerType ?? '')) ? (parsed.careerType as JobCareerType) : '');
+      setEducation(isJobEducation(String(parsed.education ?? '')) ? (parsed.education as JobEducation) : '');
+      setLocation(String(parsed.location ?? ''));
+      setWorkDays(String(parsed.workDays ?? ''));
+      setWorkHours(String(parsed.workHours ?? ''));
+      setPositionLevel(String(parsed.positionLevel ?? ''));
+      setProbation(String(parsed.probation ?? ''));
+      setAlwaysOpen(Boolean(parsed.alwaysOpen));
+      setDeadline(String(parsed.deadline ?? ''));
+      setPayType(isJobPayType(String(parsed.payType ?? '')) ? (parsed.payType as JobPayType) : '');
+      setPayAmount(String(parsed.payAmount ?? ''));
+      setPayNegotiable(Boolean(parsed.payNegotiable));
+    } else {
+      setSummary(String(parsed.summary ?? ''));
+      setRequirements(String(parsed.requirements ?? ''));
+      setPreferred(String(parsed.preferred ?? ''));
+      setBenefits(String(parsed.benefits ?? ''));
+      setProcess(String(parsed.process ?? ''));
+    }
+    setError(null);
+    if (savedSection === id) setSavedSection(null);
+  }
+
+  function baseJob(): JobPosting {
+    const existing = getMyJobPosting(userId, jobId) ?? initialJob;
+    if (existing) return existing;
+    return {
+      id: jobId,
+      title: '',
+      companyName: existing?.companyName || companyName,
+      workType: '' as JobWorkType,
+      workTypes: [],
+      payType: '' as JobPayType,
+      payLabel: '',
+      location: '',
+      summary: '',
+      createdAt: today,
+      status: 'draft',
+    };
+  }
+
+  function mergeAndSave(section: SectionId, partial: Partial<JobPosting>) {
+    const existing = baseJob();
+    const next = attachJobCompany(
+      {
+        ...existing,
+        id: jobId,
+        ...partial,
+        companyName: (partial.companyName ?? existing.companyName).trim() || companyName,
+        createdAt: existing.createdAt || today,
+        status: existing && isPublishedJob(existing) ? (existing.status ?? 'published') : 'draft',
+      },
+      userId,
+    );
+    saveMyJobPosting(userId, next);
+    setSavingSection(section);
+    setError(null);
+    const encoded = currentSnapshots()[section];
+    void (async () => {
+      try {
+        if (onSave) await onSave(next);
+        else await syncMyJobPosting(next);
+        setSavedSnapshots((current) => ({ ...current, [section]: encoded }));
+        setSavedSection(section);
+      } catch {
+        setError({ section, message: '저장에 실패했습니다. 다시 시도해 주세요.' });
+      } finally {
+        setSavingSection(null);
+      }
+    })();
+  }
+
+  function rejectSave(section: SectionId, message: string) {
+    setSavedSection(null);
+    setError({ section, message });
+  }
+
+  function saveOutline(event: React.FormEvent) {
     event.preventDefault();
     const count = Math.floor(Number(headcount));
     const payLabel = isJobPayType(payType) ? formatJobPayLabel(payType, payAmount, payNegotiable) : '';
     const requiredError = firstRequiredError([
-      { ok: !companyEditable || Boolean(company.trim()), message: '회사명을 입력해 주세요.' },
       { ok: Boolean(title.trim()), message: '채용 제목을 입력해 주세요.' },
       { ok: workTypes.length > 0, message: '근무 형태를 하나 이상 선택해 주세요.' },
       { ok: Number.isFinite(count) && count >= 1, message: '모집 인원을 입력해 주세요.' },
@@ -243,115 +356,157 @@ export default function JobCreateForm({
       { ok: isJobEducation(education), message: '학력을 선택해 주세요.' },
       { ok: Boolean(location.trim()), message: '근무지를 입력해 주세요.' },
       { ok: alwaysOpen || Boolean(deadline), message: '접수 마감을 선택해 주세요.' },
-      { ok: Boolean(summary.trim()), message: '담당 업무를 입력해 주세요.' },
     ]);
     if (requiredError) {
-      setError(requiredError);
+      rejectSave('outline', requiredError);
       return;
     }
     if (workTypes.length === 0 || !isJobCareerType(careerType) || !isJobEducation(education) || !isJobPayType(payType)) {
       return;
     }
-    setError('');
-    setSaving(true);
-    const job: JobPosting = attachJobCompany(
-      {
-        id: initialJob?.id ?? createJobPostingId(userId),
-        title: title.trim(),
-        companyName: company.trim() || companyName,
-        businessNumber: bizNumber.trim() || undefined,
-        workType: workTypes[0],
-        workTypes,
-        payType,
-        payLabel,
-        payAmount: payAmount.replace(/[^\d]/g, ''),
-        payNegotiable,
-        location: location.trim(),
-        summary: summary.trim(),
-        requirements: requirements.trim() || undefined,
-        preferred: preferred.trim() || undefined,
-        benefits: benefits.trim() || undefined,
-        workHours: workHours.trim() || undefined,
-        workDays: workDays.trim() || undefined,
-        positionLevel: positionLevel.trim() || undefined,
-        probation: probation.trim() || undefined,
-        process: process.trim() || undefined,
-        headcount: count,
-        careerType,
-        education,
-        deadline: alwaysOpen ? 'open' : deadline,
-        createdAt: initialJob?.createdAt ?? today,
-        status: initialJob && isPublishedJob(initialJob) ? (initialJob.status ?? 'published') : 'draft',
-      },
-      userId,
-    );
-    saveMyJobPosting(userId, job);
-    try {
-      if (onSave) await onSave(job);
-      else await syncMyJobPosting(job);
-      setSavedDraft(encodeJobDraft(currentDraft()));
-      router.push(returnPath || (isPublishedJob(job) ? `/jobs/${job.id}` : '/mypage?tab=jobs&sub=jobs'));
-    } catch {
-      setSaving(false);
-      setError('저장에 실패했습니다. 다시 시도해 주세요.');
-    }
+    mergeAndSave('outline', {
+      title: title.trim(),
+      workType: workTypes[0],
+      workTypes,
+      payType,
+      payLabel,
+      payAmount: payAmount.replace(/[^\d]/g, ''),
+      payNegotiable,
+      location: location.trim(),
+      workHours: workHours.trim() || undefined,
+      workDays: workDays.trim() || undefined,
+      positionLevel: positionLevel.trim() || undefined,
+      probation: probation.trim() || undefined,
+      headcount: count,
+      careerType,
+      education,
+      deadline: alwaysOpen ? 'open' : deadline,
+    });
   }
 
-  const companyIntro = loadBizVerify(userId)?.intro?.trim() || initialJob?.company?.intro?.trim() || '';
+  function saveDetails(event: React.FormEvent) {
+    event.preventDefault();
+    const requiredError = firstRequiredError([
+      { ok: Boolean(summary.trim()), message: '담당 업무를 입력해 주세요.' },
+      { ok: Boolean(process.trim()), message: '전형 절차를 입력해 주세요.' },
+    ]);
+    if (requiredError) {
+      rejectSave('details', requiredError);
+      return;
+    }
+    mergeAndSave('details', {
+      summary: summary.trim(),
+      requirements: requirements.trim() || undefined,
+      preferred: preferred.trim() || undefined,
+      benefits: benefits.trim() || undefined,
+      process: process.trim(),
+    });
+  }
+
+  function sectionStatus(id: SectionId) {
+    if (error?.section === id) return <p className="text-sm text-danger">{error.message}</p>;
+    if (savedSection === id && !isDirty(id)) return <p className="text-sm text-success">저장했습니다.</p>;
+    return null;
+  }
+
+  function saveButton(id: SectionId) {
+    const saving = savingSection === id;
+    const dirty = isDirty(id);
+    return (
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={!dirty || Boolean(savingSection)}>
+          {saving ? '저장 중…' : '저장'}
+        </Button>
+        {dirty ? (
+          <Button type="button" variant="secondary" disabled={Boolean(savingSection)} onClick={() => restoreSection(id)}>
+            취소
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
+
+  const values = currentDraft();
+  const tabsComplete = SECTIONS.every((item) => isSectionComplete(item.id, values, companyComplete));
+  const storedJob = getMyJobPosting(userId, jobId);
+  const storedPublishReady = storedJob ? canPublishMyJobPosting(userId, storedJob) : false;
+  const unsavedComplete = tabsComplete && SECTIONS.some((item) => item.id !== 'company' && isDirty(item.id));
 
   return (
-    <Card
-      title={editing ? '채용 정보 수정' : '채용 정보 작성'}
-      description={
-        editing
-          ? '수정한 내용은 저장됩니다. 공개 여부는 바꾸지 않습니다.'
-          : '구직자에게 보이는 채용 정보를 입력합니다. 저장한 뒤 마이페이지에서 공개할 수 있습니다.'
-      }
-      action={
-        <Button type="button" variant="secondary" disabled={saving} onClick={onCancel}>
-          돌아가기
-        </Button>
-      }
-    >
-      <form className="space-y-0" onSubmit={handleSubmit} noValidate>
-        <Section title="회사 정보">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <FieldLabel htmlFor="job-company" required={companyEditable}>
-                회사명
-              </FieldLabel>
-              <input
-                id="job-company"
-                value={company}
-                onChange={(event) => setCompany(event.target.value)}
-                className={authInputClassName}
-                readOnly={!companyEditable}
-                required={companyEditable}
-              />
-            </div>
-            <div>
-              <FieldLabel htmlFor="job-biz-number">사업자등록번호</FieldLabel>
-              <input
-                id="job-biz-number"
-                value={bizNumber}
-                onChange={(event) => setBizNumber(event.target.value)}
-                className={authInputClassName}
-                readOnly={!companyEditable}
-              />
-            </div>
-          </div>
-          {companyIntro ? (
-            <div>
-              <FieldLabel>회사 소개</FieldLabel>
-              <p className="whitespace-pre-wrap rounded-xl border border-border bg-neutral-50 px-4 py-3 text-sm leading-relaxed text-foreground">
-                {companyIntro}
-              </p>
-              <p className="mt-1.5 text-xs text-subtle">마이페이지 회사 정보에 저장된 소개이며, 채용 정보에도 함께 공개됩니다.</p>
-            </div>
-          ) : null}
-        </Section>
+    <div className="space-y-4">
+      <nav
+        className="sticky top-14 z-40 -mx-4 overflow-x-auto border-b border-border bg-background/95 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-xl sm:border"
+        aria-label="채용 정보 항목"
+      >
+        <div className="flex gap-1">
+          {SECTIONS.map((item) => {
+            const complete = isSectionComplete(item.id, values, companyComplete);
+            return (
+              <a
+                key={item.id}
+                href={`#job-${item.id}`}
+                aria-label={`${item.label}, ${complete ? '완료' : '미입력'}`}
+                className={cn(
+                  'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-neutral-100',
+                  complete ? 'text-foreground hover:text-foreground' : 'text-muted hover:text-foreground',
+                )}
+              >
+                {item.label}
+                <span
+                  className={cn('text-[11px] font-semibold', complete ? 'text-success' : 'text-subtle')}
+                  aria-hidden
+                >
+                  {complete ? '완료' : '미입력'}
+                </span>
+              </a>
+            );
+          })}
+        </div>
+      </nav>
+      {storedJob && isPublishedJob(storedJob) ? (
+        <p className="text-sm text-muted">수정한 내용은 각 탭에서 저장됩니다. 공개 여부는 바꾸지 않습니다.</p>
+      ) : storedPublishReady ? (
+        <p className="text-sm text-success">모든 탭이 저장되었습니다. 마이페이지의 채용 정보 관리에서 공개할 수 있습니다.</p>
+      ) : tabsComplete ? (
+        <p className="text-sm text-muted">
+          {unsavedComplete
+            ? '입력은 끝났습니다. 각 탭에서 저장을 눌러야 공개할 수 있습니다.'
+            : storedJob
+              ? `공개하려면 다음을 저장해 주세요. ${missingJobPublishRequirements(userId, storedJob).join(', ')}`
+              : '각 탭에서 저장을 눌러야 공개할 수 있습니다.'}
+        </p>
+      ) : (
+        <p className="text-sm text-muted">모든 탭이 완료되어야 공개할 수 있습니다. 지금은 작성 중으로만 저장됩니다.</p>
+      )}
 
-        <Section title="모집 요강">
+      <Card
+        id="job-company"
+        title="회사 정보"
+        description="이 채용 정보에 쓸 회사 정보를 입력합니다. 국세청 상태조회에서 계속사업자로 나온 경우에만 저장할 수 있습니다. 조회 시점의 상태이며, 국세청 인증이나 회사의 보증이 아닙니다."
+        className="scroll-mt-[7.5rem]"
+      >
+        <CompanyInfoForm
+          userId={userId}
+          hideCard
+          initialCompany={storedJob?.company ?? initialJob?.company}
+          onStatusChange={({ complete }) => setCompanyComplete(complete)}
+          onSaved={(record) => {
+            mergeAndSave('company', {
+              companyName: record.companyName,
+              businessNumber: record.businessNumber,
+              company: toJobCompanyInfo(record),
+            });
+          }}
+        />
+      </Card>
+
+      <Card
+        id="job-outline"
+        title="모집 요강"
+        description="구직자에게 보이는 모집 조건을 입력합니다."
+        className="scroll-mt-[7.5rem]"
+      >
+        <form className="space-y-4" onSubmit={saveOutline} noValidate>
           <div>
             <FieldLabel htmlFor="job-title" required>
               채용 제목
@@ -383,13 +538,12 @@ export default function JobCreateForm({
                           : [...current, item];
                         return JOB_WORK_TYPES.filter((value) => next.includes(value));
                       });
-                      setError('');
                     }}
                     className={cn(
                       'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
                       active
                         ? 'bg-primary text-white shadow-sm'
-                        : 'border border-border-strong bg-surface text-foreground hover:bg-neutral-50',
+                        : 'border border-border-strong bg-surface text-foreground hover:border-primary hover:bg-neutral-50',
                     )}
                   >
                     {WORK_TYPE_LABELS[item]}
@@ -593,7 +747,9 @@ export default function JobCreateForm({
               />
             </div>
             <div className="shrink-0">
-              <FieldLabel htmlFor="job-deadline" required={!alwaysOpen}>접수 마감</FieldLabel>
+              <FieldLabel htmlFor="job-deadline" required={!alwaysOpen}>
+                접수 마감
+              </FieldLabel>
               <div className="flex flex-wrap items-center gap-3">
                 <input
                   id="job-deadline"
@@ -617,9 +773,18 @@ export default function JobCreateForm({
               </div>
             </div>
           </div>
-        </Section>
+          {sectionStatus('outline')}
+          {saveButton('outline')}
+        </form>
+      </Card>
 
-        <Section title="상세 내용">
+      <Card
+        id="job-details"
+        title="상세 내용"
+        description="담당 업무와 전형 안내를 입력합니다."
+        className="scroll-mt-[7.5rem]"
+      >
+        <form className="space-y-4" onSubmit={saveDetails} noValidate>
           <div>
             <FieldLabel htmlFor="job-summary" required>
               담당 업무
@@ -670,7 +835,7 @@ export default function JobCreateForm({
             />
           </div>
           <div>
-            <FieldLabel htmlFor="job-process" optional>
+            <FieldLabel htmlFor="job-process" required>
               전형 절차
             </FieldLabel>
             <input
@@ -679,26 +844,19 @@ export default function JobCreateForm({
               onChange={(event) => setProcess(event.target.value)}
               className={authInputClassName}
               placeholder="예: 서류 전형 → 면접 → 최종 합격"
+              required
             />
           </div>
-        </Section>
+          {sectionStatus('details')}
+          {saveButton('details')}
+        </form>
+      </Card>
 
-        {error ? <p className="pt-4 text-sm text-danger">{error}</p> : null}
-
-        <div className="mt-6 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row">
-          <Button type="submit" fullWidth disabled={!dirty || saving}>
-            {saving ? '저장 중…' : '저장'}
-          </Button>
-          {dirty ? (
-            <Button type="button" variant="secondary" fullWidth disabled={saving} onClick={restoreDraft}>
-              취소
-            </Button>
-          ) : null}
-          <Button type="button" variant="secondary" fullWidth disabled={saving} onClick={onCancel}>
-            돌아가기
-          </Button>
-        </div>
-      </form>
-    </Card>
+      <div className="flex">
+        <Button type="button" variant="secondary" disabled={Boolean(savingSection)} onClick={onCancel}>
+          돌아가기
+        </Button>
+      </div>
+    </div>
   );
 }

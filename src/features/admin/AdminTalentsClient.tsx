@@ -12,7 +12,7 @@ import {
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
 import { deleteMyTalentProfileById, listMyTalentProfilesWithOwners } from '@/lib/my-talent-profile';
-import { talentEducation, talentRecentDate, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
+import { talentEducation, talentOccupationsLabel, talentRecentDate, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
 import { isPublishedTalent, type TalentProfile } from '@/types/talent';
 import AdminPublishBadge from '@/features/admin/AdminPublishBadge';
 
@@ -91,7 +91,7 @@ export default function AdminTalentsClient() {
                   <th className="py-2 pr-4 font-semibold">상태</th>
                   <th className="py-2 pr-4 font-semibold">제목</th>
                   <th className="py-2 pr-4 font-semibold">이름</th>
-                  <th className="py-2 pr-4 font-semibold">직무</th>
+                  <th className="py-2 pr-4 font-semibold">직종</th>
                   <th className="py-2 pr-4 font-semibold">근무 형태</th>
                   <th className="py-2 pr-4 font-semibold">최근 저장</th>
                   <th className="py-2 font-semibold">관리</th>
@@ -105,7 +105,7 @@ export default function AdminTalentsClient() {
                     </td>
                     <td className="py-2.5 pr-4 font-medium text-foreground">{talentResumeTitle(row.profile)}</td>
                     <td className="py-2.5 pr-4 font-medium text-foreground">{row.profile.name}</td>
-                    <td className="py-2.5 pr-4 text-muted">{row.profile.headline}</td>
+                    <td className="py-2.5 pr-4 text-muted">{talentOccupationsLabel(row.profile) || '—'}</td>
                     <td className="py-2.5 pr-4 text-muted">
                       {talentWorkTypesLabel(row.profile)} · {talentEducation(row.profile)}
                     </td>

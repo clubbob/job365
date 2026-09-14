@@ -7,9 +7,8 @@ import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
-import { applyCompanyToMyJobPostings, listMyJobPostings } from '@/lib/my-job-posts';
-import { loadBizVerify } from '@/lib/biz-verify-store';
-import { applyWorkPreferencesToMyProfiles, unpublishPublishedIfWorkPreferencesIncomplete } from '@/lib/my-talent-profile';
+import { hydrateMissingCompanyFromAccount } from '@/lib/my-job-posts';
+import { hydrateMissingWorkPreferencesFromAccount } from '@/lib/my-talent-profile';
 import { syncMyJobPosting, syncMyTalentProfile } from '@/lib/posting-sync';
 import JobseekerManagePanel, {
   isJobseekerSubTab,
@@ -53,8 +52,8 @@ export default function MyPageClient() {
   const { mode, ready } = useUserMode();
   const [account, setAccount] = useState<UserAccountData | null>(null);
   const [tab, setTab] = useState<TabId>('account');
-  const [jobseekerSubTab, setJobseekerSubTab] = useState<JobseekerSubTab>('conditions');
-  const [recruiterSubTab, setRecruiterSubTab] = useState<RecruiterSubTab>('company');
+  const [jobseekerSubTab, setJobseekerSubTab] = useState<JobseekerSubTab>('resume');
+  const [recruiterSubTab, setRecruiterSubTab] = useState<RecruiterSubTab>('jobs');
   const [myJobs, setMyJobs] = useState<JobPosting[]>([]);
   const [myResumes, setMyResumes] = useState<TalentProfile[]>([]);
   const [mineReady, setMineReady] = useState(false);
@@ -74,11 +73,8 @@ export default function MyPageClient() {
       setMineReady(false);
       return;
     }
-    const company = loadBizVerify(user.uid);
-    if (company) applyCompanyToMyJobPostings(user.uid, company);
-    const jobs = listMyJobPostings(user.uid);
-    applyWorkPreferencesToMyProfiles(user.uid);
-    const resumes = unpublishPublishedIfWorkPreferencesIncomplete(user.uid);
+    const jobs = hydrateMissingCompanyFromAccount(user.uid);
+    const resumes = hydrateMissingWorkPreferencesFromAccount(user.uid);
     setMyJobs(jobs);
     setMyResumes(resumes);
     setMineReady(true);
@@ -99,10 +95,10 @@ export default function MyPageClient() {
     if (mode && requested && tabsForMode(mode).some((item) => item.id === requested)) {
       setTab(requested as TabId);
       if (requested === 'resume') {
-        setJobseekerSubTab(isJobseekerSubTab(requestedSub) ? requestedSub : 'conditions');
+        setJobseekerSubTab(isJobseekerSubTab(requestedSub) ? requestedSub : 'resume');
       }
       if (requested === 'jobs') {
-        setRecruiterSubTab(isRecruiterSubTab(requestedSub) ? requestedSub : 'company');
+        setRecruiterSubTab(isRecruiterSubTab(requestedSub) ? requestedSub : 'jobs');
       }
     }
   }, [mode, searchParams]);
@@ -123,12 +119,12 @@ export default function MyPageClient() {
   function selectTab(id: TabId) {
     setTab(id);
     if (id === 'resume') {
-      setJobseekerSubTab('conditions');
+      setJobseekerSubTab('resume');
       router.replace('/mypage?tab=resume');
       return;
     }
     if (id === 'jobs') {
-      setRecruiterSubTab('company');
+      setRecruiterSubTab('jobs');
       router.replace('/mypage?tab=jobs');
       return;
     }
@@ -137,12 +133,12 @@ export default function MyPageClient() {
 
   function selectJobseekerSubTab(id: JobseekerSubTab) {
     setJobseekerSubTab(id);
-    router.replace(id === 'conditions' ? '/mypage?tab=resume' : `/mypage?tab=resume&sub=${id}`);
+    router.replace(id === 'resume' ? '/mypage?tab=resume' : `/mypage?tab=resume&sub=${id}`);
   }
 
   function selectRecruiterSubTab(id: RecruiterSubTab) {
     setRecruiterSubTab(id);
-    router.replace(id === 'company' ? '/mypage?tab=jobs' : `/mypage?tab=jobs&sub=${id}`);
+    router.replace(id === 'jobs' ? '/mypage?tab=jobs' : `/mypage?tab=jobs&sub=${id}`);
   }
 
   if (loading || !ready || (user && !mode)) {

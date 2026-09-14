@@ -10,7 +10,7 @@ export const buttonPrimaryClassName =
   'bg-primary text-white shadow-sm hover:bg-primary-hover active:scale-[0.99]';
 
 export const buttonSecondaryClassName =
-  'border border-border-strong bg-surface text-foreground hover:bg-neutral-50';
+  'border border-border-strong bg-surface text-foreground hover:border-primary hover:bg-neutral-50';
 
 export const buttonGhostClassName = 'text-muted hover:bg-neutral-100 hover:text-foreground';
 

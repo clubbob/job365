@@ -5,20 +5,13 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
-import {
-  DetailBadge,
-  DetailHero,
-  DetailSection,
-  DetailStatGrid,
-  DetailTags,
-  DetailText,
-} from '@/components/ui/PostingDetail';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
 import TalentProposeButton from '@/features/talents/TalentProposeButton';
+import TalentResumeArticle from '@/features/talents/TalentResumeArticle';
 import { isTalentHiddenFromViewer } from '@/lib/resume-view-blocks';
 import { getTalentById } from '@/lib/talent-catalog';
-import { displayTalentName, talentBasicInfoItems, talentCareerLabel, talentEducation, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
+import { talentResumeTitle } from '@/lib/talent-display';
 import type { TalentProposalStatus } from '@/lib/talent-proposals';
 import type { TalentProfile } from '@/types/talent';
 
@@ -71,63 +64,19 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
   }
 
   const revealName = proposalStatus === 'accepted';
-  const workType = talentWorkTypesLabel(talent);
-  const displayName = displayTalentName(talent.name, revealName);
 
   return (
     <div className="space-y-5">
-      <PageHeader title="인재 정보" description={talent.headline} homeHref={listHref} homeLabel={listLabel} />
+      <PageHeader
+        title="인재 정보"
+        description={talentResumeTitle(talent)}
+        homeHref={listHref}
+        homeLabel={listLabel}
+      />
       <AdSlot placement="header" />
 
       <article className="space-y-4">
-        <DetailHero
-          eyebrow={displayName}
-          title={talent.headline}
-          photoUrl={talent.photoUrl}
-          photoAlt={displayName}
-          badges={
-            <>
-              <DetailBadge tone="primary">{workType}</DetailBadge>
-              <DetailBadge>{talentCareerLabel(talent)}</DetailBadge>
-              <DetailBadge>{talentEducation(talent)}</DetailBadge>
-            </>
-          }
-          facts={[
-            { label: '지역', value: talent.location || '—' },
-            { label: '근무 가능', value: talent.available || '—' },
-            { label: '경력 유무', value: talentCareerLabel(talent) },
-          ]}
-        />
-
-        <DetailStatGrid
-          items={[
-            ...talentBasicInfoItems(talent, revealName),
-            { label: '근무 형태', value: workType },
-            { label: '경력 유무', value: talentCareerLabel(talent) },
-            { label: '최종 학력', value: talentEducation(talent) },
-            { label: '지역', value: talent.location },
-            { label: '근무 가능', value: talent.available },
-            { label: '학교', value: talent.school },
-            { label: '전공', value: talent.major },
-          ]}
-        />
-
-        <DetailSection title="자기 소개">
-          <DetailText value={talent.summary} />
-        </DetailSection>
-        <DetailSection title="경력 내역">
-          <DetailText value={talent.careerHistory} />
-        </DetailSection>
-        <DetailSection title="자격증">
-          <DetailText value={talent.experience} />
-        </DetailSection>
-        <DetailSection title="어학">
-          <DetailText value={talent.languages} />
-        </DetailSection>
-        <DetailSection title="스킬">
-          <DetailTags items={talent.tags} />
-        </DetailSection>
-
+        <TalentResumeArticle talent={talent} revealName={revealName} />
         <div className="rounded-xl border border-border bg-surface px-4 py-4 shadow-sm sm:px-5">
           <TalentProposeButton talentId={talent.id} onStatusChange={setProposalStatus} />
         </div>

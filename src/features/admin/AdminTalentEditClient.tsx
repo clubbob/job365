@@ -71,7 +71,7 @@ export default function AdminTalentEditClient({ talentId }: { talentId: string }
         initialProfile={item.profile}
         returnPath={`/admin/talents/${encodeURIComponent(item.profile.id)}`}
         onSave={async (profile) => {
-          saveMyTalentProfile(item.ownerId, profile, { applyWorkPreferences: false });
+          saveMyTalentProfile(item.ownerId, profile);
           const res = await adminJson<{ ok?: boolean; error?: { code?: string; message?: string } }>(
             `/api/admin/talents/${encodeURIComponent(item.profile.id)}`,
             { method: 'PUT', body: JSON.stringify(profile) },

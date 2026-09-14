@@ -22,6 +22,12 @@ import {
   type JobCareerType,
   type JobWorkType,
 } from '@/types/job';
+import TalentSchoolFields, {
+  emptySchoolDraft,
+  schoolDraftsFromProfile,
+  schoolFieldsFromDrafts,
+  type SchoolDraft,
+} from '@/features/talents/TalentSchoolFields';
 import { EDUCATION_OPTIONS, isEducationLevel, normalizeEducation, talentWorkTypes, type EducationLevel, type TalentProfile } from '@/types/talent';
 
 const WORK_TYPES: JobWorkType[] = WORK_TYPE_FILTERS.flatMap((item) =>
@@ -69,8 +75,7 @@ type TalentDraft = {
   summary: string;
   experience: string;
   careerHistory: string;
-  school: string;
-  major: string;
+  schools: SchoolDraft[];
   languages: string;
   tags: string;
 };
@@ -106,8 +111,7 @@ export default function MyTalentProfileForm({
   const [summary, setSummary] = useState('');
   const [experience, setExperience] = useState('');
   const [careerHistory, setCareerHistory] = useState('');
-  const [school, setSchool] = useState('');
-  const [major, setMajor] = useState('');
+  const [schools, setSchools] = useState<SchoolDraft[]>(() => [emptySchoolDraft()]);
   const [languages, setLanguages] = useState('');
   const [tags, setTags] = useState('');
   const [createdAt, setCreatedAt] = useState<string | null>(() => initialProfile?.createdAt ?? null);
@@ -133,8 +137,7 @@ export default function MyTalentProfileForm({
         summary: '',
         experience: '',
         careerHistory: '',
-        school: '',
-        major: '',
+        schools: [emptySchoolDraft()],
         languages: '',
         tags: '',
       };
@@ -150,8 +153,7 @@ export default function MyTalentProfileForm({
       setSummary(empty.summary);
       setExperience(empty.experience);
       setCareerHistory(empty.careerHistory);
-      setSchool(empty.school);
-      setMajor(empty.major);
+      setSchools(empty.schools);
       setLanguages(empty.languages);
       setTags(empty.tags);
       setCreatedAt(null);
@@ -173,8 +175,7 @@ export default function MyTalentProfileForm({
       summary: existing.summary,
       experience: existing.experience,
       careerHistory: existing.careerHistory ?? '',
-      school: existing.school ?? '',
-      major: existing.major ?? '',
+      schools: schoolDraftsFromProfile(existing),
       languages: existing.languages ?? '',
       tags: existing.tags.join(', '),
     };
@@ -190,8 +191,7 @@ export default function MyTalentProfileForm({
     setSummary(next.summary);
     setExperience(next.experience);
     setCareerHistory(next.careerHistory);
-    setSchool(next.school);
-    setMajor(next.major);
+    setSchools(next.schools);
     setLanguages(next.languages);
     setTags(next.tags);
     setCreatedAt(existing.createdAt);
@@ -213,8 +213,7 @@ export default function MyTalentProfileForm({
       summary,
       experience,
       careerHistory,
-      school,
-      major,
+      schools,
       languages,
       tags,
     };
@@ -237,8 +236,7 @@ export default function MyTalentProfileForm({
     setSummary(draft.summary);
     setExperience(draft.experience);
     setCareerHistory(draft.careerHistory);
-    setSchool(draft.school);
-    setMajor(draft.major);
+    setSchools(draft.schools.length > 0 ? draft.schools : [emptySchoolDraft()]);
     setLanguages(draft.languages);
     setTags(draft.tags);
     setError('');
@@ -258,7 +256,7 @@ export default function MyTalentProfileForm({
         message: '경력 연수를 입력해 주세요.',
       },
       { ok: isEducationLevel(education), message: '최종 학력을 선택해 주세요.' },
-      { ok: Boolean(school.trim()), message: '학교를 입력해 주세요.' },
+      { ok: schools.some((item) => item.school.trim()), message: '학교를 입력해 주세요.' },
       { ok: Boolean(summary.trim()), message: '자기 소개를 입력해 주세요.' },
     ]);
     if (requiredError) {
@@ -291,8 +289,7 @@ export default function MyTalentProfileForm({
       summary: summary.trim(),
       experience: experience.trim(),
       careerHistory: careerHistory.trim() || undefined,
-      school: school.trim() || undefined,
-      major: major.trim() || undefined,
+      ...schoolFieldsFromDrafts(schools),
       languages: languages.trim() || undefined,
       tags: tags
         .split(',')
@@ -302,7 +299,7 @@ export default function MyTalentProfileForm({
       updatedAt: today,
     };
     setSaving(true);
-    const savedProfile = saveMyTalentProfile(userId, profile, { applyWorkPreferences: false });
+    const savedProfile = saveMyTalentProfile(userId, profile);
     void (async () => {
       try {
         if (onSave) await onSave(savedProfile);
@@ -362,18 +359,6 @@ export default function MyTalentProfileForm({
               onChange={(event) => setName(event.target.value)}
               className={authInputClassName}
               required
-            />
-          </div>
-          <div>
-            <FieldLabel htmlFor="talent-headline" optional>
-              직무
-            </FieldLabel>
-            <input
-              id="talent-headline"
-              value={headline}
-              onChange={(event) => setHeadline(event.target.value)}
-              placeholder="비우면 희망 근무 조건의 직종을 씁니다"
-              className={authInputClassName}
             />
           </div>
         </div>
@@ -515,33 +500,7 @@ export default function MyTalentProfileForm({
             className={authInputClassName}
           />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <FieldLabel htmlFor="talent-school" required>
-              학교
-            </FieldLabel>
-            <input
-              id="talent-school"
-              value={school}
-              onChange={(event) => setSchool(event.target.value)}
-              placeholder="예: 한국대학교"
-              className={authInputClassName}
-              required
-            />
-          </div>
-          <div>
-            <FieldLabel htmlFor="talent-major" optional>
-              전공
-            </FieldLabel>
-            <input
-              id="talent-major"
-              value={major}
-              onChange={(event) => setMajor(event.target.value)}
-              placeholder="예: 컴퓨터공학"
-              className={authInputClassName}
-            />
-          </div>
-        </div>
+        <TalentSchoolFields schools={schools} onChange={setSchools} />
         <div>
           <FieldLabel htmlFor="talent-career-history" optional>
             경력 내역

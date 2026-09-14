@@ -1,6 +1,7 @@
 import { formatBirthDate, privateContactValue } from '@/lib/talent-contact';
+import { occupationsFromTalent } from '@/lib/work-preferences';
 import { WORK_TYPE_LABELS, type JobWorkType } from '@/types/job';
-import { normalizeEducation, talentWorkTypes, type TalentProfile } from '@/types/talent';
+import { normalizeEducation, talentSchools, talentWorkTypes, type TalentProfile } from '@/types/talent';
 
 export function talentWorkTypeLabel(workType: JobWorkType | ''): string {
   return workType ? WORK_TYPE_LABELS[workType] : '미입력';
@@ -10,6 +11,10 @@ export function talentWorkTypesLabel(talent: Pick<TalentProfile, 'workType' | 'w
   const types = talentWorkTypes(talent);
   if (types.length === 0) return '미입력';
   return types.map((item) => WORK_TYPE_LABELS[item]).join(', ');
+}
+
+export function talentOccupationsLabel(talent: Pick<TalentProfile, 'occupations' | 'headline'>): string {
+  return occupationsFromTalent(talent).join(', ');
 }
 
 export function talentResumeTitle(talent: Pick<TalentProfile, 'title' | 'name' | 'headline'>): string {
@@ -40,6 +45,13 @@ export function talentEducation(talent: Pick<TalentProfile, 'education'>): strin
   return normalizeEducation(talent.education) || '미입력';
 }
 
+export function talentSchoolItems(talent: Pick<TalentProfile, 'schools' | 'school' | 'major'>): Array<{
+  school: string;
+  major?: string;
+}> {
+  return talentSchools(talent);
+}
+
 export function talentBasicInfoItems(
   talent: TalentProfile,
   revealed: boolean,
@@ -52,6 +64,18 @@ export function talentBasicInfoItems(
     { label: '이메일', value: privateContactValue(talent.email, revealed) },
     { label: '거주 지역', value: talent.address || '—' },
     { label: '홈페이지 / SNS', value: talent.homepage || '—' },
-    { label: '직무', value: talent.headline },
   ];
+}
+
+export function talentConditionItems(
+  talent: TalentProfile,
+): Array<{ label: string; value?: string | null }> {
+  const items: Array<{ label: string; value?: string | null }> = [
+    { label: '근무 형태', value: talentWorkTypesLabel(talent) },
+    { label: '지역', value: talent.location },
+    { label: '직종', value: talentOccupationsLabel(talent) },
+    { label: '근무 가능', value: talent.available },
+  ];
+  if (talent.desiredPay?.trim()) items.push({ label: '희망 급여', value: talent.desiredPay });
+  return items;
 }

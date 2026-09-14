@@ -17,18 +17,49 @@ export function resolveJobCompany(job: JobPosting, ownerId?: string): JobCompany
   const live = toJobCompanyInfo(liveId ? loadBizVerify(liveId) : null);
   const snap = job.company;
   return {
-    companyName: pickText(live?.companyName, snap?.companyName, job.companyName),
-    businessNumber: pickText(live?.businessNumber, snap?.businessNumber, job.businessNumber),
-    ceo: pickText(live?.ceo, snap?.ceo),
-    address: pickText(live?.address, snap?.address),
-    phone: pickText(live?.phone, snap?.phone),
-    fax: pickText(live?.fax, snap?.fax),
-    foundedOn: pickText(live?.foundedOn, snap?.foundedOn),
-    employeeCount: pickText(live?.employeeCount, snap?.employeeCount),
-    lastYearRevenue: pickText(live?.lastYearRevenue, snap?.lastYearRevenue),
-    website: pickText(live?.website, snap?.website),
-    intro: pickText(live?.intro, snap?.intro),
+    companyName: pickText(snap?.companyName, job.companyName, live?.companyName),
+    businessNumber: pickText(snap?.businessNumber, job.businessNumber, live?.businessNumber),
+    ceo: pickText(snap?.ceo, live?.ceo),
+    address: pickText(snap?.address, live?.address),
+    phone: pickText(snap?.phone, live?.phone),
+    fax: pickText(snap?.fax, live?.fax),
+    foundedOn: pickText(snap?.foundedOn, live?.foundedOn),
+    employeeCount: pickText(snap?.employeeCount, live?.employeeCount),
+    lastYearRevenue: pickText(snap?.lastYearRevenue, live?.lastYearRevenue),
+    website: pickText(snap?.website, live?.website),
+    intro: pickText(snap?.intro, live?.intro),
+    registrantName: pickText(snap?.registrantName, live?.registrantName),
+    registrantEmail: pickText(snap?.registrantEmail, live?.registrantEmail),
+    registrantMobile: pickText(snap?.registrantMobile, live?.registrantMobile),
   };
+}
+
+export function jobCompanyMainItems(company: JobCompanyInfo): Array<{
+  label: string;
+  value?: string;
+  href?: string;
+}> {
+  const website = company.website?.trim() || '';
+  return [
+    { label: '사업자등록번호', value: jobCompanyBusinessNumberLabel(company.businessNumber) },
+    { label: '회사명', value: company.companyName },
+    { label: '대표자명', value: company.ceo },
+    { label: '전화번호', value: company.phone },
+    { label: '팩스번호', value: company.fax },
+    { label: '설립일', value: jobCompanyFoundedLabel(company.foundedOn) },
+    { label: '직원 수', value: jobCompanyEmployeeCountLabel(company.employeeCount) },
+    { label: '전년 매출액', value: jobCompanyRevenueLabel(company.lastYearRevenue) },
+    { label: '사업장 주소', value: company.address },
+    { label: '홈페이지', value: website, href: jobCompanyWebsiteHref(website) },
+  ];
+}
+
+export function jobCompanyRegistrantItems(company: JobCompanyInfo): Array<{ label: string; value?: string }> {
+  return [
+    { label: '등록자 이름', value: company.registrantName },
+    { label: '이메일', value: company.registrantEmail },
+    { label: '핸드폰 번호', value: company.registrantMobile },
+  ];
 }
 
 export function jobCompanyEmployeeCountLabel(value?: string): string {
@@ -66,12 +97,25 @@ export function attachJobCompany(
   ownerId: string,
 ): JobPosting {
   const live = toJobCompanyInfo(loadBizVerify(ownerId));
-  const company: JobCompanyInfo | undefined = live
+  const stored = job.company;
+  const company: JobCompanyInfo | undefined = stored?.companyName?.trim()
     ? {
         ...live,
-        companyName: job.companyName.trim() || live.companyName,
-        businessNumber: job.businessNumber?.trim() || live.businessNumber,
+        ...stored,
+        companyName: job.companyName.trim() || stored.companyName || live?.companyName,
+        businessNumber: job.businessNumber?.trim() || stored.businessNumber || live?.businessNumber,
       }
-    : job.company;
-  return { ...job, company };
+    : live
+      ? {
+          ...live,
+          companyName: job.companyName.trim() || live.companyName,
+          businessNumber: job.businessNumber?.trim() || live.businessNumber,
+        }
+      : stored;
+  return {
+    ...job,
+    companyName: company?.companyName?.trim() || job.companyName,
+    businessNumber: company?.businessNumber || job.businessNumber,
+    company,
+  };
 }

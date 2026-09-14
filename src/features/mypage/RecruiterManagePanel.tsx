@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
-import CompanyInfoForm from '@/features/mypage/CompanyInfoForm';
-import { isCompanyInfoComplete, loadBizVerify } from '@/lib/biz-verify-store';
 import {
   JOB_APPLICATION_STATUS_LABELS,
   hideJobApplicationFromRecruiterList,
@@ -17,7 +15,6 @@ import {
 import { jobCareerLabel, jobEducationLabel } from '@/lib/job-display';
 import { findMyTalentProfile } from '@/lib/my-talent-profile';
 import {
-  applyCompanyToMyJobPostings,
   canPublishMyJobPosting,
   deleteMyJobPosting,
   duplicateMyJobPosting,
@@ -42,7 +39,6 @@ import { jobWorkTypesLabel, isPublishedJob, type JobPosting } from '@/types/job'
 import { isPublishedTalent } from '@/types/talent';
 
 export const RECRUITER_SUB_TABS = [
-  { id: 'company', label: '회사 정보' },
   { id: 'jobs', label: '채용 정보 관리' },
   { id: 'proposals', label: '보낸 면접 제안' },
   { id: 'applications', label: '받은 입사 지원' },
@@ -57,17 +53,17 @@ export function isRecruiterSubTab(value: string | null): value is RecruiterSubTa
 const primaryLinkClassName =
   'inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover';
 const rowActionClassName =
-  'inline-flex rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-semibold text-foreground hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45';
+  'inline-flex rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-border-strong disabled:hover:bg-surface';
 const compactActionClassName =
-  'inline-flex shrink-0 whitespace-nowrap rounded-lg border border-border-strong bg-surface px-2 py-1.5 text-xs font-semibold text-foreground hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45';
+  'inline-flex shrink-0 whitespace-nowrap rounded-lg border border-border-strong bg-surface px-2 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-border-strong disabled:hover:bg-surface';
 const publishActionClassName =
   'inline-flex rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-muted disabled:hover:bg-neutral-200';
 const compactPublishClassName =
   'inline-flex shrink-0 whitespace-nowrap rounded-lg bg-primary px-2 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-muted disabled:hover:bg-neutral-200';
 const dangerActionClassName =
-  'inline-flex rounded-lg border border-danger/30 px-3 py-2 text-sm font-semibold text-danger hover:bg-red-50';
+  'inline-flex rounded-lg border border-danger/30 px-3 py-2 text-sm font-semibold text-danger transition-colors hover:border-danger hover:bg-red-50';
 const compactDangerClassName =
-  'inline-flex shrink-0 whitespace-nowrap rounded-lg border border-danger/30 px-2 py-1.5 text-xs font-semibold text-danger hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45';
+  'inline-flex shrink-0 whitespace-nowrap rounded-lg border border-danger/30 px-2 py-1.5 text-xs font-semibold text-danger transition-colors hover:border-danger hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-danger/30 disabled:hover:bg-transparent';
 
 export default function RecruiterManagePanel({
   userId,
@@ -86,7 +82,6 @@ export default function RecruiterManagePanel({
 }) {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [proposals, setProposals] = useState<ReceivedProposal[]>([]);
-  const [companyReady, setCompanyReady] = useState(() => isCompanyInfoComplete(loadBizVerify(userId)));
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -96,7 +91,6 @@ export default function RecruiterManagePanel({
   useEffect(() => {
     setApplications(listApplicationsForJobs(jobs.map((job) => job.id)));
     setProposals(listSentProposals(userId));
-    setCompanyReady(isCompanyInfoComplete(loadBizVerify(userId)));
   }, [jobs, subTab, userId]);
 
   function handleApplicationStatus(application: JobApplication, status: Exclude<JobApplicationStatus, 'applied'>) {
@@ -193,15 +187,13 @@ export default function RecruiterManagePanel({
         {RECRUITER_SUB_TABS.map((item) => {
           const active = subTab === item.id;
           const badge =
-            item.id === 'company' && companyReady
-              ? '완료'
-              : item.id === 'jobs' && jobs.length > 0
-                ? `${jobs.length}건`
-                : item.id === 'proposals' && proposals.length > 0
-                  ? `${proposals.length}건`
-                  : item.id === 'applications' && applications.length > 0
-                    ? `${applications.length}건`
-                    : null;
+            item.id === 'jobs' && jobs.length > 0
+              ? `${jobs.length}건`
+              : item.id === 'proposals' && proposals.length > 0
+                ? `${proposals.length}건`
+                : item.id === 'applications' && applications.length > 0
+                  ? `${applications.length}건`
+                  : null;
           return (
             <button
               key={item.id}
@@ -226,21 +218,6 @@ export default function RecruiterManagePanel({
             </button>
           );
         })}
-      </div>
-
-      <div className={subTab === 'company' ? undefined : 'hidden'}>
-        <CompanyInfoForm
-          userId={userId}
-          onSaved={() => {
-            const company = loadBizVerify(userId);
-            if (company) {
-              const updated = applyCompanyToMyJobPostings(userId, company);
-              updated.forEach((job) => void syncMyJobPosting(job));
-              onJobsChange(updated);
-            }
-            setCompanyReady(isCompanyInfoComplete(company));
-          }}
-        />
       </div>
 
       {subTab === 'jobs' ? (
@@ -357,13 +334,8 @@ export default function RecruiterManagePanel({
                         disabled={busy}
                         onClick={() => void handleSaveJobFile(job)}
                       >
-                        파일 저장
+                        채용 정보 출력
                       </button>
-                      {published ? (
-                        <Link href={`/jobs/${job.id}?from=mypage`} className={compactActionClassName}>
-                          보기
-                        </Link>
-                      ) : null}
                       <button
                         type="button"
                         className={compactDangerClassName}
