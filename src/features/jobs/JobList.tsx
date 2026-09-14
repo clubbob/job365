@@ -7,14 +7,15 @@ import JobCard from '@/features/jobs/JobCard';
 import { loadListRestore, saveListRestore, saveListScroll } from '@/lib/list-restore';
 import { listJobs } from '@/lib/job-catalog';
 import { jobSearchText } from '@/lib/job-display';
-import { SAMPLE_JOBS } from '@/lib/sample-jobs';
 import { cn } from '@/lib/utils';
-import { WORK_TYPE_FILTERS, jobMatchesWorkType, type JobWorkType } from '@/types/job';
+import { WORK_TYPE_FILTERS, jobMatchesWorkType, type JobPosting, type JobWorkType } from '@/types/job';
 
 type FilterId = (typeof WORK_TYPE_FILTERS)[number]['id'];
 
 const PAGE_BUTTON =
   'inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors';
+
+const EMPTY_JOBS: JobPosting[] = [];
 
 export default function JobList({
   limit,
@@ -37,7 +38,7 @@ export default function JobList({
   filterAsLinks?: boolean;
   showInfeed?: boolean;
 }) {
-  const [allJobs, setAllJobs] = useState(SAMPLE_JOBS);
+  const [allJobs, setAllJobs] = useState<JobPosting[]>(EMPTY_JOBS);
   const [filter, setFilter] = useState<FilterId>(workType ?? 'all');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);

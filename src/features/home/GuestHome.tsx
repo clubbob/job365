@@ -5,8 +5,10 @@ import AdSlot from '@/components/ads/AdSlot';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
-import { USER_MODE_SHORT_LABELS, type UserMode } from '@/lib/user-mode';
-import { JOB_WORK_TYPES, WORK_TYPE_LABELS } from '@/types/job';
+import { type UserMode } from '@/lib/user-mode';
+
+const hoverCardClassName =
+  'h-full origin-center transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] hover:border-primary/50 hover:bg-primary/[0.04] hover:shadow-card-hover group';
 
 const AUDIENCES: Array<{
   mode: UserMode;
@@ -65,28 +67,30 @@ export default function GuestHome() {
           JobLink 365는 구직자와 구인자를 위한 무료 매칭 서비스입니다. 로그인 후 이용 주체를 고르면 바로 시작할 수
           있습니다.
         </p>
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-stretch">
           {isLoggedIn ? (
             <>
               <button
                 type="button"
-                className="inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition hover:bg-blue-50"
+                className="inline-flex min-h-14 flex-1 flex-col items-center justify-center rounded-xl bg-white px-5 py-3.5 text-center shadow-lg ring-2 ring-white/90 transition hover:bg-blue-50 hover:shadow-xl active:scale-[0.99]"
                 onClick={() => setMode('jobseeker', { navigate: true })}
               >
-                {USER_MODE_SHORT_LABELS.jobseeker}로 시작
+                <span className="text-base font-bold text-primary sm:text-lg">구직자로 시작</span>
+                <span className="mt-0.5 text-sm font-semibold text-primary/75">(취업 개인)</span>
               </button>
               <button
                 type="button"
-                className="inline-flex rounded-lg border border-white/40 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex min-h-14 flex-1 flex-col items-center justify-center rounded-xl bg-white px-5 py-3.5 text-center shadow-lg ring-2 ring-white/90 transition hover:bg-blue-50 hover:shadow-xl active:scale-[0.99]"
                 onClick={() => setMode('recruiter', { navigate: true })}
               >
-                {USER_MODE_SHORT_LABELS.recruiter}로 시작
+                <span className="text-base font-bold text-primary sm:text-lg">구인자로 시작</span>
+                <span className="mt-0.5 text-sm font-semibold text-primary/75">(채용 회사)</span>
               </button>
             </>
           ) : (
             <Link
               href="/login"
-              className="inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition hover:bg-blue-50"
+              className="inline-flex min-h-14 flex-1 items-center justify-center rounded-xl bg-white px-5 py-3.5 text-base font-bold text-primary shadow-lg ring-2 ring-white/90 transition hover:bg-blue-50 hover:shadow-xl sm:max-w-xs sm:text-lg"
             >
               로그인하고 시작하기
             </Link>
@@ -98,7 +102,12 @@ export default function GuestHome() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         {AUDIENCES.map((item) => (
-          <Card key={item.mode} title={item.title} description={item.description}>
+          <Card
+            key={item.mode}
+            title={<span className="transition-colors group-hover:text-primary">{item.title}</span>}
+            description={item.description}
+            className={hoverCardClassName}
+          >
             <ul className="space-y-2 text-sm leading-relaxed text-muted">
               {item.points.map((point) => (
                 <li key={point}>{point}</li>
@@ -108,29 +117,21 @@ export default function GuestHome() {
         ))}
       </div>
 
-      <Card title="왜 JobLink 365인가요?">
-        <ul className="grid gap-4 sm:grid-cols-3">
+      <div>
+        <h2 className="mb-3 text-base font-bold text-foreground">왜 JobLink 365인가요?</h2>
+        <ul className="grid gap-3 sm:grid-cols-3">
           {HIGHLIGHTS.map((item) => (
             <li key={item.title}>
-              <p className="text-sm font-semibold text-foreground">{item.title}</p>
-              <p className="mt-1 text-sm leading-relaxed text-muted">{item.body}</p>
+              <Card className={hoverCardClassName}>
+                <p className="text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
+                  {item.title}
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-muted">{item.body}</p>
+              </Card>
             </li>
           ))}
         </ul>
-      </Card>
-
-      <Card title="다루는 근무 형태" description="정규 채용부터 단기·프로젝트까지 한곳에서 찾습니다.">
-        <ul className="flex flex-wrap gap-2">
-          {JOB_WORK_TYPES.map((type) => (
-            <li
-              key={type}
-              className="rounded-full border border-border bg-neutral-50 px-3 py-1 text-sm font-medium text-foreground"
-            >
-              {WORK_TYPE_LABELS[type]}
-            </li>
-          ))}
-        </ul>
-      </Card>
+      </div>
 
       {!isLoggedIn ? (
         <section className="rounded-xl border border-border bg-surface px-5 py-6 text-center shadow-card sm:px-8">
