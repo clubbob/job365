@@ -278,3 +278,67 @@ export function workPreferencesFromTalent(profile: TalentProfile): WorkPreferenc
 export function talentHasCompleteWorkPreferences(profile: TalentProfile): boolean {
   return workPreferencesAreComplete(workPreferencesFromTalent(profile));
 }
+
+export function occupationsFromList(values?: readonly string[] | null): OccupationOption[] {
+  return [
+    ...new Set(
+      (values ?? [])
+        .map(normalizeOccupation)
+        .filter((item): item is OccupationOption => Boolean(item)),
+    ),
+  ];
+}
+
+export function occupationsFromJob(job: { occupations?: readonly string[] }): OccupationOption[] {
+  return occupationsFromList(job.occupations);
+}
+
+export function regionsFromJob(job: { regions?: readonly string[]; location?: string }): RegionOption[] {
+  const fromList = (job.regions ?? []).filter(isRegionOption);
+  if (fromList.length > 0) return expandRegions(fromList);
+  return regionsFromLocationText(job.location ?? '');
+}
+
+export function jobOccupationsLabel(job: { occupations?: readonly string[] }): string {
+  return occupationsFromJob(job).join(', ');
+}
+
+export function jobRegionsLabel(job: { regions?: readonly string[]; location?: string }): string {
+  const regions = regionsFromJob(job);
+  if (regions.length === 0) return (job.location ?? '').trim();
+  return locationLabelFromRegions(compactRegions(regions));
+}
+
+export function jobMatchesOccupation(
+  job: { occupations?: readonly string[] },
+  occupation: OccupationOption,
+): boolean {
+  return occupationsFromJob(job).includes(occupation);
+}
+
+export function jobMatchesRegion(
+  job: { regions?: readonly string[]; location?: string },
+  region: RegionOption,
+): boolean {
+  const regions = regionsFromJob(job);
+  if (region === NATIONWIDE_REGION) return isNationwideSelection(regions);
+  if (isNationwideSelection(regions)) return true;
+  return regions.includes(region);
+}
+
+export function talentMatchesOccupation(
+  talent: Pick<TalentProfile, 'occupations' | 'headline'>,
+  occupation: OccupationOption,
+): boolean {
+  return occupationsFromTalent(talent).includes(occupation);
+}
+
+export function talentMatchesRegion(
+  talent: Pick<TalentProfile, 'location'>,
+  region: RegionOption,
+): boolean {
+  const regions = regionsFromLocationText(talent.location ?? '');
+  if (region === NATIONWIDE_REGION) return isNationwideSelection(regions);
+  if (isNationwideSelection(regions)) return true;
+  return regions.includes(region);
+}

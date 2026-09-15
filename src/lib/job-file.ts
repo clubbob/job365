@@ -3,9 +3,8 @@
 import { loadBizVerify } from '@/lib/biz-verify-store';
 import {
   jobCareerLabel,
-  jobDeadlineLabel,
   jobEducationLabel,
-  jobHeadcountLabel,
+  jobOutlineItems,
 } from '@/lib/job-display';
 import {
   jobCompanyBusinessNumberLabel,
@@ -14,7 +13,7 @@ import {
   jobCompanyRevenueLabel,
   resolveJobCompany,
 } from '@/lib/job-company';
-import { jobPositionLabel, jobWorkTypesLabel, type JobCompanyInfo, type JobPosting } from '@/types/job';
+import { jobWorkTypesLabel, type JobCompanyInfo, type JobPosting } from '@/types/job';
 
 const PAGE_WIDTH_PX = 794;
 
@@ -64,8 +63,6 @@ function buildJobFileHtml(
   const workType = jobWorkTypesLabel(job);
   const career = jobCareerLabel(job);
   const education = jobEducationLabel(job.education);
-  const headcount = jobHeadcountLabel(job.headcount);
-  const deadline = jobDeadlineLabel(job.deadline);
   const businessNumber = jobCompanyBusinessNumberLabel(company.businessNumber || job.businessNumber);
 
   return `<!DOCTYPE html>
@@ -124,20 +121,7 @@ function buildJobFileHtml(
     )}
     ${section(
       '모집 요강',
-      rows([
-        ['채용 제목', title],
-        ['근무 형태', workType],
-        ['모집 인원', headcount],
-        ['지급 기준', job.payLabel],
-        ['경력 유무', career],
-        ['학력', education],
-        ['직급/직책', jobPositionLabel(job.positionLevel)],
-        ['수습 기간', job.probation],
-        ['근무지', job.location],
-        ['근무 요일', job.workDays],
-        ['근무 시간', job.workHours],
-        ['접수 마감', deadline],
-      ]),
+      rows(jobOutlineItems(job).map((item) => [item.label, item.value])),
     )}
     ${section(
       '상세 내용',

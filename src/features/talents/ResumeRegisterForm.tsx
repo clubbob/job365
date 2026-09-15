@@ -9,7 +9,6 @@ import { getKoreaDateLocalToday } from '@/lib/datetime';
 import { firstRequiredError } from '@/lib/form-required';
 import {
   RESIDENCE_CITIES,
-  RESIDENCE_DISTRICTS,
   formatResidence,
   isCompleteResidence,
   parseResidence,
@@ -97,7 +96,6 @@ type SectionValues = {
   phone: string;
   email: string;
   residenceCity: string;
-  residenceDistrict: string;
   homepage: string;
   workTypes: JobWorkType[];
   regions: RegionOption[];
@@ -126,7 +124,6 @@ function snapshotsFromValues(values: SectionValues): SectionSnapshots {
       phone: values.phone,
       email: values.email,
       residenceCity: values.residenceCity,
-      residenceDistrict: values.residenceDistrict,
       homepage: values.homepage,
     }),
     conditions: JSON.stringify({
@@ -166,7 +163,7 @@ function isSectionComplete(id: SectionId, values: SectionValues): boolean {
         isTalentGender(values.gender) &&
         (!values.phone.trim() || isValidPhone(values.phone)) &&
         isValidEmail(values.email) &&
-        isCompleteResidence(values.residenceCity, values.residenceDistrict)
+        isCompleteResidence(values.residenceCity)
       );
     }
     case 'conditions':
@@ -349,7 +346,6 @@ export default function ResumeRegisterForm({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState(accountEmail ?? '');
   const [residenceCity, setResidenceCity] = useState<ResidenceCity | ''>('');
-  const [residenceDistrict, setResidenceDistrict] = useState('');
   const [homepage, setHomepage] = useState('');
   const [workTypes, setWorkTypes] = useState<JobWorkType[]>([]);
   const [regions, setRegions] = useState<RegionOption[]>([]);
@@ -384,7 +380,6 @@ export default function ResumeRegisterForm({
       setPhone('');
       setEmail(accountEmail ?? '');
       setResidenceCity('');
-      setResidenceDistrict('');
       setHomepage('');
       setWorkTypes(conditions.workTypes);
       setRegions(conditions.regions);
@@ -410,7 +405,6 @@ export default function ResumeRegisterForm({
           phone: '',
           email: accountEmail ?? '',
           residenceCity: '',
-          residenceDistrict: '',
           homepage: '',
           workTypes: storedConditions.workTypes,
           regions: storedConditions.regions,
@@ -455,7 +449,6 @@ export default function ResumeRegisterForm({
     setPhone(nextPhone);
     setEmail(nextEmail);
     setResidenceCity(residence.city);
-    setResidenceDistrict(residence.district);
     setHomepage(nextHomepage);
     setWorkTypes(conditions.workTypes);
     setRegions(conditions.regions);
@@ -481,7 +474,6 @@ export default function ResumeRegisterForm({
         phone: nextPhone,
         email: existing.email ?? '',
         residenceCity: residence.city,
-        residenceDistrict: residence.district,
         homepage: nextHomepage,
         workTypes: storedConditions.workTypes,
         regions: storedConditions.regions,
@@ -511,7 +503,6 @@ export default function ResumeRegisterForm({
       phone,
       email,
       residenceCity,
-      residenceDistrict,
       homepage,
       workTypes,
       regions,
@@ -553,7 +544,6 @@ export default function ResumeRegisterForm({
       setResidenceCity(
         typeof parsed.residenceCity === 'string' && parsed.residenceCity ? (parsed.residenceCity as ResidenceCity) : '',
       );
-      setResidenceDistrict(String(parsed.residenceDistrict ?? ''));
       setHomepage(String(parsed.homepage ?? ''));
     } else if (id === 'conditions') {
       setWorkTypes(asWorkTypes(parsed.workTypes));
@@ -621,7 +611,7 @@ export default function ResumeRegisterForm({
       { ok: isTalentGender(gender), message: '성별을 선택해 주세요.' },
       { ok: !phone.trim() || isValidPhone(phone), message: '휴대폰 번호를 확인해 주세요.' },
       { ok: Boolean(email.trim()) && isValidEmail(email), message: '이메일을 입력해 주세요.' },
-      { ok: isCompleteResidence(residenceCity, residenceDistrict), message: '거주 지역을 선택해 주세요.' },
+      { ok: isCompleteResidence(residenceCity), message: '거주 지역을 선택해 주세요.' },
     ]);
     if (requiredError) {
       rejectSave('basics', requiredError);
@@ -636,7 +626,7 @@ export default function ResumeRegisterForm({
       gender,
       phone: phone.trim(),
       email: email.trim(),
-      address: formatResidence(residenceCity, residenceDistrict),
+      address: formatResidence(residenceCity),
       homepage: normalizeWebsite(homepage),
     });
 
@@ -646,7 +636,7 @@ export default function ResumeRegisterForm({
     event.preventDefault();
     const requiredError = firstRequiredError([
       { ok: workTypes.length > 0, message: '근무 형태를 하나 이상 선택해 주세요.' },
-      { ok: regions.length > 0, message: '지역을 하나 이상 선택해 주세요.' },
+      { ok: regions.length > 0, message: '근무 지역을 하나 이상 선택해 주세요.' },
       { ok: occupations.length > 0, message: '직종을 하나 이상 선택해 주세요.' },
       { ok: isAvailableOption(available), message: '근무 가능을 선택해 주세요.' },
     ]);
@@ -1014,13 +1004,7 @@ export default function ResumeRegisterForm({
                         type="button"
                         aria-pressed={active}
                         onClick={() => {
-                          if (active) {
-                            setResidenceCity('');
-                            setResidenceDistrict('');
-                            return;
-                          }
-                          setResidenceCity(item);
-                          setResidenceDistrict('');
+                          setResidenceCity(active ? '' : item);
                         }}
                         className={cn(
                           'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
@@ -1034,31 +1018,6 @@ export default function ResumeRegisterForm({
                     );
                   })}
                 </div>
-                {residenceCity && RESIDENCE_DISTRICTS[residenceCity].length > 0 ? (
-                  <div className="mt-3 border-t border-border pt-3">
-                    <div className="flex flex-wrap gap-1.5">
-                    {RESIDENCE_DISTRICTS[residenceCity].map((item) => {
-                      const active = residenceDistrict === item;
-                      return (
-                        <button
-                          key={item}
-                          type="button"
-                          aria-pressed={active}
-                          onClick={() => setResidenceDistrict(active ? '' : item)}
-                          className={cn(
-                            'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
-                            active
-                              ? 'bg-primary text-white shadow-sm'
-                              : 'border border-border-strong bg-surface text-foreground hover:bg-neutral-50',
-                          )}
-                        >
-                          {item}
-                        </button>
-                      );
-                    })}
-                    </div>
-                  </div>
-                ) : null}
               </div>
               <div>
                 <FieldLabel htmlFor="talent-homepage" optional>
@@ -1082,7 +1041,7 @@ export default function ResumeRegisterForm({
       <Card
         id="resume-conditions"
         title="희망 근무 조건"
-        description="이 이력서로 찾고 싶은 근무 형태, 지역, 직종, 근무 가능을 고릅니다."
+        description="이 이력서로 찾고 싶은 근무 형태, 근무 지역, 직종, 근무 가능을 고릅니다."
         className="scroll-mt-[7.5rem]"
       >
         <form className="space-y-5" onSubmit={saveConditions} noValidate>
@@ -1095,7 +1054,7 @@ export default function ResumeRegisterForm({
             onToggle={(value) => setWorkTypes((current) => toggleValue(current, value))}
           />
           <ChoiceGroup
-            legend="지역"
+            legend="근무 지역"
             required
             options={REGION_OPTIONS}
             selected={regions}

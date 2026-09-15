@@ -2,20 +2,57 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import AdSlot from '@/components/ads/AdSlot';
+import MultiSelect from '@/components/ui/MultiSelect';
 import TalentCard from '@/features/talents/TalentCard';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
 import { loadListRestore, saveListRestore, saveListScroll } from '@/lib/list-restore';
 import { listTalents } from '@/lib/talent-catalog';
-import { talentOccupationsLabel } from '@/lib/talent-display';
 import { cn } from '@/lib/utils';
-import { WORK_TYPE_FILTERS, type JobWorkType } from '@/types/job';
-import { talentSchools, talentWorkTypes, type TalentProfile } from '@/types/talent';
+import {
+  isOccupationOption,
+  isRegionOption,
+  OCCUPATION_OPTIONS,
+  REGION_OPTIONS,
+  talentMatchesOccupation,
+  talentMatchesRegion,
+  type OccupationOption,
+  type RegionOption,
+} from '@/lib/work-preferences';
+import {
+  JOB_WORK_TYPES,
+  WORK_TYPE_FILTERS,
+  WORK_TYPE_LABELS,
+  isJobWorkType,
+  type JobWorkType,
+} from '@/types/job';
+import { talentWorkTypes, type TalentProfile } from '@/types/talent';
 
 type FilterId = (typeof WORK_TYPE_FILTERS)[number]['id'];
 
 const PAGE_BUTTON =
   'inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors';
+
+function restoredWorkTypes(state: {
+  workTypes?: string[];
+  filter?: FilterId;
+}): JobWorkType[] {
+  const fromList = (state.workTypes ?? []).filter(isJobWorkType);
+  if (fromList.length > 0) return fromList;
+  return state.filter && isJobWorkType(state.filter) ? [state.filter] : [];
+}
+
+function restoredOccupations(state: { occupations?: string[]; occupation?: string }): OccupationOption[] {
+  const fromList = (state.occupations ?? []).filter(isOccupationOption);
+  if (fromList.length > 0) return fromList;
+  return isOccupationOption(state.occupation) ? [state.occupation] : [];
+}
+
+function restoredRegions(state: { regions?: string[]; region?: string }): RegionOption[] {
+  const fromList = (state.regions ?? []).filter(isRegionOption);
+  if (fromList.length > 0) return fromList;
+  return isRegionOption(state.region) ? [state.region] : [];
+}
 
 export default function TalentList({
   pageSize = 10,
@@ -38,7 +75,9 @@ export default function TalentList({
 }) {
   const [allTalents, setAllTalents] = useState<TalentProfile[]>([]);
   const [filter, setFilter] = useState<FilterId>(workType ?? 'all');
-  const [query, setQuery] = useState('');
+  const [workTypes, setWorkTypes] = useState<JobWorkType[]>([]);
+  const [occupations, setOccupations] = useState<OccupationOption[]>([]);
+  const [regions, setRegions] = useState<RegionOption[]>([]);
   const [page, setPage] = useState(1);
   const [ready, setReady] = useState(!persistKey);
   const skipPageReset = useRef(Boolean(persistKey));
@@ -48,34 +87,21 @@ export default function TalentList({
 
   const filtered = useMemo(() => {
     const selected = WORK_TYPE_FILTERS.find((item) => item.id === filter);
-    const keyword = query.trim().toLowerCase();
 
     return allTalents.filter((talent) => {
       const types = talentWorkTypes(talent);
       if (workType) {
         if (!types.includes(workType)) return false;
-      } else if (selected?.types) {
-        if (!types.some((item) => selected.types?.includes(item))) return false;
+      } else if (showSearch) {
+        if (workTypes.length > 0 && !workTypes.some((item) => types.includes(item))) return false;
+      } else if (selected?.types && !types.some((item) => selected.types?.includes(item))) {
+        return false;
       }
-      if (!keyword) return true;
-
-      const haystack = [
-        talentOccupationsLabel(talent),
-        talent.location,
-        talent.summary,
-        talent.careerLabel,
-        talent.education,
-        ...talentSchools(talent).flatMap((item) => [item.school, item.major ?? '']),
-        talent.experience,
-        talent.careerHistory,
-        talent.languages,
-        ...talent.tags,
-      ]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(keyword);
+      if (occupations.length > 0 && !occupations.some((item) => talentMatchesOccupation(talent, item))) return false;
+      if (regions.length > 0 && !regions.some((item) => talentMatchesRegion(talent, item))) return false;
+      return true;
     });
-  }, [allTalents, filter, query, workType]);
+  }, [allTalents, filter, occupations, regions, showSearch, workType, workTypes]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 
@@ -88,7 +114,9 @@ export default function TalentList({
     const restored = loadListRestore(persistKey);
     if (restored) {
       setFilter(restored.filter);
-      setQuery(restored.query);
+      setWorkTypes(restoredWorkTypes(restored));
+      setOccupations(restoredOccupations(restored));
+      setRegions(restoredRegions(restored));
       setPage(restored.page);
     }
     setReady(true);
@@ -101,17 +129,22 @@ export default function TalentList({
       return;
     }
     setPage(1);
-  }, [filter, query, ready]);
+  }, [filter, occupations, ready, regions, workTypes]);
 
   useEffect(() => {
     if (!persistKey || !ready) return;
     saveListRestore(persistKey, {
-      filter,
-      query,
+      filter: workTypes[0] ?? (showSearch ? 'all' : filter),
+      workTypes,
+      occupation: occupations[0] ?? '',
+      occupations,
+      region: regions[0] ?? '',
+      regions,
+      query: '',
       page,
       scrollY: loadListRestore(persistKey)?.scrollY ?? window.scrollY,
     });
-  }, [filter, page, persistKey, query, ready]);
+  }, [filter, occupations, page, persistKey, ready, regions, showSearch, workTypes]);
 
   useEffect(() => {
     if (!persistKey || !ready) return;
@@ -137,7 +170,7 @@ export default function TalentList({
     return filtered.slice(start, start + pageSize);
   }, [filtered, limit, page, pageSize]);
 
-  const hasQuery = query.trim().length > 0;
+  const hasExtraFilters = workTypes.length > 0 || occupations.length > 0 || regions.length > 0;
 
   function goToPage(next: number) {
     setPage(next);
@@ -150,24 +183,38 @@ export default function TalentList({
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       {showSearch ? (
-      <div>
-        <label htmlFor="talent-search" className="sr-only">
-          인재 검색
-        </label>
-        <input
-          id="talent-search"
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="이름, 직종, 지역으로 검색"
-          className="w-full rounded-xl border border-border-strong bg-surface px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-subtle focus:border-primary focus:ring-2 focus:ring-primary/25"
-        />
-      </div>
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+          <MultiSelect
+            id="talent-work-type-filter"
+            label="근무 형태"
+            allLabel="근무 형태 전체"
+            options={JOB_WORK_TYPES}
+            selected={workTypes}
+            labelOf={(value) => WORK_TYPE_LABELS[value]}
+            onChange={setWorkTypes}
+          />
+          <MultiSelect
+            id="talent-region-filter"
+            label="근무 지역"
+            allLabel="근무 지역 전체"
+            options={REGION_OPTIONS}
+            selected={regions}
+            onChange={setRegions}
+          />
+          <MultiSelect
+            id="talent-occupation-filter"
+            label="직종"
+            allLabel="직종 전체"
+            options={OCCUPATION_OPTIONS}
+            selected={occupations}
+            onChange={setOccupations}
+          />
+        </div>
       ) : null}
 
-      {!hideFilters ? (
+      {!showSearch && !hideFilters ? (
       <div className="grid grid-cols-5 gap-1.5 pb-1 sm:flex sm:flex-wrap sm:gap-2">
         {WORK_TYPE_FILTERS.map((item) => (
           <button
@@ -211,15 +258,17 @@ export default function TalentList({
       {talents.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-surface px-4 py-10 text-center">
           <p className="text-sm text-muted">
-            {hasQuery ? '검색 조건에 맞는 인재가 없습니다.' : '해당 조건의 인재가 없습니다.'}
+            {hasExtraFilters ? '검색 조건에 맞는 인재가 없습니다.' : '해당 조건의 인재가 없습니다.'}
           </p>
-          {hasQuery || filter !== 'all' ? (
+          {hasExtraFilters || filter !== 'all' ? (
             <button
               type="button"
               className="mt-3 text-sm font-semibold text-primary hover:underline"
               onClick={() => {
                 setFilter('all');
-                setQuery('');
+                setWorkTypes([]);
+                setOccupations([]);
+                setRegions([]);
               }}
             >
               조건 초기화

@@ -1,4 +1,5 @@
 import { formatKoreaDateWithWeekday } from '@/lib/datetime';
+import { jobOccupationsLabel, jobRegionsLabel } from '@/lib/work-preferences';
 import {
   CAREER_TYPE_LABELS,
   PAY_TYPE_LABELS,
@@ -93,17 +94,22 @@ export function jobHeadcountLabel(headcount?: number): string | null {
   return `${headcount}명`;
 }
 
+export function jobRecentDate(job: Pick<JobPosting, 'createdAt' | 'updatedAt'>): string {
+  return job.updatedAt || job.createdAt;
+}
+
 export function jobOutlineItems(job: JobPosting): Array<{ label: string; value?: string | null }> {
   return [
     { label: '채용 제목', value: job.title },
     { label: '근무 형태', value: jobWorkTypesLabel(job) },
+    { label: '근무 지역', value: jobRegionsLabel(job) },
+    { label: '직종', value: jobOccupationsLabel(job) },
     { label: '모집 인원', value: jobHeadcountLabel(job.headcount) },
     { label: '지급 기준', value: job.payLabel },
     { label: '경력 유무', value: jobCareerLabel(job) },
     { label: '학력', value: jobEducationLabel(job.education) },
     { label: '직급/직책', value: jobPositionLabel(job.positionLevel) },
     { label: '수습 기간', value: job.probation },
-    { label: '근무지', value: job.location },
     { label: '근무 요일', value: job.workDays },
     { label: '근무 시간', value: job.workHours },
     { label: '접수 마감', value: jobDeadlineLabel(job.deadline) },
@@ -124,6 +130,8 @@ export function jobSearchText(job: JobPosting): string {
   return [
     job.title,
     job.companyName,
+    jobOccupationsLabel(job),
+    jobRegionsLabel(job),
     job.location,
     job.summary,
     job.payLabel,

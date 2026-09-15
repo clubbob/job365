@@ -491,7 +491,7 @@ export default function MyTalentProfileForm({
         </div>
         <div>
           <FieldLabel htmlFor="talent-location" optional>
-            지역
+            근무 지역
           </FieldLabel>
           <input
             id="talent-location"

@@ -246,12 +246,11 @@ export function isResidenceCity(value: unknown): value is ResidenceCity {
   return typeof value === 'string' && (RESIDENCE_CITIES as readonly string[]).includes(value);
 }
 
-export function isCompleteResidence(city: string, district: string): boolean {
-  if (!isResidenceCity(city)) return false;
-  return RESIDENCE_DISTRICTS[city].length === 0 || Boolean(district);
+export function isCompleteResidence(city: string, _district?: string): boolean {
+  return isResidenceCity(city);
 }
 
-export function formatResidence(city: string, district: string): string {
+export function formatResidence(city: string, district = ''): string {
   if (!city) return '';
   return district ? `${city} ${district}` : city;
 }
@@ -270,4 +269,8 @@ export function parseResidence(value: string): { city: ResidenceCity | ''; distr
   }
 
   return { city: '', district: '' };
+}
+
+export function residenceLabel(value?: string): string {
+  return parseResidence(value ?? '').city;
 }

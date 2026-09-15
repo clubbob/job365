@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { DetailBadge, DetailHero, DetailSection, DetailStatGrid, DetailText } from '@/components/ui/PostingDetail';
 import JobCompanySection from '@/features/jobs/JobCompanySection';
 import { jobCareerLabel, jobDetailItems, jobEducationLabel, jobOutlineItems } from '@/lib/job-display';
+import { jobOccupationsLabel, jobRegionsLabel } from '@/lib/work-preferences';
 import { jobWorkTypesLabel, type JobPosting } from '@/types/job';
 
 export default function JobPostingArticle({
@@ -16,6 +17,8 @@ export default function JobPostingArticle({
   const workType = jobWorkTypesLabel(job);
   const career = jobCareerLabel(job);
   const education = jobEducationLabel(job.education);
+  const occupations = jobOccupationsLabel(job);
+  const region = jobRegionsLabel(job);
 
   return (
     <>
@@ -26,6 +29,8 @@ export default function JobPostingArticle({
           <>
             {extraBadges}
             <DetailBadge tone="primary">{workType}</DetailBadge>
+            {region ? <DetailBadge>{region}</DetailBadge> : null}
+            {occupations ? <DetailBadge>{occupations}</DetailBadge> : null}
             {career ? <DetailBadge>{career}</DetailBadge> : null}
             {education ? <DetailBadge>{education}</DetailBadge> : null}
           </>

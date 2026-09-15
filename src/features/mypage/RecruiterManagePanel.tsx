@@ -12,8 +12,9 @@ import {
   type JobApplication,
   type JobApplicationStatus,
 } from '@/lib/job-applications';
-import { jobCareerLabel, jobEducationLabel } from '@/lib/job-display';
+import { jobCareerLabel, jobEducationLabel, jobRecentDate } from '@/lib/job-display';
 import { findMyTalentProfile } from '@/lib/my-talent-profile';
+import { jobOccupationsLabel, jobRegionsLabel } from '@/lib/work-preferences';
 import {
   canPublishMyJobPosting,
   deleteMyJobPosting,
@@ -22,6 +23,7 @@ import {
   missingJobPublishRequirements,
   publishMyJobPosting,
   unpublishMyJobPosting,
+  resolveLatestJob,
 } from '@/lib/my-job-posts';
 import { syncDeleteJobPosting, syncMyJobPosting } from '@/lib/posting-sync';
 import {
@@ -144,6 +146,16 @@ export default function RecruiterManagePanel({
     setBusyId(null);
   }
 
+  async function handleSaveJobFile(job: JobPosting) {
+    setBusyId(job.id);
+    try {
+      const { downloadJobFile } = await import('@/lib/job-file');
+      await downloadJobFile(resolveLatestJob(userId, job), userId);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function handlePublishJob(job: JobPosting) {
     if (!canPublishMyJobPosting(userId, job)) return;
     setBusyId(job.id);
@@ -156,16 +168,6 @@ export default function RecruiterManagePanel({
     setBusyId(job.id);
     if (unpublishMyJobPosting(userId, job.id)) await syncAllJobs();
     setBusyId(null);
-  }
-
-  async function handleSaveJobFile(job: JobPosting) {
-    setBusyId(job.id);
-    try {
-      const { downloadJobFile } = await import('@/lib/job-file');
-      await downloadJobFile(job, userId);
-    } finally {
-      setBusyId(null);
-    }
   }
 
   async function handleDeleteJob(job: JobPosting) {
@@ -240,6 +242,8 @@ export default function RecruiterManagePanel({
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3">
               {jobs.map((job) => {
                 const workTypesLabel = jobWorkTypesLabel(job);
+                const occupations = jobOccupationsLabel(job);
+                const region = jobRegionsLabel(job);
                 const career = jobCareerLabel(job);
                 const education = jobEducationLabel(job.education);
                 const busy = busyId === job.id;
@@ -280,10 +284,13 @@ export default function RecruiterManagePanel({
                     <p className="mt-2 line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">
                       {job.title}
                     </p>
-                    {job.location.trim() ? (
-                      <p className="mt-1 line-clamp-2 text-sm text-muted">{job.location}</p>
+                    {region ? (
+                      <p className="mt-1 line-clamp-1 text-sm text-muted">{region}</p>
                     ) : null}
-                    <p className="mt-1 text-xs text-subtle">최근 저장일 {job.createdAt}</p>
+                    {occupations ? (
+                      <p className="mt-1 line-clamp-1 text-sm text-muted">{occupations}</p>
+                    ) : null}
+                    <p className="mt-1 text-xs text-subtle">최근 저장일 {jobRecentDate(job)}</p>
                     {!published && missing.length > 0 ? (
                       <p className="mt-2 text-sm text-muted">
                         공개하려면 다음을 저장해 주세요. {missing.join(', ')}

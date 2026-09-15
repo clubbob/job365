@@ -1,6 +1,7 @@
 'use client';
 
 import { formatBirthDate } from '@/lib/talent-contact';
+import { residenceLabel } from '@/lib/korea-regions';
 import {
   talentCareerLabel,
   talentEducation,
@@ -129,7 +130,7 @@ function buildResumeFileHtml(talent: TalentProfile): string {
         ['성별', talent.gender],
         ['휴대폰', talent.phone],
         ['이메일', talent.email],
-        ['거주 지역', talent.address],
+        ['거주 지역', residenceLabel(talent.address)],
         ['홈페이지 / SNS', talent.homepage],
       ]),
     )}
@@ -137,7 +138,7 @@ function buildResumeFileHtml(talent: TalentProfile): string {
       '희망 근무 조건',
       rows([
         ['근무 형태', conditions.workTypes],
-        ['지역', conditions.regions],
+        ['근무 지역', conditions.regions],
         ['직종', conditions.occupations],
         ['근무 가능', conditions.available],
         ...(talent.desiredPay?.trim() ? ([['희망 급여', talent.desiredPay]] as Array<[string, string]>) : []),

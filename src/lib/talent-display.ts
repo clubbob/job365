@@ -1,4 +1,5 @@
 import { formatBirthDate, privateContactValue } from '@/lib/talent-contact';
+import { residenceLabel } from '@/lib/korea-regions';
 import { occupationsFromTalent } from '@/lib/work-preferences';
 import { WORK_TYPE_LABELS, type JobWorkType } from '@/types/job';
 import { normalizeEducation, talentSchools, talentWorkTypes, type TalentProfile } from '@/types/talent';
@@ -62,7 +63,7 @@ export function talentBasicInfoItems(
     { label: '성별', value: talent.gender || '—' },
     { label: '휴대폰', value: privateContactValue(talent.phone, revealed) },
     { label: '이메일', value: privateContactValue(talent.email, revealed) },
-    { label: '거주 지역', value: talent.address || '—' },
+    { label: '거주 지역', value: residenceLabel(talent.address) || '—' },
     { label: '홈페이지 / SNS', value: talent.homepage || '—' },
   ];
 }
@@ -72,7 +73,7 @@ export function talentConditionItems(
 ): Array<{ label: string; value?: string | null }> {
   const items: Array<{ label: string; value?: string | null }> = [
     { label: '근무 형태', value: talentWorkTypesLabel(talent) },
-    { label: '지역', value: talent.location },
+    { label: '근무 지역', value: talent.location },
     { label: '직종', value: talentOccupationsLabel(talent) },
     { label: '근무 가능', value: talent.available },
   ];

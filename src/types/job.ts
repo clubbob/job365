@@ -31,8 +31,12 @@ export type JobPosting = {
   payType: JobPayType;
   payLabel: string;
   location: string;
+  locationDetail?: string;
+  occupations?: string[];
+  regions?: string[];
   summary: string;
   createdAt: string;
+  updatedAt?: string;
   businessNumber?: string;
   headcount?: number;
   careerType?: JobCareerType | string;

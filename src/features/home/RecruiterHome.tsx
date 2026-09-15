@@ -28,14 +28,14 @@ export default function RecruiterHome() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-foreground">최근 인재 정보</h2>
-          <p className="mt-1 text-sm text-muted">관심 있는 근무 형태를 골라 보세요.</p>
+          <p className="mt-1 text-sm text-muted">공개된 이력서를 확인해 보세요.</p>
         </div>
         <Link href="/talents" className="text-sm font-semibold text-primary hover:underline">
           전체 보기
         </Link>
       </div>
 
-      <TalentList limit={6} showSearch={false} showCount={false} />
+      <TalentList limit={6} showSearch={false} showCount={false} hideFilters />
     </div>
   );
 }

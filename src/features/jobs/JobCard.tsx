@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { jobOccupationsLabel, jobRegionsLabel } from '@/lib/work-preferences';
 import type { JobPosting } from '@/types/job';
 import { jobWorkTypesLabel } from '@/types/job';
 
@@ -14,6 +15,9 @@ export default function JobCard({
   className?: string;
   badge?: string;
 }) {
+  const occupations = jobOccupationsLabel(job);
+  const region = jobRegionsLabel(job);
+
   return (
     <Link
       href={`/jobs/${job.id}`}
@@ -36,11 +40,12 @@ export default function JobCard({
       </div>
       <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">{job.title}</h3>
       <p className="mt-1 truncate text-sm font-medium text-muted">{job.companyName}</p>
+      {region ? <p className="mt-1 truncate text-xs text-muted sm:text-sm">{region}</p> : null}
+      {occupations ? <p className="mt-1 truncate text-xs text-muted sm:text-sm">{occupations}</p> : null}
       <p className="mt-2 line-clamp-2 text-xs text-muted sm:text-sm">{job.summary}</p>
       <div className="mt-auto flex flex-col gap-2 pt-3">
         <div className="flex flex-wrap items-end justify-between gap-1 text-sm">
           <span className="font-semibold text-primary">{job.payLabel}</span>
-          <span className="text-xs text-subtle">{job.location}</span>
         </div>
       </div>
     </Link>

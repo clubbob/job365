@@ -2,10 +2,19 @@ import { WORK_TYPE_FILTERS } from '@/types/job';
 
 export type ListRestoreState = {
   filter: (typeof WORK_TYPE_FILTERS)[number]['id'];
+  workTypes?: string[];
+  occupation?: string;
+  occupations?: string[];
+  region?: string;
+  regions?: string[];
   query: string;
   page: number;
   scrollY: number;
 };
+
+function asStringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
 
 const PREFIX = 'job365.list.';
 
@@ -22,6 +31,11 @@ export function loadListRestore(key: string): ListRestoreState | null {
     if (!isFilterId(parsed.filter)) return null;
     return {
       filter: parsed.filter,
+      workTypes: asStringList(parsed.workTypes),
+      occupation: typeof parsed.occupation === 'string' ? parsed.occupation : '',
+      occupations: asStringList(parsed.occupations),
+      region: typeof parsed.region === 'string' ? parsed.region : '',
+      regions: asStringList(parsed.regions),
       query: typeof parsed.query === 'string' ? parsed.query : '',
       page: typeof parsed.page === 'number' && parsed.page > 0 ? parsed.page : 1,
       scrollY: typeof parsed.scrollY === 'number' && parsed.scrollY > 0 ? parsed.scrollY : 0,

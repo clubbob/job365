@@ -97,6 +97,19 @@ export default function MyPageClient() {
       ...jobs.map((job) => syncMyJobPosting(job)),
       ...resumes.map((resume) => syncMyTalentProfile(resume)),
     ]);
+
+    function reloadMine() {
+      setMyJobs(hydrateMissingCompanyFromAccount(user.uid));
+      setMyResumes(hydrateMissingWorkPreferencesFromAccount(user.uid));
+    }
+    window.addEventListener('focus', reloadMine);
+    window.addEventListener('pageshow', reloadMine);
+    window.addEventListener('job365.jobs', reloadMine);
+    return () => {
+      window.removeEventListener('focus', reloadMine);
+      window.removeEventListener('pageshow', reloadMine);
+      window.removeEventListener('job365.jobs', reloadMine);
+    };
   }, [user]);
 
   useEffect(() => {

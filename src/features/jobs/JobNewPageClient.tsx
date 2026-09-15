@@ -112,6 +112,7 @@ export default function JobNewPageClient() {
         </Card>
       ) : (
         <JobCreateForm
+          key={editJob?.id ?? 'new'}
           userId={user.uid}
           companyName={editJob?.companyName || accountCompanyName}
           businessNumber={editJob?.businessNumber || accountBusinessNumber}

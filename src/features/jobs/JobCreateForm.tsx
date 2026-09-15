@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
 import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
 import CompanyInfoForm from '@/features/mypage/CompanyInfoForm';
@@ -19,6 +20,21 @@ import {
 } from '@/lib/my-job-posts';
 import { syncMyJobPosting } from '@/lib/posting-sync';
 import { cn } from '@/lib/utils';
+import {
+  compactRegions,
+  isNationwideSelection,
+  isOccupationOption,
+  isRegionOption,
+  locationLabelFromRegions,
+  NATIONWIDE_REGION,
+  OCCUPATION_OPTIONS,
+  occupationsFromJob,
+  REGION_OPTIONS,
+  regionsFromJob,
+  toggleRegionSelection,
+  type OccupationOption,
+  type RegionOption,
+} from '@/lib/work-preferences';
 import {
   CAREER_TYPE_LABELS,
   JOB_CAREER_TYPES,
@@ -65,13 +81,63 @@ function PlaceholderOption() {
   return <option value="">선택</option>;
 }
 
+function ChoiceGroup<T extends string>({
+  legend,
+  options,
+  selected,
+  required,
+  isActive,
+  labelOf,
+  onToggle,
+}: {
+  legend: string;
+  options: readonly T[];
+  selected: T[];
+  required?: boolean;
+  isActive?: (value: T) => boolean;
+  labelOf?: (value: T) => string;
+  onToggle: (value: T) => void;
+}) {
+  return (
+    <fieldset>
+      <FieldLabel required={required}>{legend}</FieldLabel>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((item) => {
+          const active = isActive ? isActive(item) : selected.includes(item);
+          return (
+            <button
+              key={item}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onToggle(item)}
+              className={cn(
+                'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
+                active
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'border border-border-strong bg-surface text-foreground hover:bg-neutral-50',
+              )}
+            >
+              {labelOf ? labelOf(item) : item}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+function toggleValue<T extends string>(list: T[], value: T): T[] {
+  return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
+}
+
 type JobDraft = {
   title: string;
   workTypes: JobWorkType[];
+  occupations: OccupationOption[];
   headcount: string;
   careerType: JobCareerType | '';
   education: JobEducation | '';
-  location: string;
+  regions: RegionOption[];
   workDays: string;
   workHours: string;
   positionLevel: string;
@@ -94,10 +160,11 @@ function snapshotsFromValues(values: JobDraft): SectionSnapshots {
     outline: JSON.stringify({
       title: values.title,
       workTypes: values.workTypes,
+      occupations: values.occupations,
       headcount: values.headcount,
       careerType: values.careerType,
       education: values.education,
-      location: values.location,
+      regions: values.regions,
       workDays: values.workDays,
       workHours: values.workHours,
       positionLevel: values.positionLevel,
@@ -130,13 +197,16 @@ function isSectionComplete(id: SectionId, values: JobDraft, companyComplete: boo
       return (
         Boolean(values.title.trim()) &&
         values.workTypes.length > 0 &&
+        values.occupations.length > 0 &&
         Number.isFinite(count) &&
         count >= 1 &&
         isJobPayType(values.payType) &&
         Boolean(payLabel) &&
         isJobCareerType(values.careerType) &&
         isJobEducation(values.education) &&
-        Boolean(values.location.trim()) &&
+        values.regions.length > 0 &&
+        Boolean(values.workDays.trim()) &&
+        Boolean(values.workHours.trim()) &&
         (values.alwaysOpen || Boolean(values.deadline))
       );
     }
@@ -176,10 +246,11 @@ export default function JobCreateForm({
   const initialDraft: JobDraft = {
     title: initialJob?.title ?? '',
     workTypes: initialJob ? jobWorkTypes(initialJob) : [],
+    occupations: initialJob ? occupationsFromJob(initialJob) : [],
     headcount: String(initialJob?.headcount || 1),
     careerType: initialJob?.careerType && isJobCareerType(initialJob.careerType) ? initialJob.careerType : '',
     education: initialJob?.education && isJobEducation(initialJob.education) ? initialJob.education : '',
-    location: initialJob?.location ?? '',
+    regions: initialJob ? regionsFromJob(initialJob) : [],
     workDays: initialJob?.workDays ?? '',
     workHours: initialJob?.workHours ?? '',
     positionLevel: jobPositionLabel(initialJob?.positionLevel) ?? '',
@@ -200,10 +271,11 @@ export default function JobCreateForm({
   };
   const [title, setTitle] = useState(initialDraft.title);
   const [workTypes, setWorkTypes] = useState<JobWorkType[]>(initialDraft.workTypes);
+  const [occupations, setOccupations] = useState<OccupationOption[]>(initialDraft.occupations);
   const [headcount, setHeadcount] = useState(initialDraft.headcount);
   const [careerType, setCareerType] = useState<JobCareerType | ''>(initialDraft.careerType);
   const [education, setEducation] = useState<JobEducation | ''>(initialDraft.education);
-  const [location, setLocation] = useState(initialDraft.location);
+  const [regions, setRegions] = useState<RegionOption[]>(initialDraft.regions);
   const [workDays, setWorkDays] = useState(initialDraft.workDays);
   const [workHours, setWorkHours] = useState(initialDraft.workHours);
   const [positionLevel, setPositionLevel] = useState(initialDraft.positionLevel);
@@ -230,10 +302,11 @@ export default function JobCreateForm({
     return {
       title,
       workTypes,
+      occupations,
       headcount,
       careerType,
       education,
-      location,
+      regions,
       workDays,
       workHours,
       positionLevel,
@@ -264,10 +337,11 @@ export default function JobCreateForm({
     if (id === 'outline') {
       setTitle(String(parsed.title ?? ''));
       setWorkTypes(Array.isArray(parsed.workTypes) ? parsed.workTypes.filter(isJobWorkType) : []);
+      setOccupations(Array.isArray(parsed.occupations) ? parsed.occupations.filter(isOccupationOption) : []);
       setHeadcount(String(parsed.headcount ?? ''));
       setCareerType(isJobCareerType(String(parsed.careerType ?? '')) ? (parsed.careerType as JobCareerType) : '');
       setEducation(isJobEducation(String(parsed.education ?? '')) ? (parsed.education as JobEducation) : '');
-      setLocation(String(parsed.location ?? ''));
+      setRegions(Array.isArray(parsed.regions) ? parsed.regions.filter(isRegionOption) : []);
       setWorkDays(String(parsed.workDays ?? ''));
       setWorkHours(String(parsed.workHours ?? ''));
       setPositionLevel(String(parsed.positionLevel ?? ''));
@@ -300,6 +374,8 @@ export default function JobCreateForm({
       payType: '' as JobPayType,
       payLabel: '',
       location: '',
+      occupations: [],
+      regions: [],
       summary: '',
       createdAt: today,
       status: 'draft',
@@ -315,6 +391,7 @@ export default function JobCreateForm({
         ...partial,
         companyName: (partial.companyName ?? existing.companyName).trim() || companyName,
         createdAt: existing.createdAt || today,
+        updatedAt: today,
         status: existing && isPublishedJob(existing) ? (existing.status ?? 'published') : 'draft',
       },
       userId,
@@ -349,13 +426,16 @@ export default function JobCreateForm({
     const requiredError = firstRequiredError([
       { ok: Boolean(title.trim()), message: '채용 제목을 입력해 주세요.' },
       { ok: workTypes.length > 0, message: '근무 형태를 하나 이상 선택해 주세요.' },
+      { ok: regions.length > 0, message: '근무 지역을 하나 이상 선택해 주세요.' },
+      { ok: occupations.length > 0, message: '직종을 하나 이상 선택해 주세요.' },
       { ok: Number.isFinite(count) && count >= 1, message: '모집 인원을 입력해 주세요.' },
       { ok: isJobPayType(payType), message: '지급 기준을 선택해 주세요.' },
       { ok: Boolean(payLabel), message: '급여를 입력하거나 협의 가능을 선택해 주세요.' },
       { ok: isJobCareerType(careerType), message: '경력 유무를 선택해 주세요.' },
       { ok: isJobEducation(education), message: '학력을 선택해 주세요.' },
-      { ok: Boolean(location.trim()), message: '근무지를 입력해 주세요.' },
-      { ok: alwaysOpen || Boolean(deadline), message: '접수 마감을 선택해 주세요.' },
+      { ok: Boolean(workDays.trim()), message: '근무 요일을 선택해 주세요.' },
+      { ok: Boolean(workHours.trim()), message: '근무 시간을 입력해 주세요.' },
+      { ok: alwaysOpen || Boolean(deadline), message: '접수 마감을 선택하거나 상시채용을 선택해 주세요.' },
     ]);
     if (requiredError) {
       rejectSave('outline', requiredError);
@@ -364,17 +444,21 @@ export default function JobCreateForm({
     if (workTypes.length === 0 || !isJobCareerType(careerType) || !isJobEducation(education) || !isJobPayType(payType)) {
       return;
     }
+    const locationLabel = locationLabelFromRegions(compactRegions(regions));
     mergeAndSave('outline', {
       title: title.trim(),
       workType: workTypes[0],
       workTypes,
+      occupations,
       payType,
       payLabel,
       payAmount: payAmount.replace(/[^\d]/g, ''),
       payNegotiable,
-      location: location.trim(),
-      workHours: workHours.trim() || undefined,
-      workDays: workDays.trim() || undefined,
+      regions: compactRegions(regions),
+      location: locationLabel,
+      locationDetail: undefined,
+      workHours: workHours.trim(),
+      workDays: workDays.trim(),
       positionLevel: positionLevel.trim() || undefined,
       probation: probation.trim() || undefined,
       headcount: count,
@@ -503,7 +587,7 @@ export default function JobCreateForm({
       <Card
         id="job-outline"
         title="모집 요강"
-        description="구직자에게 보이는 모집 조건을 입력합니다."
+        description="구직자가 검색할 수 있도록 근무 형태, 근무 지역, 직종을 고르고 모집 조건을 입력합니다."
         className="scroll-mt-[7.5rem]"
       >
         <form className="space-y-4" onSubmit={saveOutline} noValidate>
@@ -521,37 +605,33 @@ export default function JobCreateForm({
               required
             />
           </div>
-          <div>
-            <FieldLabel required>근무 형태</FieldLabel>
-            <div className="flex flex-wrap gap-1.5">
-              {JOB_WORK_TYPES.map((item) => {
-                const active = workTypes.includes(item);
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => {
-                      setWorkTypes((current) => {
-                        const next = current.includes(item)
-                          ? current.filter((value) => value !== item)
-                          : [...current, item];
-                        return JOB_WORK_TYPES.filter((value) => next.includes(value));
-                      });
-                    }}
-                    className={cn(
-                      'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
-                      active
-                        ? 'bg-primary text-white shadow-sm'
-                        : 'border border-border-strong bg-surface text-foreground hover:border-primary hover:bg-neutral-50',
-                    )}
-                  >
-                    {WORK_TYPE_LABELS[item]}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <ChoiceGroup
+            legend="근무 형태"
+            required
+            options={JOB_WORK_TYPES}
+            selected={workTypes}
+            labelOf={(value) => WORK_TYPE_LABELS[value]}
+            onToggle={(value) =>
+              setWorkTypes((current) => JOB_WORK_TYPES.filter((item) => toggleValue(current, value).includes(item)))
+            }
+          />
+          <ChoiceGroup
+            legend="근무 지역"
+            required
+            options={REGION_OPTIONS}
+            selected={regions}
+            isActive={(value) =>
+              value === NATIONWIDE_REGION ? isNationwideSelection(regions) : regions.includes(value)
+            }
+            onToggle={(value) => setRegions((current) => toggleRegionSelection(current, value))}
+          />
+          <ChoiceGroup
+            legend="직종"
+            required
+            options={OCCUPATION_OPTIONS}
+            selected={occupations}
+            onToggle={(value) => setOccupations((current) => toggleValue(current, value))}
+          />
           <div className="space-y-4">
             <div className="grid grid-cols-2 items-end gap-4 md:flex md:flex-nowrap">
               <div className="min-w-0">
@@ -702,22 +782,9 @@ export default function JobCreateForm({
               </div>
             </div>
           </div>
-          <div>
-            <FieldLabel htmlFor="job-location" required>
-              근무지
-            </FieldLabel>
-            <input
-              id="job-location"
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              className={authInputClassName}
-              placeholder="예: 서울 구로구 디지털로 300"
-              required
-            />
-          </div>
           <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-6">
             <div className="min-w-0">
-              <FieldLabel htmlFor="job-work-days" optional>
+              <FieldLabel htmlFor="job-work-days" required>
                 근무 요일
               </FieldLabel>
               <select
@@ -725,6 +792,7 @@ export default function JobCreateForm({
                 value={workDays}
                 onChange={(event) => setWorkDays(event.target.value)}
                 className={cn(controlClassName, 'w-full sm:w-44', !workDays && 'font-normal text-subtle')}
+                required
               >
                 <PlaceholderOption />
                 {JOB_WORK_DAY_OPTIONS.map((item) => (
@@ -735,7 +803,7 @@ export default function JobCreateForm({
               </select>
             </div>
             <div className="min-w-0 w-full sm:max-w-xs">
-              <FieldLabel htmlFor="job-hours" optional>
+              <FieldLabel htmlFor="job-hours" required>
                 근무 시간
               </FieldLabel>
               <input
@@ -744,10 +812,11 @@ export default function JobCreateForm({
                 onChange={(event) => setWorkHours(event.target.value)}
                 className={authInputClassName}
                 placeholder="예: 09:00~18:00"
+                required
               />
             </div>
             <div className="shrink-0">
-              <FieldLabel htmlFor="job-deadline" required={!alwaysOpen}>
+              <FieldLabel htmlFor="job-deadline" required>
                 접수 마감
               </FieldLabel>
               <div className="flex flex-wrap items-center gap-3">
@@ -860,3 +929,5 @@ export default function JobCreateForm({
     </div>
   );
 }
+
+JobCreateForm.displayName = 'JobCreateForm';

@@ -1,5 +1,6 @@
 import { isCompanyInfoComplete, isJobCompanyComplete, loadBizVerify, toJobCompanyInfo } from '@/lib/biz-verify-store';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
+import { occupationsFromJob, regionsFromJob } from '@/lib/work-preferences';
 import {
   isJobCareerType,
   isJobEducation,
@@ -27,6 +28,7 @@ function readStore(): Store {
 
 function writeStore(store: Store): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  window.dispatchEvent(new Event('job365.jobs'));
 }
 
 export function listMyJobPostings(userId?: string): JobPosting[] {
@@ -37,6 +39,10 @@ export function listMyJobPostings(userId?: string): JobPosting[] {
 
 export function getMyJobPosting(userId: string, jobId: string): JobPosting | null {
   return listMyJobPostings(userId).find((item) => item.id === jobId) ?? null;
+}
+
+export function resolveLatestJob(userId: string, job: JobPosting): JobPosting {
+  return getMyJobPosting(userId, job.id) ?? job;
 }
 
 export function listMyJobPostingsWithOwners(): Array<{ userId: string; job: JobPosting }> {
@@ -119,11 +125,14 @@ export function missingJobPublishRequirements(userId: string, job: JobPosting): 
   if (!isJobCompanyComplete(latest.company) && !isCompanyInfoComplete(loadBizVerify(userId))) missing.push('회사 정보');
   if (!latest.title.trim()) missing.push('채용 제목');
   if (jobWorkTypes(latest).length === 0) missing.push('근무 형태');
+  if (!regionsFromJob(latest).length) missing.push('근무 지역');
+  if (!occupationsFromJob(latest).length) missing.push('직종');
   if (!latest.headcount || latest.headcount < 1) missing.push('모집 인원');
   if (!isJobPayType(latest.payType) || !latest.payLabel.trim()) missing.push('급여');
   if (!latest.careerType || !isJobCareerType(latest.careerType)) missing.push('경력 유무');
   if (!latest.education || !isJobEducation(latest.education)) missing.push('학력');
-  if (!latest.location.trim()) missing.push('근무지');
+  if (!latest.workDays?.trim()) missing.push('근무 요일');
+  if (!latest.workHours?.trim()) missing.push('근무 시간');
   if (!latest.deadline?.trim()) missing.push('접수 마감');
   if (!latest.summary.trim()) missing.push('담당 업무');
   if (!latest.process?.trim()) missing.push('전형 절차');
@@ -142,6 +151,7 @@ export function publishMyJobPosting(userId: string, jobId: string): JobPosting |
     ...target,
     status: 'published' as const,
     createdAt: getKoreaDateLocalToday(),
+    updatedAt: getKoreaDateLocalToday(),
     company: company
       ? {
           ...company,
@@ -157,7 +167,7 @@ export function publishMyJobPosting(userId: string, jobId: string): JobPosting |
 export function unpublishMyJobPosting(userId: string, jobId: string): JobPosting | null {
   const target = getMyJobPosting(userId, jobId);
   if (!target) return null;
-  const next = { ...target, status: 'draft' as const };
+  const next = { ...target, status: 'draft' as const, updatedAt: getKoreaDateLocalToday() };
   saveMyJobPosting(userId, next);
   return next;
 }
@@ -171,6 +181,7 @@ export function duplicateMyJobPosting(userId: string, jobId: string): JobPosting
     title: `${source.title.trim() || '채용 정보'} 복사`,
     status: 'draft',
     createdAt: getKoreaDateLocalToday(),
+    updatedAt: getKoreaDateLocalToday(),
   };
   saveMyJobPosting(userId, next);
   return next;

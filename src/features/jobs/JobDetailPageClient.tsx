@@ -13,6 +13,13 @@ import { getJobById } from '@/lib/job-catalog';
 import { findMyJobPosting } from '@/lib/my-job-posts';
 import type { JobPosting } from '@/types/job';
 
+function readJob(jobId: string, userId?: string, fromMypage = false): JobPosting | null {
+  const mine = findMyJobPosting(jobId);
+  const own = userId && mine?.userId === userId ? attachJobCompany(mine.job, mine.userId) : null;
+  if (own && fromMypage) return own;
+  return own ?? getJobById(jobId) ?? null;
+}
+
 export default function JobDetailPageClient({ jobId }: { jobId: string }) {
   const searchParams = useSearchParams();
   const fromMypage = searchParams.get('from') === 'mypage';
@@ -23,11 +30,20 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
 
   useEffect(() => {
     if (loading) return;
-    const found = getJobById(jobId);
-    const mine = findMyJobPosting(jobId);
-    const ownPreview =
-      fromMypage && user && mine?.userId === user.uid ? attachJobCompany(mine.job, mine.userId) : null;
-    setJob(found ?? ownPreview ?? null);
+
+    function load() {
+      setJob(readJob(jobId, user?.uid, fromMypage));
+    }
+
+    load();
+    window.addEventListener('focus', load);
+    window.addEventListener('pageshow', load);
+    window.addEventListener('job365.jobs', load);
+    return () => {
+      window.removeEventListener('focus', load);
+      window.removeEventListener('pageshow', load);
+      window.removeEventListener('job365.jobs', load);
+    };
   }, [fromMypage, jobId, loading, user]);
 
   if (job === undefined || loading) {
@@ -54,7 +70,7 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
       <AdSlot placement="header" />
 
       <article className="space-y-4">
-        <JobPostingArticle job={job} />
+        <JobPostingArticle job={job} ownerId={user?.uid} />
         {fromMypage ? null : <JobDetailActions key={job.id} job={job} />}
       </article>
 

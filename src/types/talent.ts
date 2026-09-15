@@ -127,9 +127,9 @@ export function missingTalentPublishFields(profile: TalentProfile): string[] {
   if (!profile.birthDate?.trim()) missing.push('생년월');
   if (!isTalentGender(profile.gender)) missing.push('성별');
   if (!profile.email?.trim()) missing.push('이메일');
-  if (!isCompleteResidence(residence.city, residence.district)) missing.push('거주 지역');
+  if (!isCompleteResidence(residence.city)) missing.push('거주 지역');
   if (talentWorkTypes(profile).length === 0) missing.push('근무 형태');
-  if (!profile.location?.trim()) missing.push('희망 지역');
+  if (!profile.location?.trim()) missing.push('근무 지역');
   if (talentOccupationValues(profile).length === 0) missing.push('직종');
   if (!profile.available?.trim()) missing.push('근무 가능');
   if (!profile.careerLabel?.trim() || profile.careerLabel.trim() === '경력무관') missing.push('경력 유무');
