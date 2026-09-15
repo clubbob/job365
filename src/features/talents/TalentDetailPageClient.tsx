@@ -31,7 +31,7 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
     if (loading || !modeReady) return;
     const found = getTalentById(talentId);
     const mine = user ? findMyTalentProfile(talentId) : null;
-    const ownPreview = fromMypage && mine?.userId === user?.uid ? mine.profile : null;
+    const ownPreview = fromMypage && user && mine && mine.userId === user.uid ? mine.profile : null;
     const next = found ?? ownPreview;
 
     if (!next) {
