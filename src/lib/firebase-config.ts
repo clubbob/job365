@@ -1,3 +1,5 @@
+import { SITE_DOMAIN } from '@/lib/site';
+
 export type FirebaseClientConfig = {
   apiKey: string;
   authDomain: string;
@@ -7,10 +9,24 @@ export type FirebaseClientConfig = {
   measurementId?: string;
 };
 
+function resolveAuthDomain(fallback?: string): string {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname.replace(/^www\./, '');
+    if (host === SITE_DOMAIN) return SITE_DOMAIN;
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() ?? '';
+  if (process.env.VERCEL_ENV === 'production' || appUrl.includes(SITE_DOMAIN)) {
+    return SITE_DOMAIN;
+  }
+
+  return fallback?.trim() || SITE_DOMAIN;
+}
+
 export function getFirebaseClientConfig(): FirebaseClientConfig {
   const config = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    authDomain: resolveAuthDomain(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN),
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
