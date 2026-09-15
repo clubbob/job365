@@ -88,8 +88,9 @@ export default function MyPageClient() {
       setMineReady(false);
       return;
     }
-    const jobs = hydrateMissingCompanyFromAccount(user.uid);
-    const resumes = hydrateMissingWorkPreferencesFromAccount(user.uid);
+    const userId = user.uid;
+    const jobs = hydrateMissingCompanyFromAccount(userId);
+    const resumes = hydrateMissingWorkPreferencesFromAccount(userId);
     setMyJobs(jobs);
     setMyResumes(resumes);
     setMineReady(true);
@@ -99,8 +100,8 @@ export default function MyPageClient() {
     ]);
 
     function reloadMine() {
-      setMyJobs(hydrateMissingCompanyFromAccount(user.uid));
-      setMyResumes(hydrateMissingWorkPreferencesFromAccount(user.uid));
+      setMyJobs(hydrateMissingCompanyFromAccount(userId));
+      setMyResumes(hydrateMissingWorkPreferencesFromAccount(userId));
     }
     window.addEventListener('focus', reloadMine);
     window.addEventListener('pageshow', reloadMine);
