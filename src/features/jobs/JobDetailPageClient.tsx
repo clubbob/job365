@@ -5,9 +5,12 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
+import { useAuth } from '@/features/auth/auth-context';
 import JobDetailActions from '@/features/jobs/JobDetailActions';
 import JobPostingArticle from '@/features/jobs/JobPostingArticle';
+import { attachJobCompany } from '@/lib/job-company';
 import { getJobById } from '@/lib/job-catalog';
+import { findMyJobPosting } from '@/lib/my-job-posts';
 import type { JobPosting } from '@/types/job';
 
 export default function JobDetailPageClient({ jobId }: { jobId: string }) {
@@ -15,13 +18,19 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
   const fromMypage = searchParams.get('from') === 'mypage';
   const listHref = fromMypage ? '/mypage?tab=jobs&sub=jobs' : '/jobs';
   const listLabel = fromMypage ? '돌아가기' : '이전 목록으로';
+  const { user, loading } = useAuth();
   const [job, setJob] = useState<JobPosting | null | undefined>(undefined);
 
   useEffect(() => {
-    setJob(getJobById(jobId) ?? null);
-  }, [jobId]);
+    if (loading) return;
+    const found = getJobById(jobId);
+    const mine = findMyJobPosting(jobId);
+    const ownPreview =
+      fromMypage && user && mine?.userId === user.uid ? attachJobCompany(mine.job, mine.userId) : null;
+    setJob(found ?? ownPreview ?? null);
+  }, [fromMypage, jobId, loading, user]);
 
-  if (job === undefined) {
+  if (job === undefined || loading) {
     return <p className="py-8 text-center text-sm text-muted">불러오는 중…</p>;
   }
 
@@ -46,7 +55,7 @@ export default function JobDetailPageClient({ jobId }: { jobId: string }) {
 
       <article className="space-y-4">
         <JobPostingArticle job={job} />
-        <JobDetailActions key={job.id} job={job} />
+        {fromMypage ? null : <JobDetailActions key={job.id} job={job} />}
       </article>
 
       <AdSlot placement="detail" />

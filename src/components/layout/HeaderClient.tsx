@@ -114,11 +114,24 @@ export default function HeaderClient() {
           {!accountReady ? (
             <div className="h-9 w-44 rounded-lg bg-neutral-100" aria-hidden="true" />
           ) : user ? (
+            <>
+              <Link
+                href="/mypage"
+                className={cn(
+                  navLinkClassName,
+                  pathname.startsWith('/mypage')
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-muted hover:bg-neutral-100 hover:text-foreground',
+                )}
+              >
+                마이페이지
+              </Link>
               <HeaderModeMenu
                 nickname={getUserNicknameFallback(user)}
                 align="right"
                 showLogout
               />
+            </>
           ) : (
             <Link
               href="/login"
@@ -149,8 +162,20 @@ export default function HeaderClient() {
         >
           <div className="mx-auto max-w-4xl space-y-3 px-4 py-3 sm:px-6">
             {!accountReady ? null : user ? (
-              <div className="border-b border-border pb-3">
+              <div className="space-y-3 border-b border-border pb-3">
                 <HeaderModeMenu nickname={getUserNicknameFallback(user)} showLogout />
+                <Link
+                  href="/mypage"
+                  className={cn(
+                    mobileLinkClassName,
+                    pathname.startsWith('/mypage')
+                      ? 'bg-primary text-white'
+                      : 'text-foreground hover:bg-neutral-100',
+                  )}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  마이페이지
+                </Link>
               </div>
             ) : null}
 

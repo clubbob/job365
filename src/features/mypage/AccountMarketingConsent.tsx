@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import type { User } from 'firebase/auth';
 import { Button, Card } from '@/components/ui/Card';
+import LegalPageShell from '@/components/legal/LegalPageShell';
+import MarketingConsentDocument, {
+  MARKETING_CONSENT_EFFECTIVE_DATE,
+} from '@/components/legal/MarketingConsentDocument';
 import { updateUserAccount } from '@/lib/users-api';
 
 type AccountMarketingConsentProps = {
@@ -22,6 +25,7 @@ export default function AccountMarketingConsent({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [justSaved, setJustSaved] = useState(false);
+  const [documentOpen, setDocumentOpen] = useState(false);
 
   useEffect(() => {
     setDraft(agreed);
@@ -29,6 +33,23 @@ export default function AccountMarketingConsent({
     setError('');
     setJustSaved(false);
   }, [agreed]);
+
+  useEffect(() => {
+    if (!documentOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setDocumentOpen(false);
+    }
+
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [documentOpen]);
 
   const dirty = draft !== savedValue;
 
@@ -60,6 +81,7 @@ export default function AccountMarketingConsent({
   }
 
   return (
+    <>
     <Card
       title="마케팅 수신 동의"
       description="이벤트·신규 기능·채용 관련 광고성 정보를 이메일로 받을지 정합니다. 동의하지 않아도 필수 서비스는 그대로 이용할 수 있습니다."
@@ -80,14 +102,13 @@ export default function AccountMarketingConsent({
             <label htmlFor="account-marketing-consent" className="cursor-pointer">
               마케팅 활용 및 광고성 정보 수신에 동의합니다.
             </label>{' '}
-            <Link
-              href="/marketing"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
               className="font-semibold text-primary underline underline-offset-2 hover:text-primary-hover"
+              onClick={() => setDocumentOpen(true)}
             >
               마케팅 수신 동의
-            </Link>
+            </button>
           </div>
         </div>
         {error ? (
@@ -110,5 +131,24 @@ export default function AccountMarketingConsent({
         </div>
       </form>
     </Card>
+      {documentOpen ? (
+        <div
+          className="fixed inset-x-0 bottom-0 top-14 z-40 overflow-y-auto bg-background px-4 pb-6 pt-5 sm:px-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label="마케팅 수신 동의"
+        >
+          <div className="mx-auto max-w-4xl">
+            <LegalPageShell
+              title="마케팅 수신 동의"
+              effectiveDate={MARKETING_CONSENT_EFFECTIVE_DATE}
+              onClose={() => setDocumentOpen(false)}
+            >
+              <MarketingConsentDocument />
+            </LegalPageShell>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

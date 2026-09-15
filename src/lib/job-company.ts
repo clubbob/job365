@@ -30,7 +30,6 @@ export function resolveJobCompany(job: JobPosting, ownerId?: string): JobCompany
     intro: pickText(snap?.intro, live?.intro),
     registrantName: pickText(snap?.registrantName, live?.registrantName),
     registrantEmail: pickText(snap?.registrantEmail, live?.registrantEmail),
-    registrantMobile: pickText(snap?.registrantMobile, live?.registrantMobile),
   };
 }
 
@@ -58,7 +57,6 @@ export function jobCompanyRegistrantItems(company: JobCompanyInfo): Array<{ labe
   return [
     { label: '등록자 이름', value: company.registrantName },
     { label: '이메일', value: company.registrantEmail },
-    { label: '핸드폰 번호', value: company.registrantMobile },
   ];
 }
 

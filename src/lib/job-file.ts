@@ -57,7 +57,7 @@ function rows(items: Array<[string, string | null | undefined]>): string {
 function buildJobFileHtml(
   job: JobPosting,
   company: JobCompanyInfo,
-  registrant?: { name?: string; email?: string; mobile?: string },
+  registrant?: { name?: string; email?: string },
 ): string {
   const title = job.title.trim() || '채용 정보';
   const companyName = (company.companyName || job.companyName).trim() || '회사명 없음';
@@ -120,7 +120,6 @@ function buildJobFileHtml(
       ${rows([
         ['등록자 이름', registrant?.name],
         ['이메일', registrant?.email],
-        ['핸드폰 번호', registrant?.mobile],
       ])}`,
     )}
     ${section(
@@ -232,7 +231,6 @@ export async function downloadJobFile(job: JobPosting, userId?: string): Promise
       buildJobFileHtml(job, company, {
         name: company.registrantName || account?.registrantName,
         email: company.registrantEmail || account?.registrantEmail,
-        mobile: company.registrantMobile || account?.registrantMobile,
       }),
       jobFileName(job.title),
     );

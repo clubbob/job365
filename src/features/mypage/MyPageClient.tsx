@@ -32,17 +32,30 @@ type TabId = 'account' | 'applications' | 'resume' | 'jobs';
 const TAB_CLASS =
   'shrink-0 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors';
 
+function defaultTabForMode(mode: UserMode): TabId {
+  return mode === 'jobseeker' ? 'resume' : 'jobs';
+}
+
 function tabsForMode(mode: UserMode): Array<{ id: TabId; label: string }> {
   if (mode === 'jobseeker') {
     return [
-      { id: 'account', label: '내 계정' },
       { id: 'resume', label: '취업 관리' },
+      { id: 'account', label: '내 계정' },
     ];
   }
   return [
-    { id: 'account', label: '내 계정' },
     { id: 'jobs', label: '채용 관리' },
+    { id: 'account', label: '내 계정' },
   ];
+}
+
+function resolveMyPageTab(mode: UserMode | null, requested: string | null): TabId {
+  if (!mode) return 'account';
+  if (requested === 'applications') return 'resume';
+  if (requested && tabsForMode(mode).some((item) => item.id === requested)) {
+    return requested as TabId;
+  }
+  return defaultTabForMode(mode);
 }
 
 export default function MyPageClient() {
@@ -51,7 +64,9 @@ export default function MyPageClient() {
   const { user, loading } = useAuth();
   const { mode, ready } = useUserMode();
   const [account, setAccount] = useState<UserAccountData | null>(null);
-  const [tab, setTab] = useState<TabId>('account');
+  const requestedTab = searchParams.get('tab');
+  const requestedSub = searchParams.get('sub');
+  const tab = resolveMyPageTab(mode, requestedTab);
   const [jobseekerSubTab, setJobseekerSubTab] = useState<JobseekerSubTab>('resume');
   const [recruiterSubTab, setRecruiterSubTab] = useState<RecruiterSubTab>('jobs');
   const [myJobs, setMyJobs] = useState<JobPosting[]>([]);
@@ -85,29 +100,17 @@ export default function MyPageClient() {
   }, [user]);
 
   useEffect(() => {
-    const requested = searchParams.get('tab');
-    const requestedSub = searchParams.get('sub');
-    if (requested === 'applications') {
-      setTab('resume');
+    if (requestedTab === 'applications') {
       setJobseekerSubTab('applications');
       return;
     }
-    if (mode && requested && tabsForMode(mode).some((item) => item.id === requested)) {
-      setTab(requested as TabId);
-      if (requested === 'resume') {
-        setJobseekerSubTab(isJobseekerSubTab(requestedSub) ? requestedSub : 'resume');
-      }
-      if (requested === 'jobs') {
-        setRecruiterSubTab(isRecruiterSubTab(requestedSub) ? requestedSub : 'jobs');
-      }
+    if (requestedTab === 'resume') {
+      setJobseekerSubTab(isJobseekerSubTab(requestedSub) ? requestedSub : 'resume');
     }
-  }, [mode, searchParams]);
-
-  useEffect(() => {
-    if (mode && !tabsForMode(mode).some((item) => item.id === tab)) {
-      setTab('account');
+    if (requestedTab === 'jobs') {
+      setRecruiterSubTab(isRecruiterSubTab(requestedSub) ? requestedSub : 'jobs');
     }
-  }, [mode, tab]);
+  }, [requestedTab, requestedSub]);
 
   useEffect(() => {
     if (loading || !ready) return;
@@ -117,7 +120,6 @@ export default function MyPageClient() {
   }, [loading, ready, user, mode, router]);
 
   function selectTab(id: TabId) {
-    setTab(id);
     if (id === 'resume') {
       setJobseekerSubTab('resume');
       router.replace('/mypage?tab=resume');
@@ -128,7 +130,7 @@ export default function MyPageClient() {
       router.replace('/mypage?tab=jobs');
       return;
     }
-    router.replace(id === 'account' ? '/mypage' : `/mypage?tab=${id}`);
+    router.replace(id === 'account' ? '/mypage?tab=account' : `/mypage?tab=${id}`);
   }
 
   function selectJobseekerSubTab(id: JobseekerSubTab) {

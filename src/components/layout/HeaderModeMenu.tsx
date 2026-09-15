@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
@@ -101,29 +100,17 @@ export default function HeaderModeMenu({
             </button>
           ) : null}
           {showLogout ? (
-            <>
-              {mode ? (
-                <Link
-                  href="/mypage"
-                  role="menuitem"
-                  className={cn(itemClassName, 'border-t border-border text-foreground')}
-                  onClick={() => setOpen(false)}
-                >
-                  마이페이지
-                </Link>
-              ) : null}
-              <button
-                type="button"
-                role="menuitem"
-                className={cn(itemClassName, mode ? 'text-muted' : 'border-t border-border text-muted')}
-                onClick={() => {
-                  setOpen(false);
-                  logout();
-                }}
-              >
-                로그아웃
-              </button>
-            </>
+            <button
+              type="button"
+              role="menuitem"
+              className={cn(itemClassName, 'border-t border-border text-muted')}
+              onClick={() => {
+                setOpen(false);
+                logout();
+              }}
+            >
+              로그아웃
+            </button>
           ) : null}
         </div>
       )}

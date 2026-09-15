@@ -2,10 +2,16 @@
 
 type LegalCloseButtonProps = {
   className?: string;
+  onClose?: () => void;
 };
 
-export default function LegalCloseButton({ className }: LegalCloseButtonProps) {
+export default function LegalCloseButton({ className, onClose }: LegalCloseButtonProps) {
   function handleClose() {
+    if (onClose) {
+      onClose();
+      return;
+    }
+
     window.close();
 
     window.setTimeout(() => {

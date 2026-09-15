@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { maskTalentName, talentCareerLabel, talentEducation, talentOccupationsLabel, talentWorkTypesLabel } from '@/lib/talent-display';
+import { maskTalentName, talentCareerLabel, talentEducation, talentOccupationsLabel, talentResumeTitle, talentWorkTypesLabel } from '@/lib/talent-display';
 import type { TalentProfile } from '@/types/talent';
 
 export default function TalentCard({
@@ -40,7 +40,7 @@ export default function TalentCard({
       {talent.location ? (
         <p className="mt-1 truncate text-sm font-medium text-muted">{talent.location}</p>
       ) : null}
-      <p className="mt-2 line-clamp-2 text-xs text-muted sm:text-sm">{talent.summary}</p>
+      <p className="mt-2 line-clamp-2 text-xs text-muted sm:text-sm">{talentResumeTitle(talent)}</p>
       <div className="mt-auto flex flex-col gap-2 pt-3">
         {talent.available ? (
           <p className="text-xs text-subtle">{talent.available}</p>

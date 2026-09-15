@@ -16,7 +16,6 @@ import {
 } from '@/lib/biz-verify-store';
 import { NTS_STATUS_SOURCE } from '@/lib/company';
 import { firstRequiredError } from '@/lib/form-required';
-import { formatPhoneInput } from '@/lib/talent-contact';
 import { fetchUserAccount, updateUserAccount } from '@/lib/users-api';
 import { getUserNicknameFallback } from '@/lib/user-display';
 import type { JobCompanyInfo } from '@/types/job';
@@ -50,7 +49,6 @@ type CompanyDraft = {
   intro: string;
   registrantName: string;
   registrantEmail: string;
-  registrantMobile: string;
 };
 
 function FieldAlert({ message }: { message: string | null | undefined }) {
@@ -83,7 +81,6 @@ function emptyDraft(): CompanyDraft {
     intro: '',
     registrantName: '',
     registrantEmail: '',
-    registrantMobile: '',
   };
 }
 
@@ -111,7 +108,6 @@ function draftFromRecord(record: BizVerifyRecord | null): CompanyDraft {
     intro: record.intro ?? '',
     registrantName: record.registrantName ?? '',
     registrantEmail: record.registrantEmail ?? '',
-    registrantMobile: record.registrantMobile ?? '',
   };
 }
 
@@ -131,7 +127,6 @@ function encodeDraft(draft: CompanyDraft, verifiedDigits: string): string {
     intro: draft.intro.trim(),
     registrantName: draft.registrantName.trim(),
     registrantEmail: draft.registrantEmail.trim(),
-    registrantMobile: draft.registrantMobile.trim(),
     verifiedDigits,
   });
 }
@@ -152,7 +147,6 @@ function draftFromCompany(company?: JobCompanyInfo | null, fallback?: BizVerifyR
     intro: company.intro ?? '',
     registrantName: company.registrantName ?? fallback?.registrantName ?? '',
     registrantEmail: company.registrantEmail ?? fallback?.registrantEmail ?? '',
-    registrantMobile: company.registrantMobile ?? fallback?.registrantMobile ?? '',
   };
 }
 
@@ -363,7 +357,6 @@ export default function CompanyInfoForm({
       intro: draft.intro.trim(),
       registrantName: draft.registrantName.trim(),
       registrantEmail: draft.registrantEmail.trim(),
-      registrantMobile: draft.registrantMobile.trim(),
     };
     const persisted = saveBizVerify(userId, record);
     const nextDraft = withAccountContact(draftFromRecord(persisted), accountRef.current.name, accountRef.current.email);
@@ -659,23 +652,6 @@ export default function CompanyInfoForm({
             </div>
           </div>
           <p className="text-xs text-subtle">로그인 계정의 이름과 이메일을 보여 줍니다.</p>
-          <div className="max-w-md">
-            <FieldLabel htmlFor="company-registrant-mobile" required>
-              핸드폰 번호
-            </FieldLabel>
-            <input
-              id="company-registrant-mobile"
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel"
-              value={draft.registrantMobile}
-              onChange={(event) => patchDraft({ registrantMobile: formatPhoneInput(event.target.value) })}
-              className={lockedInputClassName}
-              placeholder="010-0000-0000"
-              disabled={!canEditCompany}
-            />
-            {error === '핸드폰 번호를 입력해 주세요.' ? <FieldAlert message={error} /> : null}
-          </div>
         </div>
 
         {error ? (

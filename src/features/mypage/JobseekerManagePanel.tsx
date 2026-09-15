@@ -277,7 +277,7 @@ export default function JobseekerManagePanel({
           ) : (
             <div className="space-y-4">
               {resumes.length > 0 ? (
-            <ul className="grid grid-cols-2 gap-2 sm:gap-3">
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3">
               {resumes.map((resume) => {
                 const published = isPublishedTalent(resume);
                 const title = talentResumeTitle(resume);
@@ -335,7 +335,7 @@ export default function JobseekerManagePanel({
                         공개하려면 다음을 저장해 주세요. {missing.join(', ')}
                       </p>
                     ) : null}
-                    <div className="mt-auto flex flex-nowrap items-center gap-1 overflow-x-auto pt-3">
+                    <div className="mt-auto flex flex-wrap items-center gap-1 pt-3">
                       {published ? (
                         <button
                           type="button"
@@ -374,13 +374,19 @@ export default function JobseekerManagePanel({
                       >
                         복사
                       </button>
+                      <Link
+                        href={`/talents/${encodeURIComponent(resume.id)}?from=mypage`}
+                        className={compactActionClassName}
+                      >
+                        보기
+                      </Link>
                       <button
                         type="button"
                         className={compactActionClassName}
                         disabled={busy}
                         onClick={() => void handleSaveFile(resume)}
                       >
-                        이력서 출력
+                        출력
                       </button>
                       <button
                         type="button"

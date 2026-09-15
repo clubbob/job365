@@ -9,6 +9,7 @@ import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
 import TalentProposeButton from '@/features/talents/TalentProposeButton';
 import TalentResumeArticle from '@/features/talents/TalentResumeArticle';
+import { findMyTalentProfile } from '@/lib/my-talent-profile';
 import { isTalentHiddenFromViewer } from '@/lib/resume-view-blocks';
 import { getTalentById } from '@/lib/talent-catalog';
 import { talentResumeTitle } from '@/lib/talent-display';
@@ -29,19 +30,23 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
   useEffect(() => {
     if (loading || !modeReady) return;
     const found = getTalentById(talentId);
-    if (!found) {
-      setBlocked(false);
+    const mine = user ? findMyTalentProfile(talentId) : null;
+    const ownPreview = fromMypage && mine?.userId === user?.uid ? mine.profile : null;
+    const next = found ?? ownPreview;
+
+    if (!next) {
+      setBlocked(Boolean(mode === 'recruiter' && user && isTalentHiddenFromViewer(talentId, user.uid)));
       setTalent(null);
       return;
     }
-    if (mode === 'recruiter' && user && isTalentHiddenFromViewer(talentId, user.uid)) {
+    if (!ownPreview && mode === 'recruiter' && user && isTalentHiddenFromViewer(talentId, user.uid)) {
       setBlocked(true);
       setTalent(null);
       return;
     }
     setBlocked(false);
-    setTalent(found);
-  }, [loading, mode, modeReady, talentId, user]);
+    setTalent(next);
+  }, [fromMypage, loading, mode, modeReady, talentId, user]);
 
   if (talent === undefined || loading || !modeReady) {
     return <p className="py-8 text-center text-sm text-muted">불러오는 중…</p>;
@@ -63,7 +68,8 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
     );
   }
 
-  const revealName = proposalStatus === 'accepted';
+  const revealName = fromMypage ? false : proposalStatus === 'accepted';
+  const ownPreview = fromMypage;
 
   return (
     <div className="space-y-5">
@@ -77,9 +83,11 @@ export default function TalentDetailPageClient({ talentId }: { talentId: string 
 
       <article className="space-y-4">
         <TalentResumeArticle talent={talent} revealName={revealName} />
-        <div className="rounded-xl border border-border bg-surface px-4 py-4 shadow-sm sm:px-5">
-          <TalentProposeButton talentId={talent.id} onStatusChange={setProposalStatus} />
-        </div>
+        {ownPreview ? null : (
+          <div className="rounded-xl border border-border bg-surface px-4 py-4 shadow-sm sm:px-5">
+            <TalentProposeButton talentId={talent.id} onStatusChange={setProposalStatus} />
+          </div>
+        )}
       </article>
 
       <AdSlot placement="detail" />

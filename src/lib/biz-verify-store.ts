@@ -1,7 +1,6 @@
 import { digitsOnly, formatBusinessNumber } from '@/lib/business-number';
 import { firstRequiredError } from '@/lib/form-required';
 import type { BizVerifyStatus } from '@/lib/nts-business-status';
-import { isValidPhone } from '@/lib/talent-contact';
 import type { JobCompanyInfo } from '@/types/job';
 
 export type { BizVerifyStatus };
@@ -25,7 +24,6 @@ export type BizVerifyRecord = {
   intro?: string;
   registrantName?: string;
   registrantEmail?: string;
-  registrantMobile?: string;
 };
 
 const STORAGE_KEY = 'job365.bizVerify';
@@ -84,7 +82,6 @@ export function parseBizVerifyRecord(value: unknown): BizVerifyRecord | null {
     intro: optionalText(record.intro),
     registrantName: optionalText(record.registrantName),
     registrantEmail: optionalText(record.registrantEmail),
-    registrantMobile: optionalText(record.registrantMobile),
   };
 }
 
@@ -133,7 +130,6 @@ export function toJobCompanyInfo(record: BizVerifyRecord | null | undefined): Jo
     intro: record.intro,
     registrantName: record.registrantName,
     registrantEmail: record.registrantEmail,
-    registrantMobile: record.registrantMobile,
   };
 }
 
@@ -173,7 +169,6 @@ export function missingCompanyInfoMessage(input: {
   intro?: string;
   registrantName?: string;
   registrantEmail?: string;
-  registrantMobile?: string;
 }): string | null {
   return firstRequiredError([
     { ok: hasText(input.companyName), message: '회사명을 입력해 주세요.' },
@@ -186,7 +181,6 @@ export function missingCompanyInfoMessage(input: {
     { ok: hasText(input.intro), message: '회사 소개를 입력해 주세요.' },
     { ok: hasText(input.registrantName), message: '등록자 이름을 확인할 수 없습니다. 내 계정 이름을 확인해 주세요.' },
     { ok: hasText(input.registrantEmail), message: '로그인 이메일을 확인할 수 없습니다.' },
-    { ok: isValidPhone(input.registrantMobile ?? ''), message: '핸드폰 번호를 입력해 주세요.' },
   ]);
 }
 

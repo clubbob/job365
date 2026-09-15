@@ -5,6 +5,7 @@ type LegalPageShellProps = {
   title: string;
   effectiveDate: string;
   companySectionTitle?: string;
+  onClose?: () => void;
   children: React.ReactNode;
 };
 
@@ -12,6 +13,7 @@ export default function LegalPageShell({
   title,
   effectiveDate,
   companySectionTitle = '회사 정보',
+  onClose,
   children,
 }: LegalPageShellProps) {
   return (
@@ -22,7 +24,7 @@ export default function LegalPageShell({
             <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{title}</h1>
             <p className="text-sm text-muted">시행일: {effectiveDate}</p>
           </div>
-          <LegalCloseButton />
+          <LegalCloseButton onClose={onClose} />
         </div>
       </header>
 
@@ -34,7 +36,10 @@ export default function LegalPageShell({
       </article>
 
       <div className="flex justify-center pb-2">
-        <LegalCloseButton className="inline-flex w-full max-w-xs items-center justify-center rounded-lg border border-border-strong bg-surface px-6 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:border-primary hover:bg-neutral-50 hover:text-primary active:scale-[0.99] sm:w-auto" />
+        <LegalCloseButton
+          onClose={onClose}
+          className="inline-flex w-full max-w-xs items-center justify-center rounded-lg border border-border-strong bg-surface px-6 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:border-primary hover:bg-neutral-50 hover:text-primary active:scale-[0.99] sm:w-auto"
+        />
       </div>
     </div>
   );

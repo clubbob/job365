@@ -237,7 +237,7 @@ export default function RecruiterManagePanel({
           {!ready ? (
             <p className="text-sm text-muted">불러오는 중…</p>
           ) : jobs.length > 0 ? (
-            <ul className="grid grid-cols-2 gap-2 sm:gap-3">
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3">
               {jobs.map((job) => {
                 const workTypesLabel = jobWorkTypesLabel(job);
                 const career = jobCareerLabel(job);
@@ -289,7 +289,7 @@ export default function RecruiterManagePanel({
                         공개하려면 다음을 저장해 주세요. {missing.join(', ')}
                       </p>
                     ) : null}
-                    <div className="mt-auto flex flex-nowrap items-center gap-1 overflow-x-auto pt-3">
+                    <div className="mt-auto flex flex-wrap items-center gap-1 pt-3">
                       {published ? (
                         <button
                           type="button"
@@ -328,13 +328,19 @@ export default function RecruiterManagePanel({
                       >
                         복사
                       </button>
+                      <Link
+                        href={`/jobs/${encodeURIComponent(job.id)}?from=mypage`}
+                        className={compactActionClassName}
+                      >
+                        보기
+                      </Link>
                       <button
                         type="button"
                         className={compactActionClassName}
                         disabled={busy}
                         onClick={() => void handleSaveJobFile(job)}
                       >
-                        채용 정보 출력
+                        출력
                       </button>
                       <button
                         type="button"

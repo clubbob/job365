@@ -67,7 +67,6 @@ export type JobCompanyInfo = {
   intro?: string;
   registrantName?: string;
   registrantEmail?: string;
-  registrantMobile?: string;
 };
 
 export function isJobStatus(value: string): value is JobStatus {
