@@ -29,7 +29,10 @@ export async function GET(request: Request) {
       jobMatchesBoardFilters(job, {
         q,
         quickFilter:
-          quickFilter === '신입' || quickFilter === '경력' || quickFilter === '인턴'
+          quickFilter === '신입' ||
+          quickFilter === '경력' ||
+          quickFilter === '인턴' ||
+          quickFilter === '계약직'
             ? quickFilter
             : 'all',
         employmentTypes,

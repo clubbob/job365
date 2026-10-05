@@ -19,7 +19,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "crawl": "node scripts/crawl-direct.mjs",
+    "crawl": "tsx scripts/crawl-direct.ts",
     "crawl:api": "node scripts/run-crawl.mjs",
     "job-alerts": "node scripts/run-job-alerts.mjs",
     "job-alerts:direct": "node scripts/job-alerts-direct.mjs"
@@ -45,6 +45,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

@@ -1,11 +1,12 @@
 import { cn } from '@/lib/utils';
 
 type AdSlotProps = {
-  placement: 'header' | 'infeed' | 'detail' | 'footer';
+  placement: 'screen' | 'header' | 'infeed' | 'detail' | 'footer';
   className?: string;
 };
 
 const PLACEMENT_LABELS: Record<AdSlotProps['placement'], string> = {
+  screen: '스크린 배너',
   header: '상단 배너',
   infeed: '인피드 광고',
   detail: '상세 하단 광고',
@@ -17,6 +18,7 @@ export default function AdSlot({ placement, className }: AdSlotProps) {
     <aside
       className={cn(
         'flex items-center justify-center rounded-lg border border-dashed border-border bg-neutral-50 text-center text-xs text-subtle',
+        placement === 'screen' && 'min-h-28 sm:min-h-32',
         placement === 'header' && 'min-h-16',
         placement === 'infeed' && 'min-h-24',
         placement === 'detail' && 'min-h-20',

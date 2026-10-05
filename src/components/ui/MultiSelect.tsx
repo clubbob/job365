@@ -51,8 +51,16 @@ export default function MultiSelect<T extends string>({
     onChange(selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value]);
   }
 
+  function selectAll() {
+    onChange([]);
+    setOpen(false);
+  }
+
   return (
     <div ref={rootRef} className={cn('relative', className)}>
+      <label htmlFor={id} className="mb-1 block text-xs font-semibold text-foreground">
+        {label}
+      </label>
       <button
         id={id}
         type="button"
@@ -81,12 +89,23 @@ export default function MultiSelect<T extends string>({
             type="button"
             role="option"
             aria-selected={selected.length === 0}
-            onClick={() => onChange([])}
+            onClick={selectAll}
             className={cn(
               'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-sm hover:bg-neutral-50',
               selected.length === 0 ? 'font-semibold text-primary' : 'text-foreground',
             )}
           >
+            <span
+              aria-hidden
+              className={cn(
+                'flex size-3.5 shrink-0 items-center justify-center rounded border',
+                selected.length === 0
+                  ? 'border-primary bg-primary text-white'
+                  : 'border-border-strong bg-surface',
+              )}
+            >
+              {selected.length === 0 ? '✓' : null}
+            </span>
             {allLabel}
           </button>
           {options.map((item) => {

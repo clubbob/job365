@@ -35,7 +35,7 @@ function MenuIcon({ open }: { open: boolean }) {
 }
 
 const NAV_ITEMS: Array<{ href: string; label: string; exact: boolean; authOnly?: boolean }> = [
-  { href: '/', label: '채용 공고', exact: true },
+  { href: '/jobs', label: '채용 공고', exact: false },
   { href: '/my-jobs', label: '내 채용 공고', exact: false, authOnly: true },
 ];
 

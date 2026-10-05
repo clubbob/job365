@@ -49,7 +49,7 @@ export default function BookmarksPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((job) => (
           <CrawledJobCard key={job.id} job={job} />
         ))}

@@ -4,8 +4,14 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
-import { Card } from '@/components/ui/Card';
+import {
+  DetailBadge,
+  DetailHero,
+  DetailSection,
+  DetailStatGrid,
+} from '@/components/ui/PostingDetail';
 import { useAuth } from '@/features/auth/auth-context';
+import CrawledJobDescription from '@/features/job-board/CrawledJobDescription';
 import { isJobNewToday } from '@/lib/job-board/match';
 import type { CrawledJob } from '@/types/crawled-job';
 
@@ -137,10 +143,14 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title={job.title}
-        description={`${job.companyName} · ${job.sourceName}`}
+        title="채용 공고"
+        description={job.companyName}
+        homeHref="/jobs"
+        homeLabel="목록으로"
         showRefresh={false}
       />
+
+      <AdSlot placement="header" />
 
       {closed ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -148,87 +158,90 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
         </div>
       ) : null}
 
-      <Card>
-        <div className="flex flex-wrap items-center gap-2">
-          {job.employmentTypes.map((type) => (
-            <span key={type} className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-              {type}
-            </span>
-          ))}
-          {isNew ? (
-            <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">New</span>
-          ) : null}
-        </div>
+      <article className="space-y-4">
+        <DetailHero
+          eyebrow={job.companyName}
+          title={job.title}
+          subtitle={job.sourceName}
+          badges={
+            <>
+              {job.employmentTypes.map((type) => (
+                <DetailBadge key={type} tone="primary">{type}</DetailBadge>
+              ))}
+              {isNew ? (
+                <DetailBadge tone="primary">New</DetailBadge>
+              ) : null}
+            </>
+          }
+        />
 
-        <dl className="mt-4 grid gap-2 text-sm">
-          <div className="flex gap-2">
-            <dt className="w-20 shrink-0 text-muted">지역</dt>
-            <dd className="text-foreground">{job.regions.join(', ') || '—'}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="w-20 shrink-0 text-muted">직무</dt>
-            <dd className="text-foreground">{job.roles.join(', ') || '—'}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="w-20 shrink-0 text-muted">마감일</dt>
-            <dd className="text-foreground">{job.deadline ?? '채용 시까지'}</dd>
-          </div>
-        </dl>
-
-        {job.description ? (
-          <div
-            className="prose prose-sm mt-5 max-w-none text-foreground"
-            dangerouslySetInnerHTML={{ __html: job.description }}
+        <DetailSection title="모집 요강">
+          <DetailStatGrid
+            embedded
+            items={[
+              { label: '회사', value: job.companyName },
+              { label: '채용 형태', value: job.employmentTypes.join(', ') },
+              { label: '직무', value: job.roles.join(', ') },
+              { label: '지역', value: job.regions.join(', ') },
+              { label: '마감일', value: job.deadline ?? '채용 시까지' },
+              { label: '출처', value: job.sourceName },
+            ]}
           />
-        ) : (
-          <p className="mt-5 text-sm text-muted">상세 내용이 없습니다. 원문 사이트에서 확인해 주세요.</p>
+        </DetailSection>
+
+        {job.description ? <CrawledJobDescription html={job.description} /> : (
+          <DetailSection title="상세 내용">
+            <p className="text-subtle">상세 내용이 없습니다. 원문 사이트에서 확인해 주세요.</p>
+          </DetailSection>
         )}
 
-        <div className="mt-6 flex flex-col gap-2">
-          <div className="flex flex-wrap gap-2">
-            <a
-              href={job.applyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-hover"
-            >
-              지원하기
-            </a>
-            {user ? (
-              <button
-                type="button"
-                disabled={bookmarkPending}
-                onClick={() => void toggleBookmark()}
-                className="inline-flex rounded-lg border border-border-strong bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-neutral-50 disabled:opacity-60"
+        <DetailSection title="지원">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={job.applyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-hover"
               >
-                {bookmarkPending ? '처리 중…' : bookmarked ? '찜 해제' : '찜하기'}
-              </button>
-            ) : (
-              <Link
-                href={`/login?next=/jobs/${job.id}`}
-                className="inline-flex rounded-lg border border-border-strong bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-neutral-50"
+                지원하기
+              </a>
+              {user ? (
+                <button
+                  type="button"
+                  disabled={bookmarkPending}
+                  onClick={() => void toggleBookmark()}
+                  className="inline-flex rounded-lg border border-border-strong bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-neutral-50 disabled:opacity-60"
+                >
+                  {bookmarkPending ? '처리 중…' : bookmarked ? '찜 해제' : '찜하기'}
+                </button>
+              ) : (
+                <Link
+                  href={`/login?next=/jobs/${job.id}`}
+                  className="inline-flex rounded-lg border border-border-strong bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-neutral-50"
+                >
+                  로그인 후 찜하기
+                </Link>
+              )}
+            </div>
+            {bookmarkMessage ? (
+              <p
+                className={`text-sm font-medium ${bookmarkMessage.type === 'success' ? 'text-green-700' : 'text-red-700'}`}
               >
-                로그인 후 찜하기
-              </Link>
-            )}
+                {bookmarkMessage.text}
+                {bookmarkMessage.type === 'success' && bookmarked ? (
+                  <>
+                    {' '}
+                    <Link href="/mypage?tab=bookmarks" className="font-semibold text-primary hover:underline">
+                      찜한 공고 보기
+                    </Link>
+                  </>
+                ) : null}
+              </p>
+            ) : null}
           </div>
-          {bookmarkMessage ? (
-            <p
-              className={`text-sm font-medium ${bookmarkMessage.type === 'success' ? 'text-green-700' : 'text-red-700'}`}
-            >
-              {bookmarkMessage.text}
-              {bookmarkMessage.type === 'success' && bookmarked ? (
-                <>
-                  {' '}
-                  <Link href="/mypage?tab=bookmarks" className="font-semibold text-primary hover:underline">
-                    찜한 공고 보기
-                  </Link>
-                </>
-              ) : null}
-            </p>
-          ) : null}
-        </div>
-      </Card>
+        </DetailSection>
+      </article>
 
       <AdSlot placement="detail" />
 

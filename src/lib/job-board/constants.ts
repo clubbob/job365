@@ -7,8 +7,14 @@ export const QUICK_FILTER_OPTIONS = [
   { id: '신입', label: '신입' },
   { id: '경력', label: '경력' },
   { id: '인턴', label: '인턴' },
+  { id: '계약직', label: '계약직' },
 ] as const;
 export type QuickFilterId = (typeof QUICK_FILTER_OPTIONS)[number]['id'];
+
+/** 빠른 필터·수신 설정 채용 형태 (전체 제외) */
+export const QUICK_EMPLOYMENT_TYPES = QUICK_FILTER_OPTIONS.filter(
+  (item) => item.id !== 'all',
+).map((item) => item.id) as [EmploymentType, EmploymentType, EmploymentType, EmploymentType];
 
 /** 관심 직무 */
 export const JOB_ROLES = [
@@ -61,7 +67,11 @@ export const COMPANY_SIZES = [
 ] as const;
 export type CompanySize = (typeof COMPANY_SIZES)[number];
 
-export const JOB_LIST_PAGE_SIZE = 10;
+/** 3열 × 3행 */
+export const JOB_LIST_PAGE_SIZE = 9;
+
+/** 메인 페이지 초기 노출 (3열 × 1행) */
+export const JOB_HOME_PAGE_SIZE = 3;
 
 export function isEmploymentType(value: string): value is EmploymentType {
   return (EMPLOYMENT_TYPES as readonly string[]).includes(value);

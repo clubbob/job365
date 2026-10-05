@@ -200,7 +200,7 @@ export default function JobList({
           <MultiSelect
             id="job-work-type-filter"
             label="근무 형태"
-            allLabel="근무 형태 전체"
+            allLabel="전체"
             options={JOB_WORK_TYPES}
             selected={workTypes}
             labelOf={(value) => WORK_TYPE_LABELS[value]}
@@ -209,7 +209,7 @@ export default function JobList({
           <MultiSelect
             id="job-region-filter"
             label="근무 지역"
-            allLabel="근무 지역 전체"
+            allLabel="전체"
             options={REGION_OPTIONS}
             selected={regions}
             onChange={setRegions}
@@ -217,7 +217,7 @@ export default function JobList({
           <MultiSelect
             id="job-occupation-filter"
             label="직종"
-            allLabel="직종 전체"
+            allLabel="전체"
             options={OCCUPATION_OPTIONS}
             selected={occupations}
             onChange={setOccupations}

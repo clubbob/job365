@@ -1,9 +1,11 @@
 import type { CompanySize, EmploymentType, JobRegion, JobRole } from '@/lib/job-board/constants';
-import { EMPLOYMENT_TYPES, JOB_ROLES } from '@/lib/job-board/constants';
+import { EMPLOYMENT_TYPES } from '@/lib/job-board/constants';
 
 const LOCATION_MAP: Record<string, JobRegion> = {
   판교: '경기',
   분당: '경기',
+  경기도: '경기',
+  경기: '경기',
   성남: '경기',
   수원: '경기',
   서울: '서울',
@@ -42,28 +44,57 @@ const TITLE_ROLE_KEYWORDS: Array<{ pattern: RegExp; role: JobRole }> = [
 ];
 
 export function parseEmploymentTypesFromTitle(title: string): EmploymentType[] {
-  const found = new Set<EmploymentType>();
-  if (/신입/.test(title)) found.add('신입');
-  if (/경력/.test(title)) found.add('경력');
-  if (/인턴/.test(title)) found.add('인턴');
-  if (/계약/.test(title)) found.add('계약직');
-  if (found.size === 0) found.add('경력');
-  return EMPLOYMENT_TYPES.filter((type) => found.has(type));
+  return parseEmploymentTypesFromText(title);
 }
 
-export function inferJobRoles(title: string, part?: string): JobRole[] {
+const NAVER_CLASS_ROLE_MAP: Record<string, JobRole> = {
+  Tech: 'IT·개발',
+  Design: '디자인',
+  'Service & Business': '기획·PM',
+};
+
+const NAVER_COMPANY_NAMES: Record<string, string> = {
+  NAVER: '네이버',
+  'NAVER WEBTOON': '네이버웹툰',
+  'NAVER Cloud': '네이버클라우드',
+  'NAVER LABS': '네이버랩스',
+  SNOW: '스노우',
+};
+
+export function normalizeNaverCompanyName(name: string): string {
+  const trimmed = name.trim();
+  return NAVER_COMPANY_NAMES[trimmed] ?? trimmed;
+}
+
+export function inferJobRoles(title: string, part?: string, ...extraLabels: string[]): JobRole[] {
   const roles = new Set<JobRole>();
+  const haystack = [title, part, ...extraLabels].filter(Boolean).join(' ');
 
   if (part && PART_ROLE_MAP[part]) {
     roles.add(PART_ROLE_MAP[part]);
   }
 
+  for (const [label, role] of Object.entries(NAVER_CLASS_ROLE_MAP)) {
+    if (haystack.includes(label)) roles.add(role);
+  }
+
   for (const item of TITLE_ROLE_KEYWORDS) {
-    if (item.pattern.test(title)) roles.add(item.role);
+    if (item.pattern.test(haystack)) roles.add(item.role);
   }
 
   if (roles.size === 0) roles.add('기타');
   return [...roles];
+}
+
+export function parseEmploymentTypesFromText(title: string, ...extraLabels: string[]): EmploymentType[] {
+  const haystack = [title, ...extraLabels].join(' ');
+  const found = new Set<EmploymentType>();
+  if (/신입/.test(haystack)) found.add('신입');
+  if (/경력/.test(haystack) || /Experienced/i.test(haystack)) found.add('경력');
+  if (/인턴/.test(haystack)) found.add('인턴');
+  if (/계약/.test(haystack)) found.add('계약직');
+  if (found.size === 0) found.add('경력');
+  return EMPLOYMENT_TYPES.filter((type) => found.has(type));
 }
 
 export function mapLocationToRegions(locationName?: string | null): JobRegion[] {
@@ -80,11 +111,18 @@ export function mapLocationToRegions(locationName?: string | null): JobRegion[] 
 }
 
 export function defaultCompanySize(companyName: string): CompanySize {
-  const big = ['카카오', '삼성', 'LG', '현대', '네이버', 'SK', '쿠팡', '라인'];
+  const big = ['카카오', '삼성', 'LG', '현대', '네이버', 'SK', '쿠팡', '라인', '크래프톤', '당근'];
   if (big.some((name) => companyName.includes(name))) return '대기업';
   return '중견기업';
 }
 
 export function buildDescription(parts: Array<string | null | undefined>): string {
   return parts.filter(Boolean).join('');
+}
+
+export function textSection(title: string, body?: string | null): string {
+  const trimmed = body?.trim();
+  if (!trimmed) return '';
+  const html = trimmed.replace(/\n/g, '<br>');
+  return `<section><h3>${title}</h3><p>${html}</p></section>`;
 }

@@ -12,6 +12,7 @@ import {
   type JobRole,
   type QuickFilterId,
 } from '@/lib/job-board/constants';
+import { filterChipButtonClass } from '@/features/job-board/filter-chips';
 import { cn } from '@/lib/utils';
 
 export type JobBoardFilterState = {
@@ -31,9 +32,6 @@ type JobBoardFiltersProps = {
 
 const searchClassName =
   'h-10 w-full rounded-lg border border-border-strong bg-surface px-3 text-sm text-foreground outline-none transition placeholder:text-subtle focus:border-primary focus:ring-2 focus:ring-primary/25';
-
-const chipClassName =
-  'rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors';
 
 export default function JobBoardFilters({
   value,
@@ -59,67 +57,67 @@ export default function JobBoardFilters({
         className={searchClassName}
       />
 
-      {showQuickFilters ? (
-        <div className="flex flex-wrap gap-2" role="group" aria-label="빠른 필터">
-          {QUICK_FILTER_OPTIONS.map((item) => {
-            const active = value.quickFilter === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => patch({ quickFilter: item.id })}
-                className={cn(
-                  chipClassName,
-                  active
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'bg-neutral-100 text-muted hover:bg-neutral-200 hover:text-foreground',
-                )}
-              >
-                {item.label}
-              </button>
-            );
-          })}
+      {showQuickFilters || showDetailButton ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {showQuickFilters ? (
+            <div className="flex flex-wrap gap-2" role="group" aria-label="빠른 필터">
+              {QUICK_FILTER_OPTIONS.map((item) => {
+                const active = value.quickFilter === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => patch({ quickFilter: item.id })}
+                    className={filterChipButtonClass(active)}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+
+          {showDetailButton ? (
+            <button
+              type="button"
+              onClick={() => setDetailOpen((open) => !open)}
+              className={cn(
+                'shrink-0 rounded-lg border border-border-strong bg-surface px-3.5 py-2 text-sm font-semibold text-foreground transition hover:bg-neutral-50',
+                showQuickFilters && 'ml-auto',
+              )}
+            >
+              {detailOpen ? '상세 필터 닫기' : '상세 필터'}
+            </button>
+          ) : null}
         </div>
       ) : null}
 
-      {showDetailButton ? (
-        <div>
-          <button
-            type="button"
-            onClick={() => setDetailOpen((open) => !open)}
-            className="rounded-lg border border-border-strong bg-surface px-3.5 py-2 text-sm font-semibold text-foreground transition hover:bg-neutral-50"
-          >
-            {detailOpen ? '상세 필터 닫기' : '상세 필터'}
-          </button>
-
-          {detailOpen ? (
-            <div className="mt-3 grid gap-3 rounded-xl border border-border bg-neutral-50/80 p-3 sm:grid-cols-2">
-              <MultiSelect
-                id="job-board-region-filter"
-                label="지역"
-                allLabel="지역 전체"
-                options={JOB_REGIONS}
-                selected={value.regions}
-                onChange={(regions) => patch({ regions })}
-              />
-              <MultiSelect
-                id="job-board-role-filter"
-                label="직무"
-                allLabel="직무 전체"
-                options={JOB_ROLES}
-                selected={value.roles}
-                onChange={(roles) => patch({ roles })}
-              />
-              <MultiSelect
-                id="job-board-employment-type-filter"
-                label="고용 형태"
-                allLabel="고용 형태 전체"
-                options={EMPLOYMENT_TYPES}
-                selected={value.employmentTypes}
-                onChange={(employmentTypes) => patch({ employmentTypes })}
-              />
-            </div>
-          ) : null}
+      {showDetailButton && detailOpen ? (
+        <div className="grid gap-3 rounded-xl border border-border bg-neutral-50/80 p-3 sm:grid-cols-3">
+          <MultiSelect
+            id="job-board-region-filter"
+            label="지역"
+            allLabel="전체"
+            options={JOB_REGIONS}
+            selected={value.regions}
+            onChange={(regions) => patch({ regions })}
+          />
+          <MultiSelect
+            id="job-board-role-filter"
+            label="직무"
+            allLabel="전체"
+            options={JOB_ROLES}
+            selected={value.roles}
+            onChange={(roles) => patch({ roles })}
+          />
+          <MultiSelect
+            id="job-board-employment-type-filter"
+            label="고용 형태"
+            allLabel="전체"
+            options={EMPLOYMENT_TYPES}
+            selected={value.employmentTypes}
+            onChange={(employmentTypes) => patch({ employmentTypes })}
+          />
         </div>
       ) : null}
     </div>

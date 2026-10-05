@@ -2,58 +2,26 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { User } from 'firebase/auth';
+import MultiSelect from '@/components/ui/MultiSelect';
 import { Button, Card } from '@/components/ui/Card';
+import { filterChipButtonClass } from '@/features/job-board/filter-chips';
 import {
   EMPLOYMENT_TYPES,
   JOB_REGIONS,
   JOB_ROLES,
-  type EmploymentType,
+  QUICK_EMPLOYMENT_TYPES,
   type JobRegion,
   type JobRole,
 } from '@/lib/job-board/constants';
 import type { JobAlertPrefs } from '@/types/job-alert-prefs';
-import { cn } from '@/lib/utils';
+
+const ALERT_EMPLOYMENT_TYPES = [
+  ...QUICK_EMPLOYMENT_TYPES,
+  ...EMPLOYMENT_TYPES.filter((type) => !QUICK_EMPLOYMENT_TYPES.includes(type)),
+] as const;
 
 function toggleItem<T extends string>(list: T[], item: T): T[] {
   return list.includes(item) ? list.filter((v) => v !== item) : [...list, item];
-}
-
-function CheckboxGroup<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  options: readonly T[];
-  value: T[];
-  onChange: (next: T[]) => void;
-}) {
-  return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="text-sm font-semibold text-foreground">{label}</legend>
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => {
-          const checked = value.includes(option);
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onChange(toggleItem(value, option))}
-              className={cn(
-                'rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors',
-                checked
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-neutral-100 text-muted hover:bg-neutral-200 hover:text-foreground',
-              )}
-            >
-              {option}
-            </button>
-          );
-        })}
-      </div>
-    </fieldset>
-  );
 }
 
 export default function JobAlertPrefsForm({ user }: { user: User }) {
@@ -166,12 +134,7 @@ export default function JobAlertPrefsForm({ user }: { user: User }) {
                 key={String(item.value)}
                 type="button"
                 onClick={() => setDraft({ ...draft, emailEnabled: item.value })}
-                className={cn(
-                  'rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors',
-                  draft.emailEnabled === item.value
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'bg-neutral-100 text-muted hover:bg-neutral-200 hover:text-foreground',
-                )}
+                className={filterChipButtonClass(draft.emailEnabled === item.value)}
               >
                 {item.label}
               </button>
@@ -179,24 +142,56 @@ export default function JobAlertPrefsForm({ user }: { user: User }) {
           </div>
         </fieldset>
 
-        <CheckboxGroup
-          label="채용 형태"
-          options={EMPLOYMENT_TYPES}
-          value={draft.employmentTypes}
-          onChange={(employmentTypes: EmploymentType[]) => setDraft({ ...draft, employmentTypes })}
-        />
-        <CheckboxGroup
-          label="관심 직무"
-          options={JOB_ROLES}
-          value={draft.roles}
-          onChange={(roles: JobRole[]) => setDraft({ ...draft, roles })}
-        />
-        <CheckboxGroup
-          label="희망 지역"
-          options={JOB_REGIONS}
-          value={draft.regions}
-          onChange={(regions: JobRegion[]) => setDraft({ ...draft, regions })}
-        />
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-sm font-semibold text-foreground">채용 형태</legend>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="채용 형태">
+            <button
+              type="button"
+              onClick={() => setDraft({ ...draft, employmentTypes: [] })}
+              className={filterChipButtonClass(draft.employmentTypes.length === 0)}
+            >
+              전체
+            </button>
+            {ALERT_EMPLOYMENT_TYPES.map((option) => {
+              const checked = draft.employmentTypes.includes(option);
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() =>
+                    setDraft({
+                      ...draft,
+                      employmentTypes: toggleItem(draft.employmentTypes, option),
+                    })
+                  }
+                  className={filterChipButtonClass(checked)}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted">선택하지 않으면 모든 채용 형태를 받습니다.</p>
+        </fieldset>
+
+        <div className="grid gap-3 rounded-xl border border-border bg-neutral-50/80 p-3 sm:grid-cols-2">
+          <MultiSelect
+            id="alert-role-filter"
+            label="관심 직무"
+            allLabel="전체"
+            options={JOB_ROLES}
+            selected={draft.roles}
+            onChange={(roles: JobRole[]) => setDraft({ ...draft, roles })}
+          />
+          <MultiSelect
+            id="alert-region-filter"
+            label="희망 지역"
+            allLabel="전체"
+            options={JOB_REGIONS}
+            selected={draft.regions}
+            onChange={(regions: JobRegion[]) => setDraft({ ...draft, regions })}
+          />
+        </div>
 
         {error ? (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
