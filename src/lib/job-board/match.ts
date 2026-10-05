@@ -57,14 +57,20 @@ export function jobMatchesBoardFilters(job: CrawledJobListItem, filters: JobBoar
   return true;
 }
 
-export function jobMatchesSavedPrefs(job: CrawledJobListItem, prefs: JobAlertPrefs): boolean {
-  const hasAnyPref =
+export function hasJobAlertFilterPrefs(
+  prefs: Pick<JobAlertPrefs, 'employmentTypes' | 'roles' | 'regions' | 'companySizes'>,
+): boolean {
+  return (
     prefs.employmentTypes.length > 0 ||
     prefs.roles.length > 0 ||
     prefs.regions.length > 0 ||
-    prefs.companySizes.length > 0;
+    prefs.companySizes.length > 0
+  );
+}
 
-  if (!hasAnyPref) return false;
+export function jobMatchesSavedPrefs(job: CrawledJobListItem, prefs: JobAlertPrefs): boolean {
+  if (job.status !== 'active') return false;
+  if (!hasJobAlertFilterPrefs(prefs)) return true;
 
   return jobMatchesBoardFilters(job, {
     employmentTypes: prefs.employmentTypes,

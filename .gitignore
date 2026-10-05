@@ -38,3 +38,6 @@ JSON.txt
 Firebase SDK.txt
 *serviceAccount*.json
 *-firebase-adminsdk*.json
+
+.vercel
+.env*

@@ -1,9 +1,9 @@
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 import { listCrawledJobs } from '@/lib/crawled-jobs-server';
-import { jobMatchesAlertPrefs } from '@/lib/job-board/match';
+import { hasJobAlertFilterPrefs, jobMatchesAlertPrefs } from '@/lib/job-board/match';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
-import { sendNaverEmail, isEmailServiceConfigured } from '@/lib/naver-smtp';
+import { sendEmail, isEmailServiceConfigured } from '@/lib/smtp';
 import { getPublicSiteUrl } from '@/lib/site';
 import { COMPANY } from '@/lib/company';
 import type { JobAlertPrefs } from '@/types/job-alert-prefs';
@@ -28,6 +28,7 @@ function buildDigestHtml(params: {
   nickname: string;
   jobs: Array<{ title: string; companyName: string; applyUrl: string; sourceName: string }>;
   myJobsUrl: string;
+  hasFilterPrefs: boolean;
 }): string {
   const rows = params.jobs.length
     ? params.jobs
@@ -49,7 +50,7 @@ function buildDigestHtml(params: {
   <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px;">
       <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#111;">오늘의 채용 공고</p>
-      <p style="margin:0 0 20px;font-size:14px;color:#555;">${escapeHtml(params.nickname)}님, ${COMPANY.serviceName}에서 조건에 맞는 공고를 보내 드립니다.</p>
+      <p style="margin:0 0 20px;font-size:14px;color:#555;">${escapeHtml(params.nickname)}님, ${COMPANY.serviceName}에서 ${params.hasFilterPrefs ? '조건에 맞는 공고를' : '최근 채용 공고를'} 보내 드립니다.</p>
       <table style="width:100%;border-collapse:collapse;">${rows}</table>
       <div style="margin-top:24px;text-align:center;">
         <a href="${escapeHtml(params.myJobsUrl)}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 18px;border-radius:10px;">내 채용 공고 더보기</a>
@@ -123,17 +124,6 @@ export async function sendDailyJobAlertEmails(): Promise<JobAlertEmailRunSummary
   let failed = 0;
 
   for (const recipient of recipients) {
-    const hasPrefs =
-      recipient.prefs.employmentTypes.length > 0 ||
-      recipient.prefs.roles.length > 0 ||
-      recipient.prefs.regions.length > 0 ||
-      recipient.prefs.companySizes.length > 0;
-
-    if (!hasPrefs) {
-      skipped += 1;
-      continue;
-    }
-
     const matched = allJobs
       .filter((job) => jobMatchesAlertPrefs(job, recipient.prefs))
       .slice(0, JOB_LIST_PAGE_SIZE);
@@ -155,9 +145,10 @@ export async function sendDailyJobAlertEmails(): Promise<JobAlertEmailRunSummary
         sourceName: job.sourceName,
       })),
       myJobsUrl,
+      hasFilterPrefs: hasJobAlertFilterPrefs(recipient.prefs),
     });
 
-    const result = await sendNaverEmail({
+    const result = await sendEmail({
       to: recipient.email,
       subject,
       text: `${text}\n\n내 채용 공고 더보기: ${myJobsUrl}`,

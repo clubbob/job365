@@ -21,7 +21,8 @@
     "lint": "next lint",
     "crawl": "node scripts/crawl-direct.mjs",
     "crawl:api": "node scripts/run-crawl.mjs",
-    "job-alerts": "node scripts/run-job-alerts.mjs"
+    "job-alerts": "node scripts/run-job-alerts.mjs",
+    "job-alerts:direct": "node scripts/job-alerts-direct.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

@@ -1,7 +1,7 @@
 /**
  * 채용 공고 이메일 발송 cron을 수동 실행합니다.
  * 사용: pnpm job-alerts
- * .env.local의 CRON_SECRET, NEXT_PUBLIC_APP_URL, NAVER_SMTP_*를 읽습니다.
+ * .env.local의 CRON_SECRET, NEXT_PUBLIC_APP_URL, SMTP_*를 읽습니다.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';

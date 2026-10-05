@@ -1,7 +1,7 @@
 import { getAuth } from 'firebase-admin/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminApp } from '@/lib/firebaseAdmin';
-import { isEmailServiceConfigured, sendNaverEmail } from '@/lib/naver-smtp';
+import { isEmailServiceConfigured, sendEmail } from '@/lib/smtp';
 import {
   buildPasswordResetEmailHtml,
   resolvePublicBaseUrl,
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     const text = `안녕하세요.\n\n요청하신 비밀번호 재설정 링크입니다.\n아래 링크에서 새 비밀번호를 설정해 주세요.\n\n${resetLink}\n\n본인이 요청하지 않았다면 이 메일을 무시해 주세요.\n`;
     const html = buildPasswordResetEmailHtml(resetLink);
 
-    const result = await sendNaverEmail({ to: email, subject, text, html });
+    const result = await sendEmail({ to: email, subject, text, html });
     if (!result.success) {
       return NextResponse.json(
         { error: `이메일 발송에 실패했습니다. (${result.message})` },

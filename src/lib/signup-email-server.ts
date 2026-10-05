@@ -1,5 +1,5 @@
 import { getAdminNotifyEmail } from '@/lib/admin-notify-email';
-import { isEmailServiceConfigured, sendNaverEmail } from '@/lib/naver-smtp';
+import { isEmailServiceConfigured, sendEmail } from '@/lib/smtp';
 import { getPublicSiteUrl } from '@/lib/site';
 import { getProviderLabel } from '@/lib/user-display';
 import type { UserProvider } from '@/types/user';
@@ -68,7 +68,7 @@ export async function sendSignupCreatedEmail(input: SignupCreatedEmailInput): Pr
     </div>
   `;
 
-  await sendNaverEmail({ to, subject, text, html });
+  await sendEmail({ to, subject, text, html });
 }
 
 export async function notifyAdminNewSignup(input: SignupCreatedEmailInput): Promise<void> {

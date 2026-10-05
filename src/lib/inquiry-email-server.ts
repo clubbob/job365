@@ -1,7 +1,7 @@
 import { getAdminNotifyEmail } from '@/lib/admin-notify-email';
 import { COMPANY } from '@/lib/company';
 import type { Inquiry } from '@/lib/inquiry';
-import { isEmailServiceConfigured, sendNaverEmail } from '@/lib/naver-smtp';
+import { isEmailServiceConfigured, sendEmail } from '@/lib/smtp';
 import { getPublicSiteUrl } from '@/lib/site';
 
 function escapeHtml(value: string): string {
@@ -62,7 +62,7 @@ export async function sendInquiryReceivedEmail(inquiry: Inquiry): Promise<void> 
     </div>
   `;
 
-  await sendNaverEmail({ to, subject, text, html });
+  await sendEmail({ to, subject, text, html });
 }
 
 export async function notifyAdminNewInquiry(inquiry: Inquiry): Promise<void> {
