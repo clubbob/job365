@@ -1,6 +1,5 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import {
-  isCompanySize,
   isEmploymentType,
   isJobRegion,
   isJobRole,
@@ -29,12 +28,6 @@ function parsePrefs(uid: string, data: Record<string, unknown> | undefined): Job
       )
     : DEFAULT_JOB_ALERT_PREFS.regions;
 
-  const companySizes = Array.isArray(data?.companySizes)
-    ? data.companySizes.filter((v): v is JobAlertPrefs['companySizes'][number] =>
-        typeof v === 'string' && isCompanySize(v),
-      )
-    : DEFAULT_JOB_ALERT_PREFS.companySizes;
-
   const updatedAt =
     typeof data?.updatedAt === 'string'
       ? data.updatedAt
@@ -49,7 +42,6 @@ function parsePrefs(uid: string, data: Record<string, unknown> | undefined): Job
     employmentTypes,
     roles,
     regions,
-    companySizes,
     updatedAt,
   };
 }
@@ -71,7 +63,6 @@ export type UpdateJobAlertPrefsInput = {
   employmentTypes?: JobAlertPrefs['employmentTypes'];
   roles?: JobAlertPrefs['roles'];
   regions?: JobAlertPrefs['regions'];
-  companySizes?: JobAlertPrefs['companySizes'];
 };
 
 export async function updateJobAlertPrefs(
@@ -91,7 +82,6 @@ export async function updateJobAlertPrefs(
   if (input.employmentTypes !== undefined) updates.employmentTypes = input.employmentTypes;
   if (input.roles !== undefined) updates.roles = input.roles;
   if (input.regions !== undefined) updates.regions = input.regions;
-  if (input.companySizes !== undefined) updates.companySizes = input.companySizes;
 
   await ref.set(updates, { merge: true });
   return getJobAlertPrefs(uid);

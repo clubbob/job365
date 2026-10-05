@@ -44,8 +44,7 @@ function hasFilterPrefs(prefs) {
   return (
     prefs.employmentTypes.length > 0 ||
     prefs.roles.length > 0 ||
-    prefs.regions.length > 0 ||
-    prefs.companySizes.length > 0
+    prefs.regions.length > 0
   );
 }
 
@@ -60,8 +59,7 @@ function jobMatchesPrefs(job, prefs) {
   return (
     overlaps(prefs.employmentTypes, job.employmentTypes) &&
     overlaps(prefs.roles, job.roles) &&
-    overlaps(prefs.regions, job.regions) &&
-    overlaps(prefs.companySizes, [job.companySize])
+    overlaps(prefs.regions, job.regions)
   );
 }
 
@@ -204,7 +202,6 @@ async function main() {
       employmentTypes: Array.isArray(prefsData.employmentTypes) ? prefsData.employmentTypes : [],
       roles: Array.isArray(prefsData.roles) ? prefsData.roles : [],
       regions: Array.isArray(prefsData.regions) ? prefsData.regions : [],
-      companySizes: Array.isArray(prefsData.companySizes) ? prefsData.companySizes : [],
     };
 
     recipients.push({

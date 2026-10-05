@@ -1,4 +1,4 @@
-import type { CompanySize, EmploymentType, JobRegion, JobRole } from '@/lib/job-board/constants';
+import type { EmploymentType, JobRegion, JobRole } from '@/lib/job-board/constants';
 
 export type JobAlertPrefs = {
   userId: string;
@@ -6,7 +6,6 @@ export type JobAlertPrefs = {
   employmentTypes: EmploymentType[];
   roles: JobRole[];
   regions: JobRegion[];
-  companySizes: CompanySize[];
   updatedAt: string | null;
 };
 
@@ -15,5 +14,4 @@ export const DEFAULT_JOB_ALERT_PREFS: Omit<JobAlertPrefs, 'userId' | 'updatedAt'
   employmentTypes: [],
   roles: [],
   regions: [],
-  companySizes: [],
 };

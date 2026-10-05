@@ -223,5 +223,4 @@ export const CRAWLED_JOB_FIELD_OPTIONS = {
   employmentTypes: EMPLOYMENT_TYPES,
   roles: JOB_ROLES,
   regions: JOB_REGIONS,
-  companySizes: COMPANY_SIZES,
 };

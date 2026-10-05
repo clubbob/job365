@@ -29,7 +29,6 @@ function buildQuery(state: JobBoardFilterState, page: number, todayOnly: boolean
   for (const item of state.employmentTypes) params.append('employmentType', item);
   for (const item of state.roles) params.append('role', item);
   for (const item of state.regions) params.append('region', item);
-  for (const item of state.companySizes) params.append('companySize', item);
   return params.toString();
 }
 
@@ -47,7 +46,6 @@ export default function JobBoardList({
     employmentTypes: [],
     roles: [],
     regions: [],
-    companySizes: [],
   });
   const [items, setItems] = useState<CrawledJobListItem[]>(EMPTY);
   const [todayItems, setTodayItems] = useState<CrawledJobListItem[]>(EMPTY);
@@ -58,6 +56,7 @@ export default function JobBoardList({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllToday, setShowAllToday] = useState(false);
+  const [usedFallback, setUsedFallback] = useState(false);
 
   const todayOnly = mode === 'today' || (showNewSection && showAllToday);
 
@@ -86,6 +85,7 @@ export default function JobBoardList({
             items: CrawledJobListItem[];
             total: number;
             hasMore: boolean;
+            usedFallback?: boolean;
           };
           error?: { message?: string };
         };
@@ -97,6 +97,7 @@ export default function JobBoardList({
         setItems(json.data.items);
         setTotal(json.data.total);
         setHasMore(json.data.hasMore);
+        setUsedFallback(Boolean(json.data.usedFallback));
         setLoading(false);
         return;
       }
@@ -167,6 +168,16 @@ export default function JobBoardList({
 
       <AdSlot placement="header" />
 
+      {mode === 'matched' && usedFallback && !loading ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          수신 설정에 맞는 공고가 없어 전체 채용 공고를 보여 드립니다. 조건을 바꾸려면{' '}
+          <a href="/mypage?tab=alerts" className="font-semibold text-primary hover:underline">
+            마이페이지 수신 설정
+          </a>
+          을 확인해 주세요.
+        </p>
+      ) : null}
+
       {showFilters ? (
         <JobBoardFilters value={filters} onChange={setFilters} showDetailButton={mode !== 'matched'} />
       ) : null}
@@ -219,7 +230,7 @@ export default function JobBoardList({
         ))}
       </div>
 
-      {!loading && items.length === 0 && !error ? (
+      {!loading && items.length === 0 && !error && mode !== 'matched' ? (
         <p className="rounded-xl border border-border bg-surface px-4 py-8 text-center text-sm text-muted">
           조건에 맞는 채용 공고가 없습니다.
         </p>

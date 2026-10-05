@@ -170,10 +170,6 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
             <dd className="text-foreground">{job.roles.join(', ') || '—'}</dd>
           </div>
           <div className="flex gap-2">
-            <dt className="w-20 shrink-0 text-muted">기업 규모</dt>
-            <dd className="text-foreground">{job.companySize}</dd>
-          </div>
-          <div className="flex gap-2">
             <dt className="w-20 shrink-0 text-muted">마감일</dt>
             <dd className="text-foreground">{job.deadline ?? '채용 시까지'}</dd>
           </div>

@@ -3,12 +3,10 @@
 import { useState } from 'react';
 import MultiSelect from '@/components/ui/MultiSelect';
 import {
-  COMPANY_SIZES,
   EMPLOYMENT_TYPES,
   JOB_REGIONS,
   JOB_ROLES,
   QUICK_FILTER_OPTIONS,
-  type CompanySize,
   type EmploymentType,
   type JobRegion,
   type JobRole,
@@ -22,7 +20,6 @@ export type JobBoardFilterState = {
   employmentTypes: EmploymentType[];
   roles: JobRole[];
   regions: JobRegion[];
-  companySizes: CompanySize[];
 };
 
 type JobBoardFiltersProps = {
@@ -112,14 +109,6 @@ export default function JobBoardFilters({
                 options={JOB_ROLES}
                 selected={value.roles}
                 onChange={(roles) => patch({ roles })}
-              />
-              <MultiSelect
-                id="job-board-company-size-filter"
-                label="기업 규모"
-                allLabel="기업 규모 전체"
-                options={COMPANY_SIZES}
-                selected={value.companySizes}
-                onChange={(companySizes) => patch({ companySizes })}
               />
               <MultiSelect
                 id="job-board-employment-type-filter"

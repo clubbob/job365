@@ -4,11 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import type { User } from 'firebase/auth';
 import { Button, Card } from '@/components/ui/Card';
 import {
-  COMPANY_SIZES,
   EMPLOYMENT_TYPES,
   JOB_REGIONS,
   JOB_ROLES,
-  type CompanySize,
   type EmploymentType,
   type JobRegion,
   type JobRole,
@@ -123,7 +121,6 @@ export default function JobAlertPrefsForm({ user }: { user: User }) {
           employmentTypes: draft.employmentTypes,
           roles: draft.roles,
           regions: draft.regions,
-          companySizes: draft.companySizes,
         }),
       });
       const json = (await res.json()) as { ok?: boolean; data?: { prefs: JobAlertPrefs }; error?: { message?: string } };
@@ -199,12 +196,6 @@ export default function JobAlertPrefsForm({ user }: { user: User }) {
           options={JOB_REGIONS}
           value={draft.regions}
           onChange={(regions: JobRegion[]) => setDraft({ ...draft, regions })}
-        />
-        <CheckboxGroup
-          label="기업 규모"
-          options={COMPANY_SIZES}
-          value={draft.companySizes}
-          onChange={(companySizes: CompanySize[]) => setDraft({ ...draft, companySizes })}
         />
 
         {error ? (

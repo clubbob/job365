@@ -6,7 +6,6 @@ import {
   type UpdateJobAlertPrefsInput,
 } from '@/lib/job-alert-prefs-server';
 import {
-  isCompanySize,
   isEmploymentType,
   isJobRegion,
   isJobRole,
@@ -47,11 +46,6 @@ function parsePatch(body: Record<string, unknown>): UpdateJobAlertPrefsInput | n
   if (body.regions !== undefined) {
     if (!Array.isArray(body.regions)) return null;
     patch.regions = body.regions.filter(isJobRegion);
-  }
-
-  if (body.companySizes !== undefined) {
-    if (!Array.isArray(body.companySizes)) return null;
-    patch.companySizes = body.companySizes.filter(isCompanySize);
   }
 
   return patch;

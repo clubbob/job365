@@ -4,7 +4,7 @@ import { hasJobAlertFilterPrefs, jobMatchesAlertPrefs } from '@/lib/job-board/ma
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { sendEmail, isEmailServiceConfigured } from '@/lib/smtp';
-import { getPublicSiteUrl } from '@/lib/site';
+import { SITE_URL } from '@/lib/site';
 import { COMPANY } from '@/lib/company';
 import type { JobAlertPrefs } from '@/types/job-alert-prefs';
 import { saveEmailDigestLog } from '@/lib/email-digests-server';
@@ -93,7 +93,6 @@ async function listDigestRecipients(): Promise<DigestRecipient[]> {
         employmentTypes: Array.isArray(prefsData.employmentTypes) ? prefsData.employmentTypes : [],
         roles: Array.isArray(prefsData.roles) ? prefsData.roles : [],
         regions: Array.isArray(prefsData.regions) ? prefsData.regions : [],
-        companySizes: Array.isArray(prefsData.companySizes) ? prefsData.companySizes : [],
         updatedAt: null,
       },
     });
@@ -111,8 +110,7 @@ export type JobAlertEmailRunSummary = {
 
 export async function sendDailyJobAlertEmails(): Promise<JobAlertEmailRunSummary> {
   const todayDate = getKoreaDateLocalToday();
-  const siteUrl = getPublicSiteUrl();
-  const myJobsUrl = `${siteUrl}/my-jobs`;
+  const myJobsUrl = `${SITE_URL}/my-jobs`;
 
   if (!isEmailServiceConfigured()) {
     throw new Error('EMAIL_NOT_CONFIGURED');

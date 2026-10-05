@@ -4,7 +4,6 @@ import { jobMatchesBoardFilters } from '@/lib/job-board/match';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import { listCrawledJobs } from '@/lib/crawled-jobs-server';
 import {
-  isCompanySize,
   isEmploymentType,
   isJobRegion,
   isJobRole,
@@ -21,7 +20,6 @@ export async function GET(request: Request) {
   const employmentTypes = searchParams.getAll('employmentType').filter(isEmploymentType);
   const roles = searchParams.getAll('role').filter(isJobRole);
   const regions = searchParams.getAll('region').filter(isJobRegion);
-  const companySizes = searchParams.getAll('companySize').filter(isCompanySize);
 
   const todayDate = getKoreaDateLocalToday();
 
@@ -37,7 +35,6 @@ export async function GET(request: Request) {
         employmentTypes,
         roles,
         regions,
-        companySizes,
         todayOnly,
         todayDate,
       }),

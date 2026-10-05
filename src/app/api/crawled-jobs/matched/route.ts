@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyIdToken } from '@/lib/auth-server';
 import { listCrawledJobs } from '@/lib/crawled-jobs-server';
 import { getJobAlertPrefs } from '@/lib/job-alert-prefs-server';
-import { jobMatchesSavedPrefs } from '@/lib/job-board/match';
+import { hasJobAlertFilterPrefs, jobMatchesSavedPrefs } from '@/lib/job-board/match';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 
 export async function GET(request: Request) {
@@ -23,13 +23,15 @@ export async function GET(request: Request) {
   try {
     const [prefs, all] = await Promise.all([getJobAlertPrefs(decoded.uid), listCrawledJobs()]);
     const matched = all.filter((job) => jobMatchesSavedPrefs(job, prefs));
-    const total = matched.length;
-    const items = matched.slice(0, page * pageSize);
+    const usedFallback = matched.length === 0 && hasJobAlertFilterPrefs(prefs);
+    const list = usedFallback ? all.filter((job) => job.status === 'active') : matched;
+    const total = list.length;
+    const items = list.slice(0, page * pageSize);
     const hasMore = items.length < total;
 
     return NextResponse.json({
       ok: true,
-      data: { items, total, page, pageSize, hasMore, prefs },
+      data: { items, total, page, pageSize, hasMore, prefs, usedFallback },
     });
   } catch (error) {
     console.error('[crawled-jobs/matched] failed', error);

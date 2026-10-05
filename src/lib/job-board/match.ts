@@ -1,4 +1,4 @@
-import type { CompanySize, EmploymentType, JobRegion, JobRole } from '@/lib/job-board/constants';
+import type { EmploymentType, JobRegion, JobRole } from '@/lib/job-board/constants';
 import type { CrawledJobListItem } from '@/types/crawled-job';
 import type { JobAlertPrefs } from '@/types/job-alert-prefs';
 
@@ -8,7 +8,6 @@ export type JobBoardFilters = {
   employmentTypes?: EmploymentType[];
   roles?: JobRole[];
   regions?: JobRegion[];
-  companySizes?: CompanySize[];
   todayOnly?: boolean;
   todayDate?: string;
 };
@@ -52,19 +51,17 @@ export function jobMatchesBoardFilters(job: CrawledJobListItem, filters: JobBoar
   if (!overlaps(filters.employmentTypes ?? [], job.employmentTypes)) return false;
   if (!overlaps(filters.roles ?? [], job.roles)) return false;
   if (!overlaps(filters.regions ?? [], job.regions)) return false;
-  if (!overlaps(filters.companySizes ?? [], [job.companySize])) return false;
 
   return true;
 }
 
 export function hasJobAlertFilterPrefs(
-  prefs: Pick<JobAlertPrefs, 'employmentTypes' | 'roles' | 'regions' | 'companySizes'>,
+  prefs: Pick<JobAlertPrefs, 'employmentTypes' | 'roles' | 'regions'>,
 ): boolean {
   return (
     prefs.employmentTypes.length > 0 ||
     prefs.roles.length > 0 ||
-    prefs.regions.length > 0 ||
-    prefs.companySizes.length > 0
+    prefs.regions.length > 0
   );
 }
 
@@ -76,7 +73,6 @@ export function jobMatchesSavedPrefs(job: CrawledJobListItem, prefs: JobAlertPre
     employmentTypes: prefs.employmentTypes,
     roles: prefs.roles,
     regions: prefs.regions,
-    companySizes: prefs.companySizes,
   });
 }
 
