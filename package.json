@@ -18,7 +18,10 @@
     "dev:direct": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "crawl": "node scripts/crawl-direct.mjs",
+    "crawl:api": "node scripts/run-crawl.mjs",
+    "job-alerts": "node scripts/run-job-alerts.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

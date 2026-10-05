@@ -9,7 +9,7 @@ export default function AdminDashboard() {
     <div className="space-y-5">
       <PageHeader
         title="관리자"
-        description="회원, 채용 정보, 이력서, 문의를 확인하고 수정·삭제합니다."
+        description="회원, 탈퇴 내역, 크롤링, 이메일 발송, 문의를 확인합니다."
         homeHref="/"
         homeLabel="사이트로"
         homeOpenInNewWindow
@@ -24,20 +24,28 @@ export default function AdminDashboard() {
             회원 보기
           </Link>
         </Card>
-        <Card title="채용 정보" description="공개·작성 중 상태를 확인하고 수정·삭제합니다.">
+        <Card title="회원 탈퇴" description="회원이 남긴 탈퇴 사유를 확인합니다.">
           <Link
-            href="/admin/jobs"
+            href="/admin/withdrawals"
             className="inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
           >
-            채용 정보 보기
+            탈퇴 내역 보기
           </Link>
         </Card>
-        <Card title="이력서" description="공개·작성 중 상태를 확인하고 수정·삭제합니다.">
+        <Card title="크롤링 현황" description="자동 수집 실행 내역과 결과를 확인합니다.">
           <Link
-            href="/admin/talents"
+            href="/admin/crawler"
             className="inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
           >
-            이력서 보기
+            크롤링 보기
+          </Link>
+        </Card>
+        <Card title="이메일 발송" description="채용 공고 알림 메일 발송 내역을 확인합니다.">
+          <Link
+            href="/admin/email-digests"
+            className="inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
+          >
+            발송 내역 보기
           </Link>
         </Card>
         <Card title="문의" description="회원이 보낸 문의를 확인하고 삭제합니다.">

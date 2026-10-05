@@ -5,6 +5,14 @@ const firebaseProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const nextConfig: NextConfig = {
   distDir: process.env.JOB365_NEXT_DIST_DIR || '.next',
   serverExternalPackages: ['firebase-admin', 'jspdf', 'html2canvas'],
+  async redirects() {
+    return [
+      { source: '/talents', destination: '/', permanent: false },
+      { source: '/talents/:path*', destination: '/', permanent: false },
+      { source: '/jobs/new', destination: '/', permanent: false },
+      { source: '/categories/:path*', destination: '/', permanent: false },
+    ];
+  },
   async rewrites() {
     if (!firebaseProjectId) return [];
 

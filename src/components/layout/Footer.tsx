@@ -31,7 +31,7 @@ export default function Footer() {
           <span className="mx-2 text-subtle" aria-hidden>
             ·
           </span>
-          <span className="text-muted">무료 이용·매칭 서비스</span>
+          <span className="text-muted">크롤링 기반 채용 공고 모음</span>
         </p>
 
         <p className="mt-2 text-xs leading-6 text-muted sm:text-sm">

@@ -11,14 +11,11 @@ import { Button, Card } from '@/components/ui/Card';
 import { useAuth } from '@/features/auth/auth-context';
 import { getSafeReturnPath } from '@/lib/auth-return';
 import { saveSignupConsents } from '@/lib/signup-consents-client';
-import { useUserMode } from '@/features/mode/mode-context';
-
 export default function SignupConsentPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnPath = getSafeReturnPath(searchParams.get('next'));
   const { user, loading, refreshConsentStatus } = useAuth();
-  const { resetMode } = useUserMode();
   const [consent, setConsent] = useState(createSignupConsentState);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -48,7 +45,6 @@ export default function SignupConsentPageClient() {
         return;
       }
       await refreshConsentStatus();
-      resetMode();
       router.push(returnPath);
     } catch {
       setError('약관 동의 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.');

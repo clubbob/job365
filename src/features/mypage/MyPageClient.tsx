@@ -5,74 +5,44 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
-import { useAuth } from '@/features/auth/auth-context';
-import { useUserMode } from '@/features/mode/mode-context';
-import { hydrateMissingCompanyFromAccount } from '@/lib/my-job-posts';
-import { hydrateMissingWorkPreferencesFromAccount } from '@/lib/my-talent-profile';
-import { syncMyJobPosting, syncMyTalentProfile } from '@/lib/posting-sync';
-import JobseekerManagePanel, {
-  isJobseekerSubTab,
-  type JobseekerSubTab,
-} from '@/features/mypage/JobseekerManagePanel';
 import AccountMarketingConsent from '@/features/mypage/AccountMarketingConsent';
-import RecruiterManagePanel, {
-  isRecruiterSubTab,
-  type RecruiterSubTab,
-} from '@/features/mypage/RecruiterManagePanel';
+import JobAlertPrefsForm from '@/features/mypage/JobAlertPrefsForm';
+import BookmarksPanel from '@/features/mypage/BookmarksPanel';
+import PasswordChangeForm from '@/features/mypage/PasswordChangeForm';
+import WithdrawAccountForm from '@/features/mypage/WithdrawAccountForm';
+import { useAuth } from '@/features/auth/auth-context';
 import { fetchUserAccount } from '@/lib/users-api';
 import { getUserNicknameFallback } from '@/lib/user-display';
 import { cn } from '@/lib/utils';
 import type { UserAccountData } from '@/lib/users-api';
-import type { UserMode } from '@/lib/user-mode';
-import type { JobPosting } from '@/types/job';
-import type { TalentProfile } from '@/types/talent';
 
-type TabId = 'account' | 'applications' | 'resume' | 'jobs';
+type TabId = 'account' | 'alerts' | 'bookmarks';
 
-const TAB_CLASS =
-  'shrink-0 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors';
+const TAB_CLASS = 'shrink-0 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors';
 
-function defaultTabForMode(mode: UserMode): TabId {
-  return mode === 'jobseeker' ? 'resume' : 'jobs';
-}
+const TABS: Array<{ id: TabId; label: string }> = [
+  { id: 'account', label: '회원 정보' },
+  { id: 'alerts', label: '채용 공고 수신 설정' },
+  { id: 'bookmarks', label: '찜한 공고' },
+];
 
-function tabsForMode(mode: UserMode): Array<{ id: TabId; label: string }> {
-  if (mode === 'jobseeker') {
-    return [
-      { id: 'resume', label: '취업 관리' },
-      { id: 'account', label: '내 계정' },
-    ];
-  }
-  return [
-    { id: 'jobs', label: '채용 관리' },
-    { id: 'account', label: '내 계정' },
-  ];
-}
-
-function resolveMyPageTab(mode: UserMode | null, requested: string | null): TabId {
-  if (!mode) return 'account';
-  if (requested === 'applications') return 'resume';
-  if (requested && tabsForMode(mode).some((item) => item.id === requested)) {
-    return requested as TabId;
-  }
-  return defaultTabForMode(mode);
+function resolveTab(requested: string | null): TabId {
+  if (requested && TABS.some((tab) => tab.id === requested)) return requested as TabId;
+  return 'account';
 }
 
 export default function MyPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
-  const { mode, ready } = useUserMode();
   const [account, setAccount] = useState<UserAccountData | null>(null);
-  const requestedTab = searchParams.get('tab');
-  const requestedSub = searchParams.get('sub');
-  const tab = resolveMyPageTab(mode, requestedTab);
-  const [jobseekerSubTab, setJobseekerSubTab] = useState<JobseekerSubTab>('resume');
-  const [recruiterSubTab, setRecruiterSubTab] = useState<RecruiterSubTab>('jobs');
-  const [myJobs, setMyJobs] = useState<JobPosting[]>([]);
-  const [myResumes, setMyResumes] = useState<TalentProfile[]>([]);
-  const [mineReady, setMineReady] = useState(false);
-  const tabs = mode ? tabsForMode(mode) : [];
+  const tab = resolveTab(searchParams.get('tab'));
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login?next=/mypage');
+    }
+  }, [user, loading, router]);
 
   useEffect(() => {
     if (!user) return;
@@ -81,176 +51,94 @@ export default function MyPageClient() {
     });
   }, [user]);
 
-  useEffect(() => {
-    if (!user) {
-      setMyJobs([]);
-      setMyResumes([]);
-      setMineReady(false);
-      return;
-    }
-    const userId = user.uid;
-    const jobs = hydrateMissingCompanyFromAccount(userId);
-    const resumes = hydrateMissingWorkPreferencesFromAccount(userId);
-    setMyJobs(jobs);
-    setMyResumes(resumes);
-    setMineReady(true);
-    void Promise.all([
-      ...jobs.map((job) => syncMyJobPosting(job)),
-      ...resumes.map((resume) => syncMyTalentProfile(resume)),
-    ]);
-
-    function reloadMine() {
-      setMyJobs(hydrateMissingCompanyFromAccount(userId));
-      setMyResumes(hydrateMissingWorkPreferencesFromAccount(userId));
-    }
-    window.addEventListener('focus', reloadMine);
-    window.addEventListener('pageshow', reloadMine);
-    window.addEventListener('job365.jobs', reloadMine);
-    return () => {
-      window.removeEventListener('focus', reloadMine);
-      window.removeEventListener('pageshow', reloadMine);
-      window.removeEventListener('job365.jobs', reloadMine);
-    };
-  }, [user]);
-
-  useEffect(() => {
-    if (requestedTab === 'applications') {
-      setJobseekerSubTab('applications');
-      return;
-    }
-    if (requestedTab === 'resume') {
-      setJobseekerSubTab(isJobseekerSubTab(requestedSub) ? requestedSub : 'resume');
-    }
-    if (requestedTab === 'jobs') {
-      setRecruiterSubTab(isRecruiterSubTab(requestedSub) ? requestedSub : 'jobs');
-    }
-  }, [requestedTab, requestedSub]);
-
-  useEffect(() => {
-    if (loading || !ready) return;
-    if (user && !mode) {
-      router.replace('/');
-    }
-  }, [loading, ready, user, mode, router]);
-
-  function selectTab(id: TabId) {
-    if (id === 'resume') {
-      setJobseekerSubTab('resume');
-      router.replace('/mypage?tab=resume');
-      return;
-    }
-    if (id === 'jobs') {
-      setRecruiterSubTab('jobs');
-      router.replace('/mypage?tab=jobs');
-      return;
-    }
-    router.replace(id === 'account' ? '/mypage?tab=account' : `/mypage?tab=${id}`);
-  }
-
-  function selectJobseekerSubTab(id: JobseekerSubTab) {
-    setJobseekerSubTab(id);
-    router.replace(id === 'resume' ? '/mypage?tab=resume' : `/mypage?tab=resume&sub=${id}`);
-  }
-
-  function selectRecruiterSubTab(id: RecruiterSubTab) {
-    setRecruiterSubTab(id);
-    router.replace(id === 'jobs' ? '/mypage?tab=jobs' : `/mypage?tab=jobs&sub=${id}`);
-  }
-
-  if (loading || !ready || (user && !mode)) {
+  if (loading || !user) {
     return <p className="py-10 text-center text-sm text-muted">불러오는 중…</p>;
   }
 
-  if (!user) {
-    return (
-      <div className="space-y-4">
-        <PageHeader title="마이페이지" />
-        <Card title="내 계정">
-          <p className="text-sm text-muted">로그인 후 이용할 수 있습니다.</p>
-          <Link
-            href="/login?next=/mypage"
-            className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
-          >
-            로그인
-          </Link>
-        </Card>
-      </div>
-    );
-  }
-
   const nickname = account?.profile.nickname || getUserNicknameFallback(user);
+  const email = account?.profile.email || user.email || '—';
 
   return (
-    <div className="space-y-4">
-      <PageHeader title="마이페이지" description="계정과 활동 내용을 확인하고 관리하세요." />
+    <div className="flex flex-col gap-5">
+      <PageHeader
+        title="마이페이지"
+        description="회원 정보, 비밀번호, 이메일 수신, 채용 공고 알림, 찜한 공고 등 나의 계정과 취업 활동을 관리합니다."
+        showRefresh={false}
+      />
 
-      <div className="-mx-1 flex gap-1 overflow-x-auto px-1" role="tablist" aria-label="마이페이지 메뉴">
-        {tabs.map((item) => {
+      <nav className="flex gap-2 overflow-x-auto pb-1" aria-label="마이페이지 메뉴">
+        {TABS.map((item) => {
           const active = tab === item.id;
           return (
-            <button
+            <Link
               key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => selectTab(item.id)}
+              href={`/mypage?tab=${item.id}`}
               className={cn(
                 TAB_CLASS,
                 active
                   ? 'bg-primary text-white shadow-sm'
-                  : 'text-muted hover:bg-neutral-100 hover:text-foreground',
+                  : 'bg-neutral-100 text-muted hover:bg-neutral-200 hover:text-foreground',
               )}
             >
               {item.label}
-            </button>
+            </Link>
           );
         })}
-      </div>
+      </nav>
 
       {tab === 'account' ? (
-        <>
-          <Card title="내 계정">
-            <dl className="space-y-2 text-sm">
-              <div className="flex items-baseline gap-3">
-                <dt className="w-16 shrink-0 text-subtle">이름</dt>
+        <div className="flex flex-col gap-5">
+          <Card>
+            <dl className="grid gap-3 text-sm">
+              <div className="flex gap-3">
+                <dt className="w-20 shrink-0 text-muted">닉네임</dt>
                 <dd className="min-w-0 font-semibold text-foreground">{nickname}</dd>
               </div>
-              <div className="flex items-baseline gap-3">
-                <dt className="w-16 shrink-0 text-subtle">이메일</dt>
-                <dd className="min-w-0 break-all text-foreground">{user.email ?? '-'}</dd>
+              <div className="flex gap-3">
+                <dt className="w-20 shrink-0 text-muted">이메일</dt>
+                <dd className="min-w-0 break-all font-semibold text-foreground">{email}</dd>
               </div>
             </dl>
           </Card>
-          {account ? (
+
+          <section className="flex flex-col gap-3">
+            <h2 className="text-base font-bold text-foreground">비밀번호 변경</h2>
+            <PasswordChangeForm />
+          </section>
+
+          <section className="flex flex-col gap-3">
+            <h2 className="text-base font-bold text-foreground">이메일 수신</h2>
             <AccountMarketingConsent
               user={user}
-              agreed={account.marketingAgreed}
-              onSaved={(marketingAgreed) => setAccount({ ...account, marketingAgreed })}
+              agreed={account?.marketingAgreed ?? false}
+              onSaved={(agreed) => setAccount((prev) => (prev ? { ...prev, marketingAgreed: agreed } : prev))}
             />
-          ) : null}
-        </>
+          </section>
+
+          <section className="flex flex-col gap-3">
+            <h2 className="text-base font-bold text-foreground">회원 탈퇴</h2>
+            <WithdrawAccountForm user={user} />
+          </section>
+        </div>
       ) : null}
 
-      {tab === 'resume' ? (
-        <JobseekerManagePanel
-          userId={user.uid}
-          resumes={myResumes}
-          ready={mineReady}
-          subTab={jobseekerSubTab}
-          onSelectSubTab={selectJobseekerSubTab}
-          onResumesChange={setMyResumes}
-        />
+      {tab === 'alerts' ? (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-base font-bold text-foreground">채용 공고 수신 설정</h2>
+          <p className="text-sm text-muted">
+            설정한 조건에 맞는 공고가{' '}
+            <Link href="/my-jobs" className="font-semibold text-primary hover:underline">내 채용 공고</Link>
+            와 아침 이메일에 표시됩니다.
+          </p>
+          <JobAlertPrefsForm user={user} />
+        </section>
       ) : null}
 
-      {tab === 'jobs' ? (
-        <RecruiterManagePanel
-          userId={user.uid}
-          jobs={myJobs}
-          ready={mineReady}
-          subTab={recruiterSubTab}
-          onSelectSubTab={selectRecruiterSubTab}
-          onJobsChange={setMyJobs}
-        />
+      {tab === 'bookmarks' ? (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-base font-bold text-foreground">찜한 공고</h2>
+          <BookmarksPanel />
+        </section>
       ) : null}
     </div>
   );

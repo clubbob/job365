@@ -74,6 +74,13 @@ export async function updateUserAccount(
   const settingsUpdates: Record<string, unknown> = { updatedAt: now };
 
   if (input.nickname !== undefined) {
+    const existingSnap = await userRef.get();
+    const existingNickname =
+      typeof existingSnap.data()?.nickname === 'string' ? existingSnap.data()!.nickname.trim() : '';
+    if (existingNickname) {
+      throw new Error('NICKNAME_LOCKED');
+    }
+
     const nickname = input.nickname.trim();
     if (!nickname || nickname.length > 30) {
       throw new Error('INVALID_NICKNAME');
@@ -126,6 +133,13 @@ export async function deleteUserAccount(uid: string): Promise<void> {
   const batch = db.batch();
   batch.delete(db.collection('userSettings').doc(uid));
   batch.delete(db.collection('users').doc(uid));
+  batch.delete(db.collection('jobAlertPrefs').doc(uid));
+
+  const bookmarksSnap = await db.collection('jobBookmarks').where('userId', '==', uid).get();
+  for (const doc of bookmarksSnap.docs) {
+    batch.delete(doc.ref);
+  }
+
   await batch.commit();
 
   const app = getAdminApp();

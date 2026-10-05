@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     default: COMPANY.serviceName,
     template: `%s | ${COMPANY.serviceName}`,
   },
-  description: '알바부터 정규직까지, 100% 무료 이용·매칭 서비스',
+  description: '대기업·중견·채용 사이트에서 수집한 최신 채용 공고를 한곳에서 확인하세요.',
   icons: {
     icon: '/favicon.svg',
   },

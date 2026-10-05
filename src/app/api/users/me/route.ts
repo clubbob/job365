@@ -9,6 +9,8 @@ import {
   updateUserAccount,
   type UpdateUserAccountInput,
 } from '@/lib/users-server';
+import { saveWithdrawalLog } from '@/lib/withdrawals-server';
+import { WITHDRAWAL_REASON_MAX_LENGTH } from '@/types/withdrawal';
 import type { UserProvider } from '@/types/user';
 
 function resolveProvider(firebaseProvider: string): UserProvider {
@@ -155,6 +157,41 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ ok: false, error: { code: 'ADMIN_NOT_CONFIGURED' } }, { status: 503 });
   }
 
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: { code: 'INVALID_BODY', message: '탈퇴 사유를 입력해 주세요.' } },
+      { status: 400 },
+    );
+  }
+
+  const reason =
+    body && typeof body === 'object' && typeof (body as { reason?: unknown }).reason === 'string'
+      ? (body as { reason: string }).reason.trim()
+      : '';
+
+  if (!reason) {
+    return NextResponse.json(
+      { ok: false, error: { code: 'REASON_REQUIRED', message: '탈퇴 사유를 입력해 주세요.' } },
+      { status: 400 },
+    );
+  }
+
+  if (reason.length > WITHDRAWAL_REASON_MAX_LENGTH) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          code: 'REASON_TOO_LONG',
+          message: `탈퇴 사유는 ${WITHDRAWAL_REASON_MAX_LENGTH}자 이하로 입력해 주세요.`,
+        },
+      },
+      { status: 400 },
+    );
+  }
+
   try {
     const result = await ensureUserAccount(request);
     if ('error' in result && result.error) return result.error;
@@ -169,6 +206,12 @@ export async function DELETE(request: Request) {
       );
     }
 
+    await saveWithdrawalLog({
+      userId: result.uid,
+      email: result.account.profile.email,
+      nickname: result.account.profile.nickname,
+      reason,
+    });
     await deleteUserAccount(result.uid);
     return NextResponse.json({ ok: true, data: { deleted: true } });
   } catch (error) {

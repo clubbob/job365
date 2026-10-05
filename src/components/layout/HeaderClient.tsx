@@ -1,15 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import HeaderModeMenu from '@/components/layout/HeaderModeMenu';
 import AdminHeader from '@/components/layout/AdminHeader';
 import Logo from '@/components/brand/Logo';
 import { useAuth } from '@/features/auth/auth-context';
-import { useUserMode } from '@/features/mode/mode-context';
 import { getUserNicknameFallback } from '@/lib/user-display';
-import { getHeaderNavItems } from '@/lib/user-mode';
 import { cn } from '@/lib/utils';
 
 function MenuIcon({ open }: { open: boolean }) {
@@ -37,21 +34,23 @@ function MenuIcon({ open }: { open: boolean }) {
   );
 }
 
+const NAV_ITEMS: Array<{ href: string; label: string; exact: boolean; authOnly?: boolean }> = [
+  { href: '/', label: '채용 공고', exact: true },
+  { href: '/my-jobs', label: '내 채용 공고', exact: false, authOnly: true },
+];
+
 function isNavActive(pathname: string, href: string, exact: boolean): boolean {
   if (exact) return pathname === href;
-  if (href === '/jobs' && pathname.startsWith('/jobs/new')) return false;
-  if (href === '/talents' && pathname.startsWith('/talents/new')) return false;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export default function HeaderClient() {
-  const { user, loading } = useAuth();
-  const { mode, ready: modeReady } = useUserMode();
+  const { user, loading, logout } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const navReady = mounted && modeReady;
-  const navItems = navReady ? getHeaderNavItems(mode) : [];
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -69,15 +68,25 @@ export default function HeaderClient() {
   }, [menuOpen]);
 
   const accountReady = mounted && !loading;
-  const navLinkClassName =
-    'rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors';
+  const nickname = user ? getUserNicknameFallback(user) : '';
+  const navLinkClassName = 'rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors';
+  const mobileLinkClassName = 'block rounded-lg px-3 py-3 text-base font-semibold transition-colors';
 
-  const mobileLinkClassName =
-    'block rounded-lg px-3 py-3 text-base font-semibold transition-colors';
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await logout();
+      router.push('/');
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   if (pathname.startsWith('/admin')) {
     return <AdminHeader />;
   }
+
+  const visibleNavItems = NAV_ITEMS.filter((item) => !item.authOnly || user);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface shadow-sm print:hidden">
@@ -86,35 +95,34 @@ export default function HeaderClient() {
           <Logo />
         </Link>
 
-        {navItems.length > 0 ? (
-          <nav className="hidden items-center justify-center gap-1 md:flex" aria-label="주요 메뉴">
-            {navItems.map((item) => {
-              const active = isNavActive(pathname, item.href, item.exact);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    navLinkClassName,
-                    active
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'text-muted hover:bg-neutral-100 hover:text-foreground',
-                  )}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        ) : (
-          <div className="hidden md:block" />
-        )}
+        <nav className="hidden items-center justify-center gap-1 md:flex" aria-label="주요 메뉴">
+          {visibleNavItems.map((item) => {
+            const active = isNavActive(pathname, item.href, item.exact);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  navLinkClassName,
+                  active
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-muted hover:bg-neutral-100 hover:text-foreground',
+                )}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
 
         <div className="hidden items-center justify-end gap-2 md:flex">
           {!accountReady ? (
             <div className="h-9 w-44 rounded-lg bg-neutral-100" aria-hidden="true" />
           ) : user ? (
             <>
+              <span className="max-w-[8rem] truncate px-1 text-sm font-semibold text-foreground" title={nickname}>
+                {nickname}
+              </span>
               <Link
                 href="/mypage"
                 className={cn(
@@ -126,19 +134,30 @@ export default function HeaderClient() {
               >
                 마이페이지
               </Link>
-              <HeaderModeMenu
-                nickname={getUserNicknameFallback(user)}
-                align="right"
-                showLogout
-              />
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                disabled={loggingOut}
+                className="rounded-lg px-3.5 py-2 text-sm font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-foreground disabled:opacity-60"
+              >
+                로그아웃
+              </button>
             </>
           ) : (
-            <Link
-              href="/login"
-              className="rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
-            >
-              로그인
-            </Link>
+            <>
+              <Link
+                href="/login"
+                className="rounded-lg px-3.5 py-2 text-sm font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-foreground"
+              >
+                로그인
+              </Link>
+              <Link
+                href="/signup"
+                className="rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
+              >
+                회원가입
+              </Link>
+            </>
           )}
         </div>
 
@@ -161,9 +180,26 @@ export default function HeaderClient() {
           aria-label="모바일 메뉴"
         >
           <div className="mx-auto max-w-4xl space-y-3 px-4 py-3 sm:px-6">
+            {visibleNavItems.map((item) => {
+              const active = isNavActive(pathname, item.href, item.exact);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    mobileLinkClassName,
+                    active ? 'bg-primary text-white' : 'text-foreground hover:bg-neutral-100',
+                  )}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+
             {!accountReady ? null : user ? (
-              <div className="space-y-3 border-b border-border pb-3">
-                <HeaderModeMenu nickname={getUserNicknameFallback(user)} showLogout />
+              <div className="space-y-3 border-t border-border pt-3">
+                <p className="px-3 text-sm font-semibold text-foreground">{nickname}</p>
                 <Link
                   href="/mypage"
                   className={cn(
@@ -176,36 +212,30 @@ export default function HeaderClient() {
                 >
                   마이페이지
                 </Link>
-              </div>
-            ) : null}
-
-            {navItems.map((item) => {
-              const active = isNavActive(pathname, item.href, item.exact);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    mobileLinkClassName,
-                    active
-                      ? 'bg-primary text-white'
-                      : 'text-foreground hover:bg-neutral-100',
-                  )}
-                  onClick={() => setMenuOpen(false)}
+                <button
+                  type="button"
+                  disabled={loggingOut}
+                  onClick={() => void handleLogout()}
+                  className={cn(mobileLinkClassName, 'w-full text-left text-foreground hover:bg-neutral-100')}
                 >
-                  {item.label}
-                </Link>
-              );
-            })}
-
-            {!accountReady || user ? null : (
-              <div className="border-t border-border pt-3">
+                  로그아웃
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2 border-t border-border pt-3">
                 <Link
                   href="/login"
-                  className="block rounded-lg bg-primary px-3 py-3 text-center text-base font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
+                  className={cn(mobileLinkClassName, 'text-foreground hover:bg-neutral-100')}
                   onClick={() => setMenuOpen(false)}
                 >
                   로그인
+                </Link>
+                <Link
+                  href="/signup"
+                  className="block rounded-lg bg-primary px-3 py-3 text-center text-base font-semibold text-white shadow-sm"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  회원가입
                 </Link>
               </div>
             )}

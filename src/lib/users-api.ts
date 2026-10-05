@@ -51,11 +51,15 @@ export async function updateUserAccount(user: User, payload: UpdateUserAccountPa
   });
 }
 
-export async function deleteUserAccount(user: User) {
+export async function deleteUserAccount(user: User, payload: { reason: string }) {
   const token = await user.getIdToken(true);
   const res = await fetch('/api/users/me', {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
   });
 
   return res.json() as Promise<ApiResponse<{ deleted: boolean }>>;

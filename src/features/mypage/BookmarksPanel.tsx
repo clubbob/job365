@@ -1,0 +1,73 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import CrawledJobCard from '@/features/job-board/CrawledJobCard';
+import { useAuth } from '@/features/auth/auth-context';
+import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
+import type { CrawledJobListItem } from '@/types/crawled-job';
+
+export default function BookmarksPanel() {
+  const { user } = useAuth();
+  const [items, setItems] = useState<CrawledJobListItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    setError('');
+
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/users/me/bookmarks?page=${page}&pageSize=${JOB_LIST_PAGE_SIZE}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        data?: { items: CrawledJobListItem[]; hasMore: boolean };
+      };
+      if (!res.ok || !json.ok || !json.data) {
+        throw new Error('찜한 공고를 불러오지 못했습니다.');
+      }
+      setItems(json.data.items);
+      setHasMore(json.data.hasMore);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '찜한 공고를 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user, page]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  if (loading) return <p className="text-sm text-muted">불러오는 중…</p>;
+  if (error) return <p className="text-sm text-red-700">{error}</p>;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {items.map((job) => (
+          <CrawledJobCard key={job.id} job={job} />
+        ))}
+      </div>
+      {items.length === 0 ? (
+        <p className="rounded-xl border border-border bg-surface px-4 py-8 text-center text-sm text-muted">
+          찜한 공고가 없습니다.
+        </p>
+      ) : null}
+      {hasMore ? (
+        <button
+          type="button"
+          onClick={() => setPage((p) => p + 1)}
+          className="mx-auto rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-hover"
+        >
+          더보기
+        </button>
+      ) : null}
+    </div>
+  );
+}
