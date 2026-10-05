@@ -100,7 +100,7 @@ function parsePeriodDeadline(period: string, enddate?: string): string | null {
   const fromPeriod = period.match(/~\s*(\d{4})\.(\d{2})\.(\d{2})/);
   if (fromPeriod) return `${fromPeriod[1]}-${fromPeriod[2]}-${fromPeriod[3]}`;
 
-  if (enddate?.length >= 8) {
+  if (enddate && enddate.length >= 8) {
     return `${enddate.slice(0, 4)}-${enddate.slice(4, 6)}-${enddate.slice(6, 8)}`;
   }
 
