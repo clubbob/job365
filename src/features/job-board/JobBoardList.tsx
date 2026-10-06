@@ -1,11 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AdSlot from '@/components/ads/AdSlot';
 import CrawledJobCard from '@/features/job-board/CrawledJobCard';
 import JobBoardFilters, { type JobBoardFilterState } from '@/features/job-board/JobBoardFilters';
 import { useAuth } from '@/features/auth/auth-context';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
+import { JOB_BOARD_RESET_EVENT } from '@/lib/job-board/reset';
 import type { CrawledJobListItem } from '@/types/crawled-job';
 
 type JobBoardListProps = {
@@ -16,11 +18,44 @@ type JobBoardListProps = {
   showFilters?: boolean;
   persistKey?: string;
   pageSize?: number;
+  listTitle?: string;
+  showCount?: boolean;
+  showLoadMore?: boolean;
+  showInfeedAd?: boolean;
+  listMoreHref?: string;
+  hideNewSectionHeader?: boolean;
 };
 
 const EMPTY: CrawledJobListItem[] = [];
 
-function buildQuery(state: JobBoardFilterState, page: number, todayOnly: boolean, pageSize: number) {
+const INITIAL_FILTERS: JobBoardFilterState = {
+  q: '',
+  quickFilter: 'all',
+  employmentTypes: [],
+  roles: [],
+  regions: [],
+};
+
+function JobCardSkeleton() {
+  return (
+    <div className="animate-pulse rounded-xl border border-border bg-surface p-4">
+      <div className="h-4 w-24 rounded bg-neutral-200" />
+      <div className="mt-3 h-5 w-full rounded bg-neutral-200" />
+      <div className="mt-4 space-y-2">
+        <div className="h-3 w-32 rounded bg-neutral-100" />
+        <div className="h-3 w-28 rounded bg-neutral-100" />
+        <div className="h-3 w-20 rounded bg-neutral-100" />
+      </div>
+    </div>
+  );
+}
+
+function buildQuery(
+  state: JobBoardFilterState,
+  page: number,
+  todayOnly: boolean,
+  pageSize: number,
+) {
   const params = new URLSearchParams();
   if (state.q.trim()) params.set('q', state.q.trim());
   if (state.quickFilter !== 'all') params.set('quick', state.quickFilter);
@@ -40,15 +75,15 @@ export default function JobBoardList({
   showNewSection = false,
   showFilters = true,
   pageSize = JOB_LIST_PAGE_SIZE,
+  listTitle,
+  showCount = true,
+  showLoadMore = true,
+  showInfeedAd = true,
+  listMoreHref,
+  hideNewSectionHeader = false,
 }: JobBoardListProps) {
   const { user } = useAuth();
-  const [filters, setFilters] = useState<JobBoardFilterState>({
-    q: '',
-    quickFilter: 'all',
-    employmentTypes: [],
-    roles: [],
-    regions: [],
-  });
+  const [filters, setFilters] = useState<JobBoardFilterState>(INITIAL_FILTERS);
   const [items, setItems] = useState<CrawledJobListItem[]>(EMPTY);
   const [todayItems, setTodayItems] = useState<CrawledJobListItem[]>(EMPTY);
   const [todayDate, setTodayDate] = useState('');
@@ -56,6 +91,7 @@ export default function JobBoardList({
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [todayLoading, setTodayLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [todayPage, setTodayPage] = useState(1);
@@ -84,6 +120,18 @@ export default function JobBoardList({
     [mode, user?.uid, page, pageSize, mainListQuery],
   );
 
+  const resetList = useCallback(() => {
+    setFilters(INITIAL_FILTERS);
+    setPage(1);
+    setTodayPage(1);
+    setItems(EMPTY);
+    setTodayItems(EMPTY);
+    setHasMore(false);
+    setTodayHasMore(false);
+    setTotal(0);
+    setError(null);
+  }, []);
+
   const handleFiltersChange = useCallback((next: JobBoardFilterState) => {
     setFilters(next);
     setPage(1);
@@ -96,7 +144,16 @@ export default function JobBoardList({
   }, []);
 
   useEffect(() => {
-    if (!showNewSection || mode !== 'all') return;
+    function onReset() {
+      resetList();
+    }
+
+    window.addEventListener(JOB_BOARD_RESET_EVENT, onReset);
+    return () => window.removeEventListener(JOB_BOARD_RESET_EVENT, onReset);
+  }, [resetList]);
+
+  useEffect(() => {
+    if (!showNewSection || mode !== 'all' || hideNewSectionHeader) return;
 
     const controller = new AbortController();
 
@@ -117,7 +174,9 @@ export default function JobBoardList({
         };
 
         if (todayRes.ok && todayJson.ok && todayJson.data) {
-          setTodayItems(todayJson.data.items);
+          setTodayItems((prev) =>
+            todayPage === 1 ? todayJson.data!.items : [...prev, ...todayJson.data!.items],
+          );
           setTodayHasMore(todayJson.data.hasMore);
           setTodayDate(todayJson.data.todayDate);
         }
@@ -137,7 +196,12 @@ export default function JobBoardList({
     const controller = new AbortController();
 
     async function load() {
-      setLoading(true);
+      const isLoadMore = page > 1;
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       try {
@@ -174,7 +238,7 @@ export default function JobBoardList({
             throw new Error(json.error?.message ?? '내 채용 공고를 불러오지 못했습니다.');
           }
 
-          setItems(json.data.items);
+          setItems((prev) => (page === 1 ? json.data!.items : [...prev, ...json.data!.items]));
           setTotal(json.data.total);
           setHasMore(json.data.hasMore);
           setUsedFallback(Boolean(json.data.usedFallback));
@@ -200,7 +264,7 @@ export default function JobBoardList({
           throw new Error(json.error?.message ?? '채용 공고를 불러오지 못했습니다.');
         }
 
-        setItems(json.data.items);
+        setItems((prev) => (page === 1 ? json.data!.items : [...prev, ...json.data!.items]));
         setTotal(json.data.total);
         setHasMore(json.data.hasMore);
         setTodayDate(json.data.todayDate);
@@ -208,7 +272,10 @@ export default function JobBoardList({
         if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : '채용 공고를 불러오지 못했습니다.');
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
       }
     }
 
@@ -246,9 +313,17 @@ export default function JobBoardList({
         <JobBoardFilters value={filters} onChange={handleFiltersChange} showDetailButton={mode !== 'matched'} />
       ) : null}
 
-      {showNewSection && mode === 'all' ? (
-        <section className="flex flex-col gap-3 border-t border-border pt-8">
-          <h2 className="text-lg font-bold text-foreground">오늘의 신규 채용 공고</h2>
+      {showNewSection && mode === 'all' && !hideNewSectionHeader ? (
+        <section
+          className={
+            hideNewSectionHeader
+              ? 'flex flex-col gap-3'
+              : 'flex flex-col gap-3 border-t border-border pt-8'
+          }
+        >
+          {!hideNewSectionHeader ? (
+            <h2 className="text-lg font-bold text-foreground">오늘의 신규 채용 공고</h2>
+          ) : null}
 
           {todayItems.length === 0 && !todayLoading ? (
             <p className="rounded-xl border border-border bg-surface px-4 py-6 text-center text-sm text-muted">
@@ -282,23 +357,46 @@ export default function JobBoardList({
             : 'flex flex-col gap-3'
         }
       >
-        {mode === 'all' && showNewSection ? (
+        {listTitle ? (
+          <div className="flex items-end justify-between gap-3">
+            <h2 className="text-lg font-bold text-foreground">{listTitle}</h2>
+            {listMoreHref ? (
+              <Link
+                href={listMoreHref}
+                className="shrink-0 text-sm font-semibold text-primary hover:underline"
+              >
+                전체 보기
+              </Link>
+            ) : null}
+          </div>
+        ) : mode === 'all' && showNewSection ? (
           <h2 className="text-lg font-bold text-foreground">전체 채용 공고</h2>
         ) : null}
 
-        <p className="text-sm text-muted">{countLabel}</p>
+        {showCount ? <p className="text-sm text-muted">{countLabel}</p> : null}
+        {!showCount && loading && items.length === 0 ? (
+          <p className="text-sm text-muted">불러오는 중…</p>
+        ) : null}
 
         {error ? (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         ) : null}
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((job) => (
-            <CrawledJobCard key={job.id} job={job} todayDate={todayDate} />
-          ))}
-        </div>
+        {loading && items.length === 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: pageSize }, (_, index) => (
+              <JobCardSkeleton key={index} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((job) => (
+              <CrawledJobCard key={job.id} job={job} todayDate={todayDate} />
+            ))}
+          </div>
+        )}
 
-        {items.length > 0 ? <AdSlot placement="infeed" /> : null}
+        {showInfeedAd && !loading && items.length > 0 ? <AdSlot placement="infeed" /> : null}
 
         {!loading && items.length === 0 && !error && mode !== 'matched' ? (
           <p className="rounded-xl border border-border bg-surface px-4 py-8 text-center text-sm text-muted">
@@ -306,14 +404,14 @@ export default function JobBoardList({
           </p>
         ) : null}
 
-        {hasMore ? (
+        {hasMore && showLoadMore ? (
           <button
             type="button"
-            disabled={loading}
+            disabled={loadingMore}
             onClick={() => setPage((p) => p + 1)}
             className="mx-auto rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-60"
           >
-            더보기
+            {loadingMore ? '불러오는 중…' : '더보기'}
           </button>
         ) : null}
       </section>

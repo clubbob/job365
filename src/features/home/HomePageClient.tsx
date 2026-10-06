@@ -9,9 +9,12 @@ export default function HomePageClient() {
     <div className="flex flex-col gap-5">
       <HomeScreenBanner />
       <JobBoardList
-        title="채용 공고"
-        description="대기업·중견·채용 사이트에서 수집한 최신 채용 공고를 한곳에서 확인하세요."
-        showNewSection
+        showFilters={false}
+        listTitle="최근 채용 공고"
+        listMoreHref="/jobs"
+        showCount={false}
+        showLoadMore={false}
+        showInfeedAd={false}
         pageSize={JOB_HOME_PAGE_SIZE}
       />
     </div>

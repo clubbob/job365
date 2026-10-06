@@ -70,8 +70,8 @@ export type CompanySize = (typeof COMPANY_SIZES)[number];
 /** 3열 × 3행 */
 export const JOB_LIST_PAGE_SIZE = 9;
 
-/** 메인 페이지 초기 노출 (3열 × 1행) */
-export const JOB_HOME_PAGE_SIZE = 3;
+/** 메인 페이지 초기 노출 (3열 × 2행) */
+export const JOB_HOME_PAGE_SIZE = 6;
 
 export function isEmploymentType(value: string): value is EmploymentType {
   return (EMPLOYMENT_TYPES as readonly string[]).includes(value);

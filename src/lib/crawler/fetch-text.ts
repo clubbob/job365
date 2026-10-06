@@ -1,7 +1,6 @@
-const DEFAULT_HEADERS = {
-  Accept: 'text/html,application/xhtml+xml',
-  'User-Agent': 'JobLink365Bot/1.0 (+https://joblink365.com)',
-};
+import { BROWSER_HTML_HEADERS } from '@/lib/crawler/browser-headers';
+
+const DEFAULT_HEADERS = BROWSER_HTML_HEADERS;
 
 export async function fetchText(url: string, init?: RequestInit): Promise<string> {
   const res = await fetch(url, {

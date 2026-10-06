@@ -1,0 +1,58 @@
+
+
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content_old="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1, shrink-to-fit=no" content="width=device-width, initial-scale=1.0, user-scalable=no, height=device-height, maximum-scale=1.0" />
+    <meta name="title" content="" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta property="og:title" content="" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="" />
+    <meta property="og:image" content="" />
+    <link rel="icon" href="../../../resources/images/favicon.ico" />
+    <link rel="stylesheet" href="../../../resources/plugins/swiper/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="../../../resources/plugins/selectric/selectric.css" />
+    <link rel="stylesheet" href="../../../resources/plugins/aos/aos.css" />
+    <link rel="stylesheet" href="../../../resources/plugins/jquery-ui/jquery-ui.css" />
+    <link rel="stylesheet" href="../../../resources/plugins/datepicker/jquery.datetimepicker.min.css" />
+    <link rel="stylesheet" href="../../../resources/css/style.css" />
+    <script src="../../../resources/plugins/jquery-3.7.1.min.js"></script>
+    <script src="../../../resources/plugins/jquery-ui/jquery-ui.js"></script>
+    <script src="../../../resources/plugins/swiper/swiper-bundle.min.js"></script>
+    <script src="../../../resources/plugins/selectric/jquery.selectric.js"></script>
+    <script src="../../../resources/plugins/gsap/gsap.min.js"></script>
+    <script src="../../../resources/plugins/gsap/ScrollTrigger.min.js"></script>
+    <script src="../../../resources/plugins/aos/aos.js"></script>
+    <script src="../../../resources/plugins/fullcalendar/index.global.min.js"></script>
+    <script src="../../../resources/plugins/fullcalendar/ko.global.js"></script>
+    <script src="../../../resources/plugins/fullcalendar/popper.min.js"></script>
+    <script src="../../../resources/plugins/fullcalendar/tooltip.min.js"></script>
+    <script src="../../../resources/plugins/datepicker/jquery.datetimepicker.full.js"></script>
+    <script src="../../../resources/js/common-ui.js"></script>
+    <title>ERROR < SK Careers</title>
+
+</head>
+
+<body>
+    <div id="container">
+        <!-- 컨텐츠 -->
+        <main id="content" class="error-page-content">
+            <!-- 에러페이지 -->
+            <div class="img-error"><img src="../../../resources/images/etc/img-error.png" alt="ERROR" /></div>
+                <div class="text">
+                    The page address is incorrect, or an unexpected error has occurred.<br />
+                    Please check if you have the correct address.<br />
+                    If the error persists, please contact the officer in charge.
+                </div>
+            <a href="/" class="btn small round primary">Back to Main</a>
+        </main>
+        <!-- //컨텐츠 -->
+    </div>
+</body>
+
+</html>
+

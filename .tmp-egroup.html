@@ -1,0 +1,1504 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+<title>기업집단포털</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="shortcut icon" href="/images/favicon.ico" >
+
+<meta http-equiv="Expires" content="-1">
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="cache-Control" content="no-cache">
+
+<meta name="robots" content="index, follow" />
+
+	<script type="text/javascript">
+		// 01.SBUX 환경설정 값.
+		var SBUxConfig = { Path: "/js/sbux/"
+						 , Debug: false
+						 , SBGrid: { Version2_5: true
+								   }
+						 }
+	</script>
+
+	<script type="text/javascript" src="/js/sbux/SBUx.js"></script>
+	<script type="text/javascript">
+		var SBpath = "/js/sbux/assets/js/sbgrid/2_5/";
+	</script>
+
+	<!-- 그리드를 표시하기 위한 CSS -->
+	<link type="text/css" rel="stylesheet" href="/css/wise/ftc/already/SBGrid.css">
+	<link type="text/css" rel="stylesheet" href="/css/wise/ftc/already/SBGrid_Default.css">
+
+	<!-- SBGrid 제품 설정 -->
+	<script src="/js/sbux/assets/js/sbgrid/2_5/SBGrid/SBGrid_Lib.js" type="text/javascript"></script>
+	<script src="/js/sbux/assets/js/sbgrid/2_5/SBGrid/SBGrid_min.js" type="text/javascript"></script>
+
+	<script type="text/javascript" src="/js/ps/jquery-3.7.1.min.js?v=1791285103874"></script>
+	<script type="text/javascript" src="/js/ps/jquery-migrate-3.6.0.min.js?v=1791285103874"></script>
+	<script type="text/javascript" src="/js/ps/jquery.accordionMenu.js"></script><!--서브: location > accordion 네비게이션-->
+	<script type="text/javascript" src="/js/jquery-ui-1.13.3.min.js?v=1791285103874"></script>
+	<link href="/css/wise/ftc/already/jquery-ui.css" rel="stylesheet" type="text/css">
+	<link href="/css/wise/ftc/already/datepicker.custom.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript" src="/js/smCommon.js"></script>
+	<script type="text/javascript" src="/js/common.js"></script>
+	<script type="text/javascript" src="/js/ps/common.js" ></script>
+	
+	<script type="text/javascript" src="/js/sbchart/sbchart.js" ></script>
+	
+	<link href="/css/wise/ftc/already/common.css" rel="stylesheet" type="text/css">
+	<link href="/css/wise/ftc/already/SBUx2_5.css" rel="stylesheet" type="text/css">
+
+
+	
+	<link rel="stylesheet" href="/css/sbchart/sbchart.css"/>
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" type="text/css" href="/js/wise/jquery/jquery-ui-1.13.3.min.css" media="screen" />
+<link rel="stylesheet" href="/css/wise/style.css" type="text/css">
+<script type="text/javascript" src="/js/wise/common/common.js"></script>
+<script type="text/javascript" src="/js/wise/common/commonValidation.js"></script>                
+<script type="text/javascript" src="/js/wise/common/commonCalendar.js"></script>
+<script type="text/javascript" src="/js/wise/common/commonViewFun.js"></script>                  
+<script type="text/javascript" src="/js/wise/jquery/jquery-3.7.1.min.js?v=<%=System.currentTimeMillis() - 13%>"></script>
+<script type="text/javascript" src="/js/ps/jquery-migrate-3.6.0.min.js?v=<%=System.currentTimeMillis() - 13%>"></script>
+<script type="text/javascript" src="/js/wise/jquery/jquery.money.js"></script> 
+<script type="text/javascript" src="/js/wise/common/ibsheet/chart/ibchart.js"></script>                                            
+<script type="text/javascript" src="/js/wise/common/tabsStatSch.js"></script>                                  
+<script type="text/javascript" src="/js/wise/common/map.js"></script>                         
+<script type="text/javascript" src="/js/wise/jquery/jquery.placeholder.js"></script>
+<script type="text/javascript" src="/js/wise/jquery/jquery.simplemodal-1.4.4.js"></script> 
+<!-- 웹로그분석 (VODA) -->
+<script type="text/javascript">
+   (function (a, i, v, o, r, y) {
+     a.__aivoryClient__ = {
+       load: function (src) {
+         var b = i.createElement("script");
+         b.src = src; b.async = true; b.type = "text/javascript";
+         i.getElementsByTagName("head")[0].appendChild(b);
+       },
+       ten: o,
+       rootDomain: r,
+     }; a.__aivoryClient__.load(v);
+   })(window, document, "/resources/voda/voda-agent.js", 'fixedTenantKey22', '', '');
+</script>
+<script type="text/javascript">
+var getContextPath = "";
+var serverName ="www.egroup.go.kr";
+var serverPort ="443";
+if(serverPort != "80" ){                                               
+	var serverAddr = "http://"+serverName+":"+serverPort+getContextPath;
+}else{
+	var serverAddr = "http://"+serverName+getContextPath;
+}
+var tabContentClass= "tabArea";               
+var tabId = "tabTitle";             
+var tabBody="easySearchArea";
+var tabSeq = 1;
+</script>
+
+
+<link rel="stylesheet" type="text/css" href="/css/wise/base/popup.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/base/data.css" />
+
+<!-- CSS공통 -->
+<link rel="stylesheet" type="text/css" href="/css/wise/base/board.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/base/contents.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/base/layout.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/base/main.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/base/notokr.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/base/responsiveslides.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/base/reset.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/base/board_mobile.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/base/contents_mobile.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/base/layout_mobile.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/base/top_popup.css" />
+<!-- //CSS공통 -->
+
+<!-- JS공통 -->
+<script type="text/javascript" src="/js/wise/base-by-developer.js"></script>
+<script type="text/javascript" src="/js/wise/jquery.bx.js"></script>
+<script type="text/javascript" src="/js/wise/html5.js"></script>
+<script type="text/javascript" src="/js/wise/jquery/jquery-ui-1.13.3.min.js?v=<%=System.currentTimeMillis() - 13%>"></script>
+<script type="text/javascript" src="/js/wise/jquery/json.min.js"></script>
+<script type="text/javascript" src="/js/wise/jquery/jquery.form.js"></script>
+<script type="text/javascript" src="/js/wise/jquery/jquery.cookie.js"></script>
+<script type="text/javascript" src="/js/wise/jquery/jquery.meio.mask.js" charset="utf-8"></script>
+<script type="text/javascript" src="/js/wise/common/ibsheet/ibsheet.js"></script>
+<script type="text/javascript" src="/js/wise/common/ibsheet/ibsheetinfo.js"></script>
+<script type="text/javascript" src="/js/wise/common/ibsheet/chart/ibchartinfo.js"></script>
+<script type="text/javascript" src="/js/wise/common/commonchart.js"></script>
+<script type="text/javascript" src="/js/wise/common/base/commonness.js"></script>
+<script type="text/javascript" src="/js/wise/common/base/delegation.js"></script>
+<script type="text/javascript" src="/js/wise/data/service/jquery.fileDownload.js"></script>
+<!-- //JS공통 -->
+
+<script type="text/javascript" src="/js/wise/common/common.js"></script>
+<script type="text/javascript">
+    var getContextPath = "";
+</script>
+
+<link rel="stylesheet" type="text/css" href="/css/wise/ftc/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/ftc/common.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/ftc/layout.css" />
+<link rel="stylesheet" type="text/css" href="/css/wise/ftc/contents.css" />
+<script type="text/javascript" src="/js/wise/ftc/js.js"></script>
+<script type="text/javascript" src="/js/wise/ftc/bootstrap.min.js"></script>
+
+
+<script type="text/javascript">
+	var preTabValue_a = "1";
+	var preTabValue_b = "1";
+	var params;
+	var iDataTemp;
+	var excelFileName = "";
+	var excelNumberTypeCols;
+
+	/* 초기실행 함수 */
+	function fn_subContentReady(){
+		fn_initSearchCondition(); //검색조건 초기화
+ 		fn_search(); //조회
+	}
+
+	/* 검색조건 세팅 */
+	function fn_initSearchCondition(){
+ 		gfn_ps_selectBoxCreate("/egps/wi/stat/bes/selectKmbntPresentnYearList.do", 'sch_startPrintYear', 'N', null); //시작년도
+ 		gfn_ps_selectBoxCreate("/egps/wi/stat/bes/selectKmbntPresentnYearList.do", 'sch_endPrintYear', 'N', null); //종료년도
+	}
+
+	/* 조회 */
+	function fn_search(pageIndex){
+		$("#loadingCircle").show();
+
+		if(opener == null){
+			params = gfn_ps_getTapParams();
+		}
+
+		if(pageIndex != null){
+			params["pageIndex"] = pageIndex;
+			params["pageUnit"] = jQuery("[name='pageUnit'] option:selected").val();
+		}
+
+		gfn_ps_postAjaxHtml('selectList', "/egps/wi/stat/bes/selectKmbntAppnOneList.do", params);
+		jQuery("#raonkArea").css("display","none");
+		jQuery("#listTopText").css("display","");
+		jQuery("#sheetTabContent").css("display","");
+		jQuery("#excl").css("display","");
+	}
+
+	/* 콜백 함수 */
+	function fn_callBack(iServiceId, iData){
+		if(opener == null){
+			params = gfn_ps_getTapParams();
+		}
+
+		if(iServiceId == "selectList") { //조회 후 처리
+			jQuery("#resultListDiv").html(iData);
+		}
+
+		$("#loadingCircle").hide();
+	}
+
+    /* 엑셀 다운로드 */
+	function fn_excelDown(){
+		if(opener == null) {
+			params = gfn_ps_getTapParams();
+		}
+
+		//엑셀 다운로드 시 필요한 파라미터 저장
+		jQuery("form[name='excelDownForm']").find("input[name='preTabValue']").attr('value', preTabValue_a);
+		jQuery("form[name='excelDownForm']").find("input[name='sch_startPrintYear']").attr('value', params.sch_startPrintYear);
+		jQuery("form[name='excelDownForm']").find("input[name='sch_endPrintYear']").attr('value', params.sch_endPrintYear);
+
+		/* 항목선택 값 파라미터 세팅 START */
+		var chkboxGroup = [];
+		var trueCnt = 0;
+
+		$(".chkboxData").each(function(){
+			if($(this).prop("checked") == true){
+				chkboxGroup[trueCnt] = $(this).val();
+				trueCnt += 1;
+			}
+		});
+
+		$('#sch_chkboxGroup').val(chkboxGroup);
+		/* 항목선택 값 파라미터 세팅 END */
+
+		var file_name = "기업집단 지정 현황";
+		jQuery("form[name='excelDownForm']").find("input[name='excelFileNm']").attr('value', file_name == "" ? "excel" : file_name);
+		var frm = document.excelDownForm;
+		frm.action = "/egps/wi/stat/bes/selectBeforeEasyStatExcelDownTwo.do";
+		frm.method = "post";
+		frm.submit();
+	}
+
+    /* 항목선택 전체 선택 및 해제 */
+    function fnAllCheckChange(args){
+    	if(args.value == 'true'){
+    		$(".chkboxData").each(function(){
+    			$(this).prop("checked", true); //전체선택
+    		});
+    	}else{
+    		$(".chkboxData").each(function(){
+    			$(this).prop("checked", false); //전체해제
+    		});
+    	}
+    }
+
+    /* 지정 설명자료 및 주요 용어해설 버튼 클릭시 */
+    var gubunA = false;
+    var gubunB = false;
+    function fn_infoDivOpen(gubun){
+    	if(gubun == "A"){ //지정 설명자료
+    		if(gubunA == false){
+				$("#infoDivA").show();
+				$("#infoDivB").hide();
+				gubunA = true;
+				gubunB = false;
+				$("#btnA").html("지정 설명자료 ▼");
+				$("#btnB").html("주요 용어해설 ▲");
+				$("#btnA").css("background", "green");
+				$("#btnB").css("background", "#357acd");
+    		}else if(gubunA == true){
+    			$("#infoDivA").hide();
+    			gubunA = false;
+				$("#btnA").html("지정 설명자료 ▲");
+				$("#btnA").css("background", "#357acd");
+    		}
+    	}else if(gubun == "B"){ //주요 용어해설
+    		if(gubunB == false){
+				$("#infoDivB").show();
+				$("#infoDivA").hide();
+				gubunB = true;
+				gubunA = false;
+				$("#btnB").html("주요 용어해설 ▼");
+				$("#btnA").html("지정 설명자료 ▲");
+				$("#btnB").css("background", "green");
+				$("#btnA").css("background", "#357acd");
+    		}else if(gubunB == true){
+    			$("#infoDivB").hide();
+    			gubunB = false;
+				$("#btnB").html("주요 용어해설 ▲");
+				$("#btnB").css("background", "#357acd");
+    		}
+    	}
+    }
+
+</script>
+<div id="wrap">
+
+
+
+
+
+
+
+
+	<script type="text/javascript" >
+		var commonMenuList = [{"menuId":"PSIO001","upperMenuId":"PSIO","menuNm":"대규모기업집단개요","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO001001","upperMenuId":"PSIO001","menuNm":"기업집단포털","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO001001001","upperMenuId":"PSIO001001","menuNm":"기업집단포털이란","menuAdres":"/egps/ps/io/lkm/kmbntPortalGuidance.do","useAt":"Y"},{"menuId":"PSIO001001002","upperMenuId":"PSIO001001","menuNm":"기업집단이란","menuAdres":"/egps/ps/io/lkm/kmbntDfn.do","useAt":"Y"},{"menuId":"PSIO001002","upperMenuId":"PSIO001","menuNm":"정책 및 제도","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO001002001","upperMenuId":"PSIO001002","menuNm":"대규모기업집단 정책","menuAdres":"/egps/ps/io/pns/cngmrtPolicy.do","useAt":"Y"},{"menuId":"PSIO001002002","upperMenuId":"PSIO001002","menuNm":"순환출자금지제도","menuAdres":"/egps/ps/io/pns/rotatInvstmntPrhibtSystem.do","useAt":"Y"},{"menuId":"PSIO001003","upperMenuId":"PSIO001","menuNm":"경영성과정보","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO001003001","upperMenuId":"PSIO001003","menuNm":"기업집단 경영성과정보","menuAdres":"/egps/ps/io/lkm/kmbntMngmtRsltList.do","useAt":"Y"},{"menuId":"PSIO001003002","upperMenuId":"PSIO001003","menuNm":"기업집단간 비교","menuAdres":"/egps/ps/io/lkm/kmbntCmprList.do","useAt":"Y"},{"menuId":"PSIO001003003","upperMenuId":"PSIO001003","menuNm":"회사간 비교","menuAdres":"/egps/ps/io/lkm/cmpnyCmprList.do","useAt":"Y"},{"menuId":"PSIO002","upperMenuId":"PSIO","menuNm":"기업집단 지정","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO002001","upperMenuId":"PSIO002","menuNm":"기업집단 현황","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO002001001","upperMenuId":"PSIO002001","menuNm":"지정현황","menuAdres":"/egps/ps/io/kap/appnSttusList.do","useAt":"Y"},{"menuId":"PSIO002001002","upperMenuId":"PSIO002001","menuNm":"집단별 계열사수 및 자산총액","menuAdres":"/egps/ps/io/kap/affltsAssetsTotamtList.do","useAt":"Y"},{"menuId":"PSIO002001003","upperMenuId":"PSIO002001","menuNm":"집단별 재무현황","menuAdres":"/egps/ps/io/kap/fnnrSttusList.do","useAt":"Y"},{"menuId":"PSIO002001004","upperMenuId":"PSIO002001","menuNm":"집단별 기업공개현황","menuAdres":"/egps/ps/io/kap/entrprsOthbcSttusList.do","useAt":"Y"},{"menuId":"PSIO002001005","upperMenuId":"PSIO002001","menuNm":"집단별 영위업종수현황","menuAdres":"/egps/ps/io/kap/managetIndutyCoList.do","useAt":"Y"},{"menuId":"PSIO002002","upperMenuId":"PSIO002","menuNm":"소속회사 현황","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO002002001","upperMenuId":"PSIO002002","menuNm":"기업집단 소속회사 조회","menuAdres":"/egps/ps/io/kap/searchPsitnCmpnyList.do","useAt":"Y"},{"menuId":"PSIO002002002","upperMenuId":"PSIO002002","menuNm":"소속회사 개요","menuAdres":"/egps/ps/io/kap/psitnCmpnySumryList.do","useAt":"Y"},{"menuId":"PSIO002002003","upperMenuId":"PSIO002002","menuNm":"소속회사 재무현황","menuAdres":"/egps/ps/io/kap/psitnCmpnyFnnrSttusList.do","useAt":"Y"},{"menuId":"PSIO002002004","upperMenuId":"PSIO002002","menuNm":"소속회사 임원현황","menuAdres":"/egps/ps/io/kap/psitnCmpnyExctvList.do","useAt":"Y"},{"menuId":"PSIO002002005","upperMenuId":"PSIO002002","menuNm":"소속회사 주주현황","menuAdres":"/egps/ps/io/kap/psitnCmpnyShrholdrList.do","useAt":"Y"},{"menuId":"PSIO002002006","upperMenuId":"PSIO002002","menuNm":"소속회사 참여업종개요","menuAdres":"/egps/ps/io/kap/partcptnIndutySumryList.do","useAt":"Y"},{"menuId":"PSIO003","upperMenuId":"PSIO","menuNm":"주식소유현황","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO003001","upperMenuId":"PSIO003","menuNm":"소유지분구조현황","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO003001001","upperMenuId":"PSIO003001","menuNm":"집단별 소속회사 소유지분구조현황","menuAdres":"/egps/ps/io/spo/kmbntPosesnQotaStrctList.do","useAt":"Y"},{"menuId":"PSIO003001002","upperMenuId":"PSIO003001","menuNm":"집단별 소속회사간 주식보유현황","menuAdres":"/egps/ps/io/spo/psitnCmpnyStockHoldList.do","useAt":"Y"},{"menuId":"PSIO003001003","upperMenuId":"PSIO003001","menuNm":"집단별 순환출자 현황","menuAdres":"/egps/ps/io/spo/grupRotatInvstmntList.do","useAt":"Y"},{"menuId":"PSIO003002","upperMenuId":"PSIO003","menuNm":"내부지분","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO003002001","upperMenuId":"PSIO003002","menuNm":"내부지분(대동비교)","menuAdres":"/egps/ps/io/spo/innerQotaEqltrmCmprList.do","useAt":"Y"},{"menuId":"PSIO003002002","upperMenuId":"PSIO003002","menuNm":"특수관계인 내부지분","menuAdres":"/egps/ps/io/spo/sllInnerQotaList.do","useAt":"Y"},{"menuId":"PSIO003002003","upperMenuId":"PSIO003002","menuNm":"내부지분(주식수대비)","menuAdres":"/egps/ps/io/spo/innerQotaStockCoList.do","useAt":"Y"},{"menuId":"PSIO003003","upperMenuId":"PSIO003","menuNm":"지분도","menuAdres":"/egps/ps/io/spo/qotaChart.do","useAt":"Y"},{"menuId":"PSIO004","upperMenuId":"PSIO","menuNm":"채무보증","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO004001","upperMenuId":"PSIO004","menuNm":"소속사간 채무보증현황","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO004001001","upperMenuId":"PSIO004001","menuNm":"집단별 소속사간 채무보증현황","menuAdres":"/egps/ps/io/das/psitnCmpnyDetAssrncList.do","useAt":"Y"},{"menuId":"PSIO004001002","upperMenuId":"PSIO004001","menuNm":"제한제외사유별현황","menuAdres":"/egps/ps/io/das/lmttExclPrvonshList.do","useAt":"Y"},{"menuId":"PSIO005","upperMenuId":"PSIO","menuNm":"지주회사","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO005001","upperMenuId":"PSIO005","menuNm":"설립/전환 신고현황","menuAdres":"/egps/ps/io/pcm/fondCnvrsSttemntList.do","useAt":"Y"},{"menuId":"PSIO005002","upperMenuId":"PSIO005","menuNm":"자회사 및 손자회사 현황","menuAdres":"/egps/ps/io/pcm/cdpnySttusList.do","useAt":"Y"},{"menuId":"PSIO006","upperMenuId":"PSIO","menuNm":"지배구조관련","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO006001","upperMenuId":"PSIO006","menuNm":"사외이사현황","menuAdres":"/egps/ps/io/csr/outcmpnyHmvSttusList.do","useAt":"Y"},{"menuId":"PSIO006002","upperMenuId":"PSIO006","menuNm":"이사회내 위원회 현황","menuAdres":"/egps/ps/io/csr/hmvGrpCmitSttusList.do","useAt":"Y"},{"menuId":"PSIO006003","upperMenuId":"PSIO006","menuNm":"주주총회 의결권관련 제도현황","menuAdres":"/egps/ps/io/csr/gmtsckVhtSystemList.do","useAt":"Y"},{"menuId":"PSIO007","upperMenuId":"PSIO","menuNm":"알림정보","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO007001","upperMenuId":"PSIO007","menuNm":"공지사항","menuAdres":"/egps/ps/io/ain/noticeList.do","useAt":"Y"},{"menuId":"PSIO007002","upperMenuId":"PSIO007","menuNm":"보도자료","menuAdres":"/egps/ps/io/ain/nesDtaBbsList.do","useAt":"Y"},{"menuId":"PSIO007003","upperMenuId":"PSIO007","menuNm":"대규모기업집단정책","menuAdres":"/egps/ps/io/ain/lrsclKmbntPolicyBbsList.do","useAt":"Y"},{"menuId":"PSIO008","upperMenuId":"PSIO","menuNm":"기타서비스","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO008001","upperMenuId":"PSIO008","menuNm":"개인정보보호정책","menuAdres":"/egps/ps/io/esv/indvdlinfoPrtcPolicy.do","useAt":"Y"},{"menuId":"PSIO008002","upperMenuId":"PSIO008","menuNm":"저작권정책","menuAdres":"/egps/ps/io/esv/cpyrhtPolicy.do","useAt":"Y"},{"menuId":"PSIO008003","upperMenuId":"PSIO008","menuNm":"찾아오시는길","menuAdres":"/egps/ps/io/esv/insttCoursGuidance.do","useAt":"Y"},{"menuId":"PSIO008004","upperMenuId":"PSIO008","menuNm":"뷰어다운로드","menuAdres":"/egps/ps/io/esv/viewrDwld.do","useAt":"Y"},{"menuId":"PSIO008005","upperMenuId":"PSIO008","menuNm":"사이트맵","menuAdres":"/egps/ps/io/esv/siteMapng.do","useAt":"Y"},{"menuId":"PSIO008006","upperMenuId":"PSIO008","menuNm":"오픈API","menuAdres":"/egps/ps/io/esv/publicData.do","useAt":"Y"},{"menuId":"PSIO009","upperMenuId":"PSIO","menuNm":"통합검색","menuAdres":"/egps/ps/io/esv/unitySearchList.do","useAt":"Y"},{"menuId":"PSIO010","upperMenuId":"PSIO","menuNm":"제출시스템","menuAdres":"/egps/ps/io/lgn/presentnKndChoise.do","useAt":"Y"},{"menuId":"PSIO011","upperMenuId":"PSIO","menuNm":"로그인","menuAdres":"/egps/ps/io/lgn/loginScrin.do","useAt":"Y"},{"menuId":"PSIO012","upperMenuId":"PSIO","menuNm":"사업자등록번호인증","menuAdres":"/egps/ps/io/mbr/bizrnoCrtfcScrin.do","useAt":"Y"},{"menuId":"PSIO013","upperMenuId":"PSIO","menuNm":"사용자등록","menuAdres":"/egps/ps/io/mbr/mberInfoInputScrin.do","useAt":"Y"},{"menuId":"PSIO014","upperMenuId":"PSIO","menuNm":"마이페이지","menuAdres":"/egps/ps/io/mbr/mberInfoUpdtScrin.do","useAt":"Y"},{"menuId":"PSIO015","upperMenuId":"PSIO","menuNm":"기업집단 주제별 조회","menuAdres":"/egps/ps/io/kth/kmbntThemaList.do","useAt":"Y"},{"menuId":"PSIO016","upperMenuId":"PSIO","menuNm":"사이트맵","menuAdres":"/egps/ps/io/esv/siteMapng.do","useAt":"Y"}];
+		var commonMenuMap = {"PSIO001001":{"menuId":"PSIO001001","upperMenuId":"PSIO001","menuNm":"기업집단포털","menuAdres":null,"useAt":"Y"},"PSIO001003":{"menuId":"PSIO001003","upperMenuId":"PSIO001","menuNm":"경영성과정보","menuAdres":null,"useAt":"Y"},"PSIO001002":{"menuId":"PSIO001002","upperMenuId":"PSIO001","menuNm":"정책 및 제도","menuAdres":null,"useAt":"Y"},"PSIO005002":{"menuId":"PSIO005002","upperMenuId":"PSIO005","menuNm":"자회사 및 손자회사 현황","menuAdres":"/egps/ps/io/pcm/cdpnySttusList.do","useAt":"Y"},"PSIO005001":{"menuId":"PSIO005001","upperMenuId":"PSIO005","menuNm":"설립/전환 신고현황","menuAdres":"/egps/ps/io/pcm/fondCnvrsSttemntList.do","useAt":"Y"},"PSIO009":{"menuId":"PSIO009","upperMenuId":"PSIO","menuNm":"통합검색","menuAdres":"/egps/ps/io/esv/unitySearchList.do","useAt":"Y"},"PSIO003002003":{"menuId":"PSIO003002003","upperMenuId":"PSIO003002","menuNm":"내부지분(주식수대비)","menuAdres":"/egps/ps/io/spo/innerQotaStockCoList.do","useAt":"Y"},"PSIO007":{"menuId":"PSIO007","upperMenuId":"PSIO","menuNm":"알림정보","menuAdres":null,"useAt":"Y"},"PSIO003002002":{"menuId":"PSIO003002002","upperMenuId":"PSIO003002","menuNm":"특수관계인 내부지분","menuAdres":"/egps/ps/io/spo/sllInnerQotaList.do","useAt":"Y"},"PSIO008":{"menuId":"PSIO008","upperMenuId":"PSIO","menuNm":"기타서비스","menuAdres":null,"useAt":"Y"},"PSIO003002001":{"menuId":"PSIO003002001","upperMenuId":"PSIO003002","menuNm":"내부지분(대동비교)","menuAdres":"/egps/ps/io/spo/innerQotaEqltrmCmprList.do","useAt":"Y"},"PSIO005":{"menuId":"PSIO005","upperMenuId":"PSIO","menuNm":"지주회사","menuAdres":null,"useAt":"Y"},"PSIO006":{"menuId":"PSIO006","upperMenuId":"PSIO","menuNm":"지배구조관련","menuAdres":null,"useAt":"Y"},"PSIO003":{"menuId":"PSIO003","upperMenuId":"PSIO","menuNm":"주식소유현황","menuAdres":null,"useAt":"Y"},"PSIO004":{"menuId":"PSIO004","upperMenuId":"PSIO","menuNm":"채무보증","menuAdres":null,"useAt":"Y"},"PSIO001":{"menuId":"PSIO001","upperMenuId":"PSIO","menuNm":"대규모기업집단개요","menuAdres":null,"useAt":"Y"},"PSIO002":{"menuId":"PSIO002","upperMenuId":"PSIO","menuNm":"기업집단 지정","menuAdres":null,"useAt":"Y"},"PSIO001001001":{"menuId":"PSIO001001001","upperMenuId":"PSIO001001","menuNm":"기업집단포털이란","menuAdres":"/egps/ps/io/lkm/kmbntPortalGuidance.do","useAt":"Y"},"PSIO001001002":{"menuId":"PSIO001001002","upperMenuId":"PSIO001001","menuNm":"기업집단이란","menuAdres":"/egps/ps/io/lkm/kmbntDfn.do","useAt":"Y"},"PSIO008003":{"menuId":"PSIO008003","upperMenuId":"PSIO008","menuNm":"찾아오시는길","menuAdres":"/egps/ps/io/esv/insttCoursGuidance.do","useAt":"Y"},"PSIO008004":{"menuId":"PSIO008004","upperMenuId":"PSIO008","menuNm":"뷰어다운로드","menuAdres":"/egps/ps/io/esv/viewrDwld.do","useAt":"Y"},"PSIO008005":{"menuId":"PSIO008005","upperMenuId":"PSIO008","menuNm":"사이트맵","menuAdres":"/egps/ps/io/esv/siteMapng.do","useAt":"Y"},"PSIO004001001":{"menuId":"PSIO004001001","upperMenuId":"PSIO004001","menuNm":"집단별 소속사간 채무보증현황","menuAdres":"/egps/ps/io/das/psitnCmpnyDetAssrncList.do","useAt":"Y"},"PSIO008006":{"menuId":"PSIO008006","upperMenuId":"PSIO008","menuNm":"오픈API","menuAdres":"/egps/ps/io/esv/publicData.do","useAt":"Y"},"PSIO004001":{"menuId":"PSIO004001","upperMenuId":"PSIO004","menuNm":"소속사간 채무보증현황","menuAdres":null,"useAt":"Y"},"PSIO004001002":{"menuId":"PSIO004001002","upperMenuId":"PSIO004001","menuNm":"제한제외사유별현황","menuAdres":"/egps/ps/io/das/lmttExclPrvonshList.do","useAt":"Y"},"PSIO008001":{"menuId":"PSIO008001","upperMenuId":"PSIO008","menuNm":"개인정보보호정책","menuAdres":"/egps/ps/io/esv/indvdlinfoPrtcPolicy.do","useAt":"Y"},"PSIO008002":{"menuId":"PSIO008002","upperMenuId":"PSIO008","menuNm":"저작권정책","menuAdres":"/egps/ps/io/esv/cpyrhtPolicy.do","useAt":"Y"},"PSIO002002005":{"menuId":"PSIO002002005","upperMenuId":"PSIO002002","menuNm":"소속회사 주주현황","menuAdres":"/egps/ps/io/kap/psitnCmpnyShrholdrList.do","useAt":"Y"},"PSIO002002006":{"menuId":"PSIO002002006","upperMenuId":"PSIO002002","menuNm":"소속회사 참여업종개요","menuAdres":"/egps/ps/io/kap/partcptnIndutySumryList.do","useAt":"Y"},"PSIO002002001":{"menuId":"PSIO002002001","upperMenuId":"PSIO002002","menuNm":"기업집단 소속회사 조회","menuAdres":"/egps/ps/io/kap/searchPsitnCmpnyList.do","useAt":"Y"},"PSIO002002002":{"menuId":"PSIO002002002","upperMenuId":"PSIO002002","menuNm":"소속회사 개요","menuAdres":"/egps/ps/io/kap/psitnCmpnySumryList.do","useAt":"Y"},"PSIO002002003":{"menuId":"PSIO002002003","upperMenuId":"PSIO002002","menuNm":"소속회사 재무현황","menuAdres":"/egps/ps/io/kap/psitnCmpnyFnnrSttusList.do","useAt":"Y"},"PSIO002002004":{"menuId":"PSIO002002004","upperMenuId":"PSIO002002","menuNm":"소속회사 임원현황","menuAdres":"/egps/ps/io/kap/psitnCmpnyExctvList.do","useAt":"Y"},"PSIO003002":{"menuId":"PSIO003002","upperMenuId":"PSIO003","menuNm":"내부지분","menuAdres":null,"useAt":"Y"},"PSIO003003":{"menuId":"PSIO003003","upperMenuId":"PSIO003","menuNm":"지분도","menuAdres":"/egps/ps/io/spo/qotaChart.do","useAt":"Y"},"PSIO001002002":{"menuId":"PSIO001002002","upperMenuId":"PSIO001002","menuNm":"순환출자금지제도","menuAdres":"/egps/ps/io/pns/rotatInvstmntPrhibtSystem.do","useAt":"Y"},"PSIO007002":{"menuId":"PSIO007002","upperMenuId":"PSIO007","menuNm":"보도자료","menuAdres":"/egps/ps/io/ain/nesDtaBbsList.do","useAt":"Y"},"PSIO001002001":{"menuId":"PSIO001002001","upperMenuId":"PSIO001002","menuNm":"대규모기업집단 정책","menuAdres":"/egps/ps/io/pns/cngmrtPolicy.do","useAt":"Y"},"PSIO007003":{"menuId":"PSIO007003","upperMenuId":"PSIO007","menuNm":"대규모기업집단정책","menuAdres":"/egps/ps/io/ain/lrsclKmbntPolicyBbsList.do","useAt":"Y"},"PSIO003001":{"menuId":"PSIO003001","upperMenuId":"PSIO003","menuNm":"소유지분구조현황","menuAdres":null,"useAt":"Y"},"PSIO007001":{"menuId":"PSIO007001","upperMenuId":"PSIO007","menuNm":"공지사항","menuAdres":"/egps/ps/io/ain/noticeList.do","useAt":"Y"},"PSIO002001004":{"menuId":"PSIO002001004","upperMenuId":"PSIO002001","menuNm":"집단별 기업공개현황","menuAdres":"/egps/ps/io/kap/entrprsOthbcSttusList.do","useAt":"Y"},"PSIO002001005":{"menuId":"PSIO002001005","upperMenuId":"PSIO002001","menuNm":"집단별 영위업종수현황","menuAdres":"/egps/ps/io/kap/managetIndutyCoList.do","useAt":"Y"},"PSIO002001001":{"menuId":"PSIO002001001","upperMenuId":"PSIO002001","menuNm":"지정현황","menuAdres":"/egps/ps/io/kap/appnSttusList.do","useAt":"Y"},"PSIO002001002":{"menuId":"PSIO002001002","upperMenuId":"PSIO002001","menuNm":"집단별 계열사수 및 자산총액","menuAdres":"/egps/ps/io/kap/affltsAssetsTotamtList.do","useAt":"Y"},"PSIO002001003":{"menuId":"PSIO002001003","upperMenuId":"PSIO002001","menuNm":"집단별 재무현황","menuAdres":"/egps/ps/io/kap/fnnrSttusList.do","useAt":"Y"},"PSIO002002":{"menuId":"PSIO002002","upperMenuId":"PSIO002","menuNm":"소속회사 현황","menuAdres":null,"useAt":"Y"},"PSIO002001":{"menuId":"PSIO002001","upperMenuId":"PSIO002","menuNm":"기업집단 현황","menuAdres":null,"useAt":"Y"},"PSIO001003003":{"menuId":"PSIO001003003","upperMenuId":"PSIO001003","menuNm":"회사간 비교","menuAdres":"/egps/ps/io/lkm/cmpnyCmprList.do","useAt":"Y"},"PSIO001003002":{"menuId":"PSIO001003002","upperMenuId":"PSIO001003","menuNm":"기업집단간 비교","menuAdres":"/egps/ps/io/lkm/kmbntCmprList.do","useAt":"Y"},"PSIO001003001":{"menuId":"PSIO001003001","upperMenuId":"PSIO001003","menuNm":"기업집단 경영성과정보","menuAdres":"/egps/ps/io/lkm/kmbntMngmtRsltList.do","useAt":"Y"},"PSIO006003":{"menuId":"PSIO006003","upperMenuId":"PSIO006","menuNm":"주주총회 의결권관련 제도현황","menuAdres":"/egps/ps/io/csr/gmtsckVhtSystemList.do","useAt":"Y"},"PSIO006002":{"menuId":"PSIO006002","upperMenuId":"PSIO006","menuNm":"이사회내 위원회 현황","menuAdres":"/egps/ps/io/csr/hmvGrpCmitSttusList.do","useAt":"Y"},"PSIO006001":{"menuId":"PSIO006001","upperMenuId":"PSIO006","menuNm":"사외이사현황","menuAdres":"/egps/ps/io/csr/outcmpnyHmvSttusList.do","useAt":"Y"},"PSIO003001001":{"menuId":"PSIO003001001","upperMenuId":"PSIO003001","menuNm":"집단별 소속회사 소유지분구조현황","menuAdres":"/egps/ps/io/spo/kmbntPosesnQotaStrctList.do","useAt":"Y"},"PSIO003001002":{"menuId":"PSIO003001002","upperMenuId":"PSIO003001","menuNm":"집단별 소속회사간 주식보유현황","menuAdres":"/egps/ps/io/spo/psitnCmpnyStockHoldList.do","useAt":"Y"},"PSIO016":{"menuId":"PSIO016","upperMenuId":"PSIO","menuNm":"사이트맵","menuAdres":"/egps/ps/io/esv/siteMapng.do","useAt":"Y"},"PSIO014":{"menuId":"PSIO014","upperMenuId":"PSIO","menuNm":"마이페이지","menuAdres":"/egps/ps/io/mbr/mberInfoUpdtScrin.do","useAt":"Y"},"PSIO015":{"menuId":"PSIO015","upperMenuId":"PSIO","menuNm":"기업집단 주제별 조회","menuAdres":"/egps/ps/io/kth/kmbntThemaList.do","useAt":"Y"},"PSIO003001003":{"menuId":"PSIO003001003","upperMenuId":"PSIO003001","menuNm":"집단별 순환출자 현황","menuAdres":"/egps/ps/io/spo/grupRotatInvstmntList.do","useAt":"Y"},"PSIO012":{"menuId":"PSIO012","upperMenuId":"PSIO","menuNm":"사업자등록번호인증","menuAdres":"/egps/ps/io/mbr/bizrnoCrtfcScrin.do","useAt":"Y"},"PSIO013":{"menuId":"PSIO013","upperMenuId":"PSIO","menuNm":"사용자등록","menuAdres":"/egps/ps/io/mbr/mberInfoInputScrin.do","useAt":"Y"},"PSIO010":{"menuId":"PSIO010","upperMenuId":"PSIO","menuNm":"제출시스템","menuAdres":"/egps/ps/io/lgn/presentnKndChoise.do","useAt":"Y"},"PSIO011":{"menuId":"PSIO011","upperMenuId":"PSIO","menuNm":"로그인","menuAdres":"/egps/ps/io/lgn/loginScrin.do","useAt":"Y"}};
+		var SBGridProperties={};
+		var selectOthbcYm = '';
+		var selectUnityGrupId = '';
+		var selectUnityGrupNm = '';
+		var selectEntrprsId = '';
+		var selectEntrprsNm = '';
+
+		jQuery(document.body).ready(function(){
+
+			if (opener != null) {
+			    
+				opener = null;
+			}
+
+			// 백스페이스로 뒤로가기 방지
+			$(document).bind("keydown keypress", function(e){
+				var strEle = e.target.nodeName.toLowerCase();
+				if(strEle != 'input' && strEle != 'textarea') {
+					if( e.which == 8 ) { e.preventDefault(); }
+				}
+			});
+
+			// ajax 조회시에도 세션 유지 시간 초기화
+			$(document).ajaxStart(function(){
+				if("" != null && "" != ""){
+					clearInterval(fnSessioninterval);
+					clearTimeout(fnSessionTimeOut);
+					fnSessionTimeOut = setTimeout("cf_sessionCheckRun()", strSessionTimeout);
+				}
+			});
+
+
+			gfn_ps_createTopMenu();
+
+			gfn_ps_createMobileRightMenu();
+
+			if (!location.pathname.match('/egps/ps/sm/')) {
+				if (!location.pathname.match('/egps/wi/')) {
+					if('' != ''){
+						gfn_ps_inItMenu('');
+					}else if('NFTC002001001' != ''){
+						gfn_ps_inItMenu('NFTC002001001');
+					}
+				}
+			}
+
+			// 탑메뉴 보이게
+			var chkURL = window.location.pathname;
+			if(chkURL.substr(0,9) != "/egps/wi/" && chkURL.substr(0,25) != "/egps/ps/io/lgn/logOut.do"){
+				$("#topHeadMenu").show();
+			}
+			if(typeof(fn_subContentReady) == "function"){
+				fn_subContentReady();
+			}
+
+			var smCommonMenuCount = Number("");
+			if (smCommonMenuCount == 3) {
+				$('#all_bt').css("min-width", "70px");
+				$('#allPop').css("width", "94px");
+				$('#allPop ul li a').css("width", "94px");
+				$('#all_bt2').css("min-width", "70px");
+				$('#allPop2').css("width", "94px");
+				$('#allPop2 ul li a').css("width", "94px");
+			}
+
+			$('#pop_bt').click(function() {
+				if ($('#pop').css("display") == "none") {
+					$(this).css("background-image", "url(/images/location-icon3.png)");
+					$('#pop').slideDown(200);
+					document.getElementById("pop").style.zIndex=300;
+					$('#allPop').slideUp(100);
+					$('#allPop2').slideUp(100);
+				} else {
+					$(this).css("background-image", "url(/images/location-icon2.png)");
+					$('#pop').slideUp(100);
+				}
+			});
+
+			$('#all_bt').click(function() {
+				if ($('#allPop').css("display") == "none") {
+					$(this).css("background-image", "url(/images/location-icon3.png)");
+					$('#allPop').slideDown(200);
+					document.getElementById("allPop").style.zIndex=300;
+					$('#pop').slideUp(100);
+				} else {
+					$(this).css("background-image", "url(/images/location-icon2.png)");
+					$('#allPop').slideUp(100);
+				}
+            });
+
+			// 싵태점검 공통 버튼
+			$('#all_bt2').click(function() {
+				if ($('#allPop2').css("display") == "none") {
+					$(this).css("background-image", "url(/images/location-icon3.png)");
+					$('#allPop2').slideDown(200);
+					document.getElementById("allPop2").style.zIndex=300;
+	                $('#pop').slideUp(100);
+				} else {
+					$(this).css("background-image", "url(/images/location-icon2.png)");
+					$('#allPop2').slideUp(100);
+				}
+            });
+
+			$('#popComp_bt').click(function() {
+				if ($('#popComp').css("display") == "none") {
+					$('#popComp').slideDown(200);
+					document.getElementById("popComp").style.zIndex=300;
+					$('#popEx').slideUp(200);
+				} else {
+					$('#popComp').slideUp(100);
+				}
+			});
+
+			$('#popEx_bt').click(function() {
+				if ($('#popEx').css("display") == "none") {
+					$('#popEx').slideDown(200);
+					document.getElementById("popEx").style.zIndex=300;
+					$('#popComp').slideUp(200);
+				} else {
+					$('#popEx').slideUp(100);
+				}
+			});
+
+			// loginType에 따른 메뉴 활성화
+			if("" == "F" ||
+					"" == "G" ||
+					"" == "H" ||
+					"" == "I" ||
+					"" == "J") {
+				fn_ps_topMenuDivChange('2');
+			}else{
+				fn_ps_topMenuDivChange('1');
+			}
+		});
+
+
+		
+		function fn_linkToMain(){
+
+			var frm = document.headerForm;
+			frm.action = "/egps/wi/mainPage.do";
+			frm.method = "post";
+			frm.submit();
+
+		}
+
+		function fn_linkToSmSystem(){
+
+			var frm = document.headerForm;
+			frm.action = "/egps/ps/io/lgn/presentnKndChoise.do";
+			frm.method = "post";
+			frm.submit();
+
+		}
+
+		function fn_setLeftMenu(topMenuId){
+			var targetMenuId = gfn_ps_getMenuFirstChildren(topMenuId);
+			gfn_ps_moveMenu(targetMenuId);
+		}
+
+		function fn_ps_introToggle(){
+
+			var bodyWidth = jQuery(document.body).width();
+			var bodyHeight = jQuery(document.body).height();
+			if(jQuery("#psIntroLayout").css("display") == "none"){
+				jQuery("#psIntroLayout").css("display","");
+			}else{
+				jQuery("#psIntroLayout").css("display","none");
+			}
+		}
+
+
+		function fn_ps_moveLoginMenu(menuId,loginType){
+			var param = {
+					"loginType":loginType
+					};
+
+			gfn_ps_moveMenu(menuId,param);
+			jQuery("#psIntroLayout").css("display","none");
+		}
+
+
+		function fn_logOut(){
+			if(confirm("로그아웃하시겠습니까?")){
+				if(typeof setCookie == "function"){
+					setCookie("checkCi", "N");
+				}
+				var frm = document.headerForm;
+				frm.action = "/egps/ps/io/lgn/logOut.do";
+				frm.method = "post";
+				frm.submit();
+			}
+		}
+
+		function fn_ps_presentnYmChange(){
+			gfn_isLoading("start");
+			var iParams = new Object();
+
+			iParams["userPresentnYm"] = jQuery("#presentnYmList option:selected").val();
+
+			$.ajax({ type: "POST"
+				,url: "/egps/ps/io/mbr/presentnYmChange.do"
+				,data  : iParams
+				,dataType: "json"
+				,async: false
+				,success: function (data, status, xhr) {
+						jQuery("#unityGrupNmSpan").text(data.psUserVO.unityGrupNm);
+						jQuery("#entrprsNmSpan").text(data.psUserVO.entrprsNm);
+
+						if(data.psUserVO.presentnAt == 'Y'){
+							jQuery("#presentnAtA").text("제출기간: " + data.psUserVO.inputBeginDt + " ~ " + data.psUserVO.inputEndDt);
+						}else{
+							jQuery("#presentnAtA").text("과거데이터 조회");
+						}
+
+						if('' != ''){
+							gfn_ps_moveMenu('');
+						}else{
+							gfn_ps_moveMenu(jQuery("[name='smMenuValue']").val());
+						}
+
+					}
+				, error: function (request, status, error) {
+						gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+					}
+				});
+
+		}
+
+		function fn_ps_userMenuSessionChange(loginType){
+			gfn_isLoading("start");
+			var iParams = new Object();
+			iParams["loginType"] = loginType;
+			iParams["userPresentnYm"] = "999999";
+			$.ajax({ type: "POST"
+				   , url: "/egps/ps/io/lgn/selectLoginTypeSession.do"
+				   , data   : iParams
+				   , async  : true
+				   , success: function (data, status, xhr) {
+					   //window.location.href = "/egps/wi/mainPage.do";
+					   window.location.href = "/egps/ps/sm/com/selectNoticeMatterView.do";
+				   	 }
+				   , error: function (request, status, error) {
+				   		 gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+				   	 }
+				   }
+			);
+		}
+
+		function fn_ps_userEntrprsChange(entrprsId){
+			gfn_isLoading("start");
+			var iParams = new Object();
+			iParams["selectEntrprsId"] = entrprsId;
+			iParams["loginType"] = "";
+			iParams["userPresentnYm"] = "999999";
+			$.ajax({ type: "POST"
+				   , url: "/egps/ps/io/lgn/selectEntrprsSession.do"
+				   , data   : iParams
+				   , async  : true
+				   , success: function (data, status, xhr) {
+					   window.location.href = "/egps/wi/mainPage.do";
+				   	 }
+				   , error: function (request, status, error) {
+				   		 gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+				   	 }
+				   }
+			);
+		}
+
+		function fn_ps_userGrupChange(unityGrupId){
+			gfn_isLoading("start");
+			var iParams = new Object();
+			iParams["selectUnityGrupId"] = unityGrupId;
+			iParams["loginType"] = "";
+			$.ajax({ type: "POST"
+				   , url: "/egps/ps/io/lgn/selectUnityGrupSession.do"
+				   , data   : iParams
+				   , async  : true
+				   , success: function (data, status, xhr) {
+					   window.location.href = "/egps/wi/mainPage.do";
+				   	 }
+				   , error: function (request, status, error) {
+				   		 gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+				   	 }
+				   }
+			);
+		}
+
+		function fn_ps_moveNewestDataView() {
+
+			if ("" != "Y") { // 대표 권한 여부
+				alert("최신데이터 가져오기 수행 권한이 없습니다.");
+				return;
+			}
+
+			fn_dialogClose("guideDataCopy");
+			gfn_isLoading("start");
+			var iParams = new Object();
+
+			// 채무 메뉴로 접근한 경우 주식으로 변경 처리
+			if ("" == "C") {
+				iParams["loginType"] = "B";
+			} else {
+				iParams["loginType"] = "";
+			}
+
+			// 최신데이터 가져오기 메뉴 이동
+			$.ajax({ type: "POST"
+				   , url: "/egps/ps/io/lgn/selectLoginTypeSession.do"
+				   , data   : iParams
+				   , async  : true
+				   , success: function (data, status, xhr) {
+					   window.location.href = "/egps/ps/sm/com/selectNewestDataView.do";
+				   	 }
+				   , error: function (request, status, error) {
+				   		 gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+				   	 }
+				   }
+			);
+		}
+
+		// 2020.05.11 실태조사 메뉴로 DIV컨트롤 추가
+		function fn_ps_topMenuDivChange(gubun) {
+			if(gubun == "1"){	// 1 : 지정/지주
+				$('#topGubunDiv1').css("display", "block");
+				$('#topGubunDiv2').css("display", "none");
+				$('#topMenuDiv1').css("display", "block");
+				$('#topMenuDiv2').css("display", "none");
+			} else {	// 2 : 실태조사
+				$('#topGubunDiv1').css("display", "none");
+				$('#topGubunDiv2').css("display", "block");
+				$('#topMenuDiv1').css("display", "none");
+				$('#topMenuDiv2').css("display", "block");
+			}
+		}
+
+	</script>
+
+	 <!--tab소스 공통-->
+    <script type="text/javascript">
+        $(function() {
+            tab('#tab', 0);
+
+            if ("" != null && "" == "") {
+
+            	var mobilePattern = /iphone|ipad|android|blakberry|windows ce|symbian|windows phone|polaris|webos|nokia|webos|opera mini|sonyericsson|opera mobi|iemobile/;
+            	var userAgent = navigator.userAgent.toLowerCase();
+
+            	if (userAgent.match(mobilePattern) == null) {
+					$(".util-nav").show();
+            	} else {
+            		$(".util-nav").hide();
+            	}
+            }
+
+        });
+
+        function tab(e, num) {
+
+            var num = num || 0;
+            var menu = $(e).children();
+            var con = $(e + '_con').children();
+            var select = $(menu).eq(num);
+            var i = num;
+
+            select.addClass('on');
+            con.eq(num).show();
+
+            menu.click(function() {
+                if (select !== null) {
+                    select.removeClass("on");
+                    con.eq(i).hide();
+                }
+
+                select = $(this);
+                i = $(this).index();
+
+                select.addClass('on');
+                con.eq(i).show();
+            });
+        }
+    </script>
+    <!--//tab소스 공통-->
+
+	<script type="text/javascript">
+		var noticeBbsId = "BBS00005";
+		var nesDtaBbsId = "BBS00012";
+		var policyBbsId = "BBS00006,BBS00007,BBS00008,BBS00009,BBS00010,BBS00011";
+	</script>
+
+	<script type="text/javascript">
+		// 쿠키 출력
+		function getCookie(name) {
+			var cookieName = name + "=";
+			var x = 0;
+			while(x <= document.cookie.length) {
+				var y = (x+cookieName.length);
+				if(document.cookie.substring(x, y) == cookieName) {
+					if((lastChrCookie=document.cookie.indexOf(";", y)) == -1) {
+						lastChrCookie = document.cookie.length;
+					}
+					return decodeURI(document.cookie.substring(y, lastChrCookie));
+				}
+				x = document.cookie.indexOf(" ", x) + 1;
+				if(x == 0) {
+					break;
+				}
+			}
+			return "";
+		}
+
+		// 쿠키 셋팅
+		function setCookie(cname, value, expire) {
+			var todayValue = new Date();
+
+			todayValue.setDate(todayValue.getDate() + expire);
+			document.cookie = cname + "=" + encodeURI(value) + "; expires=" + todayValue.toGMTString() + "; path=/;";
+		}
+
+		// 팝업 하루동안 보지 않기 버튼 클릭
+		function fn_noticePopupCloseDay(divId) {
+			setCookie(divId, "end", 1);
+			$dialog = $('#'+divId);
+			dialogOption = $dialog.dialog({ close:function(event, ui){} });
+			dialogOption.dialog('close');
+		}
+
+		function fn_dateCompare(compareDate) {
+			var date = new Date();
+			var year = date.getFullYear().toString();
+			var month = (date.getMonth()+1).toString();
+			var day = date.getDate().toString();
+			var hour = date.getHours().toString();
+			var min = date.getMinutes().toString();
+
+			if(month.length < 2) {
+				month = "0" + month;
+			}
+			if(day.length < 2) {
+				day = "0" + day;
+			}
+
+			var strDate = year+month+day+hour+min;
+
+			if(strDate < compareDate) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		// dialog 닫기
+		function fn_dialogClose(divId) {
+			$dialog = $('#'+divId);
+			dialogOption = $dialog.dialog({ close:function(event, ui){} });
+			dialogOption.dialog('close');
+		}
+
+		// dialog 열기
+		function fn_dialogOpen(divId, compareDate) {
+			var result = getCookie(divId);
+			if(fn_dateCompare(compareDate)) {
+				if(result != "end") {
+					cf_showSessionTimeOutDialog(divId);
+				}
+			}
+		}
+
+		// dialog 조건문 분할
+		function fn_dialogOpenEx(divId, compareDate, ex) {
+			switch(ex) {
+				case 1 :
+					if('' != '' && '' == 'C') {
+						fn_dialogOpen(divId, compareDate);
+					}
+					break;
+				default :
+					if('' != '') {
+						fn_dialogOpen(divId, compareDate);
+					}
+			}
+		}
+
+		// 서버점검 팝업
+		$(function(){
+
+			
+			//fn_dialogOpenEx('noticeArea052901', '201905292359');
+			fn_dialogOpenEx('noticeArea052902', '201905291425');
+			fn_dialogOpenEx('noticeArea2', '201905312359', 1);
+
+			// 대표회사 담당자일 경우 최신데이터 가져오기 수행여부 체크, 안내 팝업 출력
+			if ((location.pathname.match('/egps/ps/sm/kmb/') // 지정, 주식/채무 자료입력 메뉴
+					|| location.pathname.match('/egps/ps/sm/hld/')) // 지주 자료입력 메뉴
+					&& '' == "Y" // 대표 권한 여부
+				    && '' == "N" // 대표 권한 여부
+					&& '' == "Y" // 입력기간 여부
+					&& '' == "N" // 최신데이터 가져오기 수행 여부
+			    ) {
+				cf_showSessionTimeOutDialog('guideDataCopy');
+			}
+
+			// 팝업 닫기
+			$('.dc').click(function(){
+				fn_dialogClose($(this).parent().parent().parent().parent().attr('id'));
+			});
+
+			// 팝업 하루동안 보지 않기
+			$('.pcd').click(function(){
+				fn_noticePopupCloseDay($(this).parent().parent().parent().parent().attr('id'));
+			});
+
+		})
+	</script>
+
+</head>
+
+<body>
+
+<div id="header"">
+
+<!--s:skip-navigation-->
+	<div class="skip">
+		<a href="#mcontainer">본문내용바로가기</a>
+		<a href="#gnb">메뉴바로가기</a>
+	</div>
+	<!--e:skip-navigation-->
+	<!--
+	<div style="position:fixed; top:120px; right:5%; width:120px; height:52px; z-index: 99999;"><a onclick="gfn_ps_ftcBrfrumBbsPopup();" style="cursor:pointer;" title="help" target="_blank"><img src="/images/icon_help.png" alt="help"></a></div>
+	 -->
+	<!--s:세션 타임아웃 팝업영역-->
+    <div id="fadeSession" style="display:none; width: 100%; z-index:310;">
+      <div class="layer-pop">
+        <div class="pop-tit">로그인 연장</div>
+          <div class="pop-inner">
+            <div id="time">
+              <p>10분후 로그아웃됩니다. 더 연장을 원하시면 '연장'버튼을 누르세요.</p>
+              <ul>
+                <li>남은시간&nbsp;:&nbsp;</li>
+                <li><strong id="countDown"><span id="time-min">00</span>:<span id="time-sec">00</span></strong></li>
+              </ul>
+              <button type="button" name="t-More" onClick="cf_sessionStay();">연장</button>
+              <button type="button" name="t-close" class="gray" onClick="cf_sessionOut('USER');">로그아웃</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    <!--e:세션 타임아웃 팝업영역-->
+
+    <!--s:서버 점검 공지 팝업영역-->
+	<div id="noticeArea052901" style="display:none; width: 100%; z-index:310;">
+		<div class="layer-pop">
+			<div class="pop-tit">시스템 공지</div>
+			<div class="pop-inner">
+				<div id="time">
+					<p class="tl"><strong>주식/채무 자료제출 관련 기능변경 및 개선으로 공지드립니다.</strong></p>
+					<p class="tl">1. [주식-주식소유명세 및 변동현황] 항목 필수체크 수정</p>
+					<p class="tl" style="font-size:12px;">&nbsp;&nbsp;- 소속구분 '소속회사(계열제외)' 선택 시 '발행회사법인법호' 필수 미체크</p>
+					<p class="tl">2. [주식-자료제출] '10. 주식소유 명세서' 소속구분 삭제</p>
+					<p class="tl">3. [주식-자료제출] '2-12. 기업집단 소유구조 현황' 조회 개선</p>
+					<p class="tl" style="font-size:12px;">&nbsp;&nbsp;- [우선주] → [의결권있는주/의결권없는주] 분리 표시</p>
+					<p class="tl">4. [채무-자료제출] '1-8. 소속회사로부터 받은 채무보증 명세서' 조회 개선</p>
+					<p class="tl">5. [채무-자료제출] '1-11. 금융기관별 채무보증금액 명세서' 조회 개선</p>
+					<p class="tl">6. [채무-자료제출] '1-12. 여신 대비 채무보증금액 비율' 조회 개선</p>
+					<p class="tl">7. [채무-자료제출] '1-14. 만기별 채무보증 명세서' 조회 개선</p>
+					<p class="tl color_blue" style="font-size:12px;">
+						※ '주식소유 명세서'를 기 제출하신 경우 수정 제출하실 필요는 없습니다.(제출자료 수용)
+					</p>
+					<!--
+					<p><strong>DB 서버 점검</strong> 및 기능개선 사항 반영 작업이 있을 예정입니다.</p>
+					<p>점검 작업 중 사이트의 접속이 원활하지 않을 수 있습니다.</p>
+					<p class="color_blue" style="font-size:14px;">
+						※ 주식 자료제출 '10. 주식소유 명세서' 소속구분 개선 및 <br>
+						채무 자료제출 첨부서류 조회 개선 등 <br>
+					</p>
+					<ul style="margin-bottom:20px;">
+						<li>일시 : </li>
+						<li style="color:#0068c7;">2019.05.28 18:00 ~ 21:00</li>
+					</ul>
+					 -->
+					<button type="button" name="t-More" class="pcd">하루동안 열지 않기</button>
+					<button type="button" name="t-close" class="gray dc">닫기</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="noticeArea052902" style="display:none; width: 100%; z-index:310;">
+		<div class="layer-pop">
+			<div class="pop-tit">시스템 점검 공지</div>
+			<div class="pop-inner">
+				<div id="time">
+					<p>시스템 점검 및 기능개선 반영 작업이 있을 예정입니다.</p>
+					<p>점검 작업 중 사이트의 접속이 원활하지 않을 수 있습니다.</p>
+					<p class="color_blue" style="font-size:14px;">
+						※ 주식 자료제출 '2-12. 기업집단 소유구조 현황' 조회 개선 <br>
+					</p>
+					<ul style="margin-bottom:20px;">
+						<li>일시 : </li>
+						<li style="color:#0068c7;">2019.05.29 14:20 ~ 14:25</li>
+					</ul>
+					<button type="button" name="t-More" class="pcd">하루동안 열지 않기</button>
+					<button type="button" name="t-close" class="gray dc">닫기</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!--e:서버 점검 공지 팝업영역-->
+
+	<!--s:채무 자료제출 안내 팝업영역-->
+	<div id="noticeArea2" style="display:none; width: 100%; z-index:310;">
+		<div class="layer-pop">
+			<div class="pop-tit">채무 자료제출 안내</div>
+			<div class="pop-inner">
+				<div id="time">
+					<p style="font-size:16px; line-height:25px;">채무보증현황 제출대상은<br/><strong style="font-size:18px; color:#0068c7;">상호출자제한기업집단</strong>에 속하는 회사입니다.</p>
+					<button type="button" name="t-More2"  class="pcd">하루동안 열지 않기</button>
+					<button type="button" name="t-close2" class="gray dc">닫기</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!--e:채무 자료제출 안내 팝업영역-->
+
+	<!--s:최신데이터가져오기 안내 팝업영역-->
+	<div id="guideDataCopy" style="display:none; width: 100%; z-index:310">
+		<div class="layer-pop">
+			<div class="pop-tit">최신데이터 가져오기 안내</div>
+			<div class="pop-inner">
+				<div id="time">
+					<p><strong>최신데이터 가져오기가 수행되지 않았습니다.</strong></p>
+					<p>최신데이터 가져오기 수행 후 자료입력이 가능합니다.</p>
+					<p class="color_blue" style="font-size:14px;">
+						※  최신데이터 가져오기는 대표회사만 수행 가능합니다.<br>
+					</p>
+					<button type="button" name="t-More" onclick="fn_ps_moveNewestDataView()">최신데이터가져오기 메뉴 바로가기</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!--e:최신데이터가져오기 안내 팝업영역-->
+
+	<form id="headerForm" name="headerForm" ></form>
+
+	<!--s:wrap-->
+	<div id="wrap">
+		<!--s:header-->
+		<header>
+			<!--s:toplink-->
+			<div class="toplink">
+				<div class="top-wrap">
+					
+						
+						
+							<div class="ci"><a href="http://www.ftc.go.kr/" title="공정거래위원회 바로가기 새창" target="_blank">공정거래위원회</a></div>
+						
+					
+					
+					
+					<div class="util-wrap">
+						
+						
+							<ul class="util-nav">
+								<li><a href="javascript:fn_ps_moveLoginMenu('PSIO011');" class="blue" title="로그인">로그인</a></li>
+							</ul>
+						
+						<div class="log_btn">
+							<a href="#" class="mob_btn">모바일 메뉴</a>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!--e:toplink-->
+		</header>
+		</div>
+
+		<!--s:gnb 메뉴-->
+		<div id="topHeadMenu" style="display:none;">
+			<div id="gnb-wrap">
+				<div class="inner">
+					<h1>
+						<a href="/index.jsp" title="기업집단포털"><img src="/images/header/logo.png" alt="기업집단포털"></a>
+					</h1>
+					<div id="gnb">
+						<ul id="topMenuUlX">
+							<li style="width:180px;text-align:center"><a href="/egps/wi/info/aboutGroupPage.do" title="대규모 기업집단" style="font-size:20px;font-weight:600;">대규모 기업집단</a></li>
+							<li style="width:180px;text-align:center"><a href="/egps/wi/stat/easyStatPage.do" title="통계DB" style="font-size:20px;font-weight:600;">통계DB</a></li>
+							<li style="width:180px;text-align:center"><a href="/egps/wi/stat/spo/qotaChart.do" title="테마통계" style="font-size:20px;font-weight:600;">테마통계</a></li>
+							<li style="width:180px;text-align:center"><a href="/egps/wi/comm/noticePage.do" title="참여소통" style="font-size:20px;font-weight:600;">참여소통</a></li>
+							<li style="width:180px;text-align:center"><a href="/egps/wi/site/infoSitePage.do" title="소개" style="font-size:20px;font-weight:600;">소개</a></li>
+						</ul>
+					</div>
+					<!--e:gnb-->
+				</div>
+			</div>
+		</div>
+		<!--e:gnb 메뉴-->
+
+		<!-- 네비 시작 -->
+		<nav id="gnb_layout">
+			<div class="mobile_wrap">
+				<ul class='depth1_ul n7' id="mobiRightMenuUl"></ul>
+				<a id="btnClose_gnb" class="gnbClose" href="#">닫기</a>
+			</div>
+			<span class="gnb_bg"></span>
+			<span class="gnb_bar"></span>
+		</nav>
+		<!-- 네비 끝 -->
+		<div class="intro-wrap" id="isLoading" style="position: absolute; left: 0px; top: 0px; z-index: 400; display:none;" >
+            <div class="loading">
+           <img src="/images/loading_v3.gif" alt="loading">
+           <strong>Loading</strong>
+           <p class="mt5">잠시만 기다려 주십시오.</p>
+           </div>
+       </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" >
+jQuery(document.body).ready(function(){
+
+	$('#tsSearchBt').click(function() {
+		if ( com.wise.util.isEmpty($("#tsSearch input[name=totalsearch]").val()) ) {
+			var searchKey = $("#tsSearch input[name=totalsearch]").val();
+			var s_cnt = 0;
+			if(searchKey.split(" ")[0] != null){
+				$("[name=searchWord1]").val(searchKey.split(" ")[0]);
+				s_cnt = 1;
+			}
+			
+			if(searchKey.split(" ")[1] != null){
+				$("[name=searchWord2]").val(searchKey.split(" ")[1]);
+				s_cnt = s_cnt + 1;
+			}
+			
+			if(searchKey.split(" ")[2] != null){
+				$("[name=searchWord3]").val(searchKey.split(" ")[2]);
+				s_cnt = s_cnt + 1;
+			}
+			$("[name=s_cnt]").val(s_cnt);
+// 			console.log("s_cnt : " + s_cnt);
+			
+			alert("검색어를 입력하세요");
+			return false;
+		}
+		fn_tsSearch();
+	});
+
+	$('#mSearchBt').click(function() {
+		if ( com.wise.util.isEmpty($("#mSearch input[name=mtotalsearch]").val()) ) {
+			
+			var msearchKey = $("#tsSearch input[name=mtotalsearch]").val();
+			var s_cnt = 0;
+			if(msearchKey.split(" ")[0] != null){
+				$("[name=searchWord1]").val(msearchKey.split(" ")[0]);
+				s_cnt = 1;
+			}
+			
+			if(msearchKey.split(" ")[1] != null){
+				$("[name=searchWord2]").val(msearchKey.split(" ")[1]);
+				s_cnt = s_cnt + 1;
+			}
+			
+			if(msearchKey.split(" ")[2] != null){
+				$("[name=searchWord3]").val(msearchKey.split(" ")[2]);
+				s_cnt = s_cnt + 1;
+			}
+			$("[name=s_cnt]").val(s_cnt);
+// 			console.log("s_cnt : " + s_cnt);
+			
+			alert("검색어를 입력하세요");
+			return false;
+		}
+		fn_mSearch();
+	});			
+	
+});
+
+function fn_tsSearch(){
+	var frm = document.tsSearch;
+	frm.action = "/egps/wi/etc/searchPage.do";
+	frm.method = "post";
+	frm.submit();
+}
+function fn_mSearch(){
+	var mfrm = document.mSearch;
+	mfrm.action = "/egps/wi/etc/searchPage.do";
+	mfrm.method = "post";
+	mfrm.submit();
+}
+
+</script>
+		<div class="search_area">
+			<h1 class="logo"><a href="/"><span>기업집단포털</span></a></h1>
+			<div class="box"> 
+				<form id="tsSearch" name="tsSearch" >
+				<input type="hidden" name="searchWord1" value="" />
+       			<input type="hidden" name="searchWord2" value="" />
+       			<input type="hidden" name="searchWord3" value="" />
+       			<input type="hidden" name="s_cnt" value="" />
+					<fieldset>
+						<legend>홈페이지 검색</legend>
+						<label for="totalsearch" class="hidden">검색어입력</label>
+						<input type="text" name="totalsearch" id="totalsearch" class="header_search" title="검색어를 입력하세요.">
+						<input type="submit" id="tsSearchBt" value="검색">
+					</fieldset>
+				</form>
+			</div>
+		</div>
+		<div class="totalsearch">
+			<a href="#totalsearch_input" class="button"><span>검색열기</span></a>
+		</div>
+		<div id="totalsearch_input">
+			<div class="box">
+				<form  id="mSearch" name="mSearch" action="">
+				<input type="hidden" name="searchWord1" value="" />
+       			<input type="hidden" name="searchWord2" value="" />
+       			<input type="hidden" name="searchWord3" value="" />
+       			<input type="hidden" name="s_cnt" value="" />
+					<fieldset>
+						<legend>홈페이지 검색</legend>
+						<label for="mtotalsearch" class="hidden">검색어입력</label>
+						<input type="text" name="mtotalsearch" id="mtotalsearch" class="js_input_val" title="검색어를 입력하세요." />
+						<input type="submit" id="mSearchBt" value="검색" />
+					</fieldset>
+				</form>
+			</div>
+		</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		<div id="nav" class="nav_box">
+			<div id="blind"></div>
+			<div id="gnb">
+				<ul>
+					<li><a href="/egps/wi/info/aboutGroupPage.do"><span>대규모기업집단</span></a>
+						<ul>
+							<li><a href="/egps/wi/info/aboutGroupPage.do">기업집단이란</a></li>
+							<li><a href="http://www.ftc.go.kr/www/contents.do?key=696" target=_blank>대규모기업집단 정책</a></li>
+							<!-- <li><a href="/egps/wi/comm/kmbntThemaList.do">기업집단 주제별 조회</a></li>  -->
+							<li><a href="/egps/wi/stat/glossaryPage.do">용어사전</a></li>
+						</ul>
+					</li>
+					<li><a href="/egps/wi/stat/reportStatPage.do"><span>정보공개</span></a>
+						<ul>
+							<li><a href="/egps/wi/stat/reportStatPage.do">기업정보공개</a></li>
+							<li><a href="/egps/wi/stat/reportStatPageTwo.do">공정위 공시</a></li>
+							<li><a href="/egps/wi/stat/spo/qotaChart.do">지분도</a></li>
+							<li><a href="/egps/wi/thema/visualMain.do">시각화 통계</a></li>
+							<!-- <li><a href="/egps/wi/stat/easyStatPage.do">간편통계</a></li> -->
+						</ul>
+					</li>
+					<!--
+					<li><a href="/egps/wi/stat/spo/qotaChart.do"><span>테마통계</span></a>
+						<ul>
+							<li><a href="/egps/wi/thema/hitStatPage.do">인기통계</a></li>
+							<li><a href="/egps/wi/thema/newStatPage.do">최신통계</a></li>
+						</ul>
+					</li>
+					-->
+					<li><a href="/egps/wi/comm/noticePage.do"><span>참여소통</span></a>
+						<ul>
+							<li><a href="/egps/wi/comm/noticePage.do">공지사항</a></li>
+							<li><a href="/egps/wi/comm/faqPage.do">FAQ</a></li>
+							<li><a href="/egps/wi/comm/inquiryListPage.do">문의사항</a></li>
+							<!-- <li><a href="/egps/wi/comm/ammtTpofPage.do">익명제보하기</a></li> -->
+						</ul>
+					</li>
+					<li><a href="/egps/wi/site/infoSitePage.do"><span>소개</span></a>
+						<ul>
+							<li><a href="/egps/wi/site/infoSitePage.do">기업집단포털 소개</a></li>
+							<li><a href="/egps/wi/site/infoServicePage.do">서비스 이용안내</a></li>
+							<li><a href="/egps/wi/site/infoApiPage.do">OpenAPI 소개</a></li>
+							<li><a href="/egps/wi/site/infoViewerPage.do">뷰어 다운로드</a></li>
+						</ul>
+					</li>
+				</ul>
+				<script type="text/javascript">
+					$(document).ready(function() {
+						Tmenu_setting("000000");
+					});
+				</script>
+			</div>
+		</div>
+	</div>
+
+
+<div id="container">
+	<div id="visual" class="bg3">
+		<h2>기업집단 지정 현황</h2>
+	</div>
+	<div id="path">
+		<div class="layout">
+			<ul id="lnb">
+				<li class="home"><a href="/">Home</a></li>
+
+				<!-- 1 depth -->
+				<li><a href="/egps/wi/stat/reportStatPage.do">정보공개</a>
+					<ul>
+						<li><a href="/egps/wi/info/aboutGroupPage.do">대규모기업집단</a></li>
+						<li><a href="/egps/wi/comm/noticePage.do">참여소통</a></li>
+						<li><a href="/egps/wi/site/infoSitePage.do">소개</a></li>
+					</ul>
+				</li>
+
+				<!-- 2 depth -->
+				<li><a href="/egps/wi/stat/reportStatPage.do">기업정보공개</a>
+					<ul>
+						<li><a href="/egps/wi/stat/reportStatPageTwo.do">공정위 공시</a></li>
+						<li><a href="/egps/wi/stat/spo/qotaChart.do">지분도</a></li>
+						<li><a href="/egps/wi/thema/visualMain.do">시각화 통계</a></li>
+					</ul>
+				</li>
+
+				<!-- 3 depth -->
+				<li><a href="/egps/wi/stat/bes/kmbntAppnOneList.do">기업집단</a>
+					<ul>
+						<li><a href="/egps/wi/stat/pcm/fondCnvrsSttemntList.do">지주회사</a></li>
+						<li><a href="/egps/wi/stat/kap/psitnCmpnySumryList.do">소속회사</a></li>
+						<li><a href="/egps/wi/stat/bes/kmbntPosesnStrctOneList.do">주식소유</a></li>
+						<li><a href="/egps/wi/stat/bes/kmbntDavStusList.do">채무보증</a></li>
+						<li><a href="/egps/wi/stat/csr/outcmpnyHmvSttusList.do">지배구조</a></li>
+					</ul>
+				</li>
+
+				<!-- 4 depth -->
+				<li><a href="/egps/wi/stat/bes/kmbntAppnOneList.do">기업집단 지정 현황</a>
+					<ul>
+						<li><a href="/egps/wi/stat/bes/kmbntPosesnStrctFourList.do">기업집단 기업 공개 현황</a></li>
+						<li><a href="/egps/wi/stat/bes/kmbntFnnrOneList.do">기업집단 자산총액 현황</a></li>
+						<li><a href="/egps/wi/stat/bes/kmbntFnnrTwoList.do">기업집단 부채총액 현황</a></li>
+						<li><a href="/egps/wi/stat/bes/kmbntFnnrThreeList.do">기업집단 매출액 현황</a></li>
+						<li><a href="/egps/wi/stat/bes/kmbntFnnrFourList.do">기업집단 당기순이익 현황</a></li>
+						<li><a href="/egps/wi/stat/bes/kmbntFnnrFiveList.do">기업집단 부채비율 현황</a></li>
+						<li><a href="/egps/wi/stat/bes/kmbntAcctoKmbntSumryList.do">기업집단별 개요</a></li>
+						<li><a href="/egps/wi/stat/kap/entrprsOthbcSttusList.do">기업집단별 자산규모에 따른 현황</a></li>
+						<li><a href="/egps/wi/stat/lkm/kmbntMngmtRsltList.do">기업집단별 경영성과 현황</a></li>
+						<li><a href="/egps/wi/stat/bes/kmbntAcctoExctvStusList.do">기업집단별 임원 현황</a></li>
+						<li><a href="/egps/wi/stat/bes/kmbntAcctoFnnrStusList.do">기업집단별 재무 현황</a></li>
+					</ul>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<div id="contents">
+		<div id="txt">
+			<form name="excelDownForm" onsubmit="false">
+				<input type="hidden" name="excelFileNm"/>
+				<input type="hidden" name="preTabValue"/>
+				<input type="hidden" name="sch_startPrintYear"/>
+				<input type="hidden" name="sch_endPrintYear"/>
+				<input type="hidden" name="sch_chkboxGroup" id="sch_chkboxGroup" />
+				<input type="hidden" name="sch_serviceId" value="selectKmbntAppnOneList" />
+			</form>
+			<div class='tab-box-01'>
+				<!-- 실제 탭 영역 START -->
+				<div class="tabGubunAreaDiv">
+					<label class="tabGubunAreaA">기업집단 전체</label>
+					<label class="tabGubunAreaB" onclick="location.href='/egps/wi/stat/kap/appnSttusListTwo.do?tabGubunParam=1'">기업집단 별</label>
+					<label class="tabGubunAreaB" onclick="location.href='/egps/wi/stat/kap/appnSttusListTwo.do?tabGubunParam=2'">연도별 지정수</label>
+				</div>
+				<!-- 실제 탭 영역 END -->
+				<label for="tabOne"></label>
+				<input type='radio' name='aTabInput' id='tabOne' tabindex="1" value="1" checked onclick="javascript:gfn_ps_a_tabClickEvent(this);">
+				<div id="tabDiv_1" class='tab-content tab-one f-board'>
+					<form action="javascript:fn_search();">
+						<div class="gboard01" tabindex="0" style="min-height: 0px; margin-bottom: 0px;">
+							<table>
+								<tr>
+									<th width="17%" style="text-align: center; font-weight: bold;">조회기간</th>
+									<th width="83%">
+										<select id="sch_startPrintYear" name="sch_startPrintYear" title="조회기간"></select> ~
+										<select id="sch_endPrintYear" name="sch_endPrintYear" title="조회기간"></select>
+									</th>
+								</tr>
+								<tr>
+									<th style="text-align: center; font-weight: bold;">항목선택</th>
+									<th style="text-align: left;">
+										<sbux-checkbox id="allChk" name="allChk" uitype="normal" text-right-padding="10px" text="전체 선택/해제" checked onchange="fnAllCheckChange(this)"></sbux-checkbox>
+										<sbux-checkbox class="chkboxData" id="colChk1" name="colChk1" uitype="normal" text-right-padding="10px" true-value="기업집단수|kmbntCo|r" text="기업집단수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+										<sbux-checkbox class="chkboxData" id="colChk2" name="colChk2" uitype="normal" text-right-padding="10px" true-value="신규지정기업집단수|newAppnKmbntCo|r" text="신규지정기업집단수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+										<sbux-checkbox class="chkboxData" id="colChk3" name="colChk3" uitype="normal" text-right-padding="10px" true-value="지정제외기업집단수|appnExclKmbntCo|r" text="지정제외기업집단수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+										<sbux-checkbox class="chkboxData" id="colChk4" name="colChk4" uitype="normal" text-right-padding="10px" true-value="소속회사수|psitnCmpnyCo|r" text="소속회사수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+										<!-- <sbux-checkbox class="chkboxData" id="colChk5" name="colChk5" uitype="normal" text-right-padding="10px" true-value="총수존재기업집단수|hocExstKmbntCo|r" text="총수존재기업집단수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+										<sbux-checkbox class="chkboxData" id="colChk6" name="colChk6" uitype="normal" text-right-padding="10px" true-value="총수존재소속회사수|hocExstPsitnCmpnyCo|r" text="총수존재소속회사수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+										<sbux-checkbox class="chkboxData" id="colChk7" name="colChk7" uitype="normal" text-right-padding="10px" true-value="총수무존재기업집단수|hocNexstKmbntCo|r" text="총수무존재기업집단수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+										<sbux-checkbox class="chkboxData" id="colChk8" name="colChk8" uitype="normal" text-right-padding="10px" true-value="총수무존재소속회사수|hocNexstPsitnCmpnyCo|r" text="총수무존재소속회사수" checked onchange="fnCheckChange(this)"></sbux-checkbox> --> <!-- 임시로 총수 관련된 항목 주석처리 2026.06.02 -->
+										<sbux-checkbox class="chkboxData" id="colChk9" name="colChk9" uitype="normal" text-right-padding="10px" true-value="상위그룹소속회사수|upperGroupPsitnCmpnyCo|r" text="상위그룹소속회사수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+										<sbux-checkbox class="chkboxData" id="colChk10" name="colChk10" uitype="normal" text-right-padding="10px" true-value="상위그룹평균소속회사수|upperGroupAvrgPsitnCmpnyCo|r" text="상위그룹평균소속회사수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+										<sbux-checkbox class="chkboxData" id="colChk11" name="colChk11" uitype="normal" text-right-padding="10px" true-value="중위그룹소속회사수|mdnGroupPsitnCmpnyCo|r" text="중위그룹소속회사수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+										<sbux-checkbox class="chkboxData" id="colChk12" name="colChk12" uitype="normal" text-right-padding="10px" true-value="중위그룹평균소속회사수|mdnGroupAvrgPsitnCmpnyCo|r" text="중위그룹평균소속회사수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+										<sbux-checkbox class="chkboxData" id="colChk13" name="colChk13" uitype="normal" text-right-padding="10px" true-value="하위그룹소속회사수|lwprtGroupPsitnCmpnyCo|r" text="하위그룹소속회사수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+										<sbux-checkbox class="chkboxData" id="colChk14" name="colChk14" uitype="normal" text-right-padding="10px" true-value="하위그룹평균소속회사수|lwprtGroupAvrgPsitnCmpnyCo|r" text="하위그룹평균소속회사수" checked onchange="fnCheckChange(this)"></sbux-checkbox>
+									</th>
+								</tr>
+							</table>
+						</div>
+					</form>
+				</div>
+			</div>
+			<!-- 조회 버튼 -->
+			<div class="btnArea" style="float: unset; text-align: right; margin-top: 0px;">
+				<button type="button" value="A" class="blue" id="btnA" onclick="javascript:fn_infoDivOpen(this.value);">지정 설명자료 ▲</button>
+				<button type="button" value="B" class="blue" id="btnB" onclick="javascript:fn_infoDivOpen(this.value);">주요 용어해설 ▲</button>
+				<button type="button" value="Excel 출력" class="excl" id="excl" onclick="javascript:fn_excelDown();">Excel 출력</button>
+				<button type="button" value="조회" class="blue" onclick="javascript:fn_search();">조회</button>
+			</div>
+
+			<!-- 지정 설명자료 -->
+			<div class="help_area_ni" id="infoDivA" style="margin-bottom: 20px; padding: 0px 10px 0 10px; display: none;">
+				<ul>
+					<h3 style="text-align: center; text-decoration: underline;">상호출자제한기업집단 및 공시대상기업집단 지정 설명자료</h3>
+					<b>□ 개요</b><br>
+					° 「상호출자제한기업집단 및 공시대상기업집단 지정」이란 대규모기업집단 시책의 적용대상이 되는 기업집단의 범위를 확정하는 제도<br>
+					° 공정거래위원회는 상호출자제한기업집단 및 공시대상기업집단에 속하는 회사들을 대상으로 계열회사 간 상호출자･신규순환출자 금지, 금융･보험사의 의결권 행사 제한, 계열회사 간 채무보증 제한, 기업집단 현황 등 공시의무 부과, 총수일가 사익편취 규제 등 대규모기업집단 시책을 집행<br>
+					<br>
+					<b>□ 연혁</b><br>
+					° 상호출자제한기업집단의 기준이 되는 자산규모는 ’08년 7월부터 5조 원을 유지하다가 ’16년 9월 공정거래법 시행령 개정으로 10조 원으로 상향<br>
+					° ’17년 4월 공정거래법 개정으로 기업집단 시책의 적용대상이 ‘자산규모 10조 원 이상인 상호출자제한기업집단’과 ‘자산규모 5조 원 이상인 공시대상기업집단’으로 이원화<br>
+					° ’20년 12월 공정거래법 전면 개정에 따라 상호출자제한기업집단의 지정 기준을 국내총생산액의 0.5%로 변경<br>
+					<br>
+					<b>□ 지정 발표시기 및 방법</b><br>
+					° 공정거래위원회는 매년 5월 1일까지(부득이한 경우 5월 15일까지) 상호출자제한기업집단 및 공시대상기업집단을 지정(보도자료 배포 등)<br>&nbsp;&nbsp;&nbsp;
+					<font color="blue">* 공정거래위원회는 매년 공정거래법 제31조 제4항에 따른 자료를 제출받아 상호출자제한기업집단 및 공시대상기업집단을 지정</font><br>
+					<br>
+					<b>□ 지정 대상 및 기준</b><br>
+					° <b><font color="green">(상호출자제한기업집단)</font></b> 기업집단에 속하는 국내 회사들의 직전 사업연도 자산총액(금융∙보험업 영위 회사는 자본총액 또는 자본금 중 큰 금액)의 합계액이 ‘국내총생산액의 1천분의 5에 해당하는 금액’ 이상인 기업집단<br>&nbsp;&nbsp;&nbsp;
+					<font color="blue">* 금융∙보험업만을 영위하는 기업집단, 금융∙보험업 영위 회사가 동일인인 기업집단 등은 제외(공정거래법 제31조 및 공정거래법 시행령 제38조 등 참고)</font><br>
+					° <b><font color="green">(공시대상기업집단)</font></b> 기업집단에 속하는 국내 회사들의 직전 사업연도 자산총액(금융∙보험업 영위회사는 자본총액 또는 자본금 중 큰 금액)의 합계액이 5조 원 이상인 기업집단<br>&nbsp;&nbsp;&nbsp;
+					<font color="blue">* 금융∙보험업만을 영위하는 기업집단, 금융∙보험업 영위 회사가 동일인인 기업집단 등은 제외(공정거래법 제31조 및 공정거래법 시행령 제38조 등 참고)</font>
+
+				</ul>
+			</div>
+
+			<!-- 주요 용어해설 -->
+			<div class="help_area_ni" id="infoDivB" style="margin-bottom: 20px; padding: 0px 10px 0 10px; display: none;">
+				<ul>
+					<h3 style="text-align: center; text-decoration: underline;">주요 용어 해설</h3>
+					<b>□ (상호출자제한기업집단)</b> 기업집단에 속하는 국내 회사들의 직전 사업연도 자산총액(금융∙보험업 영위 회사는 자본총액 또는 자본금 중 큰 금액)의 합계액이 ‘국내총생산액의 1천분의 5에 해당하는 금액’ 이상인 기업집단<br>&nbsp;&nbsp;&nbsp;
+					<font color="blue">* 금융∙보험업만을 영위하는 기업집단, 금융∙보험업 영위 회사가 동일인인 기업집단 등은 제외(공정거래법 제31조 및 공정거래법 시행령 제38조 등 참고)</font><br>
+					<br>
+					<b>□ (공시대상기업집단)</b> 기업집단에 속하는 국내 회사들의 직전 사업연도 자산총액(금융∙보험업 영위회사는 자본총액 또는 자본금 중 큰 금액)의 합계액이 5조 원 이상인 기업집단<br>&nbsp;&nbsp;&nbsp;
+					<font color="blue">* 금융∙보험업만을 영위하는 기업집단, 금융∙보험업 영위 회사가 동일인인 기업집단 등은 제외(공정거래법 제31조 및 공정거래법 시행령 제38조 등 참고)</font><br>
+					<br>
+					<b>□ (임원)</b> 다음 어느 하나에 해당하는 사람<br>&nbsp;&nbsp;&nbsp;
+					가. 이사<br>&nbsp;&nbsp;&nbsp;
+					나. 대표이사<br>&nbsp;&nbsp;&nbsp;
+					다. 업무집행을 하는 무한책임사원<br>&nbsp;&nbsp;&nbsp;
+					라. 감사<br>&nbsp;&nbsp;&nbsp;
+					마. 가부터 라까지 중에서 어느 하나에 준하는 사람<br>&nbsp;&nbsp;&nbsp;
+					바. 지배인 등 본점이나 지점의 영업 전반을 총괄적으로 처리할 수 있는 상업사용인<br>
+					<br>
+					<b>□ (금융업 또는 보험업)</b> 「통계법」 제22조 제1항에 따라 통계청장이 고시하는 한국표준산업분류상 금융 및 보험업(다만, 공정거래법 제18조 제2항 제5호에 따른 일반지주회사는 금융업 또는 보험업을 영위하는 회사로 보지 아니함)<br>
+					<br>
+					<b>□ (기업집단)</b> 동일인이 공정거래법 시행령 제4조 등으로 정하는 기준에 따라 사실상 그 사업내용을 지배하는 회사의 집단<br>&nbsp;&nbsp;&nbsp;
+					가. 동일인이 회사인 경우: 그 동일인과 그 동일인이 지배하는 하나 이상의 회사의 집단<br>&nbsp;&nbsp;&nbsp;
+					나. 동일인이 회사가 아닌 경우: 그 동일인이 지배하는 둘 이상의 회사의 집단<br>
+					<br>
+					<b>□ (계열회사)</b> 둘 이상의 회사가 동일한 기업집단에 속하는 경우에 이들 각각의 회사를 서로 상대방의 계열회사라 함<br>
+					<br>
+					<b>□ (계열출자)</b> 기업집단 소속 회사가 계열회사의 주식을 취득 또는 소유하는 행위<br>
+					<br>
+					<b>□ (채무보증)</b> 기업집단에 속하는 회사가 다음 어느 하나에 해당하는 국내 금융기관의 여신과 관련하여 국내 계열회사에 대하여 하는 보증<br>&nbsp;&nbsp;&nbsp;
+					가. 「은행법」에 따른 은행<br>&nbsp;&nbsp;&nbsp;
+					나. 「한국산업은행법」에 따른 한국산업은행<br>&nbsp;&nbsp;&nbsp;
+					다. 「한국수출입은행법」에 따른 한국수출입은행<br>&nbsp;&nbsp;&nbsp;
+					라. 「중소기업은행법」에 따른 중소기업은행<br>&nbsp;&nbsp;&nbsp;
+					마. 「보험업법」에 따른 보험회사<br>&nbsp;&nbsp;&nbsp;
+					바. 「자본시장과 금융투자업에 관한 법률」에 따른 투자매매업자ㆍ투자중개업자 및 종합금융회사<br>&nbsp;&nbsp;&nbsp;
+					사. 그 밖에 대통령령으로 정하는 금융기관<br>
+					<br>
+					<b>□ (여신)</b> 국내 금융기관이 하는 대출 및 회사채무의 보증 또는 인수
+				</ul>
+			</div>
+
+			<!-- 조회 TAB 영역 -->
+			<div id="raonkArea"></div>
+			<!-- chart grid -->
+			<div id='sheetTabContent' class='tab-content wrap-one tab_border'>
+				<div>
+					<p id="listTopText" class="name" style="display:none;">
+						<strong id="cntTitle" >총 건수 : </strong>
+						<label id="cntSpan" style="color:red;">0</label>
+						<span id="cntText">건</span>
+						<span class="fr" id="unitSpan">(단위 : 건)</span>
+					</p>
+					<div id="resultListDiv">
+					</div>
+				</div>
+			</div>
+			<!-- 도움말 -->
+			<div class="help_area">
+				<ul>
+					<li class="blueTxt">※ 도움말</li>
+					<li>- 대규모기업집단의 기업집단 지정 현황을 제공합니다.</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<!-- Footer :S -->
+	<div id="footer">
+		<div class="layout">
+			<ul class="menu_link">
+				<li><a href="http://ftc.go.kr/www/contents.do?key=449" target="_blank" title="개인정보처리방침" class="yellow_txt" >개인정보처리방침</a></li>
+				<li><a href="http://ftc.go.kr/www/contents.do?key=450" title="저작권정책" target="_blank">저작권정책</a></li>
+				<li><a href="/egps/wi/etc/naviInfoPage.do">찾아오시는길</a></li>
+			</ul>
+			<address style="display:block; color:#8b8b8c;font-size:15px;">[30108] 세종특별자치시 다솜3로 95  공정거래위원회 <span style="display:block; vertical-align:top; margin:0 0 0 0;">- 문의안내 : 044-200-4773~4, 4771~2[09:00~18:00(공휴일·점심시간 제외)] </span><span style="display:block; vertical-align:top; margin:0 0 0 0;font-family:Noto Sans KR;">- ftcug12@korea.kr </span><span style="display:block; vertical-align:top; margin:0 0 0 0;">정부는 이용자가 본 사이트에서 얻은 정보를 통해 투자과정에서 얻은 손해에 대하여는 책임지지 않습니다.</span></address>
+			<p class="copy">Copyright ＠ 2018. FAIR TRADE COMMISSION.ALL RIGHTS RESERVED</p>
+		</div>
+	</div>
+	<!-- Footer :E -->
+
+	<div id="loadingCircle" style="position:fixed; top:0px; left:0px; width:100%; height: 100%; z-index:9999999999; display:none;">
+		<div style="position:relative; top:50%; left:50%; margin: -77px 0 0 -77px;z-index:10;"><img src="/images/wise/stat/desktop/ajax-loader.gif" alt="loading"></div>
+		<div class="bgshadow"></div>
+	</div>
+
+	<script type="text/javascript" src="/js/wise/common/titleMenu.js?v=1791285103888"></script>
+
+</div>
+</body>
+</html>

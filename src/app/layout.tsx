@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import MainLayout from '@/components/layout/MainLayout';
 import { COMPANY } from '@/lib/company';
+import { HOME_BANNER_TITLE } from '@/lib/site-menu-copy';
 import { SITE_URL } from '@/lib/site';
 import './globals.css';
 
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
     default: COMPANY.serviceName,
     template: `%s | ${COMPANY.serviceName}`,
   },
-  description: '대기업·중견·채용 사이트에서 수집한 최신 채용 공고를 한곳에서 확인하세요.',
+  description: HOME_BANNER_TITLE,
   icons: {
     icon: '/favicon.svg',
   },

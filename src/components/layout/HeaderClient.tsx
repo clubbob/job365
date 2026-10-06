@@ -7,6 +7,7 @@ import AdminHeader from '@/components/layout/AdminHeader';
 import Logo from '@/components/brand/Logo';
 import { useAuth } from '@/features/auth/auth-context';
 import { getUserNicknameFallback } from '@/lib/user-display';
+import { requestJobBoardReset } from '@/lib/job-board/reset';
 import { cn } from '@/lib/utils';
 
 function MenuIcon({ open }: { open: boolean }) {
@@ -34,13 +35,26 @@ function MenuIcon({ open }: { open: boolean }) {
   );
 }
 
-const NAV_ITEMS: Array<{ href: string; label: string; exact: boolean; authOnly?: boolean }> = [
+const NAV_ITEMS: Array<{
+  href: string;
+  label: string;
+  exact: boolean;
+  authOnly?: boolean;
+  prefetch?: boolean;
+}> = [
   { href: '/jobs', label: '채용 공고', exact: false },
+  { href: '/jobs/companies', label: '채용 공고 회사', exact: false, prefetch: false },
   { href: '/my-jobs', label: '내 채용 공고', exact: false, authOnly: true },
 ];
 
 function isNavActive(pathname: string, href: string, exact: boolean): boolean {
   if (exact) return pathname === href;
+  if (href === '/jobs') {
+    return (
+      pathname === '/jobs' ||
+      (pathname.startsWith('/jobs/') && !pathname.startsWith('/jobs/companies'))
+    );
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -72,6 +86,14 @@ export default function HeaderClient() {
   const navLinkClassName = 'rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors';
   const mobileLinkClassName = 'block rounded-lg px-3 py-3 text-base font-semibold transition-colors';
 
+  function handleNavClick(event: React.MouseEvent<HTMLAnchorElement>, href: string) {
+    if (href === '/jobs' && pathname === '/jobs') {
+      event.preventDefault();
+      requestJobBoardReset();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
   async function handleLogout() {
     setLoggingOut(true);
     try {
@@ -102,6 +124,8 @@ export default function HeaderClient() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={item.prefetch ?? true}
+                onClick={(event) => handleNavClick(event, item.href)}
                 className={cn(
                   navLinkClassName,
                   active
@@ -186,11 +210,15 @@ export default function HeaderClient() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={item.prefetch ?? true}
                   className={cn(
                     mobileLinkClassName,
                     active ? 'bg-primary text-white' : 'text-foreground hover:bg-neutral-100',
                   )}
-                  onClick={() => setMenuOpen(false)}
+                  onClick={(event) => {
+                    handleNavClick(event, item.href);
+                    setMenuOpen(false);
+                  }}
                 >
                   {item.label}
                 </Link>

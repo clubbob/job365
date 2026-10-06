@@ -73,13 +73,10 @@ async function prepareNextDir(shouldClean) {
 }
 
 async function main() {
-  const noClean = process.argv.includes('--no-clean');
-  const shouldClean =
-    process.argv.includes('--clean') ||
-    (process.platform === 'win32' && !noClean && process.env.JOB365_DEV_NO_CLEAN !== '1');
+  const shouldClean = process.argv.includes('--clean');
 
-  if (shouldClean && process.platform === 'win32') {
-    console.log('[job365] Windows 개발 모드: .next 캐시를 비운 뒤 시작합니다. (--no-clean 으로 건너뛸 수 있음)');
+  if (shouldClean) {
+    console.log('[job365] .next 캐시를 비운 뒤 시작합니다.');
   }
 
   const env = await prepareNextDir(shouldClean);

@@ -1,8 +1,6 @@
+import { crawlGenericHtmlCareers } from '@/lib/crawler/adapters/generic-html';
 import { crawlGreenhouseCareers } from '@/lib/crawler/adapters/greenhouse';
-import { crawlHyundaiCareers } from '@/lib/crawler/adapters/hyundai';
-import { crawlHanwhaCareers, crawlPoscoCareers, crawlSkCareers } from '@/lib/crawler/adapters/pending';
 import { crawlLgCareers } from '@/lib/crawler/adapters/lg';
-import { crawlSamsungCareers } from '@/lib/crawler/adapters/samsung';
 import { getCrawlerCompanies, type CrawlerAdapterId, type CrawlerCompany } from '@/lib/crawler/companies';
 import { crawlKakaoCareers } from '@/lib/crawler/sources/kakao';
 import { crawlNaverCareers } from '@/lib/crawler/sources/naver';
@@ -19,11 +17,6 @@ const SINGLETON_ADAPTERS: Partial<Record<CrawlerAdapterId, CrawlerFn>> = {
   kakao: crawlKakaoCareers,
   naver: crawlNaverCareers,
   lg: crawlLgCareers,
-  samsung: crawlSamsungCareers,
-  hyundai: crawlHyundaiCareers,
-  hanwha: crawlHanwhaCareers,
-  sk: crawlSkCareers,
-  posco: crawlPoscoCareers,
 };
 
 function greenhouseCrawler(company: CrawlerCompany): CrawlerFn {
@@ -35,6 +28,16 @@ function greenhouseCrawler(company: CrawlerCompany): CrawlerFn {
       boardToken: company.greenhouseBoard!,
       careersUrl: company.careersUrl,
       koreaOnly: company.koreaOnly,
+    });
+}
+
+function genericCrawler(company: CrawlerCompany): CrawlerFn {
+  return () =>
+    crawlGenericHtmlCareers({
+      sourceId: company.sourceId,
+      sourceName: company.sourceName,
+      companyName: company.name,
+      careersUrl: company.careersUrl,
     });
 }
 
@@ -53,8 +56,12 @@ function resolveCrawler(company: CrawlerCompany): CrawlerFn {
     return greenhouseCrawler(company);
   }
 
+  if (company.adapter === 'generic') {
+    return genericCrawler(company);
+  }
+
   const crawl = SINGLETON_ADAPTERS[company.adapter];
-  return crawl ?? unimplementedCrawler(company);
+  return crawl ?? genericCrawler(company);
 }
 
 /** 등록된 기업마다 하나의 수집 함수를 반환합니다. 우선순위·enabled 없이 전부 시도합니다. */
@@ -62,7 +69,7 @@ export function getCompanyCrawlers(): CompanyCrawler[] {
   const usedSingletons = new Set<CrawlerAdapterId>();
 
   return getCrawlerCompanies().map((company) => {
-    if (company.adapter === 'greenhouse') {
+    if (company.adapter === 'greenhouse' || company.adapter === 'generic') {
       return { company, crawl: resolveCrawler(company) };
     }
 
@@ -71,7 +78,7 @@ export function getCompanyCrawlers(): CompanyCrawler[] {
       return { company, crawl: resolveCrawler(company) };
     }
 
-    return { company, crawl: unimplementedCrawler(company) };
+    return { company, crawl: genericCrawler(company) };
   });
 }
 

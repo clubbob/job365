@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 import { jobMatchesBoardFilters } from '@/lib/job-board/match';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
-import { listCrawledJobs } from '@/lib/crawled-jobs-server';
+import { listActiveCrawledJobsPage, listCrawledJobs } from '@/lib/crawled-jobs-server';
 import {
   isEmploymentType,
   isJobRegion,
@@ -22,8 +22,32 @@ export async function GET(request: Request) {
   const regions = searchParams.getAll('region').filter(isJobRegion);
 
   const todayDate = getKoreaDateLocalToday();
+  const isUnfiltered =
+    !q &&
+    quickFilter === 'all' &&
+    employmentTypes.length === 0 &&
+    roles.length === 0 &&
+    regions.length === 0 &&
+    !todayOnly;
 
   try {
+    if (isUnfiltered && !todayOnly) {
+      const { items, total } = await listActiveCrawledJobsPage(page, pageSize);
+      const hasMore = (page - 1) * pageSize + items.length < total;
+
+      return NextResponse.json({
+        ok: true,
+        data: {
+          items,
+          total,
+          page,
+          pageSize,
+          hasMore,
+          todayDate,
+        },
+      });
+    }
+
     const all = await listCrawledJobs();
     const filtered = all.filter((job) =>
       jobMatchesBoardFilters(job, {
@@ -44,8 +68,9 @@ export async function GET(request: Request) {
     );
 
     const total = filtered.length;
-    const items = filtered.slice(0, page * pageSize);
-    const hasMore = items.length < total;
+    const start = (page - 1) * pageSize;
+    const items = filtered.slice(start, start + pageSize);
+    const hasMore = start + items.length < total;
 
     return NextResponse.json({
       ok: true,

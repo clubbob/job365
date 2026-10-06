@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import JobBoardList from '@/features/job-board/JobBoardList';
 import { useAuth } from '@/features/auth/auth-context';
+import { MY_JOBS_PAGE_DESCRIPTION } from '@/lib/site-menu-copy';
 
 export default function MyJobsPageClient() {
   const { user, loading } = useAuth();
@@ -25,7 +26,7 @@ export default function MyJobsPageClient() {
       <JobBoardList
         mode="matched"
         title="내 채용 공고"
-        description="마이페이지 수신 설정에 맞는 채용 공고입니다."
+        description={MY_JOBS_PAGE_DESCRIPTION}
         showFilters={false}
       />
       <p className="text-center text-sm text-muted">

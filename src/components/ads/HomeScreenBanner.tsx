@@ -1,3 +1,5 @@
+import { HOME_BANNER_SUBTITLE, HOME_BANNER_TITLE } from '@/lib/site-menu-copy';
+
 function BannerIllustration({ className }: { className?: string }) {
   return (
     <svg
@@ -60,10 +62,10 @@ export default function HomeScreenBanner() {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-blue-100">JobLink 365 채용 정보</p>
           <h2 className="mt-2 max-w-xl text-xl font-bold leading-snug text-white sm:text-2xl">
-            대기업·중견 최신 채용 공고를 한곳에서
+            {HOME_BANNER_TITLE}
           </h2>
           <p className="mt-3 max-w-lg text-sm leading-relaxed text-blue-100 sm:text-base">
-            신입·경력·인턴 공고를 바로 확인하고 채용 사이트에서 지원하세요.
+            {HOME_BANNER_SUBTITLE}
           </p>
         </div>
 

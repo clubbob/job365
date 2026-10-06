@@ -1,0 +1,1971 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+
+</script>
+
+
+
+
+
+
+
+<script>
+var ftcGoURL = window.location.pathname;
+if(ftcGoURL == "/egps/ps/io/lgn/loginScrin.do"){
+}else if(ftcGoURL == "/egps/ps/io/lgn/logOut.do"){
+}else if(ftcGoURL.substr(0, 16) == "/egps/ps/io/mbr/"){
+}else{
+	//기존 페이지를 신규페이지로 Redirect 처리
+	if(ftcGoURL == "/egps/ps/io/mai/mainList.do"){
+		location.href = "/egps/wi/mainPage.do";
+	}
+	if(ftcGoURL == "/egps/ps/io/lkm/kmbntMngmtRsltList.do" ||
+			ftcGoURL == "/egps/ps/io/lkm/kmbntCmprList.do" ||
+			ftcGoURL == "/egps/ps/io/lkm/cmpnyCmprList.do" ||
+			ftcGoURL == "/egps/ps/io/kap/appnSttusList.do" ||
+			ftcGoURL == "/egps/ps/io/kap/affltsAssetsTotamtList.do" ||
+			ftcGoURL == "/egps/ps/io/kap/fnnrSttusList.do" ||
+			ftcGoURL == "/egps/ps/io/kap/entrprsOthbcSttusList.do" ||
+			ftcGoURL == "/egps/ps/io/das/psitnCmpnyDetAssrncList.do" ||
+			ftcGoURL == "/egps/ps/io/das/lmttExclPrvonshList.do" ||
+			ftcGoURL == "/egps/ps/io/kap/searchPsitnCmpnyList.do" ||
+			ftcGoURL == "/egps/ps/io/kap/psitnCmpnySumryList.do" ||
+			ftcGoURL == "/egps/ps/io/kap/psitnCmpnyFnnrSttusList.do" ||
+			ftcGoURL == "/egps/ps/io/kap/psitnCmpnyExctvList.do" ||
+			ftcGoURL == "/egps/ps/io/kap/psitnCmpnyShrholdrList.do" ||
+			ftcGoURL == "/egps/ps/io/kap/partcptnIndutySumryList.do" ||
+			ftcGoURL == "/egps/ps/io/spo/kmbntPosesnQotaStrctList.do" ||
+			ftcGoURL == "/egps/ps/io/spo/psitnCmpnyStockHoldList.do" ||
+			ftcGoURL == "/egps/ps/io/spo/grupRotatInvstmntList.do" ||
+			ftcGoURL == "/egps/ps/io/spo/innerQotaEqltrmCmprList.do" ||
+			ftcGoURL == "/egps/ps/io/spo/sllInnerQotaList.do" ||
+			ftcGoURL == "/egps/ps/io/spo/innerQotaStockCoList.do" ||
+			ftcGoURL == "/egps/ps/io/pcm/fondCnvrsSttemntList.do" ||
+			ftcGoURL == "/egps/ps/io/pcm/cdpnySttusList.do" ||
+			ftcGoURL == "/egps/ps/io/spo/qotaChart.do"
+			){
+		ftcGoURL = ftcGoURL.replace("/ps/io/", "/wi/stat/");
+		location.href = ftcGoURL;
+	}
+}
+</script>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="format-detection" content="telephone=no,email=no,address=no" />
+<meta name="author" content="" />
+<meta name="Keywords" content="" />
+<meta name="description" content="" />
+<meta name="copyright" content="" />
+<title>기업집단포털</title>
+
+
+<script type="text/javascript">
+//01.SBUX 환경설정 값.
+	var SBUxConfig = { Path: "/js/sbux/"
+					 , Debug: false
+					 , SBGrid: { Version2_5: true }
+					 }
+</script>
+
+<script type="text/javascript" src="/js/sbux/SBUx.js?v=1791285153769"></script>
+
+
+
+<link type="text/css" rel="stylesheet" href="/css/jquery-ui.css?v=1791285153769" />
+<link type="text/css" rel="stylesheet" href="/css/ps/SBUx2_5.css?v=1791285153769" />
+<link type="text/css" rel="stylesheet" href="/js/sbux/assets/js/sbgrid/2_5/SBGrid/css/SBGrid.css?v=1791285153769" />
+<link type="text/css" rel="stylesheet" href="/js/sbux/assets/js/sbgrid/2_5/SBGrid/css/SBGrid_Default.css?v=1791285153769" />
+
+<script type="text/javascript">	var SBpath = "/js/sbux/assets/js/sbgrid/2_5/"; </script>
+<script type="text/javascript" src="/js/sbux/assets/js/sbgrid/2_5/SBGrid/SBGrid_Lib.js?v=1791285153769"></script>
+<script type="text/javascript" src="/js/sbux/assets/js/sbgrid/2_5/SBGrid/SBGrid_min.js?v=1791285153769"></script>
+<script type="text/javascript" src="/js/sbux/assets/js/sbgrid/2_5/SBGrid/js/util/SBUtil.js?v=1791285153769"></script>
+
+
+
+<script type="text/javascript" src="/js/smCommon.js?v=1791285153769"></script>
+<script type="text/javascript" src="/js/common.js?v=1791285153769"></script>
+<script type="text/javascript" src="/js/ps/common.js?v=1791285153769" ></script>
+<script type="text/javascript" src="/newLayout/js/common.js?v=1791285153769"></script>
+
+<script type="text/javascript" src="/js/ps/jquery-3.7.1.min.js?v=1791285153769"></script>
+<script type="text/javascript" src="/js/ps/jquery-migrate-3.6.0.min.js?v=1791285153769"></script>
+<script type="text/javascript" src="/js/ps/jquery.accordionMenu.js"></script><!--서브: location > accordion 네비게이션-->
+<script type="text/javascript" src="/js/jquery-ui-1.13.3.min.js?v=1791285153769"></script>
+<!-- 웹로그분석 (VODA) -->
+<script type="text/javascript">
+   (function (a, i, v, o, r, y) {
+     a.__aivoryClient__ = {
+       load: function (src) {
+         var b = i.createElement("script");
+         b.src = src; b.async = true; b.type = "text/javascript";
+         i.getElementsByTagName("head")[0].appendChild(b);
+       },
+       ten: o,
+       rootDomain: r,
+     }; a.__aivoryClient__.load(v);
+   })(window, document, "/resources/voda/voda-agent.js", 'fixedTenantKey22', '', '');
+</script>
+<link type="text/css" rel="stylesheet" href="/css/ps/common.css?v=1791285153769" />
+<link type="text/css" rel="stylesheet" href="/newLayout/css/layout.css?v=1791285153782" />
+<link type="text/css" rel="stylesheet" href="/js/sbux/css/datepicker.custom.css" />
+
+
+
+<link rel="stylesheet" href="/css/sbchart/sbchart.css" />
+<script type="text/javascript" src="/js/sbchart/sbchart.js" ></script>
+
+
+
+<style type="text/css">
+/*신고서 작성 메뉴 클릭 시 스타일 */
+#li_PSSM997099 > a.ov{background: #2e8574 url(/newLayout/images/common/left_arrow_on.png) no-repeat 230px 18px !important;}
+</style>
+<style type="text/css">
+	#rolling {
+		display: inline-block;
+		white-space: nowrap;
+		font-size:20px !important;
+		font-weight: bold;
+		padding: revert !important;
+	}
+
+	@media (max-width:850px) {
+		#rolling {
+			visibility: hidden;
+		}
+	}
+
+	@keyframes marquee {
+		0% {
+			transform : translateX(0%);
+		}
+		100% {
+			transform : translateX(-100%);
+		}
+	}
+</style>
+<script type="text/javascript" >
+	_UTIL_ModifyYn = "N";
+
+	var commonMenuList = [{"menuId":"PSIO001","upperMenuId":"PSIO","menuNm":"대규모기업집단개요","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO001001","upperMenuId":"PSIO001","menuNm":"기업집단포털","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO001001001","upperMenuId":"PSIO001001","menuNm":"기업집단포털이란","menuAdres":"/egps/ps/io/lkm/kmbntPortalGuidance.do","useAt":"Y"},{"menuId":"PSIO001001002","upperMenuId":"PSIO001001","menuNm":"기업집단이란","menuAdres":"/egps/ps/io/lkm/kmbntDfn.do","useAt":"Y"},{"menuId":"PSIO001002","upperMenuId":"PSIO001","menuNm":"정책 및 제도","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO001002001","upperMenuId":"PSIO001002","menuNm":"대규모기업집단 정책","menuAdres":"/egps/ps/io/pns/cngmrtPolicy.do","useAt":"Y"},{"menuId":"PSIO001002002","upperMenuId":"PSIO001002","menuNm":"순환출자금지제도","menuAdres":"/egps/ps/io/pns/rotatInvstmntPrhibtSystem.do","useAt":"Y"},{"menuId":"PSIO001003","upperMenuId":"PSIO001","menuNm":"경영성과정보","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO001003001","upperMenuId":"PSIO001003","menuNm":"기업집단 경영성과정보","menuAdres":"/egps/ps/io/lkm/kmbntMngmtRsltList.do","useAt":"Y"},{"menuId":"PSIO001003002","upperMenuId":"PSIO001003","menuNm":"기업집단간 비교","menuAdres":"/egps/ps/io/lkm/kmbntCmprList.do","useAt":"Y"},{"menuId":"PSIO001003003","upperMenuId":"PSIO001003","menuNm":"회사간 비교","menuAdres":"/egps/ps/io/lkm/cmpnyCmprList.do","useAt":"Y"},{"menuId":"PSIO002","upperMenuId":"PSIO","menuNm":"기업집단 지정","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO002001","upperMenuId":"PSIO002","menuNm":"기업집단 현황","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO002001001","upperMenuId":"PSIO002001","menuNm":"지정현황","menuAdres":"/egps/ps/io/kap/appnSttusList.do","useAt":"Y"},{"menuId":"PSIO002001002","upperMenuId":"PSIO002001","menuNm":"집단별 계열사수 및 자산총액","menuAdres":"/egps/ps/io/kap/affltsAssetsTotamtList.do","useAt":"Y"},{"menuId":"PSIO002001003","upperMenuId":"PSIO002001","menuNm":"집단별 재무현황","menuAdres":"/egps/ps/io/kap/fnnrSttusList.do","useAt":"Y"},{"menuId":"PSIO002001004","upperMenuId":"PSIO002001","menuNm":"집단별 기업공개현황","menuAdres":"/egps/ps/io/kap/entrprsOthbcSttusList.do","useAt":"Y"},{"menuId":"PSIO002001005","upperMenuId":"PSIO002001","menuNm":"집단별 영위업종수현황","menuAdres":"/egps/ps/io/kap/managetIndutyCoList.do","useAt":"Y"},{"menuId":"PSIO002002","upperMenuId":"PSIO002","menuNm":"소속회사 현황","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO002002001","upperMenuId":"PSIO002002","menuNm":"기업집단 소속회사 조회","menuAdres":"/egps/ps/io/kap/searchPsitnCmpnyList.do","useAt":"Y"},{"menuId":"PSIO002002002","upperMenuId":"PSIO002002","menuNm":"소속회사 개요","menuAdres":"/egps/ps/io/kap/psitnCmpnySumryList.do","useAt":"Y"},{"menuId":"PSIO002002003","upperMenuId":"PSIO002002","menuNm":"소속회사 재무현황","menuAdres":"/egps/ps/io/kap/psitnCmpnyFnnrSttusList.do","useAt":"Y"},{"menuId":"PSIO002002004","upperMenuId":"PSIO002002","menuNm":"소속회사 임원현황","menuAdres":"/egps/ps/io/kap/psitnCmpnyExctvList.do","useAt":"Y"},{"menuId":"PSIO002002005","upperMenuId":"PSIO002002","menuNm":"소속회사 주주현황","menuAdres":"/egps/ps/io/kap/psitnCmpnyShrholdrList.do","useAt":"Y"},{"menuId":"PSIO002002006","upperMenuId":"PSIO002002","menuNm":"소속회사 참여업종개요","menuAdres":"/egps/ps/io/kap/partcptnIndutySumryList.do","useAt":"Y"},{"menuId":"PSIO003","upperMenuId":"PSIO","menuNm":"주식소유현황","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO003001","upperMenuId":"PSIO003","menuNm":"소유지분구조현황","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO003001001","upperMenuId":"PSIO003001","menuNm":"집단별 소속회사 소유지분구조현황","menuAdres":"/egps/ps/io/spo/kmbntPosesnQotaStrctList.do","useAt":"Y"},{"menuId":"PSIO003001002","upperMenuId":"PSIO003001","menuNm":"집단별 소속회사간 주식보유현황","menuAdres":"/egps/ps/io/spo/psitnCmpnyStockHoldList.do","useAt":"Y"},{"menuId":"PSIO003001003","upperMenuId":"PSIO003001","menuNm":"집단별 순환출자 현황","menuAdres":"/egps/ps/io/spo/grupRotatInvstmntList.do","useAt":"Y"},{"menuId":"PSIO003002","upperMenuId":"PSIO003","menuNm":"내부지분","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO003002001","upperMenuId":"PSIO003002","menuNm":"내부지분(대동비교)","menuAdres":"/egps/ps/io/spo/innerQotaEqltrmCmprList.do","useAt":"Y"},{"menuId":"PSIO003002002","upperMenuId":"PSIO003002","menuNm":"특수관계인 내부지분","menuAdres":"/egps/ps/io/spo/sllInnerQotaList.do","useAt":"Y"},{"menuId":"PSIO003002003","upperMenuId":"PSIO003002","menuNm":"내부지분(주식수대비)","menuAdres":"/egps/ps/io/spo/innerQotaStockCoList.do","useAt":"Y"},{"menuId":"PSIO003003","upperMenuId":"PSIO003","menuNm":"지분도","menuAdres":"/egps/ps/io/spo/qotaChart.do","useAt":"Y"},{"menuId":"PSIO004","upperMenuId":"PSIO","menuNm":"채무보증","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO004001","upperMenuId":"PSIO004","menuNm":"소속사간 채무보증현황","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO004001001","upperMenuId":"PSIO004001","menuNm":"집단별 소속사간 채무보증현황","menuAdres":"/egps/ps/io/das/psitnCmpnyDetAssrncList.do","useAt":"Y"},{"menuId":"PSIO004001002","upperMenuId":"PSIO004001","menuNm":"제한제외사유별현황","menuAdres":"/egps/ps/io/das/lmttExclPrvonshList.do","useAt":"Y"},{"menuId":"PSIO005","upperMenuId":"PSIO","menuNm":"지주회사","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO005001","upperMenuId":"PSIO005","menuNm":"설립/전환 신고현황","menuAdres":"/egps/ps/io/pcm/fondCnvrsSttemntList.do","useAt":"Y"},{"menuId":"PSIO005002","upperMenuId":"PSIO005","menuNm":"자회사 및 손자회사 현황","menuAdres":"/egps/ps/io/pcm/cdpnySttusList.do","useAt":"Y"},{"menuId":"PSIO006","upperMenuId":"PSIO","menuNm":"지배구조관련","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO006001","upperMenuId":"PSIO006","menuNm":"사외이사현황","menuAdres":"/egps/ps/io/csr/outcmpnyHmvSttusList.do","useAt":"Y"},{"menuId":"PSIO006002","upperMenuId":"PSIO006","menuNm":"이사회내 위원회 현황","menuAdres":"/egps/ps/io/csr/hmvGrpCmitSttusList.do","useAt":"Y"},{"menuId":"PSIO006003","upperMenuId":"PSIO006","menuNm":"주주총회 의결권관련 제도현황","menuAdres":"/egps/ps/io/csr/gmtsckVhtSystemList.do","useAt":"Y"},{"menuId":"PSIO007","upperMenuId":"PSIO","menuNm":"알림정보","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO007001","upperMenuId":"PSIO007","menuNm":"공지사항","menuAdres":"/egps/ps/io/ain/noticeList.do","useAt":"Y"},{"menuId":"PSIO007002","upperMenuId":"PSIO007","menuNm":"보도자료","menuAdres":"/egps/ps/io/ain/nesDtaBbsList.do","useAt":"Y"},{"menuId":"PSIO007003","upperMenuId":"PSIO007","menuNm":"대규모기업집단정책","menuAdres":"/egps/ps/io/ain/lrsclKmbntPolicyBbsList.do","useAt":"Y"},{"menuId":"PSIO008","upperMenuId":"PSIO","menuNm":"기타서비스","menuAdres":null,"useAt":"Y"},{"menuId":"PSIO008001","upperMenuId":"PSIO008","menuNm":"개인정보보호정책","menuAdres":"/egps/ps/io/esv/indvdlinfoPrtcPolicy.do","useAt":"Y"},{"menuId":"PSIO008002","upperMenuId":"PSIO008","menuNm":"저작권정책","menuAdres":"/egps/ps/io/esv/cpyrhtPolicy.do","useAt":"Y"},{"menuId":"PSIO008003","upperMenuId":"PSIO008","menuNm":"찾아오시는길","menuAdres":"/egps/ps/io/esv/insttCoursGuidance.do","useAt":"Y"},{"menuId":"PSIO008004","upperMenuId":"PSIO008","menuNm":"뷰어다운로드","menuAdres":"/egps/ps/io/esv/viewrDwld.do","useAt":"Y"},{"menuId":"PSIO008005","upperMenuId":"PSIO008","menuNm":"사이트맵","menuAdres":"/egps/ps/io/esv/siteMapng.do","useAt":"Y"},{"menuId":"PSIO008006","upperMenuId":"PSIO008","menuNm":"오픈API","menuAdres":"/egps/ps/io/esv/publicData.do","useAt":"Y"},{"menuId":"PSIO009","upperMenuId":"PSIO","menuNm":"통합검색","menuAdres":"/egps/ps/io/esv/unitySearchList.do","useAt":"Y"},{"menuId":"PSIO010","upperMenuId":"PSIO","menuNm":"제출시스템","menuAdres":"/egps/ps/io/lgn/presentnKndChoise.do","useAt":"Y"},{"menuId":"PSIO011","upperMenuId":"PSIO","menuNm":"로그인","menuAdres":"/egps/ps/io/lgn/loginScrin.do","useAt":"Y"},{"menuId":"PSIO012","upperMenuId":"PSIO","menuNm":"사업자등록번호인증","menuAdres":"/egps/ps/io/mbr/bizrnoCrtfcScrin.do","useAt":"Y"},{"menuId":"PSIO013","upperMenuId":"PSIO","menuNm":"사용자등록","menuAdres":"/egps/ps/io/mbr/mberInfoInputScrin.do","useAt":"Y"},{"menuId":"PSIO014","upperMenuId":"PSIO","menuNm":"마이페이지","menuAdres":"/egps/ps/io/mbr/mberInfoUpdtScrin.do","useAt":"Y"},{"menuId":"PSIO015","upperMenuId":"PSIO","menuNm":"기업집단 주제별 조회","menuAdres":"/egps/ps/io/kth/kmbntThemaList.do","useAt":"Y"},{"menuId":"PSIO016","upperMenuId":"PSIO","menuNm":"사이트맵","menuAdres":"/egps/ps/io/esv/siteMapng.do","useAt":"Y"}];
+	var commonMenuMap = {"PSIO001001":{"menuId":"PSIO001001","upperMenuId":"PSIO001","menuNm":"기업집단포털","menuAdres":null,"useAt":"Y"},"PSIO001003":{"menuId":"PSIO001003","upperMenuId":"PSIO001","menuNm":"경영성과정보","menuAdres":null,"useAt":"Y"},"PSIO001002":{"menuId":"PSIO001002","upperMenuId":"PSIO001","menuNm":"정책 및 제도","menuAdres":null,"useAt":"Y"},"PSIO005002":{"menuId":"PSIO005002","upperMenuId":"PSIO005","menuNm":"자회사 및 손자회사 현황","menuAdres":"/egps/ps/io/pcm/cdpnySttusList.do","useAt":"Y"},"PSIO005001":{"menuId":"PSIO005001","upperMenuId":"PSIO005","menuNm":"설립/전환 신고현황","menuAdres":"/egps/ps/io/pcm/fondCnvrsSttemntList.do","useAt":"Y"},"PSIO009":{"menuId":"PSIO009","upperMenuId":"PSIO","menuNm":"통합검색","menuAdres":"/egps/ps/io/esv/unitySearchList.do","useAt":"Y"},"PSIO003002003":{"menuId":"PSIO003002003","upperMenuId":"PSIO003002","menuNm":"내부지분(주식수대비)","menuAdres":"/egps/ps/io/spo/innerQotaStockCoList.do","useAt":"Y"},"PSIO007":{"menuId":"PSIO007","upperMenuId":"PSIO","menuNm":"알림정보","menuAdres":null,"useAt":"Y"},"PSIO003002002":{"menuId":"PSIO003002002","upperMenuId":"PSIO003002","menuNm":"특수관계인 내부지분","menuAdres":"/egps/ps/io/spo/sllInnerQotaList.do","useAt":"Y"},"PSIO008":{"menuId":"PSIO008","upperMenuId":"PSIO","menuNm":"기타서비스","menuAdres":null,"useAt":"Y"},"PSIO003002001":{"menuId":"PSIO003002001","upperMenuId":"PSIO003002","menuNm":"내부지분(대동비교)","menuAdres":"/egps/ps/io/spo/innerQotaEqltrmCmprList.do","useAt":"Y"},"PSIO005":{"menuId":"PSIO005","upperMenuId":"PSIO","menuNm":"지주회사","menuAdres":null,"useAt":"Y"},"PSIO006":{"menuId":"PSIO006","upperMenuId":"PSIO","menuNm":"지배구조관련","menuAdres":null,"useAt":"Y"},"PSIO003":{"menuId":"PSIO003","upperMenuId":"PSIO","menuNm":"주식소유현황","menuAdres":null,"useAt":"Y"},"PSIO004":{"menuId":"PSIO004","upperMenuId":"PSIO","menuNm":"채무보증","menuAdres":null,"useAt":"Y"},"PSIO001":{"menuId":"PSIO001","upperMenuId":"PSIO","menuNm":"대규모기업집단개요","menuAdres":null,"useAt":"Y"},"PSIO002":{"menuId":"PSIO002","upperMenuId":"PSIO","menuNm":"기업집단 지정","menuAdres":null,"useAt":"Y"},"PSIO001001001":{"menuId":"PSIO001001001","upperMenuId":"PSIO001001","menuNm":"기업집단포털이란","menuAdres":"/egps/ps/io/lkm/kmbntPortalGuidance.do","useAt":"Y"},"PSIO001001002":{"menuId":"PSIO001001002","upperMenuId":"PSIO001001","menuNm":"기업집단이란","menuAdres":"/egps/ps/io/lkm/kmbntDfn.do","useAt":"Y"},"PSIO008003":{"menuId":"PSIO008003","upperMenuId":"PSIO008","menuNm":"찾아오시는길","menuAdres":"/egps/ps/io/esv/insttCoursGuidance.do","useAt":"Y"},"PSIO008004":{"menuId":"PSIO008004","upperMenuId":"PSIO008","menuNm":"뷰어다운로드","menuAdres":"/egps/ps/io/esv/viewrDwld.do","useAt":"Y"},"PSIO008005":{"menuId":"PSIO008005","upperMenuId":"PSIO008","menuNm":"사이트맵","menuAdres":"/egps/ps/io/esv/siteMapng.do","useAt":"Y"},"PSIO004001001":{"menuId":"PSIO004001001","upperMenuId":"PSIO004001","menuNm":"집단별 소속사간 채무보증현황","menuAdres":"/egps/ps/io/das/psitnCmpnyDetAssrncList.do","useAt":"Y"},"PSIO008006":{"menuId":"PSIO008006","upperMenuId":"PSIO008","menuNm":"오픈API","menuAdres":"/egps/ps/io/esv/publicData.do","useAt":"Y"},"PSIO004001":{"menuId":"PSIO004001","upperMenuId":"PSIO004","menuNm":"소속사간 채무보증현황","menuAdres":null,"useAt":"Y"},"PSIO004001002":{"menuId":"PSIO004001002","upperMenuId":"PSIO004001","menuNm":"제한제외사유별현황","menuAdres":"/egps/ps/io/das/lmttExclPrvonshList.do","useAt":"Y"},"PSIO008001":{"menuId":"PSIO008001","upperMenuId":"PSIO008","menuNm":"개인정보보호정책","menuAdres":"/egps/ps/io/esv/indvdlinfoPrtcPolicy.do","useAt":"Y"},"PSIO008002":{"menuId":"PSIO008002","upperMenuId":"PSIO008","menuNm":"저작권정책","menuAdres":"/egps/ps/io/esv/cpyrhtPolicy.do","useAt":"Y"},"PSIO002002005":{"menuId":"PSIO002002005","upperMenuId":"PSIO002002","menuNm":"소속회사 주주현황","menuAdres":"/egps/ps/io/kap/psitnCmpnyShrholdrList.do","useAt":"Y"},"PSIO002002006":{"menuId":"PSIO002002006","upperMenuId":"PSIO002002","menuNm":"소속회사 참여업종개요","menuAdres":"/egps/ps/io/kap/partcptnIndutySumryList.do","useAt":"Y"},"PSIO002002001":{"menuId":"PSIO002002001","upperMenuId":"PSIO002002","menuNm":"기업집단 소속회사 조회","menuAdres":"/egps/ps/io/kap/searchPsitnCmpnyList.do","useAt":"Y"},"PSIO002002002":{"menuId":"PSIO002002002","upperMenuId":"PSIO002002","menuNm":"소속회사 개요","menuAdres":"/egps/ps/io/kap/psitnCmpnySumryList.do","useAt":"Y"},"PSIO002002003":{"menuId":"PSIO002002003","upperMenuId":"PSIO002002","menuNm":"소속회사 재무현황","menuAdres":"/egps/ps/io/kap/psitnCmpnyFnnrSttusList.do","useAt":"Y"},"PSIO002002004":{"menuId":"PSIO002002004","upperMenuId":"PSIO002002","menuNm":"소속회사 임원현황","menuAdres":"/egps/ps/io/kap/psitnCmpnyExctvList.do","useAt":"Y"},"PSIO003002":{"menuId":"PSIO003002","upperMenuId":"PSIO003","menuNm":"내부지분","menuAdres":null,"useAt":"Y"},"PSIO003003":{"menuId":"PSIO003003","upperMenuId":"PSIO003","menuNm":"지분도","menuAdres":"/egps/ps/io/spo/qotaChart.do","useAt":"Y"},"PSIO001002002":{"menuId":"PSIO001002002","upperMenuId":"PSIO001002","menuNm":"순환출자금지제도","menuAdres":"/egps/ps/io/pns/rotatInvstmntPrhibtSystem.do","useAt":"Y"},"PSIO007002":{"menuId":"PSIO007002","upperMenuId":"PSIO007","menuNm":"보도자료","menuAdres":"/egps/ps/io/ain/nesDtaBbsList.do","useAt":"Y"},"PSIO001002001":{"menuId":"PSIO001002001","upperMenuId":"PSIO001002","menuNm":"대규모기업집단 정책","menuAdres":"/egps/ps/io/pns/cngmrtPolicy.do","useAt":"Y"},"PSIO007003":{"menuId":"PSIO007003","upperMenuId":"PSIO007","menuNm":"대규모기업집단정책","menuAdres":"/egps/ps/io/ain/lrsclKmbntPolicyBbsList.do","useAt":"Y"},"PSIO003001":{"menuId":"PSIO003001","upperMenuId":"PSIO003","menuNm":"소유지분구조현황","menuAdres":null,"useAt":"Y"},"PSIO007001":{"menuId":"PSIO007001","upperMenuId":"PSIO007","menuNm":"공지사항","menuAdres":"/egps/ps/io/ain/noticeList.do","useAt":"Y"},"PSIO002001004":{"menuId":"PSIO002001004","upperMenuId":"PSIO002001","menuNm":"집단별 기업공개현황","menuAdres":"/egps/ps/io/kap/entrprsOthbcSttusList.do","useAt":"Y"},"PSIO002001005":{"menuId":"PSIO002001005","upperMenuId":"PSIO002001","menuNm":"집단별 영위업종수현황","menuAdres":"/egps/ps/io/kap/managetIndutyCoList.do","useAt":"Y"},"PSIO002001001":{"menuId":"PSIO002001001","upperMenuId":"PSIO002001","menuNm":"지정현황","menuAdres":"/egps/ps/io/kap/appnSttusList.do","useAt":"Y"},"PSIO002001002":{"menuId":"PSIO002001002","upperMenuId":"PSIO002001","menuNm":"집단별 계열사수 및 자산총액","menuAdres":"/egps/ps/io/kap/affltsAssetsTotamtList.do","useAt":"Y"},"PSIO002001003":{"menuId":"PSIO002001003","upperMenuId":"PSIO002001","menuNm":"집단별 재무현황","menuAdres":"/egps/ps/io/kap/fnnrSttusList.do","useAt":"Y"},"PSIO002002":{"menuId":"PSIO002002","upperMenuId":"PSIO002","menuNm":"소속회사 현황","menuAdres":null,"useAt":"Y"},"PSIO002001":{"menuId":"PSIO002001","upperMenuId":"PSIO002","menuNm":"기업집단 현황","menuAdres":null,"useAt":"Y"},"PSIO001003003":{"menuId":"PSIO001003003","upperMenuId":"PSIO001003","menuNm":"회사간 비교","menuAdres":"/egps/ps/io/lkm/cmpnyCmprList.do","useAt":"Y"},"PSIO001003002":{"menuId":"PSIO001003002","upperMenuId":"PSIO001003","menuNm":"기업집단간 비교","menuAdres":"/egps/ps/io/lkm/kmbntCmprList.do","useAt":"Y"},"PSIO001003001":{"menuId":"PSIO001003001","upperMenuId":"PSIO001003","menuNm":"기업집단 경영성과정보","menuAdres":"/egps/ps/io/lkm/kmbntMngmtRsltList.do","useAt":"Y"},"PSIO006003":{"menuId":"PSIO006003","upperMenuId":"PSIO006","menuNm":"주주총회 의결권관련 제도현황","menuAdres":"/egps/ps/io/csr/gmtsckVhtSystemList.do","useAt":"Y"},"PSIO006002":{"menuId":"PSIO006002","upperMenuId":"PSIO006","menuNm":"이사회내 위원회 현황","menuAdres":"/egps/ps/io/csr/hmvGrpCmitSttusList.do","useAt":"Y"},"PSIO006001":{"menuId":"PSIO006001","upperMenuId":"PSIO006","menuNm":"사외이사현황","menuAdres":"/egps/ps/io/csr/outcmpnyHmvSttusList.do","useAt":"Y"},"PSIO003001001":{"menuId":"PSIO003001001","upperMenuId":"PSIO003001","menuNm":"집단별 소속회사 소유지분구조현황","menuAdres":"/egps/ps/io/spo/kmbntPosesnQotaStrctList.do","useAt":"Y"},"PSIO003001002":{"menuId":"PSIO003001002","upperMenuId":"PSIO003001","menuNm":"집단별 소속회사간 주식보유현황","menuAdres":"/egps/ps/io/spo/psitnCmpnyStockHoldList.do","useAt":"Y"},"PSIO016":{"menuId":"PSIO016","upperMenuId":"PSIO","menuNm":"사이트맵","menuAdres":"/egps/ps/io/esv/siteMapng.do","useAt":"Y"},"PSIO014":{"menuId":"PSIO014","upperMenuId":"PSIO","menuNm":"마이페이지","menuAdres":"/egps/ps/io/mbr/mberInfoUpdtScrin.do","useAt":"Y"},"PSIO015":{"menuId":"PSIO015","upperMenuId":"PSIO","menuNm":"기업집단 주제별 조회","menuAdres":"/egps/ps/io/kth/kmbntThemaList.do","useAt":"Y"},"PSIO003001003":{"menuId":"PSIO003001003","upperMenuId":"PSIO003001","menuNm":"집단별 순환출자 현황","menuAdres":"/egps/ps/io/spo/grupRotatInvstmntList.do","useAt":"Y"},"PSIO012":{"menuId":"PSIO012","upperMenuId":"PSIO","menuNm":"사업자등록번호인증","menuAdres":"/egps/ps/io/mbr/bizrnoCrtfcScrin.do","useAt":"Y"},"PSIO013":{"menuId":"PSIO013","upperMenuId":"PSIO","menuNm":"사용자등록","menuAdres":"/egps/ps/io/mbr/mberInfoInputScrin.do","useAt":"Y"},"PSIO010":{"menuId":"PSIO010","upperMenuId":"PSIO","menuNm":"제출시스템","menuAdres":"/egps/ps/io/lgn/presentnKndChoise.do","useAt":"Y"},"PSIO011":{"menuId":"PSIO011","upperMenuId":"PSIO","menuNm":"로그인","menuAdres":"/egps/ps/io/lgn/loginScrin.do","useAt":"Y"}};
+	var SBGridProperties={};
+	var selectOthbcYm = '';
+	var selectUnityGrupId = '';
+	var selectEntrprsId = '';
+	var selectEntrprsNm = '';
+	var egpsMenuId = "";
+	var sbuxAlterCloseKey = [13, 27, 32];
+
+	$(document).on("keydown", function(e){
+		if(sbuxAlterCloseKey.indexOf(e.keyCode) >= 0
+		|| sbuxAlterCloseKey.indexOf(e.which) >= 0){
+			SBUxMethod.closeAlert();
+		}
+	});
+
+	$(window).on('resize', function() {
+		fn_checkMarquee();
+	});
+
+	jQuery(document.body).ready(function(){
+		setTimeout(function() {
+			fn_checkMarquee();
+		}, 300);
+
+
+		fn_ps_setSessionTime();
+
+		if (opener != null) {
+		    
+			opener = null;
+		}
+
+		//백스페이스로 뒤로가기 방지
+		$(document).bind("keydown keypress", function(e){
+			var strEle = e.target.nodeName.toLowerCase();
+			if(strEle != 'input' && strEle != 'textarea') {
+				if( e.which == 8 ) { e.preventDefault(); }
+			}
+		});
+
+		//ajax 조회시에도 세션 유지 시간 초기화
+		$(document).ajaxStart(function(){
+			if("" != null && "" != ""){
+				clearInterval(fnSessioninterval);
+				clearTimeout(fnSessionTimeOut);
+				clearInterval(fnSessionTimeinterval);
+				fn_ps_setSessionTime();
+				fnSessionTimeOut = setTimeout("cf_sessionCheckRun()", strSessionTimeout-fadeSessionOpenTime);
+			}
+		});
+
+		//안내 문구 깜빡임 처리
+		setInterval(function(){
+			$('.tempText').animate({'opacity': 0}, 100, function(){
+				$('.tempText').animate({'opacity': 1}, 500);
+			});
+		}, 1500);
+
+		//컨텐츠 보이게
+		if(typeof(fn_subContentReady) == "function"){
+			fn_subContentReady();
+		}
+
+		egpsMenuId = getCookie("egpsMenuId");
+
+		//메뉴 클릭(열기)
+		if('' != '' && '' != 'Y' &&
+				(egpsMenuId.substr(0, 5) === 'PSSM0' || egpsMenuId.substr(0, 7) === 'PSSM998')) {//제출메뉴 열기
+			var loginType = '';
+			$("#li_a_presentn_"+loginType).click();
+
+ 			//console.log("제출메뉴!!!");
+
+		} else if(egpsMenuId.substr(0, 7) === 'PSSM997') {//신고메뉴 열기
+			$("#li_sttemnt").click();
+			if(egpsMenuId.length < 10)
+				egpsMenuId = 'PSSM997001';
+			$("#li_a_sttemnt_"+egpsMenuId.substr(0, 10)).click();
+
+			var rpMenuNum = Number(egpsMenuId.substr(7, 3));
+			if(rpMenuNum != 1 && rpMenuNum != 4) {	//1 : 신고서 생성, 4 :신고 진행상황
+				fnViewRpMenu();
+			}
+
+			//console.log("신고메뉴!!!");
+		} else {//공통메뉴 열기
+			if(egpsMenuId.substr(0, 7) === 'PSSM999'){ //공통메뉴 열기
+				$("#li_common").click();
+				$("#li_a_common").click();
+
+				//console.log("공통메뉴!!!");
+			}
+		}
+
+		//console.log("egpsMenuId :: " + egpsMenuId);
+ 		//console.log("ftcGoURL :: " + ftcGoURL);
+
+		//선택 메뉴 스타일 지정
+		if(egpsMenuId.length > 13) {
+			egpsMenuId = egpsMenuId.substr(0, 13);
+		}
+		$("#"+egpsMenuId).attr("class", "ov");
+
+		/****************** 흐르는 공지사항 처리 START ***********************/
+
+		var rollingNotice = '';
+
+		$.ajax({ type: "POST"
+			,url: "/egps/ps/sm/cmo/selectRollingNoticeList.do"
+			,data  : {'search_gubun':'A'}
+			,dataType: "json"
+			,async: false
+			,success: function (data, status, xhr) {
+
+				for(var i=0; i<data.resultList.length; i++){
+
+					if(i == 0){
+						rollingNotice = '<font color="blue">※ 중요공지&nbsp;&nbsp;</font>'+'<font color="red">' + data.resultList[i].bbsJobSeCodeName + '&nbsp;' + data.resultList[i].cnt + '건' + '</font>';
+					}else if(i == data.resultList.length -1){
+						rollingNotice += '<font color="red">' + ', ' + data.resultList[i].bbsJobSeCodeName + '&nbsp;' + data.resultList[i].cnt + '건' + '</font>';
+					}else{
+						rollingNotice += '<font color="red">' + ', ' + data.resultList[i].bbsJobSeCodeName + '&nbsp;' + data.resultList[i].cnt + '건' +  '</font>&nbsp;&nbsp;';
+					}
+
+					if(i == data.resultList.length -1){
+						rollingNotice += '<font color="red">' + '이 있습니다.' + '</font>'
+					}
+				}
+
+				$('#rolling').html(rollingNotice);
+			}
+			, error: function (request, status, error) {
+				gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+			}
+		});
+		/****************** 흐르는 공지사항 처리 END ***********************/
+	});
+
+
+	
+	function fn_linkToMain(){
+		var frm = document.headerForm;
+		frm.action = "/egps/ps/io/mai/mainList.do";
+		frm.method = "post";
+
+	}
+
+	function fn_linkToSmSystem(){
+		var frm = document.headerForm;
+		frm.action = "/egps/ps/io/lgn/presentnKndChoise.do";
+		frm.method = "post";
+		frm.submit();
+
+	}
+
+	function fn_setLeftMenu(topMenuId){
+		var targetMenuId = gfn_ps_getMenuFirstChildren(topMenuId);
+		gfn_ps_moveMenu(targetMenuId);
+	}
+
+	function fn_ps_introToggle(){
+		var bodyWidth = jQuery(document.body).width();
+		var bodyHeight = jQuery(document.body).height();
+		if(jQuery("#psIntroLayout").css("display") == "none"){
+			jQuery("#psIntroLayout").css("display","");
+		}else{
+			jQuery("#psIntroLayout").css("display","none");
+		}
+	}
+
+
+	function fn_ps_moveLoginMenu(menuId,loginType){
+		var param = {
+				"loginType":loginType
+				};
+
+		gfn_ps_moveMenu(menuId,param);
+		jQuery("#psIntroLayout").css("display","none");
+	}
+
+
+	function fn_logOut(){
+		if(confirm("로그아웃하시겠습니까?")){
+			if(typeof setCookie == "function"){
+				setCookie("checkCi", "N");
+			}
+			var frm = document.headerForm;
+			frm.action = "/egps/ps/io/lgn/logOut.do";
+			frm.method = "post";
+			frm.submit();
+		}
+	}
+
+	function fn_ps_presentnYmChange(){
+		gfn_isLoading("start");
+		var iParams = new Object();
+
+		iParams["userPresentnYm"] = jQuery("#presentnYmList option:selected").val();
+
+		$.ajax({ type: "POST"
+			,url: "/egps/ps/io/mbr/presentnYmChange.do"
+			,data  : iParams
+			,dataType: "json"
+			,async: false
+			,success: function (data, status, xhr) {
+				if(data.psUserVO.presentnAt == 'Y'){
+					jQuery("#presentnAtA").text(data.psUserVO.inputBeginDt + " ~ " + data.psUserVO.inputEndDt);
+				}else{
+					jQuery("#presentnAtA").text("과거데이터 조회");
+				}
+
+				if('' != ''){
+					gfn_ps_moveMenu('');
+				}else{
+					gfn_ps_moveMenu(jQuery("[name='smMenuValue']").val());
+				}
+			}
+			, error: function (request, status, error) {
+				gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+			}
+		});
+	}
+
+	function fn_ps_userMenuSessionChangeNew(){
+		var loginType = jQuery("#presentnNmList option:selected").val();
+		fn_ps_userMenuSessionChange(loginType);
+	}
+
+	function fn_ps_userMenuSessionChange(loginType){
+		if(loginType == "Y") //신고
+			setCookie("egpsMenuId", "PSSM997"); //로그인타입 변경 시 메뉴ID 초기화
+		else
+			setCookie("egpsMenuId", "PSSM000"); //로그인타입 변경 시 메뉴ID 초기화
+
+		gfn_isLoading("start");
+		var iParams = new Object();
+		iParams["loginType"] = loginType;
+		iParams["userPresentnYm"] = "999999";
+		$.ajax({ type: "POST"
+			   , url: "/egps/ps/io/lgn/selectLoginTypeSession.do"
+			   , data   : iParams
+			   , async  : true
+			   , success: function (data, status, xhr) {
+				   /* window.location.href = "/egps/ps/io/mai/mainList.do"; */
+				   if(loginType == "Y"){ //신고
+					   window.location.href = "/egps/ps/sm/rp/sdp/moveSttemntDocInfo.do";
+				   }else{
+					   window.location.href = "/egps/ps/sm/com/selectNoticeMatterView.do";
+				   }
+			   	 }
+			   , error: function (request, status, error) {
+			   		 gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+			   	 }
+			   }
+		);
+	}
+
+	//function fn_ps_userEntrprsChange(entrprsId){
+	function fn_ps_userEntrprsChange(){
+		var entrprsId = $("#smManageEntrprs").val();
+
+		gfn_isLoading("start");
+		var iParams = new Object();
+		iParams["selectEntrprsId"] = entrprsId;
+		iParams["loginType"] = "";
+		iParams["userPresentnYm"] = "999999";
+		$.ajax({ type: "POST"
+			   , url: "/egps/ps/io/lgn/selectEntrprsSession.do"
+			   , data   : iParams
+			   , async  : true
+			   , success: function (data, status, xhr) {
+				   /* window.location.href = "/egps/ps/io/mai/mainList.do"; */
+				   window.location.href = "/egps/ps/sm/com/selectNoticeMatterView.do";
+			   	 }
+			   , error: function (request, status, error) {
+			   		 gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+			   	 }
+			   }
+		);
+	}
+
+	function fn_ps_userGrupChange(){
+		var unityGrupId = $("#smUnityGroups").val();
+		var unityGrupNm = $("#smUnityGroups option:selected").text();
+
+		gfn_isLoading("start");
+		var iParams = new Object();
+		iParams["selectUnityGrupId"] = unityGrupId;
+		iParams["selectUnityGrupNm"] = unityGrupNm;
+		iParams["loginType"] = "";
+		$.ajax({ type: "POST"
+			   , url: "/egps/ps/io/lgn/selectUnityGrupSession.do"
+			   , data   : iParams
+			   , async  : true
+			   , success: function (data, status, xhr) {
+				   /* window.location.href = "/egps/ps/io/mai/mainList.do"; */
+				   window.location.href = "/egps/ps/sm/com/selectNoticeMatterView.do";
+			   	 }
+			   , error: function (request, status, error) {
+			   		 gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+			   	 }
+			   }
+		);
+	}
+
+	function fn_ps_moveNewestDataView() {
+
+		if ("" != "Y") { //대표 권한 여부
+			gfn_ps_alert("최신데이터 가져오기 수행 권한이 없습니다.");
+			return;
+		}
+
+		fn_dialogClose("guideDataCopy");
+		gfn_isLoading("start");
+		var iParams = new Object();
+
+		//채무 메뉴로 접근한 경우 주식으로 변경 처리
+		if ("" == "C") {
+			iParams["loginType"] = "B";
+		} else {
+			iParams["loginType"] = "";
+		}
+
+		//최신데이터 가져오기 메뉴 이동
+		$.ajax({ type: "POST"
+			   , url: "/egps/ps/io/lgn/selectLoginTypeSession.do"
+			   , data   : iParams
+			   , async  : true
+			   , success: function (data, status, xhr) {
+				   window.location.href = "/egps/ps/sm/com/selectNewestDataView.do";
+			   	 }
+			   , error: function (request, status, error) {
+			   		 gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+			   	 }
+			   }
+		);
+	}
+
+	//2020.05.11 실태조사 메뉴로 DIV컨트롤 추가
+	function fn_ps_topMenuDivChange(gubun) {
+		if(gubun == "1"){	//1 : 지정/지주
+			$('#topMenuDiv1').css("display", "block");
+			$('#topMenuDiv2').css("display", "none");
+			$('#topGubunDiv1').css("display", "block");
+			$('#topGubunDiv2').css("display", "none");
+
+		}else{	//2 : 실태조사
+			$('#topMenuDiv1').css("display", "none");
+			$('#topMenuDiv2').css("display", "block");
+			$('#topGubunDiv1').css("display", "none");
+			$('#topGubunDiv2').css("display", "block");
+		}
+	}
+
+	function fn_checkMarquee() {
+		var $userMsg = $('.userMsg');
+		var	$rolling = $('#rolling');
+
+		if(!!$userMsg && !!$rolling && typeof $rolling.scrollWidth != 'undefined') {
+			if($rolling[0].scrollWidth <= $userMsg.width()) {
+				$rolling.css('animation', 'none');
+			} else {
+				$rolling.css('animation', 'marquee 10s linear infinite');
+			}
+		}
+	}
+
+</script>
+
+<script type="text/javascript">
+	var noticeBbsId = "BBS00005";
+	var nesDtaBbsId = "BBS00012";
+	var policyBbsId = "BBS00006,BBS00007,BBS00008,BBS00009,BBS00010,BBS00011";
+</script>
+
+<script type="text/javascript">
+	//쿠키 출력
+	function getCookie(name) {
+		var cookieName = name + "=";
+		var x = 0;
+		while(x <= document.cookie.length) {
+			var y = (x+cookieName.length);
+			if(document.cookie.substring(x, y) == cookieName) {
+				if((lastChrCookie=document.cookie.indexOf(";", y)) == -1) {
+					lastChrCookie = document.cookie.length;
+				}
+				return decodeURI(document.cookie.substring(y, lastChrCookie));
+			}
+			x = document.cookie.indexOf(" ", x) + 1;
+			if(x == 0) {
+				break;
+			}
+		}
+		return "";
+	}
+
+	//쿠키 셋팅
+	function setCookie(cname, value, expire) {
+		var todayValue = new Date();
+
+		todayValue.setDate(todayValue.getDate() + expire);
+		document.cookie = cname + "=" + encodeURI(value) + "; expires=" + todayValue.toGMTString() + "; path=/;";
+	}
+
+	//팝업 하루동안 보지 않기 버튼 클릭
+	function fn_noticePopupCloseDay(divId) {
+		setCookie(divId, "end", 1);
+		$dialog = $('#'+divId);
+		dialogOption = $dialog.dialog({ close:function(event, ui){} });
+		dialogOption.dialog('close');
+	}
+
+	function fn_dateCompare(compareDate){
+		var date = new Date();
+		var year = date.getFullYear().toString();
+		var month = (date.getMonth()+1).toString();
+		var day = date.getDate().toString();
+		var hour = date.getHours().toString();
+		var min = date.getMinutes().toString();
+
+		if(month.length < 2) {
+			month = "0" + month;
+		}
+
+		if(day.length < 2) {
+			day = "0" + day;
+		}
+
+		var strDate = year+month+day+hour+min;
+
+		if(strDate < compareDate){
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	//dialog 닫기
+	function fn_dialogClose(divId){
+		$dialog = $('#'+divId);
+		dialogOption = $dialog.dialog({ close:function(event, ui){} });
+		dialogOption.dialog('close');
+	}
+
+	//dialog 열기
+	function fn_dialogOpen(divId, compareDate) {
+		var result = getCookie(divId);
+
+		if(fn_dateCompare(compareDate)) {
+			if(result != "end") {
+				cf_showSessionTimeOutDialog(divId);
+			}
+		}
+	}
+
+	//dialog 조건문 분할
+	function fn_dialogOpenEx(divId, compareDate, ex) {
+		switch(ex) {
+			case 1 :
+				if('' != '' && '' == 'C') {
+					fn_dialogOpen(divId, compareDate);
+				}
+				break;
+			case 2 :
+				if('' != '' && '' == 'E') {
+					fn_dialogOpen(divId, compareDate);
+				}
+				break;
+			case 3 :
+				if('' != '' && '' == 'A') {
+					fn_dialogOpen(divId, compareDate);
+				}
+				break;
+			case 4 :
+				if('' != '' && '' == 'K') {
+					fn_dialogOpen(divId, compareDate);
+				}
+				break;
+			case 5 :
+				if('' != '' && '' == 'J') {
+					fn_dialogOpen(divId, compareDate);
+				}
+				break;
+			default :
+				if('' != '') {
+					fn_dialogOpen(divId, compareDate);
+				}
+		}
+	}
+
+	//작성 중인 신고메뉴 보이기 및 숨기기
+	function fnViewRpMenu(){
+		var classVal = $("#li_a_sttemnt_PSSM997099").attr("class");
+
+		if(classVal.contains('close_folder')) { //닫혀있을때->열기
+			$("#li_a_sttemnt_PSSM997099").attr("class", "open_folder ov");
+			$("#li_PSSM997002").show();
+			$("#li_PSSM997003").show();
+			$("#li_PSSM997005").show();
+			$("#li_PSSM997006").show();
+			$("#li_PSSM997007").show();
+			$("#li_PSSM997008").show();
+			$("#li_PSSM997009").show();
+			$("#li_PSSM997010").show();
+			$("#li_PSSM997011").show();
+			$("#li_PSSM997012").show();
+			$("#li_PSSM997013").show();
+
+		}else if(classVal.contains('open_folder')){ //열려있을때->닫기
+			$("#li_a_sttemnt_PSSM997099").attr("class", "close_folder ov");
+			$("#li_PSSM997002").hide();
+			$("#li_PSSM997003").hide();
+			$("#li_PSSM997005").hide();
+			$("#li_PSSM997006").hide();
+			$("#li_PSSM997007").hide();
+			$("#li_PSSM997008").hide();
+			$("#li_PSSM997009").hide();
+			$("#li_PSSM997010").hide();
+			$("#li_PSSM997011").hide();
+			$("#li_PSSM997012").hide();
+			$("#li_PSSM997013").hide();
+
+		}else if(classVal === 'close_folder ov'){
+ 			//$("#li_a_sttemnt_PSSM997001002").attr("class", "close_folder open_folder");
+		}
+	}
+
+	//서버점검 팝업
+	$(function(){
+		
+		//fn_dialogOpenEx('noticeArea052901', '201905292359');
+
+		//fn_dialogOpenEx('noticeArea', '202004030000'); //시스템 작업 공지
+
+		//fn_dialogOpenEx('noticeArea2', '201905312359', 1); //채무 자료제출 안내
+
+		//fn_dialogOpenEx('noticeArea3', '202005310000'); //제출업무 공지
+
+		//fn_dialogOpenEx('noticeArea10', '202007140000', 2); //공시점검 공지
+
+		fn_dialogOpenEx('noticeArea11', '202103190000', 3);	//지정 공지
+
+		fn_dialogOpenEx('noticeArea13', '202109300000', 4);	//내부거래 공지
+
+		fn_dialogOpenEx('noticeArea14', '202110220000', 5);	//지배구조 공지
+
+		fn_dialogOpenEx('noticeArea15', '202512310000', 0); //신고 공지
+
+		fn_dialogOpenEx('noticeArea17', '202603160000', 0); //기업집단관리과 전화 연결 지연 안내 공지
+
+		fn_dialogOpenEx('noticeArea18', '202603220000', 0); //기업집단포털 전화번호 변경 작업으로 인한 통화 불가 안내 공지
+
+		//대표회사 담당자일 경우 최신데이터 가져오기 수행여부 체크, 안내 팝업 출력
+		if(location.pathname.match('/egps/ps/sm/kmb/') //지정, 주식/채무 자료입력 메뉴
+				&& '' == "Y" //대표 권한 여부
+			    && '' == "N" //약식 집단 여부
+				&& '' == "Y" //입력기간 여부
+				&& '' != "0002" //제출 신고 구분(수시 제출 여부)
+				&& '' == "N" //최신데이터 가져오기 수행 여부
+		    ){
+			cf_showSessionTimeOutDialog('guideDataCopy');
+
+		}else if(location.pathname.match('/egps/ps/sm/hld/') //지주 자료입력 메뉴
+                   && '' == "Y" //대표 권한 여부
+                   && '' == "Y" //입력기간 여부
+                   && '' == "N" //최신데이터 가져오기 수행 여부
+               ){
+               cf_showSessionTimeOutDialog('guideDataCopy');
+		}
+
+		//팝업 닫기
+		$('.dc').click(function(){
+			fn_dialogClose($(this).parent().parent().parent().parent().attr('id'));
+		});
+
+		//팝업 하루동안 보지 않기
+		$('.pcd').click(function(){
+			fn_noticePopupCloseDay($(this).parent().parent().parent().parent().attr('id'));
+		});
+	})
+
+	/* 작업이력확인 팝업 */
+	function fn_openPresentnHistoPopup(){
+		window.open('/egps/ps/sm/cmo/viewOpertHistoListPopup.do?type=&ym=', 'PresentnHistoPopup', 'width=1110, height=790, scrollbars=no, resizable=no').focus();
+	}
+
+	/* 사이트맵 팝업 */
+	function fn_openSiteMap(){
+		window.open('/egps/ps/sm/cmo/moveEgpsSitemap.do', 'SiteMapPopup' ,'width=1000, height=790, scrollbars=no, resizable=no').focus();
+	}
+
+	//사이트맵에서 메뉴 클릭 시
+	function fn_ps_sessionChangeAndMoveMenu(loginType, menuAdres, menuId){
+		if(loginType == "Y") //신고
+			setCookie("egpsMenuId", "PSSM997"); //로그인타입 변경 시 메뉴ID 초기화
+		else
+			setCookie("egpsMenuId", "PSSM000"); //로그인타입 변경 시 메뉴ID 초기화
+
+		gfn_isLoading("start");
+		var iParams = new Object();
+		iParams["loginType"] = loginType;
+		iParams["userPresentnYm"] = "999999";
+		$.ajax({ type: "POST"
+			   , url: "/egps/ps/io/lgn/selectLoginTypeSession.do"
+			   , data   : iParams
+			   , async  : true
+			   , success: function (data, status, xhr) {
+				   /* window.location.href = "/egps/ps/io/mai/mainList.do"; */
+				   if(loginType == "X"){ //신고
+					   gfn_ps_moveMenu(menuId);
+				   }else{
+						window.location.href = menuAdres;
+				   }
+			   	 }
+			   , error: function (request, status, error) {
+			   		 gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+			   	 }
+			   }
+		);
+	}
+
+</script>
+
+</head>
+<body>
+<!--s:세션 타임아웃 팝업영역-->
+<div id="fadeSession" style="width: 100%; display: none;">
+	<div class="layer-pop">
+		<div class="pop-tit">로그인 연장</div>
+			<div class="pop-inner">
+			<div id="time">
+				<p>10분후 로그아웃됩니다. 더 연장을 원하시면 '연장'버튼을 누르세요.</p>
+				<ul>
+					<li>남은시간&nbsp;:&nbsp;</li>
+					<li><strong id="countDown"><span id="time-min">00</span>:<span id="time-sec">00</span></strong></li>
+				</ul>
+				<button type="button" name="t-More" onClick="cf_sessionStay();">연장</button>
+				<button type="button" name="t-close" class="gray" onClick="cf_sessionOut('USER');">로그아웃</button>
+			</div>
+		</div>
+	</div>
+</div>
+<!--e:세션 타임아웃 팝업영역-->
+<!--s:서버 점검 공지 팝업영역-->
+<div id="noticeArea052901" style="display:none; width: 100%; ">
+	<div class="layer-pop">
+		<div class="pop-tit">시스템 공지</div>
+		<div class="pop-inner">
+			<div id="time">
+				<p class="tl"><strong>주식/채무 자료제출 관련 기능변경 및 개선으로 공지드립니다.</strong></p>
+				<p class="tl">1. [주식-주식소유명세 및 변동현황] 항목 필수체크 수정</p>
+				<p class="tl" style="font-size:12px;">&nbsp;&nbsp;- 소속구분 '소속회사(계열제외)' 선택 시 '발행회사법인법호' 필수 미체크</p>
+				<p class="tl">2. [주식-자료제출] '10. 주식소유 명세서' 소속구분 삭제</p>
+				<p class="tl">3. [주식-자료제출] '2-12. 기업집단 소유구조 현황' 조회 개선</p>
+				<p class="tl" style="font-size:12px;">&nbsp;&nbsp;- [우선주] → [의결권있는주/의결권없는주] 분리 표시</p>
+				<p class="tl">4. [채무-자료제출] '1-8. 소속회사로부터 받은 채무보증 명세서' 조회 개선</p>
+				<p class="tl">5. [채무-자료제출] '1-11. 금융기관별 채무보증금액 명세서' 조회 개선</p>
+				<p class="tl">6. [채무-자료제출] '1-12. 여신 대비 채무보증금액 비율' 조회 개선</p>
+				<p class="tl">7. [채무-자료제출] '1-14. 만기별 채무보증 명세서' 조회 개선</p>
+				<p class="tl color_blue" style="font-size:12px;">
+					※ '주식소유 명세서'를 기 제출하신 경우 수정 제출하실 필요는 없습니다.(제출자료 수용)
+				</p>
+				<!--
+				<p><strong>DB 서버 점검</strong> 및 기능개선 사항 반영 작업이 있을 예정입니다.</p>
+				<p>점검 작업 중 사이트의 접속이 원활하지 않을 수 있습니다.</p>
+				<p class="color_blue" style="font-size:14px;">
+					※ 주식 자료제출 '10. 주식소유 명세서' 소속구분 개선 및 <br>
+					채무 자료제출 첨부서류 조회 개선 등 <br>
+				</p>
+				<ul style="margin-bottom:20px;">
+					<li>일시 : </li>
+					<li style="color:#0068c7;">2019.05.28 18:00 ~ 21:00</li>
+				</ul>
+				 -->
+				<button type="button" name="t-More" class="pcd">하루동안 열지 않기</button>
+				<button type="button" name="t-close" class="gray dc">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="noticeArea" style="display:none; width: 100%; ">
+	<div class="layer-pop">
+		<div class="pop-tit">시스템 작업 공지</div>
+		<div class="pop-inner">
+			<div id="time">
+			    <p class="color_blue" style="font-size:16px;">
+			                금일 기업집단포털(정보공개) 시스템  개편 작업이 있을 예정입니다.
+			    </p>
+                   <p> 작업 중 사이트 접속이 원활하지 않거나, 시스템이 불안정 할 수 있습니다.</p>
+                   <p> 업무에 참고 부탁드립니다. 감사합니다.</p>
+
+				<ul style="margin:30px 0;">
+					<li>일시 : </li>
+					<li style="color:#0068c7;">2020.04.02.(목) 19:00 ~ 23:59</li>
+				</ul>
+				<button type="button" name="t-More" class="pcd">하루동안 열지 않기</button>
+				<button type="button" name="t-close" class="gray dc">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="noticeArea3" style="display:none; width: 100%; ">
+	<div class="layer-pop">
+		<div class="pop-tit">제출업무 공지</div>
+		<div class="pop-inner">
+			<div id="time">
+			    <p style="font-size:16px;">
+					<b>제출화면에서 <font color="red">자료 제출 시 아래와 같은 경우는 처리가 불가</font>하오니 꼭 유념하시어 처리 부탁 드립니다.</b>
+			    </p>
+                   <p class="tl">
+                   	<b><font color="blue">1. 업로드 PDF가 읽기전용인 경우 처리 불가</font></b><br>&nbsp;&nbsp;&nbsp;
+                   	확인방법 : Adobe PDF 뷰어로 열람을 하였을때<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                   	[........읽기전용으로 열렸습니다] 라고 뷰어 상단에 메세지가<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                   	표시될 겁니다.
+                   </p>
+                   <p class="tl">
+                   	<b><font color="blue">2. 업로드 PDF에 수정패스워드가 설정되어있는 경우 처리 불가</font></b><br>&nbsp;&nbsp;&nbsp;
+                   	확인방법 : Adobe PDF 뷰어로 열람한 후 아래 메뉴에서 확인<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                   	파일 > 속성 > 문서속성 화면의 보안탭을 클릭 후 보안방법이<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                   	[보안 사용 안함]이라고 표시되어 있는 지을 확인 할 것
+                   </p>
+                   <p class="tl">
+                   	<b><font color="blue">3. 업로드 PDF에 DRM이 설정되어있는 경우 처리 불가</font></b><br>&nbsp;&nbsp;&nbsp;
+                   	확인방법 : 각사의 DRM정책을 바탕으로 해제해서 업로드 할 것
+                   </p>
+                   <p class="tl">
+                   	<b><font color="blue">4. 업로드가 안되는 경우</font></b><br>&nbsp;&nbsp;&nbsp;
+                   	각사 내부 네트워크 환경 확인 및 브라우저를 바꿔서 진행할 것
+                   </p>
+                   <p class="tl color_blue" style="font-size:12px;">
+                   	※ 자료 제출시 참고하시기 바랍니다. 감사합니다.
+                   </p>
+
+				<button type="button" name="t-More" class="pcd">하루동안 열지 않기</button>
+				<button type="button" name="t-close" class="gray dc">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="noticeArea10" style="display:none; width: 100%; ">
+	<div class="layer-pop">
+		<div class="pop-tit">공시점검 제출업무 공지</div>
+		<div class="pop-inner">
+			<div id="time">
+			    <p style="font-size:16px;">
+					<font color="blue"><b>자료제출 재개 관련</b></font>
+			    </p>
+                   <p class="tl">
+                   	<b>제출 레포트의 항목 수정 및 포맷 수정으로 [자료제출] 화면이 노출이 안되고 있었습니다만 <font color="green">7.10(금) 오후 3시</font>부터는 화면에 노출이 됩니다.<br>
+                   	       준비가 되신 기업부터 제출 부탁드립니다.<br><br>
+                                                            단, 자료제출 메뉴에서 <font color="green">기존에 생성하셨던 PDF 파일은 재생성</font> 부탁드립니다.
+					</b>
+                   </p>
+                   <p class="tl color_blue" style="font-size:12px;">
+                   	※ 시스템 이용시 참고하시기 바랍니다. 감사합니다.
+                   </p>
+
+				<button type="button" name="t-More" class="pcd">하루동안 열지 않기</button>
+				<button type="button" name="t-close" class="gray dc">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="noticeArea11" style="display:none; width: 100%; ">
+	<div class="layer-pop">
+		<div class="pop-tit">지정 제출업무 공지</div>
+		<div class="pop-inner">
+			<div id="time">
+                   <p class="tl" style="font-size:14px;">
+                   	<b><font color="red">아래 화면에 대해서 이미 데이터가 입력되어 있는 기업에 한해 하기 내용을 진행해 주시기 바랍니다.</font></b><br>
+                   </p>
+                   <p class="tl" style="font-size:12px;">
+                   	<b><font color="blue">친족현황</font></b><br>
+                   	동일인과 혈족 1촌이면서 자녀인 경우 "동일인과의 자손구분" 항목 <font color="green">자녀</font> 입력<br>
+                   	동일인과 혈족 2촌이면서 손주인 경우 "동일인과의 자손구분" 항목 <font color="green">손주</font> 입력
+                   </p>
+                   <p class="tl" style="font-size:12px;">
+                   	<b><font color="blue">임원현황</font></b><br>
+                   	"동일인과의 관계"가 친족이면 "임원명" <font color="green">친족 검색 팝업으로 재입력</font>
+                   </p>
+                   <p class="tl" style="font-size:12px;">
+                   	<b><font color="blue">주주현황</font></b><br>
+                   	"주주구분"이 친족이면 "주주명" <font color="green">친족 검색 팝업으로 재입력</font>
+                   </p>
+                   <p class="tl" style="font-size:12px;">
+                   	<b><font color="blue">비영리법인단체 (비영리법인 출자자현황 TAB, 비영리법인 임원현황 TAB)</font></b><br>
+                   	"구분"이 친족이면 "성명" <font color="green">친족 검색 팝업으로 재입력</font>
+                   </p>
+                   <p class="tl" style="font-size:12px;">
+                   	<b><font color="blue">비계열회사 보유주식(출자)현황</font></b><br>
+                   	"구분"이 친족이면 "성명또는회사명" <font color="green">친족 검색 팝업으로 재입력</font>
+                   </p>
+                   <p class="tl color_blue" style="font-size:12px;">
+                   	※ 시스템 이용시 참고하시기 바랍니다. 감사합니다.
+                   </p>
+
+				<button type="button" name="t-More" class="pcd">하루동안 열지 않기</button>
+				<button type="button" name="t-close" class="gray dc">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="noticeArea13" style="display:none; width: 100%; ">
+	<div class="layer-pop">
+		<div class="pop-tit">내부거래 제출업무 공지</div>
+		<div class="pop-inner">
+			<div id="time">
+                   <p class="tl" style="font-size:14px;">
+                   	<b><font color="red">자금 자산거래 메뉴 내 항목 값 변경 공지</font></b><br>
+                   </p>
+                   <p class="tl" style="font-size:14px;">
+                   	<b><font color="black">대상 항목  : 유형자산 임대차 거래 표 내 2개 항목 (월 임차료, 월 임대료)</font></b><br>
+                   </p>
+                   <p class="tl" style="font-size:14px;">
+                   	<b><font color="black">위의 2개 항목에 대해 금액단위 변경에 따른 데이터 재확인 및 수정 요청</font></b><br>
+                   </p>
+                   <p class="tl" style="font-size:14px;">
+                   	<b><font color="black">기존 : 백만원 단위로 표현</font></b><br>
+                   	<b><font color="black">변경 : 천원 단위로 표현</font></b><br>
+                   </p>
+                   <p class="tl color_blue" style="font-size:12px;">
+                   	※ 관련 문의 : 044-200-4808~9, 4818~9
+                   </p>
+                   <p class="tl color_blue" style="font-size:12px;">
+                   	※ 시스템 이용시 참고하시기 바랍니다. 감사합니다.
+                   </p>
+
+				<button type="button" name="t-More" class="pcd">하루동안 열지 않기</button>
+				<button type="button" name="t-close" class="gray dc">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="noticeArea14" style="display:none; width: 100%; ">
+	<div class="layer-pop">
+		<div class="pop-tit">지배구조 제출업무 공지</div>
+		<div class="pop-inner">
+			<div id="time">
+                   <p class="tl" style="font-size:14px;">
+                   	<b><font color="red">상장사종합 메뉴 비상장사의 데이터 삭제 처리 공지</font></b><br>
+                   </p>
+                   <p class="tl" style="font-size:14px;">
+                   	<b><font color="black">지배구조 제출 업무 오픈 전 최신데이터 가져오기 수행 중</font></b>
+                   </p>
+                   <p class="tl" style="font-size:14px;">
+                   	<b><font color="black"><font color="blue">상장사 종합 메뉴에 한하여</font> 비상장사의 데이터도 적재가 되어</font></b>
+                   </p>
+                   <p class="tl" style="font-size:14px;">
+                   	<b><font color="black">비상장사의 데이터를 삭제처리 하였음을 안내드립니다.</font></b><br>
+                   </p>
+                   <p class="tl" style="font-size:14px;">
+                   	<b><font color="black">삭제 처리 시간 : 13일 11시 ~ 14시</font></b><br>
+                   </p>
+                   <p class="tl color_blue" style="font-size:12px;">
+                   	※ 관련 문의 : 044-200-4808~9, 4818~9
+                   </p>
+                   <p class="tl color_blue" style="font-size:12px;">
+                   	※ 시스템 이용시 참고하시기 바랍니다. 감사합니다.
+                   </p>
+
+				<button type="button" name="t-More" class="pcd">하루동안 열지 않기</button>
+				<button type="button" name="t-close" class="gray dc">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="noticeArea15" style="display:none; width: 100%; ">
+	<div class="layer-pop">
+		<div class="pop-tit">신고시스템 공지</div>
+		<div class="pop-inner">
+			<div id="time">
+				<p class="tl" style="font-size:14px;"><b><font color="black">기업집단포털에는 각종 신고를 할 수 있도록 <font color="blue">신고시스템</font>을 운영하고 있습니다</font></b></p>
+				<p class="tl" style="font-size:14px;"><b><font color="black">전면 온라인 신고 이용으로의 전환을 추진 중이오니 원활한 신고 처리를 위해</font></b></p>
+				<p class="tl" style="font-size:14px;"><b><font color="black">가급적 온라인 신고를 이용해 주시기 바랍니다</font></b></p>
+				<p class="tl" style="font-size:14px;"><b><font color="black">감사합니다.</font></b></p>
+				<p class="tl color_blue" style="font-size:12px;">※ 관련 문의 : 044-200-4808~9, 4818~9</p>
+				<p class="tl color_blue" style="font-size:12px;">※ 시스템 이용시 참고하시기 바랍니다. 감사합니다.</p>
+				<button type="button" name="t-More" class="pcd">하루동안 열지 않기</button>
+				<button type="button" name="t-close" class="gray dc">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="noticeArea17" style="display:none; width: 100%; ">
+	<div class="layer-pop">
+		<div class="pop-tit">[공지] 전화 응대 일시 중단 안내</div>
+		<div class="pop-inner">
+			<div id="time">
+				<p class="tl" style="font-size:14px;"><b><font color="black">2026.3.13.부터 2026.3.15.까지</font></b></p>
+				<p class="tl" style="font-size:14px;"><b><font color="black">기업집단관리과 이사로 인해 전화 연결이 어려울 수 있으니 참고하여 주시기 바랍니다.</font></b></p>
+				<p class="tl" style="font-size:14px;"><b><font color="black">긴급한 문의는 *기업집단포털 운영사업단(044-200-4808~9, 4818~9)*으로 연락하여 주시기 바라며,</font></b></p>
+				<p class="tl" style="font-size:14px;"><b><font color="black">*공통>업무질의(기업)*에 질의사항을 남겨주시면 이사 완료 후 확인하여 연락드리겠습니다</font></b></p>
+				<p class="tl color_blue" style="font-size:12px;">※ 시스템 이용시 참고하시기 바랍니다. 감사합니다.</p>
+				<button type="button" name="t-More" class="pcd">하루동안 열지 않기</button>
+				<button type="button" name="t-close" class="gray dc">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="noticeArea18" style="display:none; width: 100%; ">
+	<div class="layer-pop">
+		<div class="pop-tit">[공지] 포털 운영팀 전화 응대 일시 중단 안내</div>
+		<div class="pop-inner">
+			<div id="time">
+				<p class="tl" style="font-size:14px;"><b><font color="black">2026년 3월 20일(금) 오후 3시부터 공정거래위원회 내 전화번호 변경 작업이 예정되어 있어, 해당시간 동안 포털 운영팀 전화 연결이 원활하지 않을 수 있습니다.<br>(종료 시점은 미정)</font></b></p>
+				<p class="tl" style="font-size:14px;"><b><font color="black">문의사항이 있으신 경우, 공통 > 업무질의(기업) 게시판에 남겨주시면 확인 후 순차적으로 답변드리겠습니다.</font></b></p>
+				<p class="tl color_blue" style="font-size:12px;">시스템 이용에 참고해 주시기 바라며, 양해 부탁드립니다.</p>
+				<button type="button" name="t-More" class="pcd">하루동안 열지 않기</button>
+				<button type="button" name="t-close" class="gray dc">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
+<!--e:서버 점검 공지 팝업영역-->
+
+<!--s:채무 자료제출 안내 팝업영역-->
+<div id="noticeArea2" style="display:none; width: 100%; ">
+	<div class="layer-pop">
+		<div class="pop-tit">채무 자료제출 안내</div>
+		<div class="pop-inner">
+			<div id="time">
+				<p style="font-size:16px; line-height:25px;">채무보증현황 제출대상은<br/><strong style="font-size:18px; color:#0068c7;">상호출자제한기업집단</strong>에 속하는 회사입니다.</p>
+				<button type="button" name="t-More2"  class="pcd">하루동안 열지 않기</button>
+				<button type="button" name="t-close2" class="gray dc">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
+<!--e:채무 자료제출 안내 팝업영역-->
+
+<!--s:최신데이터가져오기 안내 팝업영역-->
+<!-- <div id="guideDataCopy" style="display:none; width: 100%; "> -->
+<!-- 	<div class="layer-pop"> -->
+<!-- 		<div class="pop-tit">최신데이터 가져오기 안내</div> -->
+<!-- 		<div class="pop-inner"> -->
+<!-- 			<div id="time"> -->
+<!-- 				<p><strong>최신데이터 가져오기가 수행되지 않았습니다.</strong></p> -->
+<!-- 				<p>최신데이터 가져오기 수행 후 자료입력이 가능합니다.</p> -->
+<!-- 				<p class="color_blue" style="font-size:14px;"> -->
+<!-- 					※  최신데이터 가져오기는 대표회사만 수행 가능합니다.<br> -->
+<!-- 				</p> -->
+<!-- 				<button type="button" name="t-More" onclick="fn_ps_moveNewestDataView()">최신데이터가져오기 메뉴 바로가기</button> -->
+<!-- 			</div> -->
+<!-- 		</div> -->
+<!-- 	</div> -->
+<!-- </div> -->
+<!--e:최신데이터가져오기 안내 팝업영역-->
+<form id="headerForm" name="headerForm" ></form>
+<div id="wrap">
+	<!-- 프로그레스바:S -->
+	<sbux-progress id="idxProgBar" name="progBarNm" uitype="bar" unit="percent" show-openlayer="true" indicator-type="load" openlayer-title="대용량 데이터를 처리중입니다. 잠시만 기다려 주십시오.">
+	    <progress-bar striped="true" show-motion="true">
+	        <bar valuenow="0" body-color="#f25c5c"  label="*%" label-style="color:black;font-weight:bold;"></bar>
+	    </progress-bar>
+	</sbux-progress>
+	<!-- 프로그레스바:E -->
+	<div class="intro-wrap" id="isLoading" style="position: absolute; left: 0px; top: 0px; z-index: 10000; display: none;" >
+		<div class="loading">
+			<img src="/images/loading_v3.gif" alt="loading">
+			<strong>Loading</strong>
+			<p class="mt5">잠시만 기다려 주십시오.</p>
+		</div>
+	</div>
+	<header id="header">
+		<h1 class="logo"><a href="/index.jsp"><img src="/newLayout/images/common/logo.png" alt="기업집단포털"> 기업집단포털</a></h1>
+		<div class="top_btn">
+			<span class='userMsg'>
+				
+				
+				
+			</span>
+			
+<!-- 			<span class="time"> -->
+<!-- 				<span class="minHeaderSessionTime"></span>:<span class="secHeaderSessionTime"></span> -->
+<!-- 			</span> -->
+<!-- 			<a href="javascript:fn_openSiteMap();" id="rightMenuOpenHeader" class="admin_sub_mob_btn" style="text-decoration: none;"><br>&nbsp;&nbsp;사이트 맵</a> -->
+		</div>
+	</header>
+ 	<div id="lnb">
+	<nav>
+		
+	</nav>
+</div>
+
+<script type="text/javascript">
+	$(document).ready(function(){
+		 $('.menu > li > ul').hide();
+		 $('.menu > li > ul > li > ul').hide();
+		 $('.menu > li > ul > li > ul > li > ul ').hide();
+		 $('.menu > li > a').click(function(){
+			$(this).next($('.menu > li > ul')).slideToggle('fast');
+		 })
+		 $('.menu > li > ul > li > a').click(function(e){
+			e.stopPropagation();
+			$(this).next($('.menu > li > ul > li > ul')).slideToggle('fast');
+		 })
+		 $('.menu > li > ul > li > ul > li > a').click(function(e){
+			e.stopPropagation();
+			$(this).next($('.menu > li > ul > li > ul > li > ul')).slideToggle('fast');
+		 })
+		 $('li > a').focus(function(){
+		    $(this).addClass('open_folder');
+		 })
+		 $("li > a").blur(function(){
+		    $(this).removeClass('open_folder');
+		 })
+	});
+</script>
+
+<!--s:본문영역-->
+<section id="admin_contents">
+<!-- <div id="mcontainer" class="container"> -->
+<!-- s:서브네비게이션 -->
+<!-- 	<div class="location"> -->
+<!-- 		<span class="home"><a href="/index.jsp" title="홈으로">홈으로</a></span> -->
+<!-- 		<ul class="accordionSub"></ul> -->
+<!-- 	</div> -->
+<!-- 	e:서브네비게이션 -->
+
+	<!-- 공시점검 하위 메뉴 탭 영역 -->
+	<div id="paTabDiv"></div>
+
+	<!-- 공시점검 하위 메뉴 탭 DIV 영역 -->
+    <div id="tab-content" hidden="true"></div>
+
+<script type="text/javascript">
+	var leftHeight = "";
+
+	/* location > accordion 메뉴  */
+	$(document).ready(function () {
+		$('.accordionSub').accordionSub();
+
+		//공시점검 선택된 탭 활성화
+		if('' != null && '' != 'null' && '' != ""){
+			SBUxMethod.selectTab('');
+
+		   gfn_ps_sendSessionMenuId(SBUxMethod.get('tabTopJson'));
+		}
+
+		// 소속회사 목록 접기/펼치기 버튼 생성
+		if($(".section-left").length){
+			$(".section-left").css("position", "relative");
+			$(".section-left").append('<div id="btn_sectionLeft" style="display:inline-block; position:absolute; top:41px; left:-18px; height:100px; vertical-align:middle; text-align:center; background:#0068c7; color:#fff; width:18px; border-radius:0px 0px 0px 18px; cursor:hand;">접기</div>');
+		}
+
+// 		if($(".help_area_ni").length){
+// 			$(".help_area_ni").css("position", "relative");
+// 			$(".help_area_ni").append('<div id="btn_sectionTop" style="display:inline-block; position:absolute; top:-25px; left:90%; height:25px; vertical-align:middle; text-align:center; background:#0068c7; color:#fff; width:150px; border-radius:18px 0px 0px 0px; cursor:hand;"><a href="/egps/ps/sm/com/selectMenualListView.do" style="cursor:pointer; font-size:16px;">매뉴얼 바로가기</a></div>');
+// 		}
+	});
+
+	// 소속회사 목록 접기/펼치기 버튼 클릭이벤트
+	$(document).on("click", "#btn_sectionLeft", function(){
+		fn_sectionLeft();
+	});
+
+	// 소속회사 목록 접기/펼치기 버튼 제어
+	function fn_sectionLeft(){
+		var scrollY = window.scrollY;
+		$("#btn_sectionLeft").text($("#btn_sectionLeft").text() == "접기" ? "펼치기" : "접기");
+
+		if($("#btn_sectionLeft").text() == "접기"){
+			fn_sectionLeftDisplay($(".section-left div:eq(0)"), "show");
+			$(".section-left").css("width", "24%");
+			$(".section-right").css("width", "75%");
+		}else{
+			fn_sectionLeftDisplay($(".section-left div:eq(0)"), "hide");
+			$(".section-left").css("width", "0%");
+			$(".section-right").css("width", "100%");
+		}
+
+		fn_datagridRefresh();
+
+		window.scrollTo(0, scrollY);
+	}
+
+	// 소속회사 목록 접기/펼치기 버튼 제어
+	function fn_sectionLeftDisplay(obj, at){
+		if(obj.attr("id") != "btn_sectionLeft"){
+			if(at == "show"){
+				obj.show();
+			}else{
+				obj.hide();
+			}
+		}
+
+		if(obj.next().length){
+			fn_sectionLeftDisplay(obj.next(), at);
+		}
+	}
+
+	// 소속회사 목록 접기/펼치기 시 그리드 스타일 새로고침
+	function fn_datagridRefresh(){
+		if(typeof(gvar_Cmpnygrid) != 'undefined') gvar_Cmpnygrid.refresh();
+		if(typeof(datagrid) != 'undefined') datagrid.refresh();
+		if(typeof(datagrid1) != 'undefined') datagrid1.refresh();
+		if(typeof(datagrid2) != 'undefined') datagrid2.refresh();
+		if(typeof(datagrid3) != 'undefined') datagrid3.refresh();
+		if(typeof(datagrid4) != 'undefined') datagrid4.refresh();
+		if(typeof(datagrid5) != 'undefined') datagrid5.refresh();
+		if(typeof(datagrid6) != 'undefined') datagrid6.refresh();
+		if(typeof(datagrid7) != 'undefined') datagrid7.refresh();
+		if(typeof(datagrid8) != 'undefined') datagrid8.refresh();
+		if(typeof(datagrid9) != 'undefined') datagrid9.refresh();
+		if(typeof(datagridSub) != 'undefined') datagridSub.refresh();
+		if(typeof(datagridSub1) != 'undefined') datagridSub1.refresh();
+		if(typeof(datagridSub2) != 'undefined') datagridSub2.refresh();
+		if(typeof(datagridDtl) != 'undefined') datagridDtl.refresh();
+		if(typeof(datagridError) != 'undefined') datagridError.refresh();
+		if(typeof(datagridJobSe) != 'undefined') datagridJobSe.refresh();
+		if(typeof(datagridTop) != 'undefined') datagridTop.refresh();
+		if(typeof(datagridBcnc) != 'undefined') datagridBcnc.refresh();
+		if(typeof(datagridDntpsn) != 'undefined') datagridDntpsn.refresh();
+		if(typeof(datagridExctv) != 'undefined') datagridExctv.refresh();
+		if(typeof(datagridShrdr) != 'undefined') datagridShrdr.refresh();
+		if(typeof(datagridSmerAfflts) != 'undefined') datagridSmerAfflts.refresh();
+		if(typeof(datagridStock) != 'undefined') datagridStock.refresh();
+		if(typeof(datagridPop) != 'undefined') datagridPop.refresh();
+		if(typeof(datagridEntrprsHis) != 'undefined') datagridEntrprsHis.refresh();
+		if(typeof(datagridAfflts) != 'undefined') datagridAfflts.refresh();
+		if(typeof(datagridAffltsExcel) != 'undefined') datagridAffltsExcel.refresh();
+		if(typeof(datagridModal) != 'undefined') datagridModal.refresh();
+	}
+
+	/* 공시점검 하위 탭 메뉴 존재할때 */
+	if('' != null && '' != 'null' && '' != ""){
+		//alert('');
+		var paTabDivHtml = "";
+		paTabDivHtml  = '<sbux-tabs id="idxtabTopJson" name="tabTopJson" uitype="normal" ';
+		paTabDivHtml += 'placement="top" ';
+		paTabDivHtml += 'onclick="evt_onclick(tabTopJson)" ';
+		paTabDivHtml += 'jsondata-ref="tabJsonData" ';
+		paTabDivHtml += 'jsondata-id="id" ';
+		paTabDivHtml += 'jsondata-pid="pid" ';
+		paTabDivHtml += 'jsondata-order="order" ';
+		paTabDivHtml += 'jsondata-text="text" ';
+		paTabDivHtml += 'jsondata-target-id="targetid" ';
+		paTabDivHtml += 'jsondata-target-value="targetvalue" ';
+		paTabDivHtml += 'jsondata-glyphs="glyphs" ';
+		paTabDivHtml += 'jsondata-badgecolor="badgecolor" ';
+		paTabDivHtml += 'jsondata-badgetext="badgetext" ';
+		paTabDivHtml += 'jsondata-css-style="cssstyle" ';
+		paTabDivHtml += 'is-draggable="true" ';
+		paTabDivHtml += 'is-draggable-openlayer="true" ';
+		paTabDivHtml += 'style="padding-top:10px; margin: 0px 20px 0px 20px; padding-bottom:0px; border-bottom: 2px solid #B2BAD2;">';
+		paTabDivHtml += '</sbux-tabs>';
+
+		$("#paTabDiv").append(paTabDivHtml);
+
+		var tabJsonData = JSON.parse('');
+		//console.log("tabJsonData : " + tabJsonData);
+		for(var i=0; i<tabJsonData.length; i++){
+			paTabDivHtml += '<div id="' + tabJsonData[i].id +'"></div>';
+		}
+
+		$("#tab-content").append(paTabDivHtml);
+	}
+
+	/* 공시점검 하위 탭 메뉴 클릭시 호출  펑션 */
+	function evt_onclick(args){
+        gfn_ps_moveMenu(args);
+        gfn_isLoading('start');
+    }
+
+	// 본인인증 수행여부 확인
+	gfn_ps_ciCheck();
+
+</script>
+
+<!-- S: 개발자 개발 영역 -->
+<script type="text/javascript">
+	
+	var preTabValue_a = "1";
+	var preTabValue_b = "1";
+	var datagrid;
+	var resources = [];
+	var columnOption;
+	
+	var chartKey = "";
+	var chartValue;
+	var initChartType = "bar";
+	var preChartType = initChartType;
+	var chartTargetIndexArray = new Array();
+	
+	var excelFileName = "";
+	var excelNumberTypeCols;
+	
+	var params;
+	var pastPopup = null;
+	
+	/*******************************************************************
+	* Function Name : fn_subContentReady  
+	* Description   : 초기실행 함수 header.jsp 의 jQuery(document.body).ready 함수에서 호출
+	* Parameter	 : 
+	* Return		: 
+	* History	   : 2018. 8. 29. / 김건태	/ 최초작성
+	*				 
+	*******************************************************************/
+	function fn_subContentReady(){
+		//title 설정
+//		jQuery(document).find("title").text("지정현황");
+		
+		fn_initSearchCondition();
+
+		gfn_ps_createYmSelect(4);	//시작년도 인덱스
+		//gfn_ps_createYmBtn("S_sch_othbcYm"); 연월 노출방식 변경
+		if(selectUnityGrupId!=""){
+			jQuery("#tabLabelDiv label").eq(1).click(); //기업집단별 조건
+		}else{
+			fn_search();
+		}
+		
+	}
+	
+	/*******************************************************************
+	* Function Name : fn_initSearchCondition  
+	* Description   : 검색조건 초기화
+	* Parameter	 : 
+	* Return		: 
+	* History	   : 2018. 9. 07. / 김건태	/ 최초작성
+	*				 
+	*******************************************************************/
+	function fn_initSearchCondition(){
+		gfn_ps_selectBoxCreate("/egps/ps/io/ocm/selectYmList.do", 'sch_startYm', 'N', null, selectOthbcYm);	//해당년도 
+		gfn_ps_selectBoxCreate("/egps/ps/io/ocm/selectYmList.do", 'sch_endYm', 'N', null, selectOthbcYm);		//해당년도 
+		gfn_ps_selectBoxCreate("/egps/ps/io/ocm/selectYmList.do", 'sch_othbcYm3', 'N', null, selectOthbcYm);	//해당년도 
+		gfn_ps_selectBoxCreate("/egps/ps/io/ocm/selectYmList.do", 'sch_othbcYm4', 'N', null, selectOthbcYm);	//해당년도 
+
+		if(opener == null){
+			params = gfn_ps_getTapParams();
+		}
+		params["sch_othbcYm"] = 'ALL';
+		gfn_ps_selectBoxCreate("/egps/ps/io/ocm/selectKmbntList.do", 'sch_unityGrupId2', 'N', params, selectUnityGrupId);	//기업집단
+	}
+	
+	
+	/*******************************************************************
+	* Function Name : fn_search  
+	* Description   : 조회
+	* Parameter	 : 
+	* Return		: 
+	* History	   : 2018. 8. 29. / 김건태	/ 최초작성
+	*				 
+	*******************************************************************/
+	function fn_search(pageIndex){
+		if(opener == null){
+			params = gfn_ps_getTapParams();
+		}
+		
+		if(pageIndex != null){
+			params["pageIndex"] = pageIndex;
+			params["pageUnit"] = jQuery("[name='pageUnit'] option:selected").val();
+		}
+		
+		if(preTabValue_a == "1"){
+			params["sch_startYm"] = jQuery("#sch_startYm").val();
+			params["sch_endYm"] = jQuery("#sch_endYm").val();
+			if(preTabValue_b == "1"){			//Tab2 > Tab1
+				gfn_ps_postAjaxHtml('1-1', "/egps/ps/io/kap/selectAjaxCntAppnSttusList.do", params);
+			}else if(preTabValue_b == "2"){		//Tab2 > Tab2
+				gfn_ps_postAjaxInit('1-2', "/egps/ps/io/kap/selectCntAppnSttusList.do", params);
+			}
+			jQuery("#ymListParent").css("display","none");
+			jQuery("#reportButton").css("display","none");
+		}else if(preTabValue_a == "2"){	
+			params["sch_unityGrupId"] = jQuery("#sch_unityGrupId2").val();
+			if(preTabValue_b == "1"){			//Tab2 > Tab1
+				gfn_ps_postAjaxHtml('2-1', "/egps/ps/io/kap/selectAjaxKmbntAppnSttusList.do", params);
+			}else if(preTabValue_b == "2"){		//Tab2 > Tab2
+				gfn_ps_postAjaxInit('2-2', "/egps/ps/io/kap/selectKmbntAppnSttusList.do", params);
+			}
+			jQuery("#reportButton").css("display","");
+			jQuery("#ymListParent").css("display","none");
+		}else if(preTabValue_a == "3"){	
+			params["sch_othbcYm"] = jQuery("#sch_othbcYm3").val();
+			if(preTabValue_b == "1"){			//Tab3 > Tab1
+				gfn_ps_postAjaxHtml('3-1', "/egps/ps/io/kap/selectAjaxAssetsAppnSttusList.do", params);
+			}else if(preTabValue_b == "2"){		//Tab3 > Tab2
+				gfn_ps_postAjaxInit('3-2', "/egps/ps/io/kap/selectAssetsAppnSttusList.do", params);
+			}
+			jQuery("#reportButton").css("display","");
+			jQuery("#ymListParent").css("display","");
+		}else if(preTabValue_a == "4"){				
+			params["sch_othbcYm"] = jQuery("#sch_othbcYm4").val();
+			params["sch_unityGrupId"] = jQuery("#sch_unityGrupId4").val();
+			if(preTabValue_b == "1"){			//Tab4 > Tab1
+				gfn_ps_postAjaxHtml('4-1', "/egps/ps/io/kap/selectAjaxAppnPsitnCmpnySumryList.do", params);
+			}else if(preTabValue_b == "2"){		//Tab4 > Tab2
+				gfn_ps_postAjaxInit('4-2', "/egps/ps/io/kap/selectAppnPsitnCmpnySumryList.do", params);
+			}
+			jQuery("#reportButton").css("display","");
+			jQuery("#ymListParent").css("display","");
+		}
+		
+	}
+		
+		
+	/*******************************************************************
+	* Function Name : fn_callBack  
+	* Description   : 콜백함수
+	* Parameter	 : iServiceId, iData
+	* Return		: 
+	* History	   : 2018. 8. 29. / 김건태	/ 최초작성
+	*				 
+	*******************************************************************/
+	function fn_callBack(iServiceId, iData){
+		if(opener == null){
+			params = gfn_ps_getTapParams();
+		}
+		
+		if(iServiceId == "S_sch_othbcYm4"){			//해당년도 gfn_ps_selectBoxCreate 콜백
+			params["sch_othbcYm"] = jQuery("#sch_othbcYm4").val();
+			//연도가 선택되면 해당 년도에 지정된 기업집단 목록 갱신 
+			gfn_ps_selectBoxCreate("/egps/ps/io/ocm/selectKmbntList.do", 'sch_unityGrupId4', 'N', params, selectUnityGrupId);	//기업집단
+		}else if(iServiceId == "S_sch_startYm" || iServiceId == "S_sch_endYm"){	
+			params["sch_startYm"] = jQuery("#sch_startYm").val();
+			params["sch_endYm"] = jQuery("#sch_endYm").val();
+		}else if(iServiceId == "S_sch_unityGrupId"){		
+			
+		}else if(iServiceId == "1-1") {	  //년도별 지정수
+			// 1.데이터
+			jQuery("#resultListDiv").html(iData);
+			
+		}else if(iServiceId == "1-2") { //년도별 지정수
+		
+			resources = iData.resultList;
+		
+			chartKey = "othbcYm";//년도
+			chartValue = [
+								{"groupCount":"지정수"}//지정수
+						];
+			
+			gfn_ps_createChartDataCheckbox();
+			gfn_ps_createChartXDataCheckbox();
+			gfn_ps_createChartTargetX();
+			
+			jQuery("[name='chartData']").eq(0).click();
+			
+		}else if(iServiceId == "2-1") { //지정현황 조회(집단 기준)
+		
+			jQuery("#resultListDiv").html(iData);
+		
+			
+			
+		}else if(iServiceId == "2-2") { //지정현황 조회(집단 기준)
+		
+			resources = iData.resultList;
+		
+			chartKey = "asYear";
+			chartValue = [
+								{"pblcorpInclsRank":"순위"}
+								,{"cnt":"회사수"}
+								,{"sumjasan":"자산총액"}
+						];
+			
+			gfn_ps_createChartDataCheckbox();
+			gfn_ps_createChartXDataCheckbox();
+			gfn_ps_createChartTargetX();
+			
+			jQuery("[name='chartData']").eq(0).click();
+			
+			
+		}else if(iServiceId == "3-1") {	  //지정현황 조회(자산기준)
+			// 1.데이터
+			jQuery("#resultListDiv").html(iData);
+			
+		}else if(iServiceId == "3-2") { //지정현황 조회(자산기준)
+		
+			resources = iData.resultList;
+		
+			chartKey = "entrprsGrupNm";
+			chartValue = [
+								{"psitnCmpnyCnt":"계열회사 수"}
+								,{"sumjasan":"자산총액"}
+						];
+			
+			gfn_ps_createChartDataCheckbox();
+			gfn_ps_createChartXDataCheckbox();
+			gfn_ps_createChartTargetX();
+			
+			jQuery("[name='chartData']").eq(0).click();
+		}else if(iServiceId == "4-1") { //집단별 소속회사개요 조회
+			jQuery("#resultListDiv").html(iData);
+		}else if(iServiceId == "4-2") { //집단별 소속회사개요 조회
+			resources = iData.resultList;
+		
+			chartKey = "entrprsNm";
+			chartValue = [
+								{"ordtmEmplyCo":"종업원수"}
+								,{"assetsTotamt":"자산총액"}
+								,{"debtTotamt":"부채총액"}
+								,{"caplTotamt":"자본총액"}
+								,{"caplAmount":"자본금"}
+								,{"selngAmount":"매출액"}
+								,{"thstrmNtpfAmount":"당기순이익"}
+						];
+			
+			gfn_ps_createChartDataCheckbox();
+			gfn_ps_createChartXDataCheckbox();
+			gfn_ps_createChartTargetX();
+			
+			jQuery("[name='chartData']").eq(0).click();
+		}
+	}
+	
+	/*******************************************************************
+	* Function Name : fn_report  
+	* Description   : 리포트 출력
+	* Parameter		: 
+	* Return		: 
+	* History		: 2018. 10. 17. / 김수환	/ 최초작성
+	*				 
+	*******************************************************************/
+	function fn_report(){
+		if(opener == null){
+			params = gfn_ps_getTapParams();
+		}
+
+		if(preTabValue_a == "1"){
+			//리포트 출력하지 않음
+		}else if(preTabValue_a == "2"){	
+			var queryListString = "selectKmbntAppnSttusList";
+			var crfString = "/ps/io/kap/kmbntAppnSttusList.crf";
+			params["sch_unityGrupId"] = jQuery("#sch_unityGrupId2").val();
+		}else if(preTabValue_a == "3"){	
+			var queryListString = "selectAssetsAppnSttusList";
+			var crfString = "/ps/io/kap/assetsAppnSttusList.crf";
+			params["sch_othbcYm"] = jQuery("#sch_othbcYm3").val();
+		}if(preTabValue_a == "4"){				
+			var queryListString = "selectAppnPsitnCmpnySumryList";
+			var crfString = "/ps/io/kap/psitnCmpnySumryList.crf";
+			params["sch_othbcYm"] = jQuery("#sch_othbcYm4").val();
+			params["sch_unityGrupId"] = jQuery("#sch_unityGrupId4").val();
+		}
+
+		var file_name = "지정현황";
+		var vlMap = {
+			file_name				: file_name == "" ? "report" : file_name,
+			sch_othbcYm				: params.sch_othbcYm,
+			sch_entrprsClCode		: params.sch_entrprsClCode,
+			sch_invstmntLmttSeCode	: params.sch_invstmntLmttSeCode,
+			sch_unityGrupId			: params.sch_unityGrupId,
+			sch_unityGrupNm			: jQuery("#sch_unityGrupId4 option:selected").html()
+		};
+		gfn_ps_report(queryListString, crfString ,vlMap);
+		
+	}
+	
+</script>
+<!--s:서브콘텐츠-->
+<div class="subCont">
+	<h2 id="subContentTitle" class="title"></h2>
+	
+	<!--s:조회 tab 영역-->
+	<div class='tab-box-01'>
+		<input type='radio' name='aTabInput' id='tabOne' tabindex="1" value="1" checked onclick="javascript:gfn_ps_a_tabClickEvent(this);">
+		<input type='radio' name='aTabInput' id='tabTwo' tabindex="2" value="2" onclick="javascript:gfn_ps_a_tabClickEvent(this);">
+		<input type='radio' name='aTabInput' id='tabThree' tabindex="3" value="3" onclick="javascript:gfn_ps_a_tabClickEvent(this);">
+		<input type='radio' name='aTabInput' id='tabFour' tabindex="4" value="4" onclick="javascript:gfn_ps_a_tabClickEvent(this);">
+		<!--s:tab 메뉴 영역-->
+		<!--s:tab 메뉴 영역-->
+		<div id="tabLabelDiv" class="tab-nav">
+			<label for='tabOne'>연도별 지정수</label>
+			<label for='tabTwo'>기업집단 별</label>
+			<label for='tabThree'>자산,공기업 구분 별</label>
+			<label for='tabFour'>기업집단별 소속회사현황</label>
+		</div>
+		<!--s:tab 메뉴 영역-->
+		<!--s:tab1 검색조건-->
+		<select name="sch_startYm" title="시작날짜" id="sch_startYm" style="display:none;"></select>
+		<select name="sch_endYm" title="종료날짜" id="sch_endYm" style="display:none;"></select>
+		<div id="tabDiv_1" class='tab-content tab-one f-board'>
+			<form>
+				<table>
+					<caption>지정현황</caption>
+					<colgroup>
+						<col class="w20" />
+						<col class="w80" />
+					</colgroup>
+					<tbody>
+					<tr>
+						<th scope="col"><label for="ymStart">조회기간</label></th>
+						<td>
+							<select id="ymStart" title="시작날짜" onchange="javascript:gfn_ps_YmBtnCheck('S_sch_startYm',this.value);"></select>
+							&nbsp;~&nbsp;
+							<select id="ymEnd" title="종료날짜" onchange="javascript:gfn_ps_YmBtnCheck('S_sch_endYm',this.value);"></select>
+						</td>
+					</tr>
+					</tbody>
+				</table>
+			</form>
+		</div>
+		<!--e:tab1 검색조건-->
+
+		<!--s:tab2 검색조건-->
+		<div id="tabDiv_2" class='tab-content tab-two f-board'>
+			<form>
+				<table>
+					<caption>지정현황</caption>
+					<colgroup>
+						<col class="w20" />
+						<col class="w80" />
+					</colgroup>
+					<tbody>
+					<tr>
+						<th scope="col"><label for="sch_unityGrupId2">기업집단</label></th>
+						<td>
+							<select name="sch_unityGrupId2" title="기업집단 조회" id="sch_unityGrupId2" onchange="javascript:fn_callBack('S_sch_unityGrupId');"></select>
+						</td>
+					</tr>
+					</tbody>
+				</table>
+            </form>
+		</div>
+		<!--e:tab2 검색조건-->
+
+		<!--s:tab3 검색조건-->
+		<div id="tabDiv_3" class='tab-content tab-three f-board'>
+			<form>
+				<table>
+					<caption>기업집단 지정현황</caption>
+					<colgroup>
+						<col class="w20" />
+						<col class="w30" />
+						<col class="w20" />
+						<col class="w30" />
+					</colgroup>
+					<tbody>
+					<tr>
+						<th scope="row">
+							<label for="sch_othbcYm3">연도별 조회</label>
+						</th>
+						<td colspan="3">
+							<select name="sch_othbcYm3" id="sch_othbcYm3"></select>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">자산별 구분</th>
+						<td colspan="3">
+							<label for="sch_invstmntLmttSeCode_A"><input type="radio" id="sch_invstmntLmttSeCode_A" name="sch_invstmntLmttSeCode" checked value="ALL" />전체</label>
+							<label for="sch_invstmntLmttSeCode_B"><input type="radio" id="sch_invstmntLmttSeCode_B" name="sch_invstmntLmttSeCode" value="0002" />상호출자제한</label>
+							<label for="sch_invstmntLmttSeCode_C"><input type="radio" id="sch_invstmntLmttSeCode_C" name="sch_invstmntLmttSeCode" value="0005" />공시대상</label>
+							<label for="sch_invstmntLmttSeCode_D"><input type="radio" id="sch_invstmntLmttSeCode_D" name="sch_invstmntLmttSeCode" value="0003" />출자총액제한</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">공기업 구분</th>
+						<td>
+							<label for="sch_entrprsClCode_A"><input type="radio" id="sch_entrprsClCode_A" name="sch_entrprsClCode" checked value="ALL" />전체</label>
+							<label for="sch_entrprsClCode_B"><input type="radio" id="sch_entrprsClCode_B" name="sch_entrprsClCode"  value="0005" />공기업</label>
+							<label for="sch_entrprsClCode_C"><input type="radio" id="sch_entrprsClCode_C" name="sch_entrprsClCode"  value="0099" />일반기업</label>
+						</td>
+						<td></td>
+					</tr>
+					</tbody>
+				</table>
+            </form>
+		</div>
+		 <!--e:tab3 검색조건-->
+		 
+		<!--s:tab4 검색조건-->
+		<div id="tabDiv_4" class='tab-content tab-four f-board'>
+			<form>
+				<table>
+					<caption>기업집단 소속회사 조회</caption>
+					<colgroup>
+						<col class="w15" />
+						<col class="w35" />
+						<col class="w15" />
+						<col class="w35" />
+					</colgroup>
+					<tbody>
+					<tr>
+						<th scope="col">
+							<label for="sch_othbcYm4">연도별 조회</label>
+						</th>
+						<td>
+							<select name="sch_othbcYm4" title="조회년월" id="sch_othbcYm4" onchange="javascript:fn_callBack('S_sch_othbcYm4');"></select>
+						</td>
+						<th scope="row">기업집단</th>
+						<td><label for="sch_unityGrupId4"></label>
+							<select name="sch_unityGrupId4" id="sch_unityGrupId4" onchange="javascript:fn_callBack('S_sch_unityGrupId');"></select>
+						</td>
+					</tr>
+					</tbody>
+				</table>
+			</form>
+		</div>
+		<!--e:tab4 검색조건-->
+	</div>
+	 <!--s:조회 버튼-->
+	<div class="btnArea mt20">
+		<button type="button" value="조회" class="blue" onclick="javascript:fn_search();">조회</button>
+	</div>
+	<!--e:조회 버튼-->
+	<!--e:조회 tab 영역-->
+				
+				
+				
+	<!--s:chart/sheet data 영역-->
+	<form id="bLevelTabForm">
+		<div class='tab-box-02'>
+			<input type='radio' name='bTabInput' id='sheet' tabindex="1" value="1" checked onclick="javascript:gfn_ps_b_tabClickEvent(this);">
+			<input type='radio' name='bTabInput' id='chart' tabindex="2" value="2" onclick="javascript:gfn_ps_b_tabClickEvent(this);">
+
+			<!--s:chart/sheet 및 버튼 영역-->
+			<div id="tabNavDiv" class="tab-nav">
+				<label for='sheet' id="sheetLabel" tabindex="0" onfocus="javascript:gfn_ps_b_tabFocusEvent('1', 'sheetLabel');">Sheet</label>
+				<label for='chart' id="chartLabel" tabindex="0" onfocus="javascript:gfn_ps_b_tabFocusEvent('2', 'chartLabel');">Chart</label>			
+				<ul id="rightButtonUl" class="c-right">
+					<li><button type="button" id="reportButton" class="report" onclick="javascript:fn_report();">리포트출력</button></li>
+				</ul>
+				
+			</div>
+			<!--e:chart/sheet 및 버튼 영역-->
+
+			<!--s:chart grid-->
+			<div id='sheetTabContent' class='tab-content wrap-one'>
+				<div>
+					<div id="resultListDiv">
+					</div>
+				</div>
+			</div>
+			<!--e:chart 내용-->
+			
+			<!--s:sheet grid-->
+			
+
+			<div id='chartTabContent' class='tab-content wrap-two tab_border'>
+				<div id="chartCont">
+					<div class="tableDetail_area2">
+						<table>
+							<caption>차트출력조건</caption>
+							<colgroup>
+                                <col class="w15" />
+                                <col class="w85" />
+                            </colgroup>
+                            <tbody>
+							<tr>
+								<th scope="row"><label for="chartTypeSelect">차트유형</label></th>
+								<td>
+									<select id="chartTypeSelect" onchange="javascript:gfn_ps_chartTypeEvent(this.value);">
+										<option value="line">line</option>
+										<option value="bar" selected="selected" >bar</option>
+										<option value="spline" >spline</option>
+										<option value="area" >area</option>
+									</select>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row">출력 데이터</th>
+								<td>
+									<ul id="chartPData" class="checkbox_form"></ul>
+									
+								</td>
+							</tr>
+							<tr>
+								<th scope="row">X축 데이터</th>
+								<td>
+									<ul id="chartXData" class="checkbox_form"></ul>
+									
+								</td>
+							</tr>
+							</tbody>
+						</table>
+					</div>
+					<div id="chartWrap" style="width:100%; height:600px;" ></div>
+				</div>
+				<div id="chartNone" style="display:none">조회된 데이터가 없습니다.</div>
+			</div>
+			<!--e:sheet grid-->
+		</div>
+	</form>
+	<!--e:chart/sheet data 영역-->
+				
+	<!--s:도움말-->
+	<div class="help_area">
+		<ul>
+			<li class="blueTxt">※ 도움말</li>
+			<li>- 집단별로 상호출자제한기업집단 및 출자총액제한기업집단 지정현황을 보여줍니다.</li>
+			<li>- 참고로 출자총액제한기업 집단은 08년까지만 지정되어 09년도부터는 조회되지 않습니다.</li>
+			<li>- 기업집단 별 탭에서는 기업집단별로 연도별 계열회사수와 자산총액 증감 현황을 보여줍니다.</li>
+		</ul>
+	</div>
+	<!--e:도움말-->
+
+</div>
+<!--e:서브콘텐츠-->
+<!-- E: 개발자 개발 영역 -->
+
+
+
+
+
+
+
+
+
+
+<!-- 	 	</div> -->
+		</section>
+	 	<!--e:본문영역-->
+
+		<!-- Footer :S -->
+		<div class="footerCont" style="width:100%; height:auto; position:relative; z-index:91; background:#414143;font-family:Noto Sans KR;letter-spacing:-0.5px">
+			<div style="padding:25px 0 25px 0; width:auto; max-width:1180px;margin:auto">
+				<ul style="width:auto; margin:0 0 5px 0;overflow:hidden;line-height:24px">
+					<li style="float:left; margin-left:0;"><a href="http://ftc.go.kr/www/contents.do?key=449" target="_blank" title="개인정보처리방침" class="yellow_txt" >개인정보처리방침</a></li>
+					<li style="float:left; margin-left:20px;"><a href="http://ftc.go.kr/www/contents.do?key=450" title="저작권정책" target="_blank" style="display:block; padding:5px 0; color:#b1b1b2;font-size:15px;">저작권정책</a></li>
+					<li style="float:left; margin-left:20px;"><a href="/egps/wi/etc/naviInfoPage.do" style="display:block; padding:5px 0; color:#b1b1b2;font-size:15px;">찾아오시는길</a></li>
+				</ul>
+				<address style="display:block; color:#8b8b8c;font-size:15px;">[30108] 세종특별자치시 다솜3로 95  공정거래위원회 <span style="display:block; vertical-align:top; margin:0 0 0 0;">- 문의안내 : 044-200-4773~4, 4771~2[09:00~18:00(공휴일·점심시간 제외)] </span><span style="display:block; vertical-align:top; margin:0 0 0 0;font-family:Noto Sans KR;">- ftcug12@korea.kr </span><span style="display:block; vertical-align:top; margin:0 0 0 0;">정부는 이용자가 본 사이트에서 얻은 정보를 통해 투자과정에서 얻은 손해에 대하여는 책임지지 않습니다.</span></address>
+				<p style="color:#757576; font-size:12px; line-height:18px; margin:3px 0 0 0;font-family:Noto Sans KR;">Copyright ＠ 2018. FAIR TRADE COMMISSION.<span>ALL RIGHTS RESERVED</span></p>
+			</div>
+		</div>
+		<!-- Footer :E -->
+
+    </div>
+    <!--e:wrap-->
+
+    <script type="text/javascript">
+		let selectFrozenColsInterval;
+
+    	// 세션타임 보이기
+// 		$("#headerSessionTime").show(); // 소스 반영 전
+// 		fn_ps_setSessionTime();
+
+		// 고정항목 옵션 생성
+		fn_ps_createFrozenColsOption();
+
+		// 매뉴얼 버튼 생성
+		$(".btn-top-wrap:eq(0)").append('<sbux-button id="btnMenual" name="btnMenual" uitype="normal" text="매뉴얼" button-color="blue" class="blue" onclick="gfn_ps_menual();" style="margin-right:5px;">매뉴얼</sbux-button>');
+
+		/**
+		 * 이전제출자료조회 버튼 생성
+		 * 각 업무 자료 제출 화면에 이전제출자료조회 버튼을 생성한다.
+		 */
+	    let commonMenuId = "";
+		if(commonMenuId != "" && commonMenuId.indexOf("PSSM") >= 0 && commonMenuId.indexOf("PSSM997") < 0){
+			let iParams = {
+				"menuId" : commonMenuId
+			}
+			$.ajax({ type: "POST"
+				,url: "/egps/ps/sm/cmo/selectMenuInfo.do"
+				,data  : iParams
+				,dataType: "json"
+				,async: false
+				,success: function (data, status, xhr) {
+					if($("#presentnYmList option").length > 1 && data.prevPresntnAt == "Y"){
+						$(".btn-top-wrap:eq(0)").append('<sbux-button id="btnPrevPresntnDta" name="btnPrevPresntnDta" uitype="normal" text="이전제출자료조회" class="btnPrevPresntnDta" onclick="gfn_ps_prevPresntnDtaPopup(' + "'" +"" + "'" + ');">이전제출보기</sbux-button>');
+					}
+				}
+				, error: function (request, status, error) {
+					gfn_ps_alert("에러가발생 했습니다..!!! [999]");
+				}
+			});
+		}
+
+		// 고정항목 옵션 변경 시 선택한 항목으로 고정
+		$(document).on("change", ".selectFrozenCols", function(){
+			fn_ps_changeFrozenCols($(this));
+		});
+
+		//제출화면 그리드 엑셀 업/다운로드 버튼 숨김
+		if( false
+				//(ftcGoURL.substr(0, 17) == "/egps/ps/sm/stdr/") //기준정보
+				 //|| (ftcGoURL.substr(0, 16) == "/egps/ps/sm/kmb/") //지정,주식,채무 2023_02_23 엑셀업로드 가능하도록 주석 처리
+// 				    (ftcGoURL.substr(0, 15) == "/egps/ps/sm/pa/")  //공시
+				 //|| (ftcGoURL.substr(0, 15) == "/egps/ps/sm/cs/")  //지배구조
+// 				 || (ftcGoURL.substr(0, 15) == "/egps/ps/sm/id/")  //내부거래
+// 				 || (ftcGoURL.substr(0, 16) == "/egps/ps/sm/hld/")  //지주
+// 				 || (ftcGoURL.substr(0, 15) == "/egps/ps/sm/ip/")  //계열유예
+				 //|| (ftcGoURL.substr(0, 15) == "/egps/ps/sm/ig/") //동일인/독립경영 2023_04_13 계열회사일반현황 메뉴에서 소속회사목록 다운 가능해야 하므로 주석 처리
+																){
+			$(".btn-pack > a.down").hide(); //다운로드
+			$(".btn-pack > a.up").removeAttr("id"); //업로드버튼 ID 제거(해당 화면에서 제어하는거 무시하도록)
+			$(".btn-pack > a.up").hide(); //업로드
+		}
+
+		var gKmPresentnSttusCode = ""
+     	// 대표회사 제출상태에 따른 메세지 오픈
+     	if(gKmPresentnSttusCode == "0002" || gKmPresentnSttusCode == "0003" 				// 대표회사가 제출완료 또는 2차 제출완료 일때
+     			|| gKmPresentnSttusCode == "0006" || gKmPresentnSttusCode == "0007"){		// 대표회사가 확인완료 또는 2차 확인완료 일때
+     		$("#kmPresentnMsg").text("[대표회사가 제출 후에는 수정불가합니다.]");
+    		$("#kmPresentnMsg").show();
+     	}else{
+    		$("#kmPresentnMsg").hide();
+     	}
+
+    </script>
+</body>
+
+</html>
+

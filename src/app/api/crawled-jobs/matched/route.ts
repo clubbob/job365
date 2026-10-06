@@ -26,8 +26,9 @@ export async function GET(request: Request) {
     const usedFallback = matched.length === 0 && hasJobAlertFilterPrefs(prefs);
     const list = usedFallback ? all.filter((job) => job.status === 'active') : matched;
     const total = list.length;
-    const items = list.slice(0, page * pageSize);
-    const hasMore = items.length < total;
+    const start = (page - 1) * pageSize;
+    const items = list.slice(start, start + pageSize);
+    const hasMore = start + items.length < total;
 
     return NextResponse.json({
       ok: true,

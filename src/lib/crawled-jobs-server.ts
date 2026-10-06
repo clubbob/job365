@@ -11,9 +11,13 @@ import {
 } from '@/lib/job-board/constants';
 import { SAMPLE_CRAWLED_JOBS } from '@/lib/job-board/sample-jobs';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
+import { isBrowsableCrawledJob, shouldPersistCrawledJob } from '@/lib/crawler/job-quality';
 import type { CrawledJob, CrawledJobListItem, CrawledJobStatus } from '@/types/crawled-job';
 
 const COLLECTION = 'crawledJobs';
+const LIST_CACHE_TTL_MS = 60_000;
+
+let listCache: { expiresAt: number; items: CrawledJobListItem[] } | null = null;
 
 function serializeTimestamp(value: unknown): string | null {
   if (!value) return null;
@@ -105,6 +109,10 @@ function toListItem(job: CrawledJob): CrawledJobListItem {
   };
 }
 
+function filterBrowsableJobs(jobs: CrawledJob[]): CrawledJob[] {
+  return jobs.filter((job) => job.status === 'active' && isBrowsableCrawledJob(job));
+}
+
 async function listFromFirestore(): Promise<CrawledJob[]> {
   const db = getAdminFirestore();
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
@@ -116,21 +124,154 @@ async function listFromFirestore(): Promise<CrawledJob[]> {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+async function listBrowsableFromFirestore(): Promise<CrawledJob[]> {
+  return filterBrowsableJobs(await listFromFirestore());
+}
+
 function shouldUseSampleFallback(): boolean {
   return process.env.NODE_ENV !== 'production' && process.env.CRAWLER_USE_SAMPLES !== 'false';
 }
 
-export async function listCrawledJobs(): Promise<CrawledJobListItem[]> {
+export type DiscoveredAffiliate = {
+  companyName: string;
+  activeJobCount: number;
+};
+
+async function listAllCrawledJobsForAggregation(): Promise<CrawledJob[]> {
   try {
     const jobs = await listFromFirestore();
-    if (jobs.length > 0) return jobs.map(toListItem);
+    if (jobs.length > 0) return jobs;
+    if (!shouldUseSampleFallback()) return [];
+  } catch (error) {
+    console.warn('[crawled-jobs] aggregation list failed', error);
+    if (!shouldUseSampleFallback()) return [];
+  }
+
+  return SAMPLE_CRAWLED_JOBS;
+}
+
+export type CrawledJobSourceStats = {
+  jobCountsBySource: Record<string, number>;
+  discoveredBySource: Record<string, DiscoveredAffiliate[]>;
+};
+
+let sourceStatsCache: { expiresAt: number; data: CrawledJobSourceStats } | null = null;
+const SOURCE_STATS_TTL_MS = 60_000;
+
+function buildSourceStats(jobs: CrawledJob[]): CrawledJobSourceStats {
+  const jobCountsBySource: Record<string, number> = {};
+  const bySource = new Map<string, Map<string, number>>();
+
+  for (const job of jobs) {
+    if (job.status !== 'active') continue;
+
+    jobCountsBySource[job.sourceId] = (jobCountsBySource[job.sourceId] ?? 0) + 1;
+
+    const companyName = job.companyName.trim();
+    if (!companyName) continue;
+
+    if (!bySource.has(job.sourceId)) bySource.set(job.sourceId, new Map());
+    const companies = bySource.get(job.sourceId)!;
+    companies.set(companyName, (companies.get(companyName) ?? 0) + 1);
+  }
+
+  const discoveredBySource: Record<string, DiscoveredAffiliate[]> = {};
+  for (const [sourceId, companies] of bySource) {
+    discoveredBySource[sourceId] = [...companies.entries()]
+      .map(([companyName, activeJobCount]) => ({ companyName, activeJobCount }))
+      .sort((a, b) => a.companyName.localeCompare(b.companyName, 'ko'));
+  }
+
+  return { jobCountsBySource, discoveredBySource };
+}
+
+/** 채용 사이트별 공고 건수·계열사를 한 번의 조회로 집계합니다. */
+export async function getCrawledJobSourceStats(): Promise<CrawledJobSourceStats> {
+  if (sourceStatsCache && sourceStatsCache.expiresAt > Date.now()) {
+    return sourceStatsCache.data;
+  }
+
+  const jobs = await listAllCrawledJobsForAggregation();
+  const data = buildSourceStats(jobs);
+  sourceStatsCache = { expiresAt: Date.now() + SOURCE_STATS_TTL_MS, data };
+  return data;
+}
+
+/** 채용 사이트(sourceId)별 active 공고 건수 */
+export async function countActiveJobsBySource(): Promise<Record<string, number>> {
+  const { jobCountsBySource } = await getCrawledJobSourceStats();
+  return jobCountsBySource;
+}
+
+/** 채용 사이트(sourceId)별 active 공고에서 확인된 모집 회사(계열사) 목록 */
+export async function listDiscoveredAffiliatesBySource(): Promise<Record<string, DiscoveredAffiliate[]>> {
+  const { discoveredBySource } = await getCrawledJobSourceStats();
+  return discoveredBySource;
+}
+
+export async function listCrawledJobs(): Promise<CrawledJobListItem[]> {
+  if (listCache && listCache.expiresAt > Date.now()) {
+    return listCache.items;
+  }
+
+  try {
+    const jobs = await listBrowsableFromFirestore();
+    if (jobs.length > 0) {
+      const items = jobs.map(toListItem);
+      listCache = { expiresAt: Date.now() + LIST_CACHE_TTL_MS, items };
+      return items;
+    }
     if (!shouldUseSampleFallback()) return [];
   } catch (error) {
     console.warn('[crawled-jobs] Firestore list failed', error);
     if (!shouldUseSampleFallback()) throw error;
   }
 
-  return SAMPLE_CRAWLED_JOBS.map(toListItem);
+  const items = SAMPLE_CRAWLED_JOBS.map(toListItem);
+  listCache = { expiresAt: Date.now() + LIST_CACHE_TTL_MS, items };
+  return items;
+}
+
+export async function countActiveCrawledJobs(): Promise<number> {
+  try {
+    const db = getAdminFirestore();
+    if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
+
+    const snap = await db.collection(COLLECTION).where('status', '==', 'active').count().get();
+    return snap.data().count;
+  } catch (error) {
+    console.warn('[crawled-jobs] active count failed, falling back to full list', error);
+    const all = await listCrawledJobs();
+    return all.filter((job) => job.status === 'active').length;
+  }
+}
+
+/** 필터 없는 목록: 페이지당 pageSize개만 조회 */
+export async function listActiveCrawledJobsPage(
+  page: number,
+  pageSize: number,
+): Promise<{ items: CrawledJobListItem[]; total: number }> {
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.max(1, Math.min(pageSize, 50));
+  const start = (safePage - 1) * safePageSize;
+
+  try {
+    const db = getAdminFirestore();
+    if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
+
+    const browsable = await listBrowsableFromFirestore();
+    const items = browsable.slice(start, start + safePageSize).map(toListItem);
+
+    return { items, total: browsable.length };
+  } catch (error) {
+    console.warn('[crawled-jobs] paged list failed, falling back to full list', error);
+    const all = await listCrawledJobs();
+    const active = all.filter((job) => job.status === 'active');
+    return {
+      items: active.slice(start, start + safePageSize),
+      total: active.length,
+    };
+  }
 }
 
 export async function getCrawledJob(id: string): Promise<CrawledJob | null> {
@@ -139,7 +280,7 @@ export async function getCrawledJob(id: string): Promise<CrawledJob | null> {
     const snap = await db.collection(COLLECTION).doc(id).get();
     if (snap.exists) {
       const parsed = fromDoc(snap.id, snap.data() ?? {});
-      if (parsed) return parsed;
+      if (parsed && isBrowsableCrawledJob(parsed) && parsed.status === 'active') return parsed;
     }
   }
 
@@ -147,16 +288,43 @@ export async function getCrawledJob(id: string): Promise<CrawledJob | null> {
   return SAMPLE_CRAWLED_JOBS.find((job) => job.id === id) ?? null;
 }
 
-export async function upsertCrawledJob(job: CrawledJob): Promise<void> {
+function jobContentSnapshot(job: CrawledJob): string {
+  return JSON.stringify({
+    sourceId: job.sourceId,
+    sourceName: job.sourceName,
+    companyName: job.companyName,
+    title: job.title,
+    employmentTypes: job.employmentTypes,
+    roles: job.roles,
+    regions: job.regions,
+    companySize: job.companySize,
+    deadline: job.deadline,
+    applyUrl: job.applyUrl,
+    description: job.description,
+    status: job.status,
+    closedAt: job.closedAt,
+  });
+}
+
+export type UpsertCrawledJobResult = 'created' | 'updated' | 'unchanged';
+
+export async function upsertCrawledJob(job: CrawledJob): Promise<UpsertCrawledJobResult> {
   const db = getAdminFirestore();
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
 
   const ref = db.collection(COLLECTION).doc(job.id);
   const existing = await ref.get();
-  const createdAt =
-    existing.exists && typeof existing.data()?.createdAt === 'string'
-      ? existing.data()!.createdAt
-      : job.createdAt;
+  const existingJob = existing.exists ? fromDoc(ref.id, existing.data() ?? {}) : null;
+
+  if (existingJob && jobContentSnapshot(existingJob) === jobContentSnapshot(job)) {
+    return 'unchanged';
+  }
+
+  if (!shouldPersistCrawledJob(job)) {
+    return 'unchanged';
+  }
+
+  const createdAt = existingJob?.createdAt ?? job.createdAt;
 
   await ref.set({
     ...job,
@@ -167,6 +335,8 @@ export async function upsertCrawledJob(job: CrawledJob): Promise<void> {
     companySize: isCompanySize(job.companySize) ? job.companySize : COMPANY_SIZES[0],
     updatedAt: new Date().toISOString(),
   });
+
+  return existing.exists ? 'updated' : 'created';
 }
 
 export async function listActiveJobIdsBySource(sourceId: string): Promise<string[]> {
