@@ -7,10 +7,9 @@ import { useAdminAuth } from '@/features/admin/admin-auth-context';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { href: '/admin', label: '관리 홈', exact: true },
+  { href: '/admin', label: '대시보드', exact: true },
   { href: '/admin/users', label: '회원', exact: false },
   { href: '/admin/jobs', label: '채용 정보', exact: false },
-  { href: '/admin/talents', label: '이력서', exact: false },
   { href: '/admin/inquiries', label: '문의', exact: false },
 ];
 
@@ -26,11 +25,8 @@ export default function AdminHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface shadow-sm print:hidden">
       <div className="mx-auto flex min-h-14 max-w-7xl min-w-0 flex-wrap items-center gap-2 px-4 py-2 sm:h-14 sm:flex-nowrap sm:px-6 sm:py-0">
-        <Link href="/admin" className="inline-flex min-w-0 items-center gap-2">
+        <Link href="/admin" className="inline-flex min-w-0 items-center">
           <Logo />
-          <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-semibold text-muted">
-            관리자
-          </span>
         </Link>
 
         {loggedIn ? (
@@ -61,15 +57,28 @@ export default function AdminHeader() {
           {loading ? (
             <span className="text-sm text-muted">확인 중…</span>
           ) : loggedIn ? (
-            <button
-              type="button"
-              onClick={() => {
-                void logout();
-              }}
-              className="rounded-lg px-3.5 py-2 text-sm font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-foreground"
-            >
-              로그아웃
-            </button>
+            <>
+              <Link
+                href="/admin"
+                className={cn(
+                  'rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors',
+                  pathname === '/admin'
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-muted hover:bg-neutral-100 hover:text-foreground',
+                )}
+              >
+                관리자
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  void logout();
+                }}
+                className="rounded-lg px-3.5 py-2 text-sm font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-foreground"
+              >
+                로그아웃
+              </button>
+            </>
           ) : null}
         </div>
       </div>

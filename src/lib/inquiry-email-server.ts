@@ -35,15 +35,17 @@ export async function sendInquiryReceivedEmail(inquiry: Inquiry): Promise<void> 
   const appUrl = getPublicSiteUrl();
   const adminUrl = `${appUrl.replace(/\/$/, '')}/admin/inquiries/${encodeURIComponent(inquiry.id)}`;
   const createdAt = formatInquiryDateTime(inquiry.createdAt);
-  const subject = `[${COMPANY.serviceName} 문의] ${inquiry.name}`;
+  const subject = `[${COMPANY.serviceName} 문의] ${inquiry.title || inquiry.name}`;
 
   const text = [
     '새로운 문의가 접수되었습니다.',
     '',
-    `이름: ${inquiry.name}`,
+    `제목: ${inquiry.title || '(제목 없음)'}`,
+    `닉네임: ${inquiry.name}`,
     `이메일: ${inquiry.email}`,
     `회원 ID: ${inquiry.userId}`,
     `접수일: ${createdAt}`,
+    inquiry.attachment ? `첨부 파일: ${inquiry.attachment.fileName}` : '첨부 파일: 없음',
     '',
     inquiry.message,
     '',
@@ -53,10 +55,12 @@ export async function sendInquiryReceivedEmail(inquiry: Inquiry): Promise<void> 
   const html = `
     <div style="font-family:sans-serif;line-height:1.6;color:#222;">
       <h2 style="margin:0 0 12px;">새로운 문의가 접수되었습니다</h2>
-      <p><strong>이름</strong>: ${escapeHtml(inquiry.name)}</p>
+      <p><strong>제목</strong>: ${escapeHtml(inquiry.title || '(제목 없음)')}</p>
+      <p><strong>닉네임</strong>: ${escapeHtml(inquiry.name)}</p>
       <p><strong>이메일</strong>: ${escapeHtml(inquiry.email)}</p>
       <p><strong>회원 ID</strong>: ${escapeHtml(inquiry.userId)}</p>
       <p><strong>접수일</strong>: ${escapeHtml(createdAt)}</p>
+      <p><strong>첨부 파일</strong>: ${escapeHtml(inquiry.attachment?.fileName ?? '없음')}</p>
       <p style="white-space:pre-wrap;">${escapeHtml(inquiry.message)}</p>
       <p><a href="${escapeHtml(adminUrl)}">관리자 페이지 열기</a></p>
     </div>

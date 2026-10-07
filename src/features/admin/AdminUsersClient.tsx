@@ -134,7 +134,7 @@ export default function AdminUsersClient() {
         title="회원"
         description="가입한 회원 정보를 조회합니다. 삭제하면 회원 관련 모든 정보가 삭제됩니다."
         homeHref="/admin"
-        homeLabel="관리 홈"
+        homeLabel="대시보드"
       />
 
       <Card>

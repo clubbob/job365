@@ -76,7 +76,7 @@ export default function AdminTalentsClient() {
         title="이력서"
         description="공개·작성 중 이력서를 확인하고 수정·삭제합니다."
         homeHref="/admin"
-        homeLabel="관리 홈"
+        homeLabel="대시보드"
       />
       <Card>
         {loading ? (

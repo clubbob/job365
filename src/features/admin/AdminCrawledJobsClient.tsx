@@ -159,7 +159,7 @@ export default function AdminCrawledJobsClient() {
         title="수집 채용 공고"
         description="외부 채용 사이트에서 자동 수집한 채용 공고입니다."
         homeHref="/admin"
-        homeLabel="관리 홈"
+        homeLabel="대시보드"
       />
 
       <Card>

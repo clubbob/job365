@@ -673,7 +673,7 @@ export default function JobCompaniesPanel({
         title="채용 공고 회사"
         description="대기업·계열사 채용 사이트와 수집·노출 설정을 한곳에서 관리합니다. 기업 이의 제기 시 노출 중단만 누르면 됩니다."
         homeHref="/admin"
-        homeLabel="관리 홈"
+        homeLabel="대시보드"
       />
 
       {error ? (

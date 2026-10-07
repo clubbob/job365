@@ -47,7 +47,7 @@ export default function AdminCrawlRunsClient() {
         title="수집 실행 내역"
         description="자동 수집 cron 실행 결과와 소스별 저장·마감 건수를 확인합니다."
         homeHref="/admin"
-        homeLabel="관리 홈"
+        homeLabel="대시보드"
       />
 
       {loading ? <p className="text-sm text-muted">불러오는 중…</p> : null}

@@ -1,4 +1,4 @@
-import { isInquiry, type Inquiry } from '@/lib/inquiry';
+import { normalizeInquiry, type Inquiry } from '@/lib/inquiry';
 
 const STORAGE_KEY = 'job365.inquiries';
 
@@ -42,7 +42,12 @@ export function saveInquiry(inquiry: Inquiry): Inquiry {
 export function listInquiries(userId?: string): Inquiry[] {
   const store = readStore();
   if (userId) return sortByRecent(store[userId] ?? []);
-  return sortByRecent(Object.values(store).flat().filter(isInquiry));
+  return sortByRecent(
+    Object.values(store)
+      .flat()
+      .map((item) => normalizeInquiry(item))
+      .filter((item): item is Inquiry => Boolean(item)),
+  );
 }
 
 export function getInquiry(id: string): Inquiry | null {

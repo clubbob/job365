@@ -1,40 +1,36 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
+import InquiryDetailContent from '@/features/inquiry/InquiryDetailContent';
+import InquiryReplySection from '@/features/inquiry/InquiryReplySection';
 import {
   adminDangerActionClassName,
   adminJson,
   adminSecondaryActionClassName,
 } from '@/lib/admin-ui';
 import { deleteInquiry, getInquiry } from '@/lib/inquiries-store';
+import {
+  formatInquiryDateTime,
+  inquiryReplyStatusClassName,
+  inquiryReplyStatusLabel,
+} from '@/lib/inquiry-display';
 import type { Inquiry } from '@/lib/inquiry';
+import { cn } from '@/lib/utils';
 
 type ItemResponse =
   | { ok: true; data: { item: Inquiry | null } }
   | { ok: false; error?: { message?: string } };
 
-function formatCreatedAt(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('ko-KR', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(date);
-}
-
 export default function AdminInquiryDetailClient({ inquiryId }: { inquiryId: string }) {
   const router = useRouter();
   const [item, setItem] = useState<Inquiry | null>(null);
   const [ready, setReady] = useState(false);
+  const [draftReply, setDraftReply] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [replyError, setReplyError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -44,6 +40,7 @@ export default function AdminInquiryDetailClient({ inquiryId }: { inquiryId: str
         const data = await adminJson<ItemResponse>(`/api/admin/inquiries/${encodeURIComponent(inquiryId)}`);
         if (!cancelled && data.ok && data.data.item) {
           setItem(data.data.item);
+          setDraftReply(data.data.item.reply?.message ?? '');
           setReady(true);
           return;
         }
@@ -52,6 +49,7 @@ export default function AdminInquiryDetailClient({ inquiryId }: { inquiryId: str
       }
       if (!cancelled) {
         setItem(local);
+        setDraftReply(local?.reply?.message ?? '');
         setReady(true);
       }
     }
@@ -61,9 +59,46 @@ export default function AdminInquiryDetailClient({ inquiryId }: { inquiryId: str
     };
   }, [inquiryId]);
 
+  const savedReplyMessage = item?.reply?.message ?? '';
+  const replyDirty = draftReply !== savedReplyMessage;
+
+  async function handleSaveReply(event: React.FormEvent) {
+    event.preventDefault();
+    if (!item || saving || !replyDirty) return;
+    if (!draftReply.trim()) {
+      setReplyError('답변 내용을 입력해 주세요.');
+      return;
+    }
+
+    setSaving(true);
+    setReplyError('');
+    try {
+      const data = await adminJson<ItemResponse>(`/api/admin/inquiries/${encodeURIComponent(item.id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: draftReply.trim() }),
+      });
+      if (!data.ok || !data.data.item) {
+        const message = !data.ok ? data.error?.message : undefined;
+        throw new Error(message ?? '답변을 저장하지 못했습니다.');
+      }
+      setItem(data.data.item);
+      setDraftReply(data.data.item.reply?.message ?? '');
+    } catch (err) {
+      setReplyError(err instanceof Error ? err.message : '답변을 저장하지 못했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleCancelReply() {
+    setDraftReply(savedReplyMessage);
+    setReplyError('');
+  }
+
   async function handleDelete() {
     if (!item) return;
-    if (!window.confirm(`「${item.name}」님의 문의를 삭제할까요?`)) return;
+    if (!window.confirm(`「${item.title || item.name}」 문의를 삭제할까요?`)) return;
     deleteInquiry(item.id);
     try {
       await adminJson(`/api/admin/inquiries/${encodeURIComponent(item.id)}`, { method: 'DELETE' });
@@ -80,7 +115,7 @@ export default function AdminInquiryDetailClient({ inquiryId }: { inquiryId: str
   if (!item) {
     return (
       <div className="space-y-5">
-        <PageHeader title="문의" homeHref="/admin/inquiries" homeLabel="목록으로" />
+        <PageHeader title="문의 상세" homeHref="/admin/inquiries" homeLabel="목록으로" />
         <Card>
           <p className="text-sm text-muted">문의를 찾을 수 없습니다.</p>
         </Card>
@@ -90,42 +125,60 @@ export default function AdminInquiryDetailClient({ inquiryId }: { inquiryId: str
 
   return (
     <div className="space-y-5">
-      <PageHeader title="문의" description={item.name} homeHref="/admin/inquiries" homeLabel="목록으로" />
-      <div className="flex flex-wrap items-center gap-2">
-        <a href={`mailto:${item.email}`} className={adminSecondaryActionClassName}>
-          이메일 보내기
-        </a>
-        <button type="button" className={adminDangerActionClassName} onClick={() => void handleDelete()}>
-          삭제
-        </button>
+      <PageHeader
+        title="문의 상세"
+        description={`${item.name} · ${formatInquiryDateTime(item.createdAt)}`}
+        homeHref="/admin/inquiries"
+        homeLabel="목록으로"
+      />
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span
+          className={cn(
+            'inline-flex rounded-md px-2.5 py-1 text-xs font-semibold',
+            inquiryReplyStatusClassName(item),
+          )}
+        >
+          {inquiryReplyStatusLabel(item)}
+        </span>
+        <div className="flex flex-wrap gap-2">
+          <a href={`mailto:${item.email}`} className={adminSecondaryActionClassName}>
+            이메일 보내기
+          </a>
+          <button type="button" className={adminDangerActionClassName} onClick={() => void handleDelete()}>
+            삭제
+          </button>
+        </div>
       </div>
-      <Card title="문의 내용">
-        <dl className="space-y-3 text-sm">
-          <div>
-            <dt className="text-subtle">접수일</dt>
-            <dd className="mt-1 font-semibold text-foreground">{formatCreatedAt(item.createdAt)}</dd>
-          </div>
-          <div>
-            <dt className="text-subtle">이름</dt>
-            <dd className="mt-1 font-semibold text-foreground">{item.name}</dd>
-          </div>
-          <div>
-            <dt className="text-subtle">이메일</dt>
-            <dd className="mt-1 font-semibold text-foreground">
-              <a href={`mailto:${item.email}`} className="text-primary hover:underline">
-                {item.email}
+
+      <Card title="받은 문의">
+        <InquiryDetailContent
+          inquiry={item}
+          showMemberInfo
+          attachmentAction={
+            item.attachment ? (
+              <a
+                href={`/api/admin/inquiries/${encodeURIComponent(item.id)}/attachment`}
+                className="inline-flex items-center gap-2 font-semibold text-primary hover:underline"
+              >
+                {item.attachment.fileName}
+                <span className="text-xs font-normal text-muted">다운로드</span>
               </a>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-subtle">내용</dt>
-            <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-foreground">{item.message}</dd>
-          </div>
-        </dl>
+            ) : undefined
+          }
+        />
       </Card>
-      <Link href="/admin/inquiries" className="text-sm font-semibold text-primary hover:underline">
-        목록으로
-      </Link>
+
+      <InquiryReplySection
+        inquiry={item}
+        draftReply={draftReply}
+        onDraftChange={setDraftReply}
+        onSubmit={(event) => void handleSaveReply(event)}
+        onCancel={handleCancelReply}
+        saving={saving}
+        error={replyError}
+        replyDirty={replyDirty}
+      />
     </div>
   );
 }

@@ -10,6 +10,7 @@ import JobAlertPrefsForm from '@/features/mypage/JobAlertPrefsForm';
 import BookmarksPanel from '@/features/mypage/BookmarksPanel';
 import PasswordChangeForm from '@/features/mypage/PasswordChangeForm';
 import WithdrawAccountForm from '@/features/mypage/WithdrawAccountForm';
+import InquiryPanel from '@/features/mypage/InquiryPanel';
 import { useAuth } from '@/features/auth/auth-context';
 import { fetchUserAccount } from '@/lib/users-api';
 import { getUserNicknameFallback } from '@/lib/user-display';
@@ -17,7 +18,7 @@ import { MATCHED_JOBS_PAGE_TITLE, MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site
 import { cn } from '@/lib/utils';
 import type { UserAccountData } from '@/lib/users-api';
 
-type TabId = 'account' | 'alerts' | 'bookmarks';
+type TabId = 'account' | 'alerts' | 'bookmarks' | 'inquiry';
 
 const TAB_CLASS = 'shrink-0 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors';
 
@@ -25,6 +26,7 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'account', label: '회원 정보' },
   { id: 'alerts', label: MATCHED_JOBS_SETTINGS_TITLE },
   { id: 'bookmarks', label: '찜한 공고' },
+  { id: 'inquiry', label: '문의하기' },
 ];
 
 function resolveTab(requested: string | null): TabId {
@@ -63,7 +65,7 @@ export default function MyPageClient() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="마이페이지"
-        description="회원 정보, 비밀번호, 이메일 수신, 맞춤 채용 설정, 찜한 공고 등 나의 계정과 취업 활동을 관리합니다."
+        description="회원 정보, 비밀번호, 이메일 수신, 맞춤 채용 설정, 찜한 공고, 문의하기 등 나의 계정과 취업 활동을 관리합니다."
         showRefresh={false}
       />
 
@@ -141,6 +143,8 @@ export default function MyPageClient() {
           <BookmarksPanel />
         </section>
       ) : null}
+
+      {tab === 'inquiry' ? <InquiryPanel user={user} /> : null}
     </div>
   );
 }
