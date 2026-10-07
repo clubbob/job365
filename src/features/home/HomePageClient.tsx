@@ -14,7 +14,6 @@ export default function HomePageClient() {
         listMoreHref="/jobs"
         showCount={false}
         showLoadMore={false}
-        showInfeedAd={false}
         pageSize={JOB_HOME_PAGE_SIZE}
       />
     </div>

@@ -8,6 +8,7 @@ import Logo from '@/components/brand/Logo';
 import { useAuth } from '@/features/auth/auth-context';
 import { getUserNicknameFallback } from '@/lib/user-display';
 import { requestJobBoardReset } from '@/lib/job-board/reset';
+import { MATCHED_JOBS_PAGE_TITLE } from '@/lib/site-menu-copy';
 import { cn } from '@/lib/utils';
 
 function MenuIcon({ open }: { open: boolean }) {
@@ -43,17 +44,13 @@ const NAV_ITEMS: Array<{
   prefetch?: boolean;
 }> = [
   { href: '/jobs', label: '채용 공고', exact: false },
-  { href: '/jobs/companies', label: '채용 공고 회사', exact: false, prefetch: false },
-  { href: '/my-jobs', label: '내 채용 공고', exact: false, authOnly: true },
+  { href: '/my-jobs', label: MATCHED_JOBS_PAGE_TITLE, exact: false, authOnly: true },
 ];
 
 function isNavActive(pathname: string, href: string, exact: boolean): boolean {
   if (exact) return pathname === href;
   if (href === '/jobs') {
-    return (
-      pathname === '/jobs' ||
-      (pathname.startsWith('/jobs/') && !pathname.startsWith('/jobs/companies'))
-    );
+    return pathname === '/jobs' || pathname.startsWith('/jobs/');
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }

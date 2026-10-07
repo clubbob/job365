@@ -22,6 +22,14 @@ export function parseHanwhainRtSeq(applyUrl: string): string | null {
   }
 }
 
+function pickHanwhainHeadcount(units: Record<string, unknown>[]): string | null {
+  const values = units
+    .map((unit) => (typeof unit.ruRcrtPrsn === 'string' ? unit.ruRcrtPrsn.trim() : ''))
+    .filter((value) => value && !/^0+\s*명?$/.test(value));
+  if (values.length === 0) return null;
+  return [...new Set(values)].join(', ');
+}
+
 function buildHanwhainDescription(item: Record<string, unknown>): string {
   const units = Array.isArray(item.unitDt) ? (item.unitDt as Record<string, unknown>[]) : [];
 
@@ -33,14 +41,15 @@ function buildHanwhainDescription(item: Record<string, unknown>): string {
       const headcount = typeof unit.ruRcrtPrsn === 'string' ? unit.ruRcrtPrsn.trim() : '';
       if (!detail) return '';
 
-      return [
-        name ? `<strong>${name}</strong>` : '',
-        textSection('근무 지역', workplace),
-        textSection('모집 인원', headcount),
-        textSection('상세', detail),
+      const body = [
+        workplace ? `근무 지역: ${workplace}` : '',
+        headcount ? `모집 인원: ${headcount}` : '',
+        detail,
       ]
         .filter(Boolean)
-        .join('');
+        .join('\n\n');
+
+      return textSection(name || '모집 분야', body);
     })
     .join('');
 
@@ -80,12 +89,14 @@ export async function fetchHanwhainRecruitDetail(
 
     const title = typeof item.rtNm === 'string' ? item.rtNm.trim() : '';
     const companyName = typeof item.sdNm === 'string' ? item.sdNm.trim() : undefined;
+    const units = Array.isArray(item.unitDt) ? (item.unitDt as Record<string, unknown>[]) : [];
     const description = buildHanwhainDescription(item);
     if (!title || isInvalidJobDescription(description)) return null;
 
     return {
       title,
       companyName,
+      headcount: pickHanwhainHeadcount(units),
       deadline: parseHanwhainDeadline(item.rtAcptEndDttm),
       description,
     };

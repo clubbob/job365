@@ -117,6 +117,7 @@ async function toCrawledJob(item: NaverJob, crawledAt: string): Promise<CrawledJ
     roles: inferJobRoles(title, undefined, item.classCdNm ?? '', item.subJobCdNm ?? ''),
     regions: mapLocationToRegions(item.workAreaCd === '0010' ? '분당' : undefined),
     companySize: defaultCompanySize(companyName),
+    headcount: null,
     deadline: item.endYmd ? `${item.endYmd.slice(0, 4)}-${item.endYmd.slice(4, 6)}-${item.endYmd.slice(6, 8)}` : null,
     applyUrl,
     description: buildDescription([description]),

@@ -13,6 +13,7 @@ import WithdrawAccountForm from '@/features/mypage/WithdrawAccountForm';
 import { useAuth } from '@/features/auth/auth-context';
 import { fetchUserAccount } from '@/lib/users-api';
 import { getUserNicknameFallback } from '@/lib/user-display';
+import { MATCHED_JOBS_PAGE_TITLE, MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site-menu-copy';
 import { cn } from '@/lib/utils';
 import type { UserAccountData } from '@/lib/users-api';
 
@@ -22,7 +23,7 @@ const TAB_CLASS = 'shrink-0 rounded-lg px-3.5 py-2 text-sm font-semibold transit
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'account', label: '회원 정보' },
-  { id: 'alerts', label: '채용 공고 수신 설정' },
+  { id: 'alerts', label: MATCHED_JOBS_SETTINGS_TITLE },
   { id: 'bookmarks', label: '찜한 공고' },
 ];
 
@@ -62,7 +63,7 @@ export default function MyPageClient() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="마이페이지"
-        description="회원 정보, 비밀번호, 이메일 수신, 채용 공고 알림, 찜한 공고 등 나의 계정과 취업 활동을 관리합니다."
+        description="회원 정보, 비밀번호, 이메일 수신, 맞춤 채용 설정, 찜한 공고 등 나의 계정과 취업 활동을 관리합니다."
         showRefresh={false}
       />
 
@@ -124,10 +125,10 @@ export default function MyPageClient() {
 
       {tab === 'alerts' ? (
         <section className="flex flex-col gap-3">
-          <h2 className="text-base font-bold text-foreground">채용 공고 수신 설정</h2>
+          <h2 className="text-base font-bold text-foreground">{MATCHED_JOBS_SETTINGS_TITLE}</h2>
           <p className="text-sm text-muted">
             설정한 조건에 맞는 공고가{' '}
-            <Link href="/my-jobs" className="font-semibold text-primary hover:underline">내 채용 공고</Link>
+            <Link href="/my-jobs" className="font-semibold text-primary hover:underline">{MATCHED_JOBS_PAGE_TITLE}</Link>
             와 아침 이메일에 표시됩니다.
           </p>
           <JobAlertPrefsForm user={user} />

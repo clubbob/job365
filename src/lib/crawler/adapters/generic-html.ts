@@ -25,6 +25,7 @@ import {
   parseEmploymentTypesFromText,
   textSection,
 } from '@/lib/crawler/map-fields';
+import { paceCrawlRequest } from '@/lib/crawler/crawl-throttle';
 import { fetchText } from '@/lib/crawler/fetch-text';
 import type { CrawledJob } from '@/types/crawled-job';
 import type { CrawlerSourceResult } from '@/lib/crawler/types';
@@ -483,6 +484,7 @@ function extractCandidatesFromHtmlFragments(
 }
 
 async function fetchWithSessionCookies(careersUrl: string): Promise<{ html: string; cookieHeader: string }> {
+  await paceCrawlRequest();
   const res = await fetch(careersUrl, { headers: BROWSER_HTML_HEADERS, signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new Error(`HTTP ${res.status} ${careersUrl}`);
   const cookieHeader = (res.headers.getSetCookie?.() ?? []).map((item) => item.split(';')[0]).join('; ');
@@ -616,6 +618,7 @@ async function buildJobsFromCandidates(
       roles: inferJobRoles(title, candidate.roleHint),
       regions: mapLocationToRegions(locationSource),
       companySize: defaultCompanySize(companyName),
+      headcount: detail?.headcount ?? null,
       deadline: detail?.deadline ?? candidate.deadline ?? null,
       applyUrl: candidate.applyUrl,
       description,

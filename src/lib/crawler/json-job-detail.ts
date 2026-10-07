@@ -3,6 +3,33 @@ import { buildDescription, textSection } from '@/lib/crawler/map-fields';
 import { isInvalidJobDescription } from '@/lib/crawler/job-quality';
 import type { JobDetailFetchResult } from '@/lib/crawler/fetch-job-detail';
 
+const HEADCOUNT_KEYS = ['ruRcrtPrsn', 'recuCnt', 'hireCnt', 'hireNum', 'rcrtPrsn', 'recruitCnt', 'rcrtCnt'];
+
+function pickHeadcountValue(value: unknown): string | null {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed || null;
+  }
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return `${value}명`;
+  }
+  return null;
+}
+
+function pickHeadcount(record: Record<string, unknown>, items: Record<string, unknown>[]): string | null {
+  for (const key of HEADCOUNT_KEYS) {
+    const picked = pickHeadcountValue(record[key]);
+    if (picked) return picked;
+  }
+  for (const item of items) {
+    for (const key of HEADCOUNT_KEYS) {
+      const picked = pickHeadcountValue(item[key]);
+      if (picked) return picked;
+    }
+  }
+  return null;
+}
+
 const DETAIL_TEXT_FIELDS: Array<{ key: string; label: string }> = [
   { key: 'introKr', label: '소개' },
   { key: 'intro', label: '소개' },
@@ -118,6 +145,7 @@ export function parseJsonJobDetail(payload: unknown): JobDetailFetchResult | nul
   return {
     title,
     companyName,
+    headcount: pickHeadcount(record, items),
     deadline,
     description,
   };

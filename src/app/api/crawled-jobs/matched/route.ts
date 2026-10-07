@@ -37,7 +37,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('[crawled-jobs/matched] failed', error);
     return NextResponse.json(
-      { ok: false, error: { code: 'LIST_FAILED', message: '내 채용 공고를 불러오지 못했습니다.' } },
+      { ok: false, error: { code: 'LIST_FAILED', message: '맞춤 채용 공고를 불러오지 못했습니다.' } },
       { status: 500 },
     );
   }

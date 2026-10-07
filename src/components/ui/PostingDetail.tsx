@@ -25,6 +25,7 @@ export function DetailHero({
   eyebrow,
   title,
   subtitle,
+  subtitleHref,
   photoUrl,
   photoAlt,
   badges,
@@ -35,6 +36,7 @@ export function DetailHero({
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  subtitleHref?: string;
   photoUrl?: string;
   photoAlt?: string;
   badges?: React.ReactNode;
@@ -55,12 +57,36 @@ export function DetailHero({
             />
           ) : null}
           <div className="min-w-0 flex-1">
-            {eyebrow ? <p className="text-sm font-semibold text-primary">{eyebrow}</p> : null}
-            {badges ? <div className={cn('flex flex-wrap gap-1.5', eyebrow && 'mt-2.5')}>{badges}</div> : null}
+            {eyebrow || badges ? (
+              <div
+                className={cn(
+                  'flex flex-wrap items-center gap-x-3 gap-y-2',
+                  eyebrow && badges ? 'justify-between' : badges ? 'justify-end' : undefined,
+                )}
+              >
+                {eyebrow ? <p className="text-sm font-semibold text-primary">{eyebrow}</p> : null}
+                {badges ? <div className="flex flex-wrap justify-end gap-1.5">{badges}</div> : null}
+              </div>
+            ) : null}
             <h2 className={cn('text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl', (eyebrow || badges) && 'mt-3')}>
               {title}
             </h2>
-            {subtitle ? <p className="mt-1.5 text-sm font-medium text-muted">{subtitle}</p> : null}
+            {subtitle ? (
+              <p className="mt-1.5 text-sm font-medium text-muted">
+                {subtitleHref ? (
+                  <a
+                    href={subtitleHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline decoration-primary/30 underline-offset-[3px] hover:decoration-primary/60"
+                  >
+                    {subtitle}
+                  </a>
+                ) : (
+                  subtitle
+                )}
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -93,13 +119,20 @@ export function DetailStatGrid({
   title = '핵심 정보',
   items,
   embedded = false,
+  embeddedColumns = 3,
 }: {
   title?: string;
   items: Array<{ label: string; value?: string | null; href?: string }>;
   embedded?: boolean;
+  embeddedColumns?: 3 | 4;
 }) {
+  const embeddedGridClass =
+    embeddedColumns === 4
+      ? 'grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4'
+      : 'grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3';
+
   const list = (
-    <dl className={embedded ? 'grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3' : 'grid grid-cols-2 gap-2 sm:grid-cols-3'}>
+    <dl className={embedded ? embeddedGridClass : 'grid grid-cols-2 gap-2 sm:grid-cols-3'}>
       {items.map((item) => {
         const value = item.value?.trim() ? item.value : '—';
         return (

@@ -148,6 +148,7 @@ async function toCrawledJob(item: LgListItem, crawledAt: string): Promise<Crawle
     roles: inferJobRoles(title, undefined, roleLabel),
     regions: mapLocationToRegions(locationLabel),
     companySize: defaultCompanySize(companyName),
+    headcount: null,
     deadline: parseLgDeadline(detail?.recEndDate, item.recEndDateTime),
     applyUrl: `${SITE_BASE}/apply/detail?id=${item.jobNoticeId}`,
     description: buildLgDescription(detail),

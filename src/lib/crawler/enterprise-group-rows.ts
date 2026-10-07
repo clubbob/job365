@@ -1,6 +1,6 @@
 import { getCrawlerCompanies, type CrawlerCompany } from '@/lib/crawler/companies';
 import { getCrawlAdapterStatus, type CrawlAdapterStatus } from '@/lib/crawler/targets';
-import type { DiscoveredAffiliate } from '@/lib/crawled-jobs-server';
+import type { DiscoveredAffiliate } from '@/types/crawled-job';
 import { getFtcEnterpriseGroups } from '@/lib/enterprise-groups';
 
 export type EnterpriseGroupCrawlStatus = 'collected' | 'empty' | 'pending' | 'unlinked';
@@ -11,6 +11,7 @@ export type EnterpriseGroupRow = {
   owner: string;
   ftcAffiliateCount: number;
   crawlStatus: EnterpriseGroupCrawlStatus;
+  sourceId: string | null;
   sourceName: string | null;
   careersUrl: string | null;
   activeJobCount: number;
@@ -46,6 +47,7 @@ export function buildEnterpriseGroupRows(
       owner: group.owner,
       ftcAffiliateCount: group.affiliateCount,
       crawlStatus: resolveCrawlStatus(crawler, activeJobCount),
+      sourceId: crawler?.sourceId ?? null,
       sourceName: crawler?.sourceName ?? null,
       careersUrl: crawler?.careersUrl ?? null,
       activeJobCount,

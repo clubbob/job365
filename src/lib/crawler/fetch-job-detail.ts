@@ -10,6 +10,7 @@ const BROWSER_HEADERS = BROWSER_HTML_HEADERS;
 export type JobDetailFetchResult = {
   title?: string;
   companyName?: string;
+  headcount?: string | null;
   deadline?: string | null;
   description: string;
 };

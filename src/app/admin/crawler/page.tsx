@@ -1,5 +1,5 @@
-import AdminCrawlRunsClient from '@/features/admin/AdminCrawlRunsClient';
+import { redirect } from 'next/navigation';
 
-export default function AdminCrawlerPage() {
-  return <AdminCrawlRunsClient />;
+export default function AdminCrawlerRedirectPage() {
+  redirect('/admin/jobs/crawl-runs');
 }

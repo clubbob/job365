@@ -58,6 +58,7 @@ function toCrawledJob(item: KakaoJob, crawledAt: string): CrawledJob | null {
     roles: inferJobRoles(title, item.jobPart),
     regions: mapLocationToRegions(item.locationName),
     companySize: defaultCompanySize(companyName),
+    headcount: null,
     deadline: item.endDate ? item.endDate.slice(0, 10) : null,
     applyUrl: `${BASE_URL}/jobs/${item.realId}`,
     description: buildDescription([

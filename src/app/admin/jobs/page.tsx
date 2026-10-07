@@ -1,5 +1,5 @@
-import AdminJobsClient from '@/features/admin/AdminJobsClient';
+import { redirect } from 'next/navigation';
 
-export default function AdminJobsPage() {
-  return <AdminJobsClient />;
+export default function AdminJobsIndexPage() {
+  redirect('/admin/jobs/crawled');
 }

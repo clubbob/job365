@@ -97,10 +97,10 @@ function buildDigestHtml({ nickname, jobs, myJobsUrl, hasFilterPrefs: hasPrefs }
       <p style="margin:0 0 20px;font-size:14px;color:#555;">${escapeHtml(nickname)}님, ${SERVICE_NAME}에서 ${intro} 보내 드립니다.</p>
       <table style="width:100%;border-collapse:collapse;">${rows}</table>
       <div style="margin-top:24px;text-align:center;">
-        <a href="${escapeHtml(myJobsUrl)}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 18px;border-radius:10px;">내 채용 공고 더보기</a>
+        <a href="${escapeHtml(myJobsUrl)}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 18px;border-radius:10px;">맞춤 채용 공고 더보기</a>
       </div>
     </div>
-    <p style="margin:16px 0 0;font-size:12px;color:#888;text-align:center;">본 메일은 ${SERVICE_NAME} 채용 공고 수신 설정에 따라 발송됩니다.</p>
+    <p style="margin:16px 0 0;font-size:12px;color:#888;text-align:center;">본 메일은 ${SERVICE_NAME} 맞춤 채용 설정에 따라 발송됩니다.</p>
   </div>
 </body></html>`;
 }
@@ -257,7 +257,7 @@ async function main() {
         from,
         to: recipient.email,
         subject,
-        text: `${text}\n\n내 채용 공고 더보기: ${myJobsUrl}`,
+        text: `${text}\n\n맞춤 채용 공고 더보기: ${myJobsUrl}`,
         html,
       });
       sent += 1;

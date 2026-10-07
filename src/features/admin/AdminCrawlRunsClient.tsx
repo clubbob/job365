@@ -31,10 +31,10 @@ export default function AdminCrawlRunsClient() {
       try {
         const res = await fetch('/api/admin/crawl-runs');
         const json = (await res.json()) as { ok?: boolean; data?: { runs: CrawlRun[] } };
-        if (!res.ok || !json.ok || !json.data) throw new Error('크롤링 내역을 불러오지 못했습니다.');
+        if (!res.ok || !json.ok || !json.data) throw new Error('수집 실행 내역을 불러오지 못했습니다.');
         setRuns(json.data.runs);
       } catch (err) {
-        setError(err instanceof Error ? err.message : '크롤링 내역을 불러오지 못했습니다.');
+        setError(err instanceof Error ? err.message : '수집 실행 내역을 불러오지 못했습니다.');
       } finally {
         setLoading(false);
       }
@@ -43,7 +43,12 @@ export default function AdminCrawlRunsClient() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="크롤링 현황" description="자동 수집 실행 내역입니다." homeHref="/admin" homeLabel="관리자" />
+      <PageHeader
+        title="수집 실행 내역"
+        description="자동 수집 cron 실행 결과와 소스별 저장·마감 건수를 확인합니다."
+        homeHref="/admin"
+        homeLabel="관리 홈"
+      />
 
       {loading ? <p className="text-sm text-muted">불러오는 중…</p> : null}
       {error ? <p className="text-sm text-red-700">{error}</p> : null}

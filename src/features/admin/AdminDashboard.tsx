@@ -32,12 +32,12 @@ export default function AdminDashboard() {
             탈퇴 내역 보기
           </Link>
         </Card>
-        <Card title="크롤링 현황" description="자동 수집 실행 내역과 결과를 확인합니다.">
+        <Card title="채용 정보" description="수집 공고와 채용 공고 회사 노출을 관리합니다.">
           <Link
-            href="/admin/crawler"
+            href="/admin/jobs"
             className="inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
           >
-            크롤링 보기
+            채용 정보 보기
           </Link>
         </Card>
         <Card title="이메일 발송" description="채용 공고 알림 메일 발송 내역을 확인합니다.">

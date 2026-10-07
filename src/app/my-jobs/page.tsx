@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import MyJobsPageClient from '@/features/my-jobs/MyJobsPageClient';
+import { MATCHED_JOBS_PAGE_DESCRIPTION, MATCHED_JOBS_PAGE_TITLE } from '@/lib/site-menu-copy';
 
 export const metadata: Metadata = {
-  title: '내 채용 공고',
-  description: '수신 설정에 맞는 채용 공고를 확인하세요.',
+  title: MATCHED_JOBS_PAGE_TITLE,
+  description: MATCHED_JOBS_PAGE_DESCRIPTION,
 };
 
 export default function MyJobsPage() {

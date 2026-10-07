@@ -45,14 +45,14 @@ export default function JobAlertPrefsForm({ user }: { user: User }) {
         });
         const json = (await res.json()) as { ok?: boolean; data?: { prefs: JobAlertPrefs } };
         if (!res.ok || !json.ok || !json.data) {
-          throw new Error('수신 설정을 불러오지 못했습니다.');
+          throw new Error('맞춤 채용 설정을 불러오지 못했습니다.');
         }
         if (!mounted) return;
         setPrefs(json.data.prefs);
         setDraft(json.data.prefs);
       } catch (err) {
         if (!mounted) return;
-        setError(err instanceof Error ? err.message : '수신 설정을 불러오지 못했습니다.');
+        setError(err instanceof Error ? err.message : '맞춤 채용 설정을 불러오지 못했습니다.');
       } finally {
         if (mounted) setLoading(false);
       }
@@ -93,13 +93,13 @@ export default function JobAlertPrefsForm({ user }: { user: User }) {
       });
       const json = (await res.json()) as { ok?: boolean; data?: { prefs: JobAlertPrefs }; error?: { message?: string } };
       if (!res.ok || !json.ok || !json.data) {
-        throw new Error(json.error?.message ?? '수신 설정을 저장하지 못했습니다.');
+        throw new Error(json.error?.message ?? '맞춤 채용 설정을 저장하지 못했습니다.');
       }
       setPrefs(json.data.prefs);
       setDraft(json.data.prefs);
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '수신 설정을 저장하지 못했습니다.');
+      setError(err instanceof Error ? err.message : '맞춤 채용 설정을 저장하지 못했습니다.');
     } finally {
       setSaving(false);
     }
@@ -113,11 +113,11 @@ export default function JobAlertPrefsForm({ user }: { user: User }) {
   }
 
   if (loading) {
-    return <p className="text-sm text-muted">수신 설정을 불러오는 중…</p>;
+    return <p className="text-sm text-muted">맞춤 채용 설정을 불러오는 중…</p>;
   }
 
   if (!draft) {
-    return <p className="text-sm text-red-700">{error || '수신 설정을 불러오지 못했습니다.'}</p>;
+    return <p className="text-sm text-red-700">{error || '맞춤 채용 설정을 불러오지 못했습니다.'}</p>;
   }
 
   return (

@@ -1,0 +1,1 @@
+export const ADMIN_CRAWLED_JOBS_PAGE_SIZE = 20;

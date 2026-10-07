@@ -7,6 +7,7 @@ import CrawledJobCard from '@/features/job-board/CrawledJobCard';
 import JobBoardFilters, { type JobBoardFilterState } from '@/features/job-board/JobBoardFilters';
 import { useAuth } from '@/features/auth/auth-context';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
+import { MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site-menu-copy';
 import { JOB_BOARD_RESET_EVENT } from '@/lib/job-board/reset';
 import type { CrawledJobListItem } from '@/types/crawled-job';
 
@@ -21,7 +22,6 @@ type JobBoardListProps = {
   listTitle?: string;
   showCount?: boolean;
   showLoadMore?: boolean;
-  showInfeedAd?: boolean;
   listMoreHref?: string;
   hideNewSectionHeader?: boolean;
 };
@@ -78,7 +78,6 @@ export default function JobBoardList({
   listTitle,
   showCount = true,
   showLoadMore = true,
-  showInfeedAd = true,
   listMoreHref,
   hideNewSectionHeader = false,
 }: JobBoardListProps) {
@@ -235,7 +234,7 @@ export default function JobBoardList({
           };
 
           if (!res.ok || !json.ok || !json.data) {
-            throw new Error(json.error?.message ?? '내 채용 공고를 불러오지 못했습니다.');
+            throw new Error(json.error?.message ?? '맞춤 채용 공고를 불러오지 못했습니다.');
           }
 
           setItems((prev) => (page === 1 ? json.data!.items : [...prev, ...json.data!.items]));
@@ -285,7 +284,7 @@ export default function JobBoardList({
 
   const countLabel = useMemo(() => {
     if (loading) return '불러오는 중…';
-    return `총 ${total}건`;
+    return `모집 중 총 ${total}건`;
   }, [loading, total]);
 
   return (
@@ -301,9 +300,9 @@ export default function JobBoardList({
 
       {mode === 'matched' && usedFallback && !loading ? (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          수신 설정에 맞는 공고가 없어 전체 채용 공고를 보여 드립니다. 조건을 바꾸려면{' '}
+          {MATCHED_JOBS_SETTINGS_TITLE}에 맞는 공고가 없어 전체 채용 공고를 보여 드립니다. 조건을 바꾸려면{' '}
           <a href="/mypage?tab=alerts" className="font-semibold text-primary hover:underline">
-            마이페이지 수신 설정
+            {MATCHED_JOBS_SETTINGS_TITLE}
           </a>
           을 확인해 주세요.
         </p>
@@ -395,8 +394,6 @@ export default function JobBoardList({
             ))}
           </div>
         )}
-
-        {showInfeedAd && !loading && items.length > 0 ? <AdSlot placement="infeed" /> : null}
 
         {!loading && items.length === 0 && !error && mode !== 'matched' ? (
           <p className="rounded-xl border border-border bg-surface px-4 py-8 text-center text-sm text-muted">

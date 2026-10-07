@@ -94,6 +94,12 @@ export function jobHeadcountLabel(headcount?: number): string | null {
   return `${headcount}명`;
 }
 
+export function crawledJobHeadcountLabel(headcount: string | null | undefined): string | undefined {
+  const trimmed = headcount?.trim();
+  if (!trimmed || /^0+\s*명?$/.test(trimmed)) return undefined;
+  return trimmed;
+}
+
 export function jobRecentDate(job: Pick<JobPosting, 'createdAt' | 'updatedAt'>): string {
   return job.updatedAt || job.createdAt;
 }

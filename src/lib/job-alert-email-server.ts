@@ -5,6 +5,7 @@ import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { sendEmail, isEmailServiceConfigured } from '@/lib/smtp';
 import { SITE_URL } from '@/lib/site';
+import { MATCHED_JOBS_MORE_LINK_LABEL, MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site-menu-copy';
 import { COMPANY } from '@/lib/company';
 import type { JobAlertPrefs } from '@/types/job-alert-prefs';
 import { saveEmailDigestLog } from '@/lib/email-digests-server';
@@ -53,10 +54,10 @@ function buildDigestHtml(params: {
       <p style="margin:0 0 20px;font-size:14px;color:#555;">${escapeHtml(params.nickname)}님, ${COMPANY.serviceName}에서 ${params.hasFilterPrefs ? '조건에 맞는 공고를' : '최근 채용 공고를'} 보내 드립니다.</p>
       <table style="width:100%;border-collapse:collapse;">${rows}</table>
       <div style="margin-top:24px;text-align:center;">
-        <a href="${escapeHtml(params.myJobsUrl)}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 18px;border-radius:10px;">내 채용 공고 더보기</a>
+        <a href="${escapeHtml(params.myJobsUrl)}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 18px;border-radius:10px;">${escapeHtml(MATCHED_JOBS_MORE_LINK_LABEL)}</a>
       </div>
     </div>
-    <p style="margin:16px 0 0;font-size:12px;color:#888;text-align:center;">본 메일은 ${COMPANY.serviceName} 채용 공고 수신 설정에 따라 발송됩니다.</p>
+    <p style="margin:16px 0 0;font-size:12px;color:#888;text-align:center;">본 메일은 ${COMPANY.serviceName} ${escapeHtml(MATCHED_JOBS_SETTINGS_TITLE)}에 따라 발송됩니다.</p>
   </div>
 </body></html>`;
 }
@@ -149,7 +150,7 @@ export async function sendDailyJobAlertEmails(): Promise<JobAlertEmailRunSummary
     const result = await sendEmail({
       to: recipient.email,
       subject,
-      text: `${text}\n\n내 채용 공고 더보기: ${myJobsUrl}`,
+      text: `${text}\n\n${MATCHED_JOBS_MORE_LINK_LABEL}: ${myJobsUrl}`,
       html,
     });
 

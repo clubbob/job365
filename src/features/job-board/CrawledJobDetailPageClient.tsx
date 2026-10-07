@@ -4,15 +4,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
-import {
-  DetailBadge,
-  DetailHero,
-  DetailSection,
-  DetailStatGrid,
-} from '@/components/ui/PostingDetail';
+import CrawledJobDetailView from '@/features/job-board/CrawledJobDetailView';
 import { useAuth } from '@/features/auth/auth-context';
-import CrawledJobDescription from '@/features/job-board/CrawledJobDescription';
-import { isJobNewToday } from '@/lib/job-board/match';
+import { getCrawledJobOriginalUrl } from '@/lib/crawler/source-url';
 import type { CrawledJob } from '@/types/crawled-job';
 
 export default function CrawledJobDetailPageClient({ jobId }: { jobId: string }) {
@@ -138,17 +132,11 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
   }
 
   const closed = job.status === 'closed';
-  const isNew = todayDate ? isJobNewToday(job, todayDate) : false;
+  const originalJobUrl = getCrawledJobOriginalUrl(job.applyUrl);
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader
-        title="채용 공고"
-        description={job.companyName}
-        homeHref="/jobs"
-        homeLabel="목록으로"
-        showRefresh={false}
-      />
+      <PageHeader title="채용 공고" homeHref="/jobs" homeLabel="목록으로" showRefresh={false} />
 
       <AdSlot placement="header" />
 
@@ -158,48 +146,14 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
         </div>
       ) : null}
 
-      <article className="space-y-4">
-        <DetailHero
-          eyebrow={job.companyName}
-          title={job.title}
-          subtitle={job.sourceName}
-          badges={
-            <>
-              {job.employmentTypes.map((type) => (
-                <DetailBadge key={type} tone="primary">{type}</DetailBadge>
-              ))}
-              {isNew ? (
-                <DetailBadge tone="primary">New</DetailBadge>
-              ) : null}
-            </>
-          }
-        />
-
-        <DetailSection title="모집 요강">
-          <DetailStatGrid
-            embedded
-            items={[
-              { label: '회사', value: job.companyName },
-              { label: '채용 형태', value: job.employmentTypes.join(', ') },
-              { label: '직무', value: job.roles.join(', ') },
-              { label: '지역', value: job.regions.join(', ') },
-              { label: '마감일', value: job.deadline ?? '채용 시까지' },
-              { label: '출처', value: job.sourceName },
-            ]}
-          />
-        </DetailSection>
-
-        {job.description ? <CrawledJobDescription html={job.description} /> : (
-          <DetailSection title="상세 내용">
-            <p className="text-subtle">상세 내용이 없습니다. 원문 사이트에서 확인해 주세요.</p>
-          </DetailSection>
-        )}
-
-        <DetailSection title="지원">
-          <div className="flex flex-col gap-2">
+      <CrawledJobDetailView
+        job={job}
+        todayDate={todayDate}
+        actions={
+          <>
             <div className="flex flex-wrap gap-2">
               <a
-                href={job.applyUrl}
+                href={originalJobUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-hover"
@@ -239,9 +193,9 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
                 ) : null}
               </p>
             ) : null}
-          </div>
-        </DetailSection>
-      </article>
+          </>
+        }
+      />
 
       <AdSlot placement="detail" />
 

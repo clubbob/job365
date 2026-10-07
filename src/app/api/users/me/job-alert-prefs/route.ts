@@ -61,7 +61,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('[job-alert-prefs] get failed', error);
     return NextResponse.json(
-      { ok: false, error: { code: 'GET_FAILED', message: '수신 설정을 불러오지 못했습니다.' } },
+      { ok: false, error: { code: 'GET_FAILED', message: '맞춤 채용 설정을 불러오지 못했습니다.' } },
       { status: 500 },
     );
   }
@@ -86,7 +86,7 @@ export async function PATCH(request: Request) {
   } catch (error) {
     console.error('[job-alert-prefs] update failed', error);
     return NextResponse.json(
-      { ok: false, error: { code: 'UPDATE_FAILED', message: '수신 설정을 저장하지 못했습니다.' } },
+      { ok: false, error: { code: 'UPDATE_FAILED', message: '맞춤 채용 설정을 저장하지 못했습니다.' } },
       { status: 500 },
     );
   }

@@ -1,0 +1,37 @@
+---
+description: 수집 채용 공고 상세는 CrawledJobDetailPageClient UI만 사용한다
+globs: src/features/job-board/**,src/app/jobs/**,src/lib/crawler/**
+alwaysApply: false
+---
+
+# 수집 채용 공고 상세 (Default UI)
+
+현재·앞으로 추출한 채용 공고 데이터는 **사용자 상세 화면에서 아래 UI만** 보여 준다. 다른 상세 레이아웃을 새로 만들지 않는다.
+
+## 진입점
+
+- 라우트: `/jobs/[id]` → `CrawledJobDetailPageClient`만 사용
+- 목록·찜·맞춤 채용 공고 등 모든 카드 링크도 동일 경로
+
+## 화면 구조 (순서 유지)
+
+1. 원문 안내 (`CrawledJobSourceNotice`)
+2. `DetailHero` — 회사명, 제목, 채용 형태·New 뱃지
+3. `DetailSection` **모집 요강** — `DetailStatGrid` 4열 (회사, 채용 형태, 직무, 지역, 채용 인원, 마감일, 출처)
+4. `CrawledJobDescriptionSummary` **공고 요약** — 자격·전형·지원 3행 테이블 (원문 HTML에서 요약)
+5. 지원하기(원문 링크)·찜하기 + 하단 안내 문구
+
+## 데이터·표시 규칙
+
+- 수집 `description` HTML은 **공고 요약**으로만 가공해 표시한다. 사용자 화면에 원문 HTML 전체(`dangerouslySetInnerHTML` 블록)를 노출하지 않는다.
+- 새로 추출하는 필드는 **모집 요강** 또는 **공고 요약** 행에 맞춰 넣는다. 값 없으면 `—`.
+- 상세 본문·제출 서류·지원 방법 전체 목록 등 **별도 섹션을 늘리지 않는다** (요청 없이).
+
+## 크롤러·타입
+
+- `CrawledJob` 타입·`upsertCrawledJob`·크롤러 파서 변경 시 위 UI에 매핑 가능한 필드로 저장한다.
+
+## 관리자
+
+- 관리자 수집 공고 상세(`/admin/jobs/crawled/[id]`)도 `CrawledJobDetailView`를 쓴다. 사용자 화면과 동일한 Default UI로 미리본다.
+- 관리자만 상태 뱃지·마감·사용자 화면 링크를 상단에 추가할 수 있다. 공고 본문 레이아웃은 바꾸지 않는다.

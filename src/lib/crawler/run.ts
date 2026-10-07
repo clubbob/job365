@@ -1,5 +1,9 @@
+import { isCompanyCrawlDisabled } from '@/lib/crawl-company-policy-server';
+import { isCrawlDisabled } from '@/lib/crawl-source-policy-server';
 import { closeExpiredCrawledJobs, listActiveJobIdsBySource, markCrawledJobsClosed, upsertCrawledJob } from '@/lib/crawled-jobs-server';
 import { closeBrowserCrawlSession } from '@/lib/crawler/browser-page-crawl';
+import { pauseBetweenCrawlSources } from '@/lib/crawler/crawl-throttle';
+import { isCareersUrlRobotsAllowed } from '@/lib/crawler/robots';
 import { getCompanyCrawlers } from '@/lib/crawler/registry';
 import type { CrawlRunSummary, CrawlerSourceResult } from '@/lib/crawler/types';
 import { saveCrawlRun } from '@/lib/crawl-runs-server';
@@ -17,6 +21,10 @@ async function syncSource(result: CrawlerSourceResult) {
   let upserted = 0;
 
   for (const job of result.jobs) {
+    if (await isCompanyCrawlDisabled(job.sourceId, job.companyName)) {
+      seenIds.add(job.id);
+      continue;
+    }
     const writeResult = await upsertCrawledJob(job);
     if (writeResult !== 'unchanged') upserted += 1;
   }
@@ -35,8 +43,38 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
   let totalClosed = 0;
 
   try {
+    let isFirstSource = true;
     for (const { company, crawl } of getCompanyCrawlers()) {
+      if (!isFirstSource) {
+        await pauseBetweenCrawlSources();
+      }
+      isFirstSource = false;
+
       try {
+        if (await isCrawlDisabled(company.sourceId)) {
+          sourceSummaries.push({
+            sourceId: company.sourceId,
+            sourceName: company.sourceName,
+            fetched: 0,
+            upserted: 0,
+            closed: 0,
+            errors: ['관리자에 의해 수집이 중단된 소스입니다.'],
+          });
+          continue;
+        }
+
+        if (!(await isCareersUrlRobotsAllowed(company.careersUrl))) {
+          sourceSummaries.push({
+            sourceId: company.sourceId,
+            sourceName: company.sourceName,
+            fetched: 0,
+            upserted: 0,
+            closed: 0,
+            errors: ['robots.txt 정책상 수집이 허용되지 않습니다.'],
+          });
+          continue;
+        }
+
         const result = await crawl();
 
         if (shouldSyncSource(result)) {

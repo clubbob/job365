@@ -71,6 +71,7 @@ function toCrawledJob(job: GreenhouseJob, config: GreenhouseCompanyConfig, crawl
     roles: inferJobRoles(title, undefined, locationName),
     regions: mapLocationToRegions(locationName),
     companySize: defaultCompanySize(config.companyName),
+    headcount: null,
     deadline: null,
     applyUrl: toKoreanApplyUrl(job.absolute_url),
     description: content ? buildDescription([`<section><h3>상세 내용</h3>${content}</section>`]) : '',

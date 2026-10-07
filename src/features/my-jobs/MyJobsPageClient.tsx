@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import JobBoardList from '@/features/job-board/JobBoardList';
 import { useAuth } from '@/features/auth/auth-context';
-import { MY_JOBS_PAGE_DESCRIPTION } from '@/lib/site-menu-copy';
+import {
+  MATCHED_JOBS_PAGE_DESCRIPTION,
+  MATCHED_JOBS_PAGE_TITLE,
+  MATCHED_JOBS_SETTINGS_TITLE,
+} from '@/lib/site-menu-copy';
 
 export default function MyJobsPageClient() {
   const { user, loading } = useAuth();
@@ -22,20 +26,20 @@ export default function MyJobsPageClient() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <JobBoardList
-        mode="matched"
-        title="내 채용 공고"
-        description={MY_JOBS_PAGE_DESCRIPTION}
-        showFilters={false}
-      />
-      <p className="text-center text-sm text-muted">
-        조건을 바꾸려면{' '}
-        <Link href="/mypage?tab=alerts" className="font-semibold text-primary hover:underline">
-          마이페이지 수신 설정
+    <div className="flex flex-col gap-5">
+      <header className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">{MATCHED_JOBS_PAGE_TITLE}</h1>
+          <p className="text-sm text-muted">{MATCHED_JOBS_PAGE_DESCRIPTION}</p>
+        </div>
+        <Link
+          href="/mypage?tab=alerts"
+          className="inline-flex shrink-0 rounded-lg border border-primary bg-primary px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
+        >
+          {MATCHED_JOBS_SETTINGS_TITLE} 변경
         </Link>
-        을 확인해 주세요.
-      </p>
+      </header>
+      <JobBoardList mode="matched" showFilters={false} />
     </div>
   );
 }

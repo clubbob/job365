@@ -6,6 +6,7 @@ import PageActions from '@/components/navigation/PageActions';
 /** PageHeader를 쓰는 화면은 버튼을 중복하지 않습니다. */
 const TITLE_HEADER_PATHS = new Set([
   '/mypage',
+  '/my-jobs',
   '/jobs',
   '/jobs/new',
   '/talents',

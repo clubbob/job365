@@ -12,6 +12,7 @@ export type CrawledJob = {
   roles: JobRole[];
   regions: JobRegion[];
   companySize: CompanySize;
+  headcount: string | null;
   deadline: string | null;
   applyUrl: string;
   description: string;
@@ -19,6 +20,14 @@ export type CrawledJob = {
   crawledAt: string;
   createdAt: string;
   closedAt: string | null;
+};
+
+export type DiscoveredAffiliate = {
+  companyName: string;
+  activeJobCount: number;
+  crawlDisabled?: boolean;
+  displayDisabled?: boolean;
+  reason?: string | null;
 };
 
 export type CrawledJobListItem = Pick<
