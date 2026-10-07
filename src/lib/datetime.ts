@@ -210,6 +210,21 @@ export function combineKoreaDateTimeLocal(
   return `${targetDate}T${pad2(internalHour)}:${pad2(safeMinute)}`;
 }
 
+export function formatKoreaDateTime(value: string | null | undefined): string {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: KOREA_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
 export function formatDurationMinutes(minutes: number): string {
   const rounded = Math.max(0, Math.round(minutes));
   if (rounded < 60) return `${rounded}분`;

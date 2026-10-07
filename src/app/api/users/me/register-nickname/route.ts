@@ -84,7 +84,6 @@ export async function POST(request: Request) {
         tx.set(prefsRef, {
           userId: decoded.uid,
           ...DEFAULT_JOB_ALERT_PREFS,
-          updatedAt: FieldValue.serverTimestamp(),
         });
       }
     });

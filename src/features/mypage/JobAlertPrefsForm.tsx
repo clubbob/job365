@@ -13,6 +13,7 @@ import {
   type JobRegion,
   type JobRole,
 } from '@/lib/job-board/constants';
+import { formatKoreaDateTime } from '@/lib/datetime';
 import type { JobAlertPrefs } from '@/types/job-alert-prefs';
 
 const ALERT_EMPLOYMENT_TYPES = [
@@ -122,6 +123,9 @@ export default function JobAlertPrefsForm({ user }: { user: User }) {
 
   return (
     <Card>
+      {prefs?.updatedAt ? (
+        <p className="mb-4 text-sm text-muted">최근 업데이트 {formatKoreaDateTime(prefs.updatedAt)}</p>
+      ) : null}
       <form className="flex flex-col gap-5" onSubmit={(e) => void handleSave(e)}>
         <fieldset className="flex flex-col gap-2">
           <legend className="text-sm font-semibold text-foreground">수신 여부</legend>

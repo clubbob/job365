@@ -1,15 +1,15 @@
-import { FieldValue } from 'firebase-admin/firestore';
 import {
   isEmploymentType,
   isJobRegion,
   isJobRole,
 } from '@/lib/job-board/constants';
+import { parseFirestoreTimestamp } from '@/lib/firestore-timestamp';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { DEFAULT_JOB_ALERT_PREFS, type JobAlertPrefs } from '@/types/job-alert-prefs';
 
 const COLLECTION = 'jobAlertPrefs';
 
-function parsePrefs(uid: string, data: Record<string, unknown> | undefined): JobAlertPrefs {
+export function parseJobAlertPrefs(uid: string, data: Record<string, unknown> | undefined): JobAlertPrefs {
   const employmentTypes = Array.isArray(data?.employmentTypes)
     ? data.employmentTypes.filter((v): v is JobAlertPrefs['employmentTypes'][number] =>
         typeof v === 'string' && isEmploymentType(v),
@@ -28,12 +28,7 @@ function parsePrefs(uid: string, data: Record<string, unknown> | undefined): Job
       )
     : DEFAULT_JOB_ALERT_PREFS.regions;
 
-  const updatedAt =
-    typeof data?.updatedAt === 'string'
-      ? data.updatedAt
-      : data?.updatedAt && typeof data.updatedAt === 'object' && 'toDate' in data.updatedAt
-        ? (data.updatedAt as { toDate: () => Date }).toDate().toISOString()
-        : null;
+  const updatedAt = parseFirestoreTimestamp(data?.updatedAt);
 
   return {
     userId: uid,
@@ -55,7 +50,7 @@ export async function getJobAlertPrefs(uid: string): Promise<JobAlertPrefs> {
     return { userId: uid, ...DEFAULT_JOB_ALERT_PREFS, updatedAt: null };
   }
 
-  return parsePrefs(uid, snap.data() as Record<string, unknown>);
+  return parseJobAlertPrefs(uid, snap.data() as Record<string, unknown>);
 }
 
 export type UpdateJobAlertPrefsInput = {
@@ -73,9 +68,10 @@ export async function updateJobAlertPrefs(
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
 
   const ref = db.collection(COLLECTION).doc(uid);
+  const nowIso = new Date().toISOString();
   const updates: Record<string, unknown> = {
     userId: uid,
-    updatedAt: FieldValue.serverTimestamp(),
+    updatedAt: nowIso,
   };
 
   if (input.emailEnabled !== undefined) updates.emailEnabled = input.emailEnabled;

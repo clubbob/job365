@@ -1,8 +1,10 @@
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
-import { isCompanyInfoComplete, parseBizVerifyRecord, type BizVerifyRecord } from '@/lib/biz-verify-store';
+import { parseBizVerifyRecord, type BizVerifyRecord } from '@/lib/biz-verify-store';
 import { getAdminApp, getAdminFirestore } from '@/lib/firebaseAdmin';
 import { deleteStoredJobPostingsByOwner } from '@/lib/jobs-server';
+import { parseFirestoreTimestamp } from '@/lib/firestore-timestamp';
+import { parseJobAlertPrefs } from '@/lib/job-alert-prefs-server';
 import { omitUndefined } from '@/lib/omit-undefined';
 import { deleteStoredTalentProfilesByOwner } from '@/lib/talents-server';
 import type { UserProfile, UserProvider, UserSettings, AdminUserListItem } from '@/types/user';
@@ -155,15 +157,7 @@ export async function deleteUserAccount(uid: string): Promise<void> {
 }
 
 function serializeTimestamp(value: unknown): string | null {
-  if (!value || typeof value !== 'object') return null;
-  if ('toDate' in value && typeof value.toDate === 'function') {
-    try {
-      return (value as { toDate: () => Date }).toDate().toISOString();
-    } catch {
-      return null;
-    }
-  }
-  return null;
+  return parseFirestoreTimestamp(value);
 }
 
 function providerFromAuthUser(providerData: Array<{ providerId: string }> | undefined): UserProvider {
@@ -183,7 +177,6 @@ export async function listUserAccounts(limit = 200): Promise<AdminUserListItem[]
   const snap = await db.collection('users').limit(limit).get();
   for (const doc of snap.docs) {
     const data = doc.data();
-    const company = parseBizVerifyRecord(data.company);
     byId.set(doc.id, {
       id: doc.id,
       email: (data.email as string | null) ?? null,
@@ -193,8 +186,8 @@ export async function listUserAccounts(limit = 200): Promise<AdminUserListItem[]
       role: (data.role as UserProfile['role']) ?? 'user',
       status: (data.status as UserProfile['status']) ?? 'active',
       createdAt: serializeTimestamp(data.createdAt),
-      companyName: company?.companyName?.trim() || null,
-      companyReady: isCompanyInfoComplete(company),
+      lastLoginAt: serializeTimestamp(data.lastActiveAt),
+      jobAlertPrefsUpdatedAt: null,
     });
   }
 
@@ -202,8 +195,13 @@ export async function listUserAccounts(limit = 200): Promise<AdminUserListItem[]
     const authUsers = await getAuth(app).listUsers(limit);
     for (const user of authUsers.users) {
       const existing = byId.get(user.uid);
+      const lastSignInAt = user.metadata.lastSignInTime
+        ? new Date(user.metadata.lastSignInTime).toISOString()
+        : null;
+
       if (existing) {
         if (!existing.email && user.email) existing.email = user.email;
+        if (!existing.lastLoginAt && lastSignInAt) existing.lastLoginAt = lastSignInAt;
         continue;
       }
       byId.set(user.uid, {
@@ -216,12 +214,30 @@ export async function listUserAccounts(limit = 200): Promise<AdminUserListItem[]
         createdAt: user.metadata.creationTime
           ? new Date(user.metadata.creationTime).toISOString()
           : null,
-        companyName: null,
-        companyReady: false,
+        lastLoginAt: lastSignInAt,
+        jobAlertPrefsUpdatedAt: null,
       });
     }
   } catch (error) {
     console.error('[admin-users] list Auth users failed', error);
+  }
+
+  const userIds = [...byId.keys()];
+  const prefsByUid = new Map<string, Record<string, unknown>>();
+  if (userIds.length > 0) {
+    const prefRefs = userIds.map((id) => db.collection('jobAlertPrefs').doc(id));
+    const prefSnaps = await db.getAll(...prefRefs);
+    for (const doc of prefSnaps) {
+      if (doc.exists) {
+        prefsByUid.set(doc.id, doc.data() as Record<string, unknown>);
+      }
+    }
+  }
+
+  for (const user of byId.values()) {
+    const raw = prefsByUid.get(user.id);
+    const prefs = parseJobAlertPrefs(user.id, raw);
+    user.jobAlertPrefsUpdatedAt = raw && prefs.updatedAt ? prefs.updatedAt : null;
   }
 
   return [...byId.values()].sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));

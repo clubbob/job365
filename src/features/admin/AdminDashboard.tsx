@@ -16,7 +16,7 @@ export default function AdminDashboard() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card title="회원" description="가입한 회원과 회사 정보 등록 여부를 확인하고 삭제합니다.">
+        <Card title="회원" description="가입한 회원 정보를 조회합니다. 삭제하면 회원 관련 모든 정보가 삭제됩니다.">
           <Link
             href="/admin/users"
             className="inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"

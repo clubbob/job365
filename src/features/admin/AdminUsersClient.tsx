@@ -7,14 +7,7 @@ import { adminDangerActionClassName, adminJson, firebaseAdminUnavailableText } f
 import { clearBizVerify } from '@/lib/biz-verify-store';
 import { deleteAllMyJobPostings } from '@/lib/my-job-posts';
 import { deleteMyTalentProfile } from '@/lib/my-talent-profile';
-import { getProviderLabel } from '@/lib/user-display';
-import type { AdminUserListItem, UserStatus } from '@/types/user';
-
-const STATUS_LABELS: Record<UserStatus, string> = {
-  active: '이용중',
-  suspended: '이용중단',
-  deleted: '탈퇴',
-};
+import type { AdminUserListItem } from '@/types/user';
 
 type FirebaseAdminCheck = {
   hasProjectId?: boolean;
@@ -44,7 +37,7 @@ type DeleteResponse =
   | { ok: true; data: { deleted: true } }
   | { ok: false; error?: { message?: string } };
 
-function formatCreatedAt(value: string | null): string {
+function formatDateTime(value: string | null): string {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
@@ -139,7 +132,7 @@ export default function AdminUsersClient() {
     <div className="space-y-5">
       <PageHeader
         title="회원"
-        description="가입한 회원과 회사 정보 등록 여부를 확인하고 삭제합니다. 삭제하면 이력서와 채용 정보도 함께 지워집니다."
+        description="가입한 회원 정보를 조회합니다. 삭제하면 회원 관련 모든 정보가 삭제됩니다."
         homeHref="/admin"
         homeLabel="관리 홈"
       />
@@ -165,9 +158,8 @@ export default function AdminUsersClient() {
                   <tr className="border-b border-border text-subtle">
                     <th className="py-2 pr-4 font-semibold">닉네임</th>
                     <th className="py-2 pr-4 font-semibold">이메일</th>
-                    <th className="py-2 pr-4 font-semibold">가입</th>
-                    <th className="py-2 pr-4 font-semibold">회사 정보</th>
-                    <th className="py-2 pr-4 font-semibold">상태</th>
+                    <th className="py-2 pr-4 font-semibold">맞춤 채용 설정</th>
+                    <th className="py-2 pr-4 font-semibold">최근 로그인</th>
                     <th className="py-2 pr-4 font-semibold">가입일</th>
                     <th className="py-2 font-semibold">관리</th>
                   </tr>
@@ -177,16 +169,11 @@ export default function AdminUsersClient() {
                     <tr key={user.id} className="border-b border-border last:border-0">
                       <td className="py-2.5 pr-4 font-medium text-foreground">{user.nickname}</td>
                       <td className="py-2.5 pr-4 break-all text-foreground">{user.email ?? '-'}</td>
-                      <td className="py-2.5 pr-4 text-muted">{getProviderLabel(user.provider)}</td>
-                      <td className="py-2.5 pr-4 text-muted">
-                        {user.companyReady
-                          ? user.companyName || '완료'
-                          : user.companyName
-                            ? `${user.companyName} · 미완료`
-                            : '없음'}
+                      <td className="py-2.5 pr-4 whitespace-nowrap text-muted">
+                        {formatDateTime(user.jobAlertPrefsUpdatedAt)}
                       </td>
-                      <td className="py-2.5 pr-4 text-muted">{STATUS_LABELS[user.status]}</td>
-                      <td className="py-2.5 pr-4 whitespace-nowrap text-muted">{formatCreatedAt(user.createdAt)}</td>
+                      <td className="py-2.5 pr-4 whitespace-nowrap text-muted">{formatDateTime(user.lastLoginAt)}</td>
+                      <td className="py-2.5 pr-4 whitespace-nowrap text-muted">{formatDateTime(user.createdAt)}</td>
                       <td className="py-2.5">
                         {user.role === 'admin' ? (
                           <span className="text-xs text-muted">관리자</span>
