@@ -685,7 +685,7 @@ export default function JobCompaniesPanel({
           <div>
             <p className="text-xs text-muted">수집 일정</p>
             <p className="mt-1 text-sm font-semibold text-foreground">{CRAWL_SCHEDULE.label}</p>
-            <p className="text-xs text-subtle">cron UTC {CRAWL_SCHEDULE.cronUtc}</p>
+            <p className="text-xs text-subtle">{CRAWL_SCHEDULE.runner} · cron UTC {CRAWL_SCHEDULE.cronUtc}</p>
           </div>
           <div>
             <p className="text-xs text-muted">모집 중 채용 공고</p>
