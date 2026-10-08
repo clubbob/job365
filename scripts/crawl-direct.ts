@@ -8,7 +8,12 @@ import { runCrawlPipeline } from '@/lib/crawler/run';
 
 function loadEnvLocal() {
   const path = resolve(process.cwd(), '.env.local');
-  const text = readFileSync(path, 'utf8');
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch {
+    return;
+  }
   for (const line of text.split('\n')) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
