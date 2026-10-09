@@ -38,6 +38,27 @@ type GroupedCrawlError = {
 
 const COMPANY_SAMPLE_IN_GROUP = 8;
 
+/** 배치 수집 진행 안내(오류가 아님) */
+function isCrawlSourceMemoLine(line: string): boolean {
+  const t = line.trim();
+  if (t.startsWith('DB 배치:')) return true;
+  if (t.startsWith('고용24')) return true;
+  if (t.includes('WORK24_AUTH_KEY')) return true;
+  return false;
+}
+
+function splitCrawlSourceMessages(errors: string[]): { memos: string[]; issues: string[] } {
+  const memos: string[] = [];
+  const issues: string[] = [];
+  for (const line of errors) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (isCrawlSourceMemoLine(trimmed)) memos.push(trimmed);
+    else issues.push(trimmed);
+  }
+  return { memos, issues };
+}
+
 function parseCrawlErrorLine(line: string): { company: string; message: string } {
   const trimmed = line.trim();
   if (!trimmed) return { company: '', message: '' };
@@ -138,8 +159,12 @@ const PAGE_BUTTON =
 function CrawlRunCard({ run, defaultExpanded = false }: { run: CrawlRun; defaultExpanded?: boolean }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const sources = useMemo(() => sortSourcesForDisplay(run.sources), [run.sources]);
-  const errorSourceCount = sources.filter((source) => source.errors.length > 0).length;
+  const errorSourceCount = sources.filter(
+    (source) => splitCrawlSourceMessages(source.errors).issues.length > 0,
+  ).length;
   const successSourceCount = sources.filter((source) => source.upserted > 0).length;
+  const isCompactMidSizedRun =
+    run.runKind === 'mid-sized-only' || (sources.length <= 3 && sources.every((s) => s.sourceName.includes('중견')));
   const runKindLabel =
     run.runKind === 'mid-sized-only' ? '중견만' : run.runKind === 'daily' ? '일일 전체' : null;
 
@@ -161,8 +186,9 @@ function CrawlRunCard({ run, defaultExpanded = false }: { run: CrawlRun; default
             ) : null}
           </p>
           <p className="mt-0.5 text-xs text-muted">
-            소스 {sources.length}곳 · 저장 있음 {successSourceCount}곳
+            수집 소스 {sources.length}곳 · 저장 있음 {successSourceCount}곳
             {errorSourceCount > 0 ? ` · 오류 ${errorSourceCount}곳` : ''}
+            {isCompactMidSizedRun ? ' · 중견은 회사별이 아니라 배치 2줄로 표시' : ''}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -180,19 +206,20 @@ function CrawlRunCard({ run, defaultExpanded = false }: { run: CrawlRun; default
             <thead>
               <tr className="border-b border-border text-xs text-subtle">
                 <th className="py-2 pr-4 font-semibold">수집 소스</th>
-                <th className="whitespace-nowrap py-2 pr-4 font-semibold">수집</th>
+                <th className="whitespace-nowrap py-2 pr-4 font-semibold">가져온 공고</th>
                 <th className="whitespace-nowrap py-2 pr-4 font-semibold">저장</th>
                 <th className="whitespace-nowrap py-2 pr-4 font-semibold">마감</th>
-                <th className="py-2 font-semibold">오류·메모</th>
+                <th className="py-2 font-semibold">진행·오류</th>
               </tr>
             </thead>
             <tbody>
-              {sources.map((source) => {
-                const hasErrors = source.errors.length > 0;
-                const rowMuted = source.upserted === 0 && source.fetched === 0 && !hasErrors;
+              {sources.map((source, index) => {
+                const { memos, issues } = splitCrawlSourceMessages(source.errors);
+                const hasIssues = issues.length > 0;
+                const rowMuted = source.upserted === 0 && source.fetched === 0 && !hasIssues && memos.length === 0;
                 return (
                   <tr
-                    key={source.sourceName}
+                    key={`${source.sourceName}-${index}`}
                     className={cn('border-b border-border last:border-0', rowMuted && 'opacity-60')}
                   >
                     <td className="max-w-[14rem] py-2.5 pr-4 align-top font-medium text-foreground">
@@ -215,7 +242,14 @@ function CrawlRunCard({ run, defaultExpanded = false }: { run: CrawlRun; default
                       {source.closed.toLocaleString('ko-KR')}
                     </td>
                     <td className="min-w-[10rem] py-2.5 align-top">
-                      <CrawlErrorSummary errors={source.errors} />
+                      {memos.length > 0 ? (
+                        <ul className="mb-2 space-y-1 text-xs text-muted">
+                          {memos.map((memo) => (
+                            <li key={memo}>{memo}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                      <CrawlErrorSummary errors={issues} />
                     </td>
                   </tr>
                 );
@@ -350,7 +384,7 @@ export default function AdminCrawlRunsClient() {
     <div className="space-y-5">
       <PageHeader
         title="수집 실행 내역"
-        description="대기업·중견기업 채용 사이트 자동 수집 결과와 소스별 저장·마감 건수를 확인합니다."
+        description="실행마다 채용 사이트(소스)별로 가져온 공고·저장·마감 건수를 봅니다. 대기업은 사이트마다 한 줄, 중견은 DB·고용24 배치 두 줄로 묶여 표시됩니다."
         homeHref="/admin"
         homeLabel="대시보드"
       />

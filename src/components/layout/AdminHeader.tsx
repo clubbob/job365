@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Logo from '@/components/brand/Logo';
 import { useAdminAuth } from '@/features/admin/admin-auth-context';
 import { cn } from '@/lib/utils';
@@ -21,6 +22,14 @@ function isActive(pathname: string, href: string, exact: boolean): boolean {
 export default function AdminHeader() {
   const pathname = usePathname();
   const { loading, loggedIn, logout } = useAdminAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const showAdminNav = mounted && loggedIn;
+  const authReady = mounted && !loading;
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface shadow-sm print:hidden">
@@ -29,7 +38,7 @@ export default function AdminHeader() {
           <Logo />
         </Link>
 
-        {loggedIn ? (
+        {showAdminNav ? (
           <nav className="ml-2 flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" aria-label="관리자 메뉴">
             {NAV_ITEMS.map((item) => {
               const active = isActive(pathname, item.href, item.exact);
@@ -60,7 +69,7 @@ export default function AdminHeader() {
           >
             사이트
           </Link>
-          {loading ? (
+          {!authReady ? (
             <span className="text-sm text-muted">확인 중…</span>
           ) : loggedIn ? (
             <button

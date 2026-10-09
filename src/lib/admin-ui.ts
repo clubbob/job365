@@ -14,7 +14,17 @@ export async function adminJson<T>(path: string, init?: RequestInit): Promise<T>
       ...init?.headers,
     },
   });
-  return res.json() as Promise<T>;
+  const data = (await res.json()) as T;
+  if (!res.ok) {
+    const payload = data as { error?: { message?: string; code?: string } };
+    const message =
+      payload.error?.message ??
+      (payload.error?.code === 'ADMIN_NOT_CONFIGURED'
+        ? 'Firebase Admin이 설정되지 않았습니다. .env.local을 확인해 주세요.'
+        : `요청에 실패했습니다. (${res.status})`);
+    throw new Error(message);
+  }
+  return data;
 }
 
 export const adminActionClassName =

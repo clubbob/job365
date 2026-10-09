@@ -31,6 +31,7 @@ export default function AdminInquiryDetailClient({ inquiryId }: { inquiryId: str
   const [draftReply, setDraftReply] = useState('');
   const [saving, setSaving] = useState(false);
   const [replyError, setReplyError] = useState('');
+  const [replySuccess, setReplySuccess] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +63,10 @@ export default function AdminInquiryDetailClient({ inquiryId }: { inquiryId: str
   const savedReplyMessage = item?.reply?.message ?? '';
   const replyDirty = draftReply !== savedReplyMessage;
 
+  useEffect(() => {
+    if (replyDirty) setReplySuccess('');
+  }, [replyDirty]);
+
   async function handleSaveReply(event: React.FormEvent) {
     event.preventDefault();
     if (!item || saving || !replyDirty) return;
@@ -72,6 +77,7 @@ export default function AdminInquiryDetailClient({ inquiryId }: { inquiryId: str
 
     setSaving(true);
     setReplyError('');
+    setReplySuccess('');
     try {
       const data = await adminJson<ItemResponse>(`/api/admin/inquiries/${encodeURIComponent(item.id)}`, {
         method: 'PATCH',
@@ -84,6 +90,7 @@ export default function AdminInquiryDetailClient({ inquiryId }: { inquiryId: str
       }
       setItem(data.data.item);
       setDraftReply(data.data.item.reply?.message ?? '');
+      setReplySuccess('답변을 저장했습니다. 회원 마이페이지 문의 내역에 표시됩니다.');
     } catch (err) {
       setReplyError(err instanceof Error ? err.message : '답변을 저장하지 못했습니다.');
     } finally {
@@ -177,6 +184,7 @@ export default function AdminInquiryDetailClient({ inquiryId }: { inquiryId: str
         onCancel={handleCancelReply}
         saving={saving}
         error={replyError}
+        success={replySuccess}
         replyDirty={replyDirty}
       />
     </div>

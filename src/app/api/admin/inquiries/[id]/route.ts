@@ -49,7 +49,16 @@ export async function PATCH(
   const { id } = await params;
 
   if (!isFirebaseAdminReady()) {
-    return NextResponse.json({ ok: false, error: { code: 'ADMIN_NOT_CONFIGURED' } }, { status: 503 });
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          code: 'ADMIN_NOT_CONFIGURED',
+          message: 'Firebase Admin이 설정되지 않아 답변을 저장할 수 없습니다.',
+        },
+      },
+      { status: 503 },
+    );
   }
 
   let body: { message?: string };
@@ -100,7 +109,16 @@ export async function DELETE(
   const { id } = await params;
 
   if (!isFirebaseAdminReady()) {
-    return NextResponse.json({ ok: false, error: { code: 'ADMIN_NOT_CONFIGURED' } }, { status: 503 });
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          code: 'ADMIN_NOT_CONFIGURED',
+          message: 'Firebase Admin이 설정되지 않아 답변을 저장할 수 없습니다.',
+        },
+      },
+      { status: 503 },
+    );
   }
 
   try {

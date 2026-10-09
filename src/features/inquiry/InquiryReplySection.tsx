@@ -16,6 +16,7 @@ export default function InquiryReplySection({
   onCancel,
   saving,
   error,
+  success,
   replyDirty,
 }: {
   inquiry: Inquiry;
@@ -25,6 +26,7 @@ export default function InquiryReplySection({
   onCancel: () => void;
   saving: boolean;
   error: string;
+  success: string;
   replyDirty: boolean;
 }) {
   return (
@@ -47,6 +49,14 @@ export default function InquiryReplySection({
           />
         </div>
         {error ? <p className="text-sm text-danger">{error}</p> : null}
+        {success ? (
+          <p
+            className="rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 text-sm font-medium text-primary"
+            role="status"
+          >
+            {success}
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={!replyDirty || saving || !draftReply.trim()}>
             {saving ? '저장 중…' : '저장'}
