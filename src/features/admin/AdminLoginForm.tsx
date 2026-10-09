@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import { useAdminAuth } from '@/features/admin/admin-auth-context';
 import { authInputClassName } from '@/lib/auth-ui';
 import { firstRequiredError } from '@/lib/form-required';
@@ -72,11 +73,7 @@ export default function AdminLoginForm() {
               required
             />
           </div>
-          {error ? (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </p>
-          ) : null}
+          {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
           <Button type="submit" fullWidth disabled={pending}>
             {pending ? '로그인 중…' : '로그인'}
           </Button>

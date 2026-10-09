@@ -2,6 +2,7 @@
 
 import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import { inputClassName } from '@/features/auth/auth-errors';
 import { formatInquiryDateTime } from '@/lib/inquiry-display';
 import type { Inquiry } from '@/lib/inquiry';
@@ -48,15 +49,8 @@ export default function InquiryReplySection({
             required
           />
         </div>
-        {error ? <p className="text-sm text-danger">{error}</p> : null}
-        {success ? (
-          <p
-            className="rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 text-sm font-medium text-primary"
-            role="status"
-          >
-            {success}
-          </p>
-        ) : null}
+        {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
+        {success ? <FormFeedback variant="success">{success}</FormFeedback> : null}
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={!replyDirty || saving || !draftReply.trim()}>
             {saving ? '저장 중…' : '저장'}

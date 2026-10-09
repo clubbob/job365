@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
+import { FieldFeedback, FormFeedback } from '@/components/ui/FormFeedback';
 import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
 import { useAuth } from '@/features/auth/auth-context';
 import { authInputClassName } from '@/lib/auth-ui';
@@ -50,15 +51,6 @@ type CompanyDraft = {
   registrantName: string;
   registrantEmail: string;
 };
-
-function FieldAlert({ message }: { message: string | null | undefined }) {
-  if (!message) return null;
-  return (
-    <p className="mt-1 text-sm text-danger" role="alert">
-      {message}
-    </p>
-  );
-}
 
 function formatRevenueAmountInput(value: string): string {
   const digits = value.replace(/[^\d]/g, '');
@@ -450,9 +442,7 @@ export default function CompanyInfoForm({
               {numberCheck.taxType ? ` · ${numberCheck.taxType}` : ''}
             </p>
           ) : lookupError ? (
-            <p className="mt-1 text-sm text-danger" role="alert">
-              {lookupError}
-            </p>
+            <FieldFeedback message={lookupError} />
           ) : (
             <p className="mt-1 text-sm text-muted">계속사업자로 조회되면 아래 회사 정보를 입력할 수 있습니다.</p>
           )}
@@ -472,7 +462,7 @@ export default function CompanyInfoForm({
               placeholder="사업자 상호를 입력해 주세요"
               disabled={!canEditCompany}
             />
-            {error === '회사명을 입력해 주세요.' ? <FieldAlert message={error} /> : null}
+            {error === '회사명을 입력해 주세요.' ? <FieldFeedback message={error} /> : null}
           </div>
           <div>
             <FieldLabel htmlFor="company-ceo" required>
@@ -486,7 +476,7 @@ export default function CompanyInfoForm({
               placeholder="대표자 성명"
               disabled={!canEditCompany}
             />
-            {error === '대표자명을 입력해 주세요.' ? <FieldAlert message={error} /> : null}
+            {error === '대표자명을 입력해 주세요.' ? <FieldFeedback message={error} /> : null}
           </div>
         </div>
 
@@ -504,7 +494,7 @@ export default function CompanyInfoForm({
               placeholder="02-0000-0000"
               disabled={!canEditCompany}
             />
-            {error === '전화번호를 입력해 주세요.' ? <FieldAlert message={error} /> : null}
+            {error === '전화번호를 입력해 주세요.' ? <FieldFeedback message={error} /> : null}
           </div>
           <div>
             <FieldLabel htmlFor="company-fax" optional>
@@ -535,7 +525,7 @@ export default function CompanyInfoForm({
               className={lockedInputClassName}
               disabled={!canEditCompany}
             />
-            {error === '설립일을 입력해 주세요.' ? <FieldAlert message={error} /> : null}
+            {error === '설립일을 입력해 주세요.' ? <FieldFeedback message={error} /> : null}
           </div>
           <div className="min-w-0">
             <FieldLabel htmlFor="company-employee-count" required>
@@ -553,7 +543,7 @@ export default function CompanyInfoForm({
               />
               <span className="shrink-0 whitespace-nowrap text-sm text-muted">명</span>
             </div>
-            {error === '직원 수를 입력해 주세요.' ? <FieldAlert message={error} /> : null}
+            {error === '직원 수를 입력해 주세요.' ? <FieldFeedback message={error} /> : null}
           </div>
           <div className="min-w-0">
             <FieldLabel htmlFor="company-revenue" required>
@@ -571,7 +561,7 @@ export default function CompanyInfoForm({
               />
               <span className="shrink-0 whitespace-nowrap text-sm text-muted">백만 원</span>
             </div>
-            {error === '전년 매출액을 입력해 주세요.' ? <FieldAlert message={error} /> : null}
+            {error === '전년 매출액을 입력해 주세요.' ? <FieldFeedback message={error} /> : null}
           </div>
         </div>
 
@@ -587,7 +577,7 @@ export default function CompanyInfoForm({
             placeholder="본사 또는 사업장 주소"
             disabled={!canEditCompany}
           />
-          {error === '사업장 주소를 입력해 주세요.' ? <FieldAlert message={error} /> : null}
+          {error === '사업장 주소를 입력해 주세요.' ? <FieldFeedback message={error} /> : null}
         </div>
 
         <div>
@@ -618,7 +608,7 @@ export default function CompanyInfoForm({
             rows={3}
             disabled={!canEditCompany}
           />
-          {error === '회사 소개를 입력해 주세요.' ? <FieldAlert message={error} /> : null}
+          {error === '회사 소개를 입력해 주세요.' ? <FieldFeedback message={error} /> : null}
         </div>
 
         <div className="space-y-4">
@@ -634,7 +624,7 @@ export default function CompanyInfoForm({
                 className={accountInputClassName}
                 autoComplete="name"
               />
-            {error.startsWith('등록자 이름') ? <FieldAlert message={error} /> : null}
+            {error.startsWith('등록자 이름') ? <FieldFeedback message={error} /> : null}
               </div>
               <div>
               <FieldLabel htmlFor="company-registrant-email" required>
@@ -648,22 +638,18 @@ export default function CompanyInfoForm({
                 className={accountInputClassName}
                 autoComplete="email"
               />
-            {error.startsWith('로그인 이메일') ? <FieldAlert message={error} /> : null}
+            {error.startsWith('로그인 이메일') ? <FieldFeedback message={error} /> : null}
             </div>
           </div>
           <p className="text-xs text-subtle">로그인 계정의 이름과 이메일을 보여 줍니다.</p>
         </div>
 
         {error ? (
-          <p className="text-sm text-danger" role="alert">
-            {error}
-          </p>
+          <FormFeedback variant="error">{error}</FormFeedback>
         ) : lookupError ? (
-          <p className="text-sm text-danger" role="alert">
-            {lookupError}
-          </p>
+          <FormFeedback variant="error">{lookupError}</FormFeedback>
         ) : didSave && !dirty ? (
-          <p className="text-sm font-medium text-primary">회사 정보를 저장했습니다.</p>
+          <FormFeedback variant="success">회사 정보를 저장했습니다.</FormFeedback>
         ) : null}
 
         <div className="flex flex-wrap gap-2">

@@ -136,7 +136,7 @@ export default function SignupConsent({ value, onChange, className }: SignupCons
         required
       >
         <>
-          개인정보처리방침에 동의합니다.{' '}
+          개인정보처리방침(개인정보 국외 이전 포함)에 동의합니다.{' '}
           <Link href="/privacy" target="_blank" rel="noopener noreferrer" className={linkClassName}>
             개인정보처리방침
           </Link>

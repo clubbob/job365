@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
 import CompanyInfoForm from '@/features/mypage/CompanyInfoForm';
 import { authInputClassName } from '@/lib/auth-ui';
@@ -488,8 +489,8 @@ export default function JobCreateForm({
   }
 
   function sectionStatus(id: SectionId) {
-    if (error?.section === id) return <p className="text-sm text-danger">{error.message}</p>;
-    if (savedSection === id && !isDirty(id)) return <p className="text-sm text-success">저장했습니다.</p>;
+    if (error?.section === id) return <FormFeedback variant="error">{error.message}</FormFeedback>;
+    if (savedSection === id && !isDirty(id)) return <FormFeedback variant="success">저장했습니다.</FormFeedback>;
     return null;
   }
 

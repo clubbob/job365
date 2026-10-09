@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import PageHeader from '@/components/navigation/PageHeader';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import CrawledJobDetailView from '@/features/job-board/CrawledJobDetailView';
 import {
   adminDangerActionClassName,
@@ -76,17 +77,13 @@ export default function AdminCrawledJobDetailClient({ jobId }: { jobId: string }
 
   if (error && !job) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-700">
-        {error}
-      </div>
+      <FormFeedback variant="error" centered>{error}</FormFeedback>
     );
   }
 
   if (!job) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-700">
-        공고를 찾지 못했습니다.
-      </div>
+      <FormFeedback variant="error" centered>공고를 찾지 못했습니다.</FormFeedback>
     );
   }
 
@@ -104,7 +101,7 @@ export default function AdminCrawledJobDetailClient({ jobId }: { jobId: string }
         showRefresh={false}
       />
 
-      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
 
       <div className="flex flex-wrap items-center gap-2">
         <span

@@ -51,13 +51,14 @@ type FieldLabelProps = {
   children: React.ReactNode;
   optional?: boolean;
   required?: boolean;
+  className?: string;
 };
 
-export function FieldLabel({ htmlFor, children, optional, required }: FieldLabelProps) {
+export function FieldLabel({ htmlFor, children, optional, required, className }: FieldLabelProps) {
   return (
     <label
       htmlFor={htmlFor}
-      className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"
+      className={cn('mb-2 flex items-center gap-2 text-sm font-semibold text-foreground', className)}
     >
       {children}
       {required ? <span className="text-xs font-normal text-primary">필수</span> : null}

@@ -2,14 +2,12 @@
 
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
+import PageHeader from '@/components/navigation/PageHeader';
+import { Button, Card, FieldLabel } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import { useAuth } from '@/features/auth/auth-context';
 import { isValidEmail } from '@/features/auth/auth-errors';
-import {
-  AUTH_CARD,
-  authInputClassName,
-  authLinkClassName,
-  authPrimaryButtonClassName,
-} from '@/lib/auth-ui';
+import { authFormInputClassName, authLinkClassName } from '@/lib/auth-ui';
 
 export default function ForgotPasswordPageClient() {
   const { sendPasswordReset } = useAuth();
@@ -67,45 +65,41 @@ export default function ForgotPasswordPageClient() {
   }
 
   return (
-    <div className={AUTH_CARD}>
-      <h1 className="text-2xl font-bold text-foreground">비밀번호 찾기</h1>
-      <p className="mt-3 text-sm leading-relaxed text-muted">
-        가입한 이메일을 입력하면 비밀번호 재설정 링크를 보내드립니다.
-      </p>
+    <div className="flex flex-col gap-5">
+      <PageHeader
+        title="비밀번호 찾기"
+        description="가입한 이메일로 비밀번호 재설정 링크를 보내 드립니다."
+        showRefresh={false}
+      />
 
-      {message ? (
-        <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-          {message}
-        </div>
-      ) : null}
-      {errorMessage ? (
-        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {errorMessage}
-        </div>
-      ) : null}
+      <Card>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div>
+            <FieldLabel htmlFor="forgot-password-email" required>이메일</FieldLabel>
+            <input
+              id="forgot-password-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="가입한 이메일"
+              className={authFormInputClassName}
+              required
+            />
+          </div>
+          {errorMessage ? <FormFeedback variant="error">{errorMessage}</FormFeedback> : null}
+          {message ? <FormFeedback variant="success">{message}</FormFeedback> : null}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? '확인 중…' : '비밀번호 재설정 메일 받기'}
+          </Button>
+        </form>
 
-      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-        <input
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="이메일"
-          className={authInputClassName}
-          required
-        />
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={authPrimaryButtonClassName}
-        >
-          {isSubmitting ? '확인 중...' : '비밀번호 재설정 메일 받기'}
-        </button>
-      </form>
-
-      <Link href="/login" className={`mt-6 inline-block ${authLinkClassName}`}>
-        로그인으로 돌아가기
-      </Link>
+        <p className="mt-4 text-center text-sm text-muted">
+          <Link href="/login" className={authLinkClassName}>
+            로그인으로 돌아가기
+          </Link>
+        </p>
+      </Card>
     </div>
   );
 }

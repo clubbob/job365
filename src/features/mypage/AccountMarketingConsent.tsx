@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
 import { Button, Card } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import LegalPageShell from '@/components/legal/LegalPageShell';
 import MarketingConsentDocument, {
   MARKETING_CONSENT_EFFECTIVE_DATE,
@@ -111,13 +112,9 @@ export default function AccountMarketingConsent({
             </button>
           </div>
         </div>
-        {error ? (
-          <p className="text-sm text-danger" role="alert">
-            {error}
-          </p>
-        ) : null}
+        {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
         {justSaved && !dirty ? (
-          <p className="text-sm font-medium text-primary">마케팅 수신 동의를 저장했습니다.</p>
+          <FormFeedback variant="success">마케팅 수신 동의를 저장했습니다.</FormFeedback>
         ) : null}
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={!dirty || saving}>

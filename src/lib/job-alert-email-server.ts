@@ -29,6 +29,7 @@ function buildDigestHtml(params: {
   nickname: string;
   jobs: Array<{ title: string; companyName: string; applyUrl: string; sourceName: string }>;
   myJobsUrl: string;
+  alertSettingsUrl: string;
   hasFilterPrefs: boolean;
 }): string {
   const rows = params.jobs.length
@@ -57,7 +58,10 @@ function buildDigestHtml(params: {
         <a href="${escapeHtml(params.myJobsUrl)}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 18px;border-radius:10px;">${escapeHtml(MATCHED_JOBS_MORE_LINK_LABEL)}</a>
       </div>
     </div>
-    <p style="margin:16px 0 0;font-size:12px;color:#888;text-align:center;">본 메일은 ${COMPANY.serviceName} ${escapeHtml(MATCHED_JOBS_SETTINGS_TITLE)}에 따라 발송됩니다.</p>
+    <p style="margin:16px 0 0;font-size:12px;color:#888;text-align:center;line-height:1.5;">
+      본 메일은 ${COMPANY.serviceName} ${escapeHtml(MATCHED_JOBS_SETTINGS_TITLE)}에서 &quot;채용 공고 이메일 받기&quot;를 선택한 회원에게 발송됩니다.<br />
+      <a href="${escapeHtml(params.alertSettingsUrl)}" style="color:#2563eb;text-decoration:underline;">이메일 수신 끄기·맞춤 조건 변경</a>
+    </p>
   </div>
 </body></html>`;
 }
@@ -112,6 +116,7 @@ export type JobAlertEmailRunSummary = {
 export async function sendDailyJobAlertEmails(): Promise<JobAlertEmailRunSummary> {
   const todayDate = getKoreaDateLocalToday();
   const myJobsUrl = `${SITE_URL}/my-jobs`;
+  const alertSettingsUrl = `${SITE_URL}/mypage?tab=alerts`;
 
   if (!isEmailServiceConfigured()) {
     throw new Error('EMAIL_NOT_CONFIGURED');
@@ -144,13 +149,14 @@ export async function sendDailyJobAlertEmails(): Promise<JobAlertEmailRunSummary
         sourceName: job.sourceName,
       })),
       myJobsUrl,
+      alertSettingsUrl,
       hasFilterPrefs: hasJobAlertFilterPrefs(recipient.prefs),
     });
 
     const result = await sendEmail({
       to: recipient.email,
       subject,
-      text: `${text}\n\n${MATCHED_JOBS_MORE_LINK_LABEL}: ${myJobsUrl}`,
+      text: `${text}\n\n${MATCHED_JOBS_MORE_LINK_LABEL}: ${myJobsUrl}\n이메일 수신 끄기·맞춤 조건 변경: ${alertSettingsUrl}`,
       html,
     });
 

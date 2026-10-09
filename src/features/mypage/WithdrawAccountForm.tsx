@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { User } from 'firebase/auth';
 import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
 import { Card } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import { getAuthErrorMessage } from '@/features/auth/auth-errors';
 import { useAuth } from '@/features/auth/auth-context';
 import { deleteUserAccount } from '@/lib/users-api';
@@ -122,9 +123,7 @@ export default function WithdrawAccountForm({ user }: { user: User }) {
           <p className="text-xs text-muted">입력한 사유는 서비스 개선을 위해 관리자가 확인합니다.</p>
         </label>
 
-        {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-        ) : null}
+        {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
 
         <div className="flex flex-wrap gap-2">
           <button

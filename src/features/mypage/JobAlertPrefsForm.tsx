@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { User } from 'firebase/auth';
 import MultiSelect from '@/components/ui/MultiSelect';
 import { Button, Card } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import { filterChipButtonClass } from '@/features/job-board/filter-chips';
 import {
   EMPLOYMENT_TYPES,
@@ -144,6 +145,10 @@ export default function JobAlertPrefsForm({ user }: { user: User }) {
               </button>
             ))}
           </div>
+          <p className="text-xs leading-relaxed text-muted">
+            &quot;채용 공고 이메일 받기&quot;를 선택하고 저장하면 맞춤 채용 설정에 따라 채용 공고 안내 메일을 받는 것에
+            동의한 것으로 봅니다. 마케팅 수신 동의와는 별개입니다.
+          </p>
         </fieldset>
 
         <fieldset className="flex flex-col gap-2">
@@ -197,10 +202,8 @@ export default function JobAlertPrefsForm({ user }: { user: User }) {
           />
         </div>
 
-        {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-        ) : null}
-        {saved ? <p className="text-sm font-medium text-green-700">저장했습니다.</p> : null}
+        {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
+        {saved ? <FormFeedback variant="success">저장했습니다.</FormFeedback> : null}
 
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={!dirty || saving}>

@@ -8,6 +8,7 @@ import SignupConsent, {
 } from '@/components/auth/SignupConsent';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Button, Card } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import { useAuth } from '@/features/auth/auth-context';
 import { getSafeReturnPath } from '@/lib/auth-return';
 import { saveSignupConsents } from '@/lib/signup-consents-client';
@@ -73,7 +74,7 @@ export default function SignupConsentPageClient() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <SignupConsent value={consent} onChange={setConsent} />
 
-          {error && <p className="text-sm text-danger">{error}</p>}
+          {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
 
           <Button type="submit" fullWidth disabled={pending || !requiredConsentsMet}>
             동의하고 시작하기

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FieldLabel } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
 import { authInputClassName } from '@/lib/auth-ui';
@@ -200,7 +201,7 @@ export default function TalentProposeButton({
         {gate}
         {intro ? <p className="text-sm text-muted">{intro}</p> : null}
         {jobPicker}
-        {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}
+        {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
         <button
           type="button"
           className={cn(buttonBaseClassName, buttonSizeDefaultClassName, buttonPrimaryClassName, 'w-full')}
@@ -218,7 +219,7 @@ export default function TalentProposeButton({
       {gate}
       {intro ? <p className="text-sm text-muted">{intro}</p> : null}
       {jobPicker}
-      {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}
+      {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
       <button
         type="button"
         className={cn(buttonBaseClassName, buttonSizeDefaultClassName, buttonPrimaryClassName, 'w-full')}

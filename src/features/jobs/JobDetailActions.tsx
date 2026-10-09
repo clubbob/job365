@@ -23,6 +23,8 @@ import {
   buttonSecondaryClassName,
   buttonSizeDefaultClassName,
 } from '@/lib/button-ui';
+import JobInquiryButton from '@/features/inquiry/JobInquiryButton';
+import { buildJobInquiryHref } from '@/lib/job-inquiry';
 import type { JobPosting } from '@/types/job';
 
 const gridButtonClassName = cn(
@@ -157,6 +159,14 @@ export default function JobDetailActions({ job }: { job: JobPosting }) {
             지원하기
           </button>
         )}
+
+        <JobInquiryButton
+          inquiryHref={buildJobInquiryHref('member', job.id, {
+            title: job.title,
+            companyName: job.companyName,
+          })}
+          className={cn(gridButtonClassName, buttonSecondaryClassName, 'col-span-2')}
+        />
       </div>
     </div>
   );

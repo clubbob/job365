@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import InquiryForm from '@/features/inquiry/InquiryForm';
 import InquiryHistoryItem from '@/features/inquiry/InquiryHistoryItem';
 import type { Inquiry } from '@/lib/inquiry';
@@ -13,7 +14,15 @@ type ListResponse =
 
 const panelClassName = 'rounded-xl border border-border bg-surface shadow-card';
 
-export default function InquiryPanel({ user }: { user: User }) {
+export default function InquiryPanel({
+  user,
+  initialTitle = '',
+  initialMessage = '',
+}: {
+  user: User;
+  initialTitle?: string;
+  initialMessage?: string;
+}) {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -87,6 +96,8 @@ export default function InquiryPanel({ user }: { user: User }) {
         <InquiryForm
           user={user}
           successMessage={successMessage}
+          initialTitle={initialTitle}
+          initialMessage={initialMessage}
           onSubmitted={handleSubmitted}
           onError={() => setSuccessMessage('')}
         />
@@ -98,7 +109,9 @@ export default function InquiryPanel({ user }: { user: User }) {
           <p className="mt-0.5 text-sm text-muted">접수한 문의와 답변을 확인합니다.</p>
         </header>
         {error ? (
-          <p className="px-4 py-4 text-sm text-danger sm:px-6" role="alert">{error}</p>
+          <div className="px-4 pt-4 sm:px-6">
+            <FormFeedback variant="error">{error}</FormFeedback>
+          </div>
         ) : null}
         {loading ? (
           <p className="px-4 py-10 text-center text-sm text-muted sm:px-6">불러오는 중…</p>

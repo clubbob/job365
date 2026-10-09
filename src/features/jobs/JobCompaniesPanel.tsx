@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import {
   AdminListPagination,
   AdminListResultMeta,
@@ -811,9 +812,7 @@ export default function JobCompaniesPanel({
         homeLabel="대시보드"
       />
 
-      {error ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
-      ) : null}
+      {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
 
       <div
         className="flex gap-1 rounded-xl border border-border bg-surface p-1"

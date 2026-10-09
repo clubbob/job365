@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { User } from 'firebase/auth';
 import { Button, FieldLabel } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
 import { inputClassName } from '@/features/auth/auth-errors';
 import { firstRequiredError } from '@/lib/form-required';
@@ -18,16 +19,20 @@ const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 export default function InquiryForm({
   user,
   successMessage,
+  initialTitle = '',
+  initialMessage = '',
   onSubmitted,
   onError,
 }: {
   user: User;
   successMessage?: string;
+  initialTitle?: string;
+  initialMessage?: string;
   onSubmitted?: (inquiry: Inquiry) => void;
   onError?: (message: string) => void;
 }) {
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
+  const [title, setTitle] = useState(initialTitle);
+  const [message, setMessage] = useState(initialMessage);
   const [attachment, setAttachment] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
@@ -152,12 +157,8 @@ export default function InquiryForm({
           <p className="mt-1 text-xs text-muted">PDF, 이미지, 문서 파일 1개까지 등록할 수 있습니다. (최대 10MB)</p>
         )}
       </div>
-      {error ? (
-        <p className="text-sm text-danger" role="alert">{error}</p>
-      ) : null}
-      {successMessage ? (
-        <p className="text-sm font-medium text-foreground" role="status">{successMessage}</p>
-      ) : null}
+      {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
+      {successMessage ? <FormFeedback variant="success">{successMessage}</FormFeedback> : null}
       <Button type="submit" disabled={sending}>
         {sending ? '등록 중…' : '문의하기'}
       </Button>

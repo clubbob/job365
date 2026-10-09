@@ -16,6 +16,7 @@ const TITLE_HEADER_PATHS = new Set([
   '/signup',
   '/signup/consent',
   '/forgot-password',
+  '/reset-password/confirm',
   '/terms',
   '/privacy',
   '/marketing',

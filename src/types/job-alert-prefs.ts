@@ -10,7 +10,7 @@ export type JobAlertPrefs = {
 };
 
 export const DEFAULT_JOB_ALERT_PREFS: Omit<JobAlertPrefs, 'userId' | 'updatedAt'> = {
-  emailEnabled: true,
+  emailEnabled: false,
   employmentTypes: [],
   roles: [],
   regions: [],

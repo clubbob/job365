@@ -2,14 +2,16 @@ import Link from 'next/link';
 import { COMPANY } from '@/lib/company';
 
 const navLinkClassName =
-  'text-sm text-muted transition-colors hover:text-foreground hover:underline hover:underline-offset-2';
+  'text-muted transition-colors hover:text-foreground hover:underline hover:underline-offset-2';
 
 export default function Footer() {
+  const year = new Date().getFullYear();
+
   return (
     <footer className="border-t border-border bg-surface print:hidden">
-      <div className="mx-auto w-full min-w-0 max-w-4xl px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center sm:px-6">
+      <div className="mx-auto w-full min-w-0 max-w-4xl px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center text-xs leading-5 text-muted sm:px-6">
         <nav
-          className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1"
+          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 sm:text-sm"
           aria-label="법적 고지"
         >
           <Link href="/terms" className={navLinkClassName}>
@@ -26,36 +28,34 @@ export default function Footer() {
           </Link>
         </nav>
 
-        <p className="mt-3 text-sm">
-          <span className="font-semibold text-foreground">{COMPANY.serviceName}</span>
-          <span className="mx-2 text-subtle" aria-hidden>
-            ·
-          </span>
-          <span className="text-muted">크롤링 기반 채용 공고 모음</span>
+        <p className="mt-2">
+          <Link
+            href="/"
+            className="font-semibold text-foreground transition-colors hover:text-primary"
+          >
+            {COMPANY.serviceName}
+          </Link>
         </p>
 
-        <p className="mt-2 text-xs leading-6 text-muted sm:text-sm">
+        <p className="mt-0.5">
           <span className="whitespace-nowrap">회사명 : {COMPANY.name}</span>
-          <span className="mx-2 text-subtle" aria-hidden>
-            |
-          </span>
+          <span className="mx-1.5 text-subtle" aria-hidden>|</span>
           <span className="whitespace-nowrap">대표 : {COMPANY.ceo}</span>
-          <span className="mx-2 text-subtle" aria-hidden>
-            |
-          </span>
+          <span className="mx-1.5 text-subtle" aria-hidden>|</span>
           <span className="whitespace-nowrap">사업자등록번호 : {COMPANY.businessNumber}</span>
         </p>
-        <p className="mt-0.5 text-xs sm:text-sm">
+
+        <p>
           <a
             href={`mailto:${COMPANY.email}`}
-            className="inline-block max-w-full text-muted transition-colors hover:text-foreground hover:underline hover:underline-offset-2"
+            className="transition-colors hover:text-foreground hover:underline hover:underline-offset-2"
           >
             이메일 : {COMPANY.email}
           </a>
         </p>
 
-        <p className="mt-3 text-xs text-subtle">
-          Copyright © 2026 {COMPANY.serviceName}. All rights reserved.
+        <p className="mt-1 text-subtle">
+          Copyright © {year} {COMPANY.serviceName}. All rights reserved.
         </p>
       </div>
     </footer>

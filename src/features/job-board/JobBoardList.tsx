@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AdSlot from '@/components/ads/AdSlot';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import CrawledJobCard from '@/features/job-board/CrawledJobCard';
 import JobBoardFilters, { type JobBoardFilterState } from '@/features/job-board/JobBoardFilters';
 import { useAuth } from '@/features/auth/auth-context';
@@ -393,7 +394,7 @@ export default function JobBoardList({
         ) : null}
 
         {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          <FormFeedback variant="error">{error}</FormFeedback>
         ) : null}
 
         {loading && items.length === 0 ? (

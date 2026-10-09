@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import AutoGrowTextarea from '@/components/ui/AutoGrowTextarea';
 import { authInputClassName } from '@/lib/auth-ui';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
@@ -551,12 +552,12 @@ export default function MyTalentProfileForm({
             className={authInputClassName}
           />
         </div>
-        {error ? <p className="text-sm text-danger">{error}</p> : null}
         {updatedAt ? <p className="text-sm text-muted">프로필 최근일 {updatedAt}</p> : null}
+        {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
         {saved ? (
-          <p className="text-sm text-success">
+          <FormFeedback variant="success">
             {returnPath ? '저장했습니다. 목록으로 이동합니다.' : '저장했습니다. 인재 정보로 이동합니다.'}
-          </p>
+          </FormFeedback>
         ) : null}
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button type="submit" fullWidth disabled={!dirty || saving}>

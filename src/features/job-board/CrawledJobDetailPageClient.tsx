@@ -4,9 +4,12 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import CrawledJobDetailView from '@/features/job-board/CrawledJobDetailView';
 import { useAuth } from '@/features/auth/auth-context';
 import { getCrawledJobOriginalUrl } from '@/lib/crawler/source-url';
+import JobInquiryButton from '@/features/inquiry/JobInquiryButton';
+import { buildJobInquiryHref } from '@/lib/job-inquiry';
 import type { CrawledJob } from '@/types/crawled-job';
 
 export default function CrawledJobDetailPageClient({ jobId }: { jobId: string }) {
@@ -125,14 +128,18 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
 
   if (error || !job) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-700">
+      <FormFeedback variant="error" centered>
         {error ?? '채용 공고를 찾을 수 없습니다.'}
-      </div>
+      </FormFeedback>
     );
   }
 
   const closed = job.status === 'closed';
   const originalJobUrl = getCrawledJobOriginalUrl(job.applyUrl);
+  const inquiryHref = buildJobInquiryHref('crawled', job.id, {
+    title: job.title,
+    companyName: job.companyName,
+  });
 
   return (
     <div className="flex flex-col gap-5">
@@ -177,11 +184,10 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
                   로그인 후 찜하기
                 </Link>
               )}
+              <JobInquiryButton inquiryHref={inquiryHref} />
             </div>
             {bookmarkMessage ? (
-              <p
-                className={`text-sm font-medium ${bookmarkMessage.type === 'success' ? 'text-green-700' : 'text-red-700'}`}
-              >
+              <FormFeedback variant={bookmarkMessage.type === 'success' ? 'success' : 'error'}>
                 {bookmarkMessage.text}
                 {bookmarkMessage.type === 'success' && bookmarked ? (
                   <>
@@ -191,7 +197,7 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
                     </Link>
                   </>
                 ) : null}
-              </p>
+              </FormFeedback>
             ) : null}
           </>
         }

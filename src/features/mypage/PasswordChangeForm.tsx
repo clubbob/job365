@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button, Card } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import { getAuthErrorMessage, PASSWORD_MIN_LENGTH } from '@/features/auth/auth-errors';
 import { useAuth } from '@/features/auth/auth-context';
 
@@ -85,10 +86,8 @@ export default function PasswordChangeForm() {
           <p className="text-xs text-muted">{PASSWORD_MIN_LENGTH}자 이상으로 입력해 주세요.</p>
         </label>
 
-        {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-        ) : null}
-        {saved ? <p className="text-sm font-medium text-green-700">비밀번호를 변경했습니다.</p> : null}
+        {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
+        {saved ? <FormFeedback variant="success">비밀번호를 변경했습니다.</FormFeedback> : null}
 
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={!canSave || pending}>

@@ -5,13 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { FirebaseError } from 'firebase/app';
 import { confirmPasswordReset } from 'firebase/auth';
+import PageHeader from '@/components/navigation/PageHeader';
+import { Button, Card, FieldLabel } from '@/components/ui/Card';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import { getClientAuth } from '@/lib/firebase';
-import {
-  AUTH_CARD,
-  authInputClassName,
-  authLinkClassName,
-  authPrimaryButtonClassName,
-} from '@/lib/auth-ui';
+import { authFormInputClassName, authLinkClassName } from '@/lib/auth-ui';
 
 function PasswordResetForm() {
   const searchParams = useSearchParams();
@@ -25,7 +23,7 @@ function PasswordResetForm() {
 
   useEffect(() => {
     if (!oobCode) {
-      setErrorMsg('유효하지 않은 접근입니다.');
+      setErrorMsg('유효하지 않은 접근입니다. 비밀번호 찾기에서 메일을 다시 요청해 주세요.');
     }
   }, [oobCode]);
 
@@ -56,7 +54,7 @@ function PasswordResetForm() {
 
     try {
       await confirmPasswordReset(auth, oobCode, password);
-      setMessage('비밀번호가 성공적으로 변경되었습니다.');
+      setMessage('비밀번호를 변경했습니다. 새 비밀번호로 로그인해 주세요.');
     } catch (error) {
       if (error instanceof FirebaseError) {
         setErrorMsg('비밀번호 재설정에 실패했습니다. 링크가 만료되었을 수 있습니다.');
@@ -69,57 +67,69 @@ function PasswordResetForm() {
   }
 
   return (
-    <div className={AUTH_CARD}>
-      <h1 className="text-2xl font-bold text-foreground">새 비밀번호 설정</h1>
-      <p className="mt-3 text-sm leading-relaxed text-muted">
-        새 비밀번호를 입력하고 변경을 완료해 주세요.
-      </p>
+    <div className="flex flex-col gap-5">
+      <PageHeader
+        title="새 비밀번호 설정"
+        description="메일의 재설정 링크로 들어온 경우, 새 비밀번호를 입력해 주세요."
+        showRefresh={false}
+        homeHref="/login"
+        homeLabel="로그인으로"
+      />
 
-      {message ? (
-        <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-          {message}
-        </div>
-      ) : null}
+      <Card>
+        {message ? (
+          <>
+            <FormFeedback variant="success">{message}</FormFeedback>
+            <Link href="/login" className={`mt-4 inline-block ${authLinkClassName}`}>
+              로그인하기
+            </Link>
+          </>
+        ) : (
+          <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
+            <label className="flex flex-col gap-1.5 text-sm">
+              <FieldLabel htmlFor="reset-password-new" required>새 비밀번호</FieldLabel>
+              <input
+                id="reset-password-new"
+                type="password"
+                autoComplete="new-password"
+                placeholder="6자 이상"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={authFormInputClassName}
+                required
+                minLength={6}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm">
+              <FieldLabel htmlFor="reset-password-confirm" required>비밀번호 확인</FieldLabel>
+              <input
+                id="reset-password-confirm"
+                type="password"
+                autoComplete="new-password"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                className={authFormInputClassName}
+                required
+                minLength={6}
+              />
+            </label>
+            {errorMsg ? <FormFeedback variant="error">{errorMsg}</FormFeedback> : null}
+            <Button type="submit" disabled={isSubmitting || !oobCode}>
+              {isSubmitting ? '변경 중…' : '비밀번호 변경'}
+            </Button>
+          </form>
+        )}
 
-      {errorMsg ? (
-        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {errorMsg}
-        </div>
-      ) : null}
-
-      {message ? (
-        <Link href="/login" className={`mt-6 inline-block ${authLinkClassName}`}>
-          로그인으로 돌아가기
-        </Link>
-      ) : (
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-          <input
-            type="password"
-            autoComplete="new-password"
-            placeholder="새 비밀번호 (6자 이상)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={authInputClassName}
-            required
-          />
-          <input
-            type="password"
-            autoComplete="new-password"
-            placeholder="비밀번호 확인"
-            value={passwordConfirm}
-            onChange={(e) => setPasswordConfirm(e.target.value)}
-            className={authInputClassName}
-            required
-          />
-          <button
-            type="submit"
-            disabled={isSubmitting || !oobCode}
-            className={authPrimaryButtonClassName}
-          >
-            {isSubmitting ? '처리 중...' : '비밀번호 변경'}
-          </button>
-        </form>
-      )}
+        {!message ? (
+          <p className="mt-4 text-sm text-muted">
+            링크가 만료되었으면{' '}
+            <Link href="/forgot-password" className="font-semibold text-primary hover:underline">
+              비밀번호 찾기
+            </Link>
+            에서 메일을 다시 받을 수 있습니다.
+          </p>
+        ) : null}
+      </Card>
     </div>
   );
 }
