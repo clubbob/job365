@@ -171,7 +171,7 @@ export default function AdminCrawledJobsClient() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="제목·회사·소스 검색"
+              placeholder="공고 제목, 회사, 직무, 지역, 수집 소스 검색"
               className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
             />
           </div>
@@ -213,7 +213,7 @@ export default function AdminCrawledJobsClient() {
                 <col className="w-24" />
                 <col />
                 <col className="w-32" />
-                <col className="w-24" />
+                <col className="w-44" />
                 <col className="w-28" />
                 <col className="w-44" />
               </colgroup>
@@ -222,8 +222,8 @@ export default function AdminCrawledJobsClient() {
                   <th className="whitespace-nowrap py-2 pr-4 font-semibold">상태</th>
                   <th className="py-2 pr-4 font-semibold">제목</th>
                   <th className="whitespace-nowrap py-2 pr-4 font-semibold">회사</th>
-                  <th className="whitespace-nowrap py-2 pr-4 font-semibold">수집 소스</th>
-                  <th className="whitespace-nowrap py-2 pr-4 font-semibold">수집일</th>
+                  <th className="whitespace-nowrap py-2 pr-6 font-semibold">수집 소스</th>
+                  <th className="whitespace-nowrap py-2 pl-2 pr-4 font-semibold">수집일</th>
                   <th className="whitespace-nowrap py-2 font-semibold">관리</th>
                 </tr>
               </thead>
@@ -273,8 +273,15 @@ export default function AdminCrawledJobsClient() {
                       >
                         {job.companyName}
                       </td>
-                      <td className="whitespace-nowrap py-2.5 pr-4 align-middle text-muted">{job.sourceName}</td>
-                      <td className="whitespace-nowrap py-2.5 pr-4 align-middle text-muted">{formatDate(job.crawledAt)}</td>
+                      <td
+                        className="min-w-0 max-w-[11rem] truncate py-2.5 pr-6 align-middle text-muted"
+                        title={job.sourceName}
+                      >
+                        {job.sourceName}
+                      </td>
+                      <td className="whitespace-nowrap py-2.5 pl-2 pr-4 align-middle text-muted">
+                        {formatDate(job.crawledAt)}
+                      </td>
                       <td className="whitespace-nowrap py-2.5 align-middle">
                         <div className="flex flex-nowrap items-center gap-1.5">
                           {canViewOnSite ? (

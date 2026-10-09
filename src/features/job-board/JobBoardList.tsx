@@ -24,6 +24,8 @@ type JobBoardListProps = {
   showLoadMore?: boolean;
   listMoreHref?: string;
   hideNewSectionHeader?: boolean;
+  /** 서버에서 미리 불러온 첫 페이지(메인 최근 공고 등) */
+  prefetchedItems?: CrawledJobListItem[];
 };
 
 const EMPTY: CrawledJobListItem[] = [];
@@ -80,16 +82,17 @@ export default function JobBoardList({
   showLoadMore = true,
   listMoreHref,
   hideNewSectionHeader = false,
+  prefetchedItems,
 }: JobBoardListProps) {
   const { user } = useAuth();
   const [filters, setFilters] = useState<JobBoardFilterState>(INITIAL_FILTERS);
-  const [items, setItems] = useState<CrawledJobListItem[]>(EMPTY);
+  const [items, setItems] = useState<CrawledJobListItem[]>(prefetchedItems ?? EMPTY);
   const [todayItems, setTodayItems] = useState<CrawledJobListItem[]>(EMPTY);
   const [todayDate, setTodayDate] = useState('');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => (prefetchedItems?.length ?? 0) === 0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [todayLoading, setTodayLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -118,6 +121,17 @@ export default function JobBoardList({
     () => `${mode}\0${user?.uid ?? ''}\0${page}\0${pageSize}\0${mainListQuery}`,
     [mode, user?.uid, page, pageSize, mainListQuery],
   );
+
+  const canUsePrefetchedOnly = useMemo(() => {
+    if (!prefetchedItems?.length || page !== 1 || mode !== 'all' || todayOnly) return false;
+    return (
+      filters.q === '' &&
+      filters.quickFilter === 'all' &&
+      filters.employmentTypes.length === 0 &&
+      filters.roles.length === 0 &&
+      filters.regions.length === 0
+    );
+  }, [prefetchedItems, page, mode, todayOnly, filters]);
 
   const resetList = useCallback(() => {
     setFilters(INITIAL_FILTERS);
@@ -196,9 +210,10 @@ export default function JobBoardList({
 
     async function load() {
       const isLoadMore = page > 1;
+      const silentRefresh = canUsePrefetchedOnly && !isLoadMore;
       if (isLoadMore) {
         setLoadingMore(true);
-      } else {
+      } else if (!silentRefresh) {
         setLoading(true);
       }
       setError(null);
@@ -280,7 +295,7 @@ export default function JobBoardList({
 
     void load();
     return () => controller.abort();
-  }, [mainFetchKey]);
+  }, [mainFetchKey, canUsePrefetchedOnly]);
 
   const countLabel = useMemo(() => {
     if (loading) return '불러오는 중…';

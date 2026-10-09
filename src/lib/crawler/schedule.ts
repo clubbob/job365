@@ -5,8 +5,12 @@ export const CRAWL_SCHEDULE = {
   timezone: 'Asia/Seoul',
   localTime: '06:00',
   cronUtc: CRAWL_CRON_UTC,
-  label: '매일 06:00 (한국 시간, 중견기업은 일별 배치 순환)',
+  label: '매일 06:00 (한국 시간), GitHub Actions 1회',
+  /** 관리자·안내용. 자동 수집은 Vercel이 아니라 GitHub에서 돌아 서버 비용을 줄입니다. */
+  detail:
+    '대기업·계열 채용 사이트는 매일 전부 수집합니다. 중견기업은 연결된 채용 URL을 하루 900곳씩 순환해 7일 안에 전체 한 바퀴를 돕니다.',
   frequency: 'daily',
-  /** 전체 수집은 수 분 걸려 Vercel 서버리스(최대 60초)로는 완료하기 어렵습니다. GitHub Actions에서 실행합니다. */
   runner: 'GitHub Actions',
+  maxRunnerMinutes: 120,
+  midSizedSitesPerRun: 900,
 } as const;

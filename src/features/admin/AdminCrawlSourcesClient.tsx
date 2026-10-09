@@ -94,17 +94,17 @@ export default function AdminCrawlSourcesClient() {
     }
   }
 
-  if (loading && !data) {
-    return <p className="text-sm text-muted">불러오는 중…</p>;
-  }
-
   if (!data) {
+    if (loading) {
+      return <p className="text-sm text-muted">불러오는 중…</p>;
+    }
     return <p className="text-sm text-red-700">{error || '채용 공고 회사 목록을 불러오지 못했습니다.'}</p>;
   }
 
   return (
     <JobCompaniesPanel
       data={data}
+      loading={loading}
       error={error}
       busyKey={pendingKey}
       onUpdateSource={(sourceId, patch, confirmMessage) => void updateSource(sourceId, patch, confirmMessage)}

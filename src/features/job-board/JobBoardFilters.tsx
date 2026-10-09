@@ -53,7 +53,7 @@ export default function JobBoardFilters({
         type="search"
         value={value.q}
         onChange={(e) => patch({ q: e.target.value })}
-        placeholder="회사명, 직무, 지역 검색"
+        placeholder="회사명, 공고 제목, 직무, 지역 검색"
         className={searchClassName}
       />
 

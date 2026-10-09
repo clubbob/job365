@@ -1,3 +1,4 @@
+import { isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
 import type { CrawledJob } from '@/types/crawled-job';
 
 export function htmlToPlainText(html: string): string {
@@ -23,14 +24,20 @@ export function isInvalidJobDescription(description: string): boolean {
   return false;
 }
 
+export function isInvalidJobTitle(title: string | null | undefined): boolean {
+  const trimmed = title?.trim() ?? '';
+  if (!trimmed) return true;
+  return !isLikelyJobTitle(trimmed);
+}
+
 /** 채용 공고 목록·상세에 노출할 수 있는 공고 */
 export function isBrowsableCrawledJob(job: Pick<CrawledJob, 'title' | 'description' | 'status'>): boolean {
   if (job.status !== 'active') return false;
-  if (!job.title?.trim()) return false;
+  if (isInvalidJobTitle(job.title)) return false;
   return !isInvalidJobDescription(job.description);
 }
 
 export function shouldPersistCrawledJob(job: Pick<CrawledJob, 'title' | 'description'>): boolean {
-  if (!job.title?.trim()) return false;
+  if (isInvalidJobTitle(job.title)) return false;
   return !isInvalidJobDescription(job.description);
 }

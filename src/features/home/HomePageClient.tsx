@@ -3,8 +3,13 @@
 import HomeScreenBanner from '@/components/ads/HomeScreenBanner';
 import JobBoardList from '@/features/job-board/JobBoardList';
 import { JOB_HOME_PAGE_SIZE } from '@/lib/job-board/constants';
+import type { CrawledJobListItem } from '@/types/crawled-job';
 
-export default function HomePageClient() {
+type HomePageClientProps = {
+  prefetchedRecentJobs?: CrawledJobListItem[];
+};
+
+export default function HomePageClient({ prefetchedRecentJobs }: HomePageClientProps) {
   return (
     <div className="flex flex-col gap-5">
       <HomeScreenBanner />
@@ -15,6 +20,7 @@ export default function HomePageClient() {
         showCount={false}
         showLoadMore={false}
         pageSize={JOB_HOME_PAGE_SIZE}
+        prefetchedItems={prefetchedRecentJobs}
       />
     </div>
   );

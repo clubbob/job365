@@ -54,31 +54,24 @@ export default function AdminHeader() {
         )}
 
         <div className="ml-auto flex items-center gap-2">
+          <Link
+            href="/"
+            className="rounded-lg px-3.5 py-2 text-sm font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-foreground"
+          >
+            사이트
+          </Link>
           {loading ? (
             <span className="text-sm text-muted">확인 중…</span>
           ) : loggedIn ? (
-            <>
-              <Link
-                href="/admin"
-                className={cn(
-                  'rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors',
-                  pathname === '/admin'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-muted hover:bg-neutral-100 hover:text-foreground',
-                )}
-              >
-                관리자
-              </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  void logout();
-                }}
-                className="rounded-lg px-3.5 py-2 text-sm font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-foreground"
-              >
-                로그아웃
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={() => {
+                void logout();
+              }}
+              className="rounded-lg px-3.5 py-2 text-sm font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-foreground"
+            >
+              로그아웃
+            </button>
           ) : null}
         </div>
       </div>

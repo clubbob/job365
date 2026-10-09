@@ -15,7 +15,7 @@ import { fetchRecruiterNoticeCandidates, type RecruiterNoticeCandidate } from '@
 import { fetchHanwhainRecruitDetail, parseHanwhainRtSeq } from '@/lib/crawler/hanwha-career-api';
 import { fetchTossCareerCandidates } from '@/lib/crawler/toss-career-api';
 import { isLikelyJobPosting, isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
-import { isInvalidJobDescription } from '@/lib/crawler/job-quality';
+import { isInvalidJobDescription, isInvalidJobTitle } from '@/lib/crawler/job-quality';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 import {
   buildDescription,
@@ -240,7 +240,11 @@ function walkJsonForCandidates(
               ? record.date
               : undefined;
 
-      if (isLikelyJobPosting(title, applyUrl, config.careersUrl) || recruitKeys || (id && detailUrlPrefix)) {
+      if (
+        isLikelyJobPosting(title, applyUrl, config.careersUrl) ||
+        (recruitKeys && isLikelyJobTitle(title)) ||
+        (id && detailUrlPrefix && isLikelyJobPosting(title, applyUrl, config.careersUrl))
+      ) {
         seen.add(applyUrl);
         candidates.push({
           title: normalizeJobTitle(title),
@@ -600,6 +604,7 @@ async function buildJobsFromCandidates(
       hasListDescription || jsonDetail ? null : await fetchJobDetail(candidate.applyUrl, config.careersUrl);
     const detail = jsonDetail ?? htmlDetail;
     const title = normalizeJobTitle(detail?.title ?? candidate.title);
+    if (isInvalidJobTitle(title)) return;
     const companyName = detail?.companyName ?? candidate.companyName;
     const description =
       candidate.listDescription && !isInvalidJobDescription(candidate.listDescription)

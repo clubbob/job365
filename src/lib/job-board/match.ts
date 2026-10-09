@@ -17,21 +17,32 @@ function overlaps<T extends string>(selected: T[], values: T[]): boolean {
   return selected.some((item) => values.includes(item));
 }
 
-function matchesKeyword(job: CrawledJobListItem, keyword: string): boolean {
+/** 채용 공고 목록·관리자 수집 공고 검색 (공고 제목·회사·직무·지역·소스) */
+export function matchesCrawledJobKeyword(
+  job: Pick<CrawledJobListItem, 'title' | 'companyName' | 'sourceName' | 'roles' | 'regions'> & {
+    sourceId?: string;
+  },
+  keyword: string,
+): boolean {
   const q = keyword.trim().toLowerCase();
   if (!q) return true;
 
   const haystack = [
-    job.companyName,
     job.title,
+    job.companyName,
+    job.sourceName,
+    job.sourceId ?? '',
     ...job.roles,
     ...job.regions,
-    job.sourceName,
   ]
     .join(' ')
     .toLowerCase();
 
   return haystack.includes(q);
+}
+
+function matchesKeyword(job: CrawledJobListItem, keyword: string): boolean {
+  return matchesCrawledJobKeyword(job, keyword);
 }
 
 export function jobMatchesBoardFilters(job: CrawledJobListItem, filters: JobBoardFilters): boolean {

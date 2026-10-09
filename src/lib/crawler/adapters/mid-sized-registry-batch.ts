@@ -71,7 +71,7 @@ async function crawlOneRecord(record: {
 function selectCareersConfigBatch(configs: ReturnType<typeof getMidSizedCareersConfigs>) {
   const batchSize = Math.max(
     1,
-    Number(process.env.CRAWL_MID_SIZED_DB_BATCH_SIZE ?? process.env.CRAWL_MID_SIZED_BATCH_SIZE ?? 10_000) || 10_000,
+    Number(process.env.CRAWL_MID_SIZED_DB_BATCH_SIZE ?? process.env.CRAWL_MID_SIZED_BATCH_SIZE ?? 900) || 900,
   );
   if (configs.length <= batchSize) return configs;
   const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);

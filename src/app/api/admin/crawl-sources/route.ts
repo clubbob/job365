@@ -9,7 +9,7 @@ import {
   markCrawledJobsClosed,
 } from '@/lib/crawled-jobs-server';
 import { getCrawlerCompanies } from '@/lib/crawler/companies';
-import { buildJobCompaniesPayload } from '@/lib/job-companies-server';
+import { buildJobCompaniesPayload, invalidateJobCompaniesPayloadCache } from '@/lib/job-companies-server';
 import { firebaseAdminListFields, isFirebaseAdminReady } from '@/lib/firebaseAdmin';
 
 export async function GET() {
@@ -37,8 +37,6 @@ export async function GET() {
           companyDisplayDisabledCount: 0,
         },
         groups: [],
-        standaloneSources: [],
-        midSizedSources: [],
         extraSources: [],
         crawlMeta: {
           enterpriseCrawlSources: 0,
@@ -121,6 +119,7 @@ export async function PATCH(request: Request) {
         await markCrawledJobsClosed(activeIds, new Date().toISOString());
       }
       invalidateCrawledJobsListCache();
+      invalidateJobCompaniesPayloadCache();
 
       return NextResponse.json({
         ok: true,
@@ -141,6 +140,7 @@ export async function PATCH(request: Request) {
       await markCrawledJobsClosed(activeIds, new Date().toISOString());
     }
     invalidateCrawledJobsListCache();
+    invalidateJobCompaniesPayloadCache();
 
     return NextResponse.json({
       ok: true,

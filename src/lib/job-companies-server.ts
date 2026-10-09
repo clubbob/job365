@@ -6,10 +6,7 @@ import {
 import { listCrawlSourcePolicies, type CrawlSourcePolicy } from '@/lib/crawl-source-policy-server';
 import { countCrawlerCompaniesByTier, getCrawlerCompanies, type CrawlerCompany } from '@/lib/crawler/companies';
 import { countCrawlTargetsOnDisk } from '@/lib/mid-sized-companies/crawl-targets-map';
-import {
-  countMidSizedWithCareersUrl,
-  getUniqueMidSizedRegistryForCrawl,
-} from '@/lib/mid-sized-companies/registry-for-crawl';
+import { countMidSizedCareersConfigs } from '@/lib/crawler/mid-sized-careers-urls';
 import { getMidSizedRegistryStats, type MidSizedRegistryStats } from '@/lib/mid-sized-companies-server';
 import {
   buildEnterpriseGroupRows,
@@ -38,6 +35,8 @@ export type JobCompanySourceView = {
 
 export type JobCompanyGroupView = EnterpriseGroupRow & {
   source: JobCompanySourceView | null;
+  /** API 응답에서 계열사 목록을 줄였을 때 전체 건수 */
+  discoveredAffiliateTotal?: number;
 };
 
 export type JobCompaniesSummary = ReturnType<typeof summarizeEnterpriseGroupRows> & {
@@ -59,12 +58,40 @@ export type JobCompaniesCrawlMeta = {
 export type JobCompaniesPayload = {
   summary: JobCompaniesSummary;
   groups: JobCompanyGroupView[];
-  /** 중견·기타 등 기업집단에 묶이지 않은 수집 소스 전체 */
-  standaloneSources: JobCompanySourceView[];
-  midSizedSources: JobCompanySourceView[];
   extraSources: JobCompanySourceView[];
   crawlMeta: JobCompaniesCrawlMeta;
 };
+
+const JOB_COMPANIES_PAYLOAD_TTL_MS = 90_000;
+const AFFILIATES_IN_PAYLOAD_MAX = 40;
+
+let jobCompaniesPayloadCache: {
+  expiresAt: number;
+  includeDisplayDisabled: boolean;
+  data: JobCompaniesPayload;
+} | null = null;
+
+export function invalidateJobCompaniesPayloadCache(): void {
+  jobCompaniesPayloadCache = null;
+}
+
+function capAffiliatesForPayload(affiliates: DiscoveredAffiliate[]): {
+  affiliates: DiscoveredAffiliate[];
+  total: number;
+} {
+  const total = affiliates.length;
+  if (total <= AFFILIATES_IN_PAYLOAD_MAX) {
+    return { affiliates, total };
+  }
+  const capped = [...affiliates]
+    .sort(
+      (a, b) =>
+        b.activeJobCount - a.activeJobCount ||
+        a.companyName.localeCompare(b.companyName, 'ko'),
+    )
+    .slice(0, AFFILIATES_IN_PAYLOAD_MAX);
+  return { affiliates: capped, total };
+}
 
 function defaultPolicy(): JobCompanySourcePolicyView {
   return {
@@ -168,6 +195,14 @@ function resolveAffiliateJobCount(
 export async function buildJobCompaniesPayload(options: {
   includeDisplayDisabled: boolean;
 }): Promise<JobCompaniesPayload> {
+  if (
+    jobCompaniesPayloadCache &&
+    jobCompaniesPayloadCache.expiresAt > Date.now() &&
+    jobCompaniesPayloadCache.includeDisplayDisabled === options.includeDisplayDisabled
+  ) {
+    return jobCompaniesPayloadCache.data;
+  }
+
   const [{ discoveredBySource, jobCountsBySource }, policies, companyPolicies] = await Promise.all([
     getCrawledJobSourceStats({ skipDisplayFilters: options.includeDisplayDisabled }),
     listCrawlSourcePolicies(),
@@ -197,11 +232,12 @@ export async function buildJobCompaniesPayload(options: {
     }
 
     const counts = resolveAffiliateJobCount(affiliates, row.crawlStatus);
+    const cappedAffiliates = capAffiliatesForPayload(counts.affiliates);
     const source = crawler
       ? toSourceView(
           crawler,
           counts.activeJobCount,
-          counts.affiliates,
+          cappedAffiliates.affiliates,
           policyMap.get(crawler.sourceId),
         )
       : null;
@@ -211,7 +247,8 @@ export async function buildJobCompaniesPayload(options: {
 
     return {
       ...row,
-      discoveredAffiliates: counts.affiliates,
+      discoveredAffiliates: cappedAffiliates.affiliates,
+      discoveredAffiliateTotal: cappedAffiliates.total,
       activeJobCount,
       crawlStatus: source?.policy.displayDisabled && !options.includeDisplayDisabled ? 'empty' : counts.crawlStatus,
       source,
@@ -228,11 +265,12 @@ export async function buildJobCompaniesPayload(options: {
       );
       const visible = options.includeDisplayDisabled ? affiliates : visibleAffiliates(affiliates);
       const activeJobCount = visible.reduce((sum, affiliate) => sum + affiliate.activeJobCount, 0);
+      const cappedAffiliates = capAffiliatesForPayload(visible);
 
       return toSourceView(
         company,
         activeJobCount,
-        visible,
+        cappedAffiliates.affiliates,
         policyMap.get(company.sourceId),
       );
     });
@@ -251,11 +289,6 @@ export async function buildJobCompaniesPayload(options: {
     'work24-mid-sized-batch-careers',
   ]);
 
-  const filteredMidSized = filteredStandalone.filter((source) => {
-    if (MID_SIZED_BATCH_SOURCE_IDS.has(source.sourceId)) return false;
-    const crawler = crawlerBySourceId.get(source.sourceId);
-    return crawler?.tier === 'mid-sized';
-  });
   const filteredExtra = filteredStandalone.filter((source) => {
     const crawler = crawlerBySourceId.get(source.sourceId);
     return crawler?.tier !== 'mid-sized';
@@ -263,14 +296,11 @@ export async function buildJobCompaniesPayload(options: {
 
   const tierCounts = countCrawlerCompaniesByTier();
   const midSizedRegistry = await getMidSizedRegistryStats();
-  const registryForCrawl = getUniqueMidSizedRegistryForCrawl();
-  const midSizedLinkedFromDb = countMidSizedWithCareersUrl(registryForCrawl);
+  const midSizedLinkedFromDb = countMidSizedCareersConfigs();
 
-  return {
+  const payload: JobCompaniesPayload = {
     summary: buildSummary(groups, standaloneSources, companyPolicyMap),
     groups: filteredGroups,
-    standaloneSources: filteredStandalone,
-    midSizedSources: filteredMidSized,
     extraSources: filteredExtra,
     crawlMeta: {
       enterpriseCrawlSources: tierCounts.enterprise,
@@ -280,4 +310,12 @@ export async function buildJobCompaniesPayload(options: {
       midSizedRegistry,
     },
   };
+
+  jobCompaniesPayloadCache = {
+    expiresAt: Date.now() + JOB_COMPANIES_PAYLOAD_TTL_MS,
+    includeDisplayDisabled: options.includeDisplayDisabled,
+    data: payload,
+  };
+
+  return payload;
 }

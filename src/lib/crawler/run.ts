@@ -1,6 +1,12 @@
 import { isCompanyCrawlDisabled } from '@/lib/crawl-company-policy-server';
 import { isCrawlDisabled } from '@/lib/crawl-source-policy-server';
-import { closeExpiredCrawledJobs, listActiveJobIdsBySource, markCrawledJobsClosed, upsertCrawledJob } from '@/lib/crawled-jobs-server';
+import {
+  closeExpiredCrawledJobs,
+  invalidateCrawledJobsListCache,
+  listActiveJobIdsBySource,
+  markCrawledJobsClosed,
+  upsertCrawledJob,
+} from '@/lib/crawled-jobs-server';
 import { closeBrowserCrawlSession } from '@/lib/crawler/browser-page-crawl';
 import { pauseBetweenCrawlSources } from '@/lib/crawler/crawl-throttle';
 import { isCareersUrlRobotsAllowed } from '@/lib/crawler/robots';
@@ -156,6 +162,10 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
 
     const expiredClosed = await closeExpiredCrawledJobs(getKoreaDateLocalToday());
     totalClosed += expiredClosed;
+
+    if (totalUpserted > 0 || totalClosed > 0) {
+      invalidateCrawledJobsListCache();
+    }
 
     const finishedAt = new Date().toISOString();
     const run: CrawlRunSummary = {

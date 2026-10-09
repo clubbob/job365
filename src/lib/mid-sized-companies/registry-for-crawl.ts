@@ -14,7 +14,7 @@ export function getUniqueMidSizedRegistryForCrawl(): MidSizedRegistryCrawlRecord
 export function selectMidSizedDbBatch(records: MidSizedRegistryCrawlRecord[]): MidSizedRegistryCrawlRecord[] {
   const batchSize = Math.max(
     1,
-    Number(process.env.CRAWL_MID_SIZED_DB_BATCH_SIZE ?? process.env.CRAWL_MID_SIZED_BATCH_SIZE ?? 500) || 500,
+    Number(process.env.CRAWL_MID_SIZED_DB_BATCH_SIZE ?? process.env.CRAWL_MID_SIZED_BATCH_SIZE ?? 900) || 900,
   );
   if (records.length <= batchSize) return records;
 

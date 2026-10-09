@@ -2,6 +2,22 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
+import {
+  AdminCompanyRegistrySearchAndFilters,
+  AdminCompanyRegistryStatGrid,
+  AdminCompanyRegistryTableHead,
+  AdminListPagination,
+  AdminListResultMeta,
+  COMPANY_REGISTRY_EMPTY_LIST_MESSAGE,
+  COMPANY_REGISTRY_LIST_CARD_DESCRIPTION,
+  COMPANY_REGISTRY_STAT_EMPTY,
+  RegistryCareersUrlLink,
+  RegistryDetailButton,
+  RegistryTableEmptyCell,
+  adminRegistryTableClassName,
+  adminRegistryTableWrapClassName,
+  formatCompanyRegistryResultMeta,
+} from '@/features/admin/AdminRegistryListChrome';
 
 type CareersDiscoveryStatus = 'pending' | 'found' | 'not_found';
 
@@ -86,104 +102,48 @@ export default function MidSizedRegistryBrowser() {
     setOffset(0);
   }, [query, activeOnly, linkedOnly, notFoundOnly, pendingOnly]);
 
+  const resultTotal = data?.total ?? 0;
+
   return (
-    <Card title="중견기업 명단 (고유 회사)">
-      <p className="mb-3 text-sm text-muted">
-        중견기업정보마당 원본은 발급 이력이 여러 행입니다. 사업자번호 기준으로 한 회사씩 묶어 파악합니다.
-      </p>
+    <Card title="목록 검색" description={COMPANY_REGISTRY_LIST_CARD_DESCRIPTION}>
+      <AdminCompanyRegistryStatGrid
+        uniqueCompanies={
+          data ? `${data.uniqueCompanyCount.toLocaleString('ko-KR')}곳` : COMPANY_REGISTRY_STAT_EMPTY
+        }
+        linkedUrl={data ? `${data.linkedCount.toLocaleString('ko-KR')}곳` : COMPANY_REGISTRY_STAT_EMPTY}
+        validCert={
+          data ? `${data.activeCertificateCount.toLocaleString('ko-KR')}곳` : COMPANY_REGISTRY_STAT_EMPTY
+        }
+      />
 
-      {data ? (
-        <div className="mb-4 grid gap-2 rounded-lg border border-border bg-neutral-50 px-3 py-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-          <p>
-            <span className="text-muted">고유 기업 </span>
-            <span className="font-semibold text-foreground">{data.uniqueCompanyCount.toLocaleString('ko-KR')}곳</span>
-          </p>
-          <p>
-            <span className="text-muted">유효 인증 </span>
-            <span className="font-semibold text-foreground">
-              {data.activeCertificateCount.toLocaleString('ko-KR')}곳
-            </span>
-          </p>
-          <p>
-            <span className="text-muted">채용 URL </span>
-            <span className="font-semibold text-foreground">{data.linkedCount.toLocaleString('ko-KR')}곳</span>
-          </p>
-          <p>
-            <span className="text-muted">탐색 </span>
-            <span className="font-semibold text-foreground">
-              완료 {data.probedCount.toLocaleString('ko-KR')} · 미탐색 {data.pendingCount.toLocaleString('ko-KR')}
-            </span>
-          </p>
-        </div>
-      ) : null}
+      <AdminCompanyRegistrySearchAndFilters
+        searchId="mid-sized-registry-search"
+        query={query}
+        onQueryChange={setQuery}
+        filters={{
+          activeOnly,
+          linkedOnly,
+          notFoundOnly,
+          pendingOnly,
+          onActiveOnly: setActiveOnly,
+          onLinkedOnly: setLinkedOnly,
+          onNotFoundOnly: setNotFoundOnly,
+          onPendingOnly: setPendingOnly,
+        }}
+      />
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="회사명·사업자번호 검색"
-          className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground sm:min-w-[14rem]"
-        />
-        <label className="flex items-center gap-2 text-sm text-muted">
-          <input
-            type="checkbox"
-            checked={activeOnly}
-            onChange={(event) => setActiveOnly(event.target.checked)}
-            className="rounded border-border"
-          />
-          유효 인증만
-        </label>
-        <label className="flex items-center gap-2 text-sm text-muted">
-          <input
-            type="checkbox"
-            checked={linkedOnly}
-            onChange={(event) => setLinkedOnly(event.target.checked)}
-            className="rounded border-border"
-          />
-          URL 연결만
-        </label>
-        <label className="flex items-center gap-2 text-sm text-muted">
-          <input
-            type="checkbox"
-            checked={notFoundOnly}
-            onChange={(event) => setNotFoundOnly(event.target.checked)}
-            className="rounded border-border"
-          />
-          탐색 완료(미연결)
-        </label>
-        <label className="flex items-center gap-2 text-sm text-muted">
-          <input
-            type="checkbox"
-            checked={pendingOnly}
-            onChange={(event) => setPendingOnly(event.target.checked)}
-            className="rounded border-border"
-          />
-          미탐색만
-        </label>
-      </div>
+      <AdminListResultMeta>
+        {data ? formatCompanyRegistryResultMeta(resultTotal, query) : formatCompanyRegistryResultMeta(0, query)}
+      </AdminListResultMeta>
 
-      {data ? (
-        <p className="mb-3 text-xs text-subtle">
-          마당 원본 {data.rawRowCount.toLocaleString('ko-KR')}행 · 조회 결과 {data.total.toLocaleString('ko-KR')}건
-        </p>
-      ) : null}
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
       {loading ? <p className="text-sm text-muted">불러오는 중…</p> : null}
 
       {!loading && data && data.items.length > 0 ? (
         <>
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full min-w-[40rem] text-left text-sm">
-              <thead className="border-b border-border bg-neutral-50 text-xs text-muted">
-                <tr>
-                  <th className="px-3 py-2 font-semibold">기업명</th>
-                  <th className="px-3 py-2 font-semibold">사업자번호</th>
-                  <th className="px-3 py-2 font-semibold">인증</th>
-                  <th className="px-3 py-2 font-semibold">탐색</th>
-                  <th className="px-3 py-2 font-semibold">채용 URL</th>
-                </tr>
-              </thead>
+          <div className={adminRegistryTableWrapClassName}>
+            <table className={adminRegistryTableClassName}>
+              <AdminCompanyRegistryTableHead />
               <tbody className="divide-y divide-border">
                 {data.items.map((row) => (
                   <tr key={row.businessNumber} className="text-foreground">
@@ -191,19 +151,14 @@ export default function MidSizedRegistryBrowser() {
                     <td className="px-3 py-2 text-muted">{row.businessNumber}</td>
                     <td className="px-3 py-2 text-muted">{row.active ? '유효' : '만료'}</td>
                     <td className="px-3 py-2 text-muted">{discoveryLabel(row.careersDiscoveryStatus)}</td>
+                    <td className="px-3 py-2 text-muted">
+                      <RegistryTableEmptyCell />
+                    </td>
                     <td className="px-3 py-2">
-                      {row.careersUrl ? (
-                        <a
-                          href={row.careersUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary underline decoration-primary/30 underline-offset-[3px]"
-                        >
-                          열기
-                        </a>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
+                      <RegistryCareersUrlLink url={row.careersUrl} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <RegistryDetailButton disabled />
                     </td>
                   </tr>
                 ))}
@@ -211,34 +166,20 @@ export default function MidSizedRegistryBrowser() {
             </table>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
-            <span>
-              {data.offset + 1}–{Math.min(data.offset + data.limit, data.total)} / {data.total.toLocaleString('ko-KR')}
-            </span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={data.offset === 0}
-                onClick={() => setOffset((value) => Math.max(0, value - PAGE_SIZE))}
-                className="rounded-lg border border-border-strong bg-surface px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-              >
-                이전
-              </button>
-              <button
-                type="button"
-                disabled={!data.hasMore}
-                onClick={() => setOffset((value) => value + PAGE_SIZE)}
-                className="rounded-lg border border-border-strong bg-surface px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-              >
-                다음
-              </button>
-            </div>
-          </div>
+          <AdminListPagination
+            rangeStart={data.offset + 1}
+            rangeEnd={Math.min(data.offset + data.limit, data.total)}
+            total={data.total}
+            prevDisabled={data.offset === 0}
+            nextDisabled={!data.hasMore}
+            onPrev={() => setOffset((value) => Math.max(0, value - PAGE_SIZE))}
+            onNext={() => setOffset((value) => value + PAGE_SIZE)}
+          />
         </>
       ) : null}
 
       {!loading && data && data.items.length === 0 ? (
-        <p className="text-sm text-muted">조건에 맞는 기업이 없습니다.</p>
+        <p className="text-sm text-muted">{COMPANY_REGISTRY_EMPTY_LIST_MESSAGE}</p>
       ) : null}
     </Card>
   );

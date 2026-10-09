@@ -9,6 +9,7 @@ on:
 jobs:
   crawl:
     runs-on: ubuntu-latest
+    # 비용 최소: 하루 1회·최대 2시간 (GitHub Actions 분). Vercel 함수는 사용하지 않음.
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
@@ -33,4 +34,5 @@ jobs:
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           CRAWLER_USE_SAMPLES: 'false'
-          CRAWL_MID_SIZED_BATCH_SIZE: '10000'
+          CRAWL_MID_SIZED_BATCH_SIZE: '900'
+          CRAWL_MID_SIZED_DB_BATCH_SIZE: '900'

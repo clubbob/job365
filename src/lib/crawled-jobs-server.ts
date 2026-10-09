@@ -1,4 +1,4 @@
-import type { DocumentData, Timestamp } from 'firebase-admin/firestore';
+import type { DocumentData, QueryDocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
 import {
   COMPANY_SIZES,
   EMPLOYMENT_TYPES,
@@ -15,6 +15,7 @@ import { getDisplayDisabledCompanyKeys, isCompanyCrawlDisabled } from '@/lib/cra
 import { getDisplayDisabledSourceIds, isDisplayDisabled } from '@/lib/crawl-source-policy-server';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { isBrowsableCrawledJob, shouldPersistCrawledJob } from '@/lib/crawler/job-quality';
+import { matchesCrawledJobKeyword } from '@/lib/job-board/match';
 import type {
   CrawledJob,
   CrawledJobListItem,
@@ -23,13 +24,53 @@ import type {
 } from '@/types/crawled-job';
 
 const COLLECTION = 'crawledJobs';
-const LIST_CACHE_TTL_MS = 60_000;
+/** 사용자 목록·검색용 노출 가능 공고 캐시 TTL */
+const LIST_CACHE_TTL_MS = 120_000;
+/** 첫 페이지만 최근 active 문서를 소량 읽어 노출 공고를 채움 */
+const BROWSABLE_WINDOW_BATCH_SIZE = 48;
+const BROWSABLE_WINDOW_MAX_SCAN = 400;
+/** 관리자 목록 조회 시 description 등 대용량 필드 제외 */
+const ADMIN_LIST_SELECT_FIELDS = [
+  'companyName',
+  'title',
+  'sourceId',
+  'sourceName',
+  'employmentTypes',
+  'roles',
+  'regions',
+  'companySize',
+  'headcount',
+  'deadline',
+  'applyUrl',
+  'status',
+  'crawledAt',
+  'createdAt',
+  'closedAt',
+] as const;
 
 let listCache: { expiresAt: number; items: CrawledJobListItem[] } | null = null;
+let browsableJobsCache: { expiresAt: number; jobs: CrawledJob[] } | null = null;
+let browsableLoadPromise: Promise<CrawledJob[]> | null = null;
+let adminFullListCache: { expiresAt: number; jobs: CrawledJob[] } | null = null;
+let adminFullListLoadPromise: Promise<CrawledJob[]> | null = null;
+let adminJobsByStatusCache: Partial<
+  Record<CrawledJobStatus, { expiresAt: number; jobs: CrawledJob[] }>
+> = {};
+let adminJobsByStatusLoadPromise: Partial<Record<CrawledJobStatus, Promise<CrawledJob[]>>> = {};
 
 export function invalidateCrawledJobsListCache(): void {
   listCache = null;
+  browsableJobsCache = null;
+  browsableLoadPromise = null;
+  adminFullListCache = null;
+  adminFullListLoadPromise = null;
+  adminJobsByStatusCache = {};
+  adminJobsByStatusLoadPromise = {};
   sourceStatsCache = null;
+  browsableStatusCreatedAtIndexReady = null;
+  void import('@/lib/job-companies-server')
+    .then((mod) => mod.invalidateJobCompaniesPayloadCache())
+    .catch(() => undefined);
 }
 
 async function filterDisplayableJobs<T extends { sourceId: string; companyName: string }>(
@@ -145,6 +186,158 @@ async function filterBrowsableJobs(jobs: CrawledJob[]): Promise<CrawledJob[]> {
   return filterDisplayableJobs(active);
 }
 
+function isFirestoreIndexError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const code = (error as { code?: number | string }).code;
+  if (code === 9 || code === 'failed-precondition') return true;
+  const message = String((error as { message?: string }).message ?? '');
+  const details = String((error as { details?: string }).details ?? '');
+  return message.includes('requires an index') || details.includes('requires an index');
+}
+
+/** status+createdAt 복합 인덱스 없으면 윈도우 쿼리를 건너뜁니다 */
+let browsableStatusCreatedAtIndexReady: boolean | null = null;
+
+function isJobVisibleOnBoard(
+  job: CrawledJob,
+  hiddenSources: Set<string>,
+  hiddenCompanies: Set<string>,
+): boolean {
+  if (!isBrowsableCrawledJob(job)) return false;
+  if (hiddenSources.has(job.sourceId)) return false;
+  const companyKey = `${job.sourceId}::${job.companyName.trim()}`;
+  return !hiddenCompanies.has(companyKey);
+}
+
+/**
+ * 전체 active 스캔 없이 최근 순으로 일부만 읽어 페이지를 채웁니다 (메인·첫 페이지용).
+ */
+/**
+ * 복합 인덱스 없을 때: createdAt만 정렬해 최근 문서를 읽고 active·노출 가능 공고만 채웁니다.
+ */
+async function listBrowsableJobsByCreatedAtScan(
+  page: number,
+  pageSize: number,
+): Promise<{ items: CrawledJobListItem[]; total: number }> {
+  const db = getAdminFirestore();
+  if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
+
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.max(1, Math.min(pageSize, 50));
+  const start = (safePage - 1) * safePageSize;
+  const targetEnd = safePage * safePageSize;
+
+  const [hiddenSources, hiddenCompanies, countSnap] = await Promise.all([
+    getDisplayDisabledSourceIds(),
+    getDisplayDisabledCompanyKeys(),
+    db.collection(COLLECTION).where('status', '==', 'active').count().get(),
+  ]);
+
+  const collected: CrawledJob[] = [];
+  let lastDoc: QueryDocumentSnapshot<DocumentData> | null = null;
+  let scanned = 0;
+
+  while (collected.length < targetEnd && scanned < BROWSABLE_WINDOW_MAX_SCAN) {
+    let query = db
+      .collection(COLLECTION)
+      .orderBy('createdAt', 'desc')
+      .limit(BROWSABLE_WINDOW_BATCH_SIZE);
+    if (lastDoc) {
+      query = query.startAfter(lastDoc);
+    }
+
+    const snap = await query.get();
+    if (snap.empty) break;
+
+    scanned += snap.docs.length;
+    for (const doc of snap.docs) {
+      const job = fromDoc(doc.id, doc.data());
+      if (!job || job.status !== 'active') continue;
+      if (!isJobVisibleOnBoard(job, hiddenSources, hiddenCompanies)) continue;
+      collected.push(job);
+    }
+
+    lastDoc = snap.docs[snap.docs.length - 1] ?? null;
+    if (snap.docs.length < BROWSABLE_WINDOW_BATCH_SIZE) break;
+  }
+
+  const activeTotal = countSnap.data().count;
+  return {
+    items: collected.slice(start, start + safePageSize).map(toListItem),
+    total: Math.max(collected.length, activeTotal),
+  };
+}
+
+async function listBrowsableJobsWindow(
+  page: number,
+  pageSize: number,
+): Promise<{ items: CrawledJobListItem[]; total: number }> {
+  const db = getAdminFirestore();
+  if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
+
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.max(1, Math.min(pageSize, 50));
+  const targetEnd = safePage * safePageSize;
+  const start = (safePage - 1) * safePageSize;
+
+  if (browsableStatusCreatedAtIndexReady === false) {
+    return listBrowsableJobsByCreatedAtScan(page, pageSize);
+  }
+
+  try {
+    const [hiddenSources, hiddenCompanies, countSnap] = await Promise.all([
+      getDisplayDisabledSourceIds(),
+      getDisplayDisabledCompanyKeys(),
+      db.collection(COLLECTION).where('status', '==', 'active').count().get(),
+    ]);
+
+    const collected: CrawledJob[] = [];
+    let lastDoc: QueryDocumentSnapshot<DocumentData> | null = null;
+    let scanned = 0;
+
+    while (collected.length < targetEnd && scanned < BROWSABLE_WINDOW_MAX_SCAN) {
+      let query = db
+        .collection(COLLECTION)
+        .where('status', '==', 'active')
+        .orderBy('createdAt', 'desc')
+        .limit(BROWSABLE_WINDOW_BATCH_SIZE);
+      if (lastDoc) {
+        query = query.startAfter(lastDoc);
+      }
+
+      const snap = await query.get();
+      if (snap.empty) break;
+
+      scanned += snap.docs.length;
+      for (const doc of snap.docs) {
+        const job = fromDoc(doc.id, doc.data());
+        if (!job || !isJobVisibleOnBoard(job, hiddenSources, hiddenCompanies)) continue;
+        collected.push(job);
+      }
+
+      lastDoc = snap.docs[snap.docs.length - 1] ?? null;
+      if (snap.docs.length < BROWSABLE_WINDOW_BATCH_SIZE) break;
+    }
+
+    const activeTotal = countSnap.data().count;
+    const items = collected.slice(start, start + safePageSize).map(toListItem);
+    const total =
+      collected.length >= targetEnd || scanned >= BROWSABLE_WINDOW_MAX_SCAN
+        ? Math.max(collected.length, activeTotal)
+        : collected.length;
+
+    browsableStatusCreatedAtIndexReady = true;
+    return { items, total };
+  } catch (error) {
+    if (!isFirestoreIndexError(error)) throw error;
+    browsableStatusCreatedAtIndexReady = false;
+    console.warn(
+      '[crawled-jobs] browsable window needs status+createdAt index; using createdAt scan (deploy firestore.indexes.json to speed up)',
+    );
+    return listBrowsableJobsByCreatedAtScan(page, pageSize);
+  }
+}
+
 async function listFromFirestore(): Promise<CrawledJob[]> {
   const db = getAdminFirestore();
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
@@ -156,8 +349,66 @@ async function listFromFirestore(): Promise<CrawledJob[]> {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+/** 모집 중 공고만 조회 (마감·전체 스캔보다 작음) */
+async function listActiveFromFirestore(): Promise<CrawledJob[]> {
+  const db = getAdminFirestore();
+  if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
+
+  const snap = await db.collection(COLLECTION).where('status', '==', 'active').get();
+  return snap.docs
+    .map((doc) => fromDoc(doc.id, doc.data()))
+    .filter((item): item is CrawledJob => Boolean(item))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+/** 사용자 채용 목록·필터 검색용 (캐시·동시 요청 합침) */
+async function getBrowsableCrawledJobs(): Promise<CrawledJob[]> {
+  if (browsableJobsCache && browsableJobsCache.expiresAt > Date.now()) {
+    return browsableJobsCache.jobs;
+  }
+  if (browsableLoadPromise) {
+    return browsableLoadPromise;
+  }
+
+  browsableLoadPromise = (async () => {
+    const jobs = await filterBrowsableJobs(await listActiveFromFirestore());
+    const expiresAt = Date.now() + LIST_CACHE_TTL_MS;
+    browsableJobsCache = { expiresAt, jobs };
+    listCache = { expiresAt, items: jobs.map(toListItem) };
+    return jobs;
+  })();
+
+  try {
+    return await browsableLoadPromise;
+  } finally {
+    browsableLoadPromise = null;
+  }
+}
+
+/** 관리자 검색: 전체 수집 공고를 한 번 읽어 메모리에서 제목·회사 등으로 필터 */
+async function listAllCrawledJobsForAdminSearch(): Promise<CrawledJob[]> {
+  if (adminFullListCache && adminFullListCache.expiresAt > Date.now()) {
+    return adminFullListCache.jobs;
+  }
+  if (adminFullListLoadPromise) {
+    return adminFullListLoadPromise;
+  }
+
+  adminFullListLoadPromise = (async () => {
+    const jobs = await listFromFirestore();
+    adminFullListCache = { expiresAt: Date.now() + LIST_CACHE_TTL_MS, jobs };
+    return jobs;
+  })();
+
+  try {
+    return await adminFullListLoadPromise;
+  } finally {
+    adminFullListLoadPromise = null;
+  }
+}
+
 async function listBrowsableFromFirestore(): Promise<CrawledJob[]> {
-  return filterBrowsableJobs(await listFromFirestore());
+  return getBrowsableCrawledJobs();
 }
 
 function shouldUseSampleFallback(): boolean {
@@ -185,21 +436,18 @@ export type CrawledJobSourceStats = {
 let sourceStatsCache: { expiresAt: number; data: CrawledJobSourceStats; key: string } | null = null;
 const SOURCE_STATS_TTL_MS = 60_000;
 
-function buildSourceStats(jobs: CrawledJob[]): CrawledJobSourceStats {
+const SOURCE_STATS_SELECT_FIELDS = ['sourceId', 'companyName', 'status'] as const;
+
+function buildSourceStatsFromActiveRows(rows: Array<{ sourceId: string; companyName: string }>): CrawledJobSourceStats {
   const jobCountsBySource: Record<string, number> = {};
   const bySource = new Map<string, Map<string, number>>();
 
-  for (const job of jobs) {
-    if (job.status !== 'active') continue;
+  for (const row of rows) {
+    jobCountsBySource[row.sourceId] = (jobCountsBySource[row.sourceId] ?? 0) + 1;
 
-    jobCountsBySource[job.sourceId] = (jobCountsBySource[job.sourceId] ?? 0) + 1;
-
-    const companyName = job.companyName.trim();
-    if (!companyName) continue;
-
-    if (!bySource.has(job.sourceId)) bySource.set(job.sourceId, new Map());
-    const companies = bySource.get(job.sourceId)!;
-    companies.set(companyName, (companies.get(companyName) ?? 0) + 1);
+    if (!bySource.has(row.sourceId)) bySource.set(row.sourceId, new Map());
+    const companies = bySource.get(row.sourceId)!;
+    companies.set(row.companyName, (companies.get(row.companyName) ?? 0) + 1);
   }
 
   const discoveredBySource: Record<string, DiscoveredAffiliate[]> = {};
@@ -212,6 +460,35 @@ function buildSourceStats(jobs: CrawledJob[]): CrawledJobSourceStats {
   return { jobCountsBySource, discoveredBySource };
 }
 
+function buildSourceStats(jobs: CrawledJob[]): CrawledJobSourceStats {
+  return buildSourceStatsFromActiveRows(
+    jobs
+      .filter((job) => job.status === 'active')
+      .map((job) => ({ sourceId: job.sourceId, companyName: job.companyName.trim() }))
+      .filter((row) => row.companyName),
+  );
+}
+
+async function listActiveJobRowsForSourceStats(): Promise<Array<{ sourceId: string; companyName: string }>> {
+  const db = getAdminFirestore();
+  if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
+
+  const snap = await db
+    .collection(COLLECTION)
+    .where('status', '==', 'active')
+    .select(...SOURCE_STATS_SELECT_FIELDS)
+    .get();
+
+  const rows: Array<{ sourceId: string; companyName: string }> = [];
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    const sourceId = typeof data.sourceId === 'string' ? data.sourceId.trim() : '';
+    const companyName = typeof data.companyName === 'string' ? data.companyName.trim() : '';
+    if (sourceId && companyName) rows.push({ sourceId, companyName });
+  }
+  return rows;
+}
+
 /** 채용 사이트별 공고 건수·계열사를 한 번의 조회로 집계합니다. */
 export async function getCrawledJobSourceStats(options?: {
   skipDisplayFilters?: boolean;
@@ -221,9 +498,31 @@ export async function getCrawledJobSourceStats(options?: {
     return sourceStatsCache.data;
   }
 
-  const allJobs = (await listAllCrawledJobsForAggregation()).filter((job) => job.status === 'active');
-  const jobs = options?.skipDisplayFilters ? allJobs : await filterDisplayableJobs(allJobs);
-  const data = buildSourceStats(jobs);
+  let rows: Array<{ sourceId: string; companyName: string }>;
+  try {
+    rows = await listActiveJobRowsForSourceStats();
+  } catch (error) {
+    console.warn('[crawled-jobs] source stats select query failed, falling back to full scan', error);
+    const allJobs = (await listAllCrawledJobsForAggregation()).filter((job) => job.status === 'active');
+    const jobs = options?.skipDisplayFilters ? allJobs : await filterDisplayableJobs(allJobs);
+    const data = buildSourceStats(jobs);
+    sourceStatsCache = { expiresAt: Date.now() + SOURCE_STATS_TTL_MS, data, key: cacheKey };
+    return data;
+  }
+  if (!options?.skipDisplayFilters) {
+    const [hiddenSources, hiddenCompanies] = await Promise.all([
+      getDisplayDisabledSourceIds(),
+      getDisplayDisabledCompanyKeys(),
+    ]);
+    if (hiddenSources.size > 0 || hiddenCompanies.size > 0) {
+      rows = rows.filter((row) => {
+        if (hiddenSources.has(row.sourceId)) return false;
+        const companyKey = `${row.sourceId}::${row.companyName}`;
+        return !hiddenCompanies.has(companyKey);
+      });
+    }
+  }
+  const data = buildSourceStatsFromActiveRows(rows);
   sourceStatsCache = { expiresAt: Date.now() + SOURCE_STATS_TTL_MS, data, key: cacheKey };
   return data;
 }
@@ -264,9 +563,7 @@ function toAdminCrawledJobRow(job: CrawledJob, hidden: Set<string>): AdminCrawle
 }
 
 function matchesAdminCrawledJobQuery(job: CrawledJob, q: string): boolean {
-  const needle = q.trim().toLowerCase();
-  if (!needle) return true;
-  return [job.title, job.companyName, job.sourceName, job.sourceId].join(' ').toLowerCase().includes(needle);
+  return matchesCrawledJobKeyword(job, q);
 }
 
 function paginateAdminCrawledJobs(
@@ -301,6 +598,83 @@ function filterAdminCrawledJobs(
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+function jobsFromQueryDocs(docs: QueryDocumentSnapshot[]): CrawledJob[] {
+  return docs
+    .map((doc) => fromDoc(doc.id, doc.data()))
+    .filter((item): item is CrawledJob => Boolean(item));
+}
+
+/** 인덱스 없을 때만: status별 전체를 select로 한 번 읽고 캐시 (검색·폴백용) */
+async function listCrawledJobsByStatusForAdminCache(status: CrawledJobStatus): Promise<CrawledJob[]> {
+  const cached = adminJobsByStatusCache[status];
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.jobs;
+  }
+
+  const inFlight = adminJobsByStatusLoadPromise[status];
+  if (inFlight) return inFlight;
+
+  const load = (async () => {
+    const db = getAdminFirestore();
+    if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
+
+    const snap = await db
+      .collection(COLLECTION)
+      .where('status', '==', status)
+      .select(...ADMIN_LIST_SELECT_FIELDS)
+      .get();
+
+    const jobs = jobsFromQueryDocs(snap.docs).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    adminJobsByStatusCache[status] = { expiresAt: Date.now() + LIST_CACHE_TTL_MS, jobs };
+    return jobs;
+  })();
+
+  adminJobsByStatusLoadPromise[status] = load;
+  try {
+    return await load;
+  } finally {
+    delete adminJobsByStatusLoadPromise[status];
+  }
+}
+
+async function listAdminCrawledJobsByStatusPaged(
+  status: CrawledJobStatus,
+  page: number,
+  pageSize: number,
+): Promise<{ jobs: CrawledJob[]; total: number }> {
+  const db = getAdminFirestore();
+  if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
+
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.max(1, Math.min(pageSize, ADMIN_CRAWLED_JOBS_PAGE_SIZE));
+  const offset = (safePage - 1) * safePageSize;
+  const collection = db.collection(COLLECTION);
+  const filtered = collection.where('status', '==', status);
+
+  try {
+    const [totalSnap, pageSnap] = await Promise.all([
+      filtered.count().get(),
+      filtered
+        .orderBy('createdAt', 'desc')
+        .select(...ADMIN_LIST_SELECT_FIELDS)
+        .limit(offset + safePageSize)
+        .get(),
+    ]);
+
+    const total = totalSnap.data().count;
+    const jobs = jobsFromQueryDocs(pageSnap.docs.slice(offset));
+    return { jobs, total };
+  } catch (error) {
+    if (!isFirestoreIndexError(error)) throw error;
+    console.warn(
+      '[crawled-jobs] admin status page needs composite index, using cached status scan',
+      error,
+    );
+    const all = await listCrawledJobsByStatusForAdminCache(status);
+    return { jobs: all.slice(offset, offset + safePageSize), total: all.length };
+  }
+}
+
 /** 관리자용: 기본 모집 중·50건 페이지네이션. 검색어가 있으면 메모리 필터 후 페이지네이션 */
 export async function listCrawledJobsForAdminPage(
   page: number,
@@ -315,7 +689,11 @@ export async function listCrawledJobsForAdminPage(
 
   if (trimmedQ) {
     try {
-      const jobs = filterAdminCrawledJobs(await listFromFirestore(), status, trimmedQ);
+      const source =
+        status === 'active' || status === 'closed'
+          ? await listCrawledJobsByStatusForAdminCache(status)
+          : await listAllCrawledJobsForAdminSearch();
+      const jobs = filterAdminCrawledJobs(source, status, trimmedQ);
       if (jobs.length > 0 || !shouldUseSampleFallback()) {
         return paginateAdminCrawledJobs(jobs, hidden, safePage, safePageSize);
       }
@@ -341,43 +719,54 @@ export async function listCrawledJobsForAdminPage(
   }
 
   try {
-    if (status !== 'all') {
-      const snap = await db.collection(COLLECTION).where('status', '==', status).get();
-      const filtered = snap.docs
-        .map((doc) => fromDoc(doc.id, doc.data()))
-        .filter((item): item is CrawledJob => Boolean(item))
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const collection = db.collection(COLLECTION);
 
-      if (filtered.length === 0 && shouldUseSampleFallback()) {
+    if (status === 'all') {
+      const offset = (safePage - 1) * safePageSize;
+      const [totalSnap, pageSnap] = await Promise.all([
+        collection.count().get(),
+        collection
+          .orderBy('createdAt', 'desc')
+          .select(...ADMIN_LIST_SELECT_FIELDS)
+          .limit(offset + safePageSize)
+          .get(),
+      ]);
+
+      const total = totalSnap.data().count;
+
+      if (total === 0 && shouldUseSampleFallback()) {
         return paginateAdminCrawledJobs(filterAdminCrawledJobs(SAMPLE_CRAWLED_JOBS, status, ''), hidden, safePage, safePageSize);
       }
 
-      return paginateAdminCrawledJobs(filtered, hidden, safePage, safePageSize);
+      const jobs = jobsFromQueryDocs(pageSnap.docs.slice(offset)).map((job) =>
+        toAdminCrawledJobRow(job, hidden),
+      );
+
+      return {
+        jobs,
+        total,
+        page: safePage,
+        pageSize: safePageSize,
+        totalPages: Math.max(1, Math.ceil(total / safePageSize)),
+      };
     }
 
-    const totalSnap = await db.collection(COLLECTION).count().get();
-    const total = totalSnap.data().count;
+    const { jobs: statusJobs, total } = await listAdminCrawledJobsByStatusPaged(
+      status,
+      safePage,
+      safePageSize,
+    );
 
-    if (total === 0 && shouldUseSampleFallback()) {
+    if (statusJobs.length === 0 && total === 0 && shouldUseSampleFallback()) {
       return paginateAdminCrawledJobs(filterAdminCrawledJobs(SAMPLE_CRAWLED_JOBS, status, ''), hidden, safePage, safePageSize);
     }
 
-    const offset = (safePage - 1) * safePageSize;
-    const snap = await db.collection(COLLECTION).orderBy('createdAt', 'desc').limit(offset + safePageSize).get();
-    const jobs = snap.docs
-      .slice(offset)
-      .map((doc) => fromDoc(doc.id, doc.data()))
-      .filter((item): item is CrawledJob => Boolean(item))
-      .map((job) => toAdminCrawledJobRow(job, hidden));
-
-    const totalPages = Math.max(1, Math.ceil(total / safePageSize));
-
     return {
-      jobs,
+      jobs: statusJobs.map((job) => toAdminCrawledJobRow(job, hidden)),
       total,
       page: safePage,
       pageSize: safePageSize,
-      totalPages,
+      totalPages: Math.max(1, Math.ceil(total / safePageSize)),
     };
   } catch (error) {
     console.warn('[crawled-jobs] admin paged list failed', error);
@@ -403,11 +792,9 @@ export async function listCrawledJobs(): Promise<CrawledJobListItem[]> {
   }
 
   try {
-    const jobs = await listBrowsableFromFirestore();
+    const jobs = await getBrowsableCrawledJobs();
     if (jobs.length > 0) {
-      const items = jobs.map(toListItem);
-      listCache = { expiresAt: Date.now() + LIST_CACHE_TTL_MS, items };
-      return items;
+      return listCache?.items ?? jobs.map(toListItem);
     }
     if (!shouldUseSampleFallback()) return [];
   } catch (error) {
@@ -444,10 +831,19 @@ export async function listActiveCrawledJobsPage(
   const start = (safePage - 1) * safePageSize;
 
   try {
-    const db = getAdminFirestore();
-    if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
+    if (browsableJobsCache && browsableJobsCache.expiresAt > Date.now()) {
+      const jobs = browsableJobsCache.jobs;
+      return {
+        items: jobs.slice(start, start + safePageSize).map(toListItem),
+        total: jobs.length,
+      };
+    }
 
-    const browsable = await listBrowsableFromFirestore();
+    if (safePageSize <= 24) {
+      return await listBrowsableJobsWindow(safePage, safePageSize);
+    }
+
+    const browsable = await getBrowsableCrawledJobs();
     const items = browsable.slice(start, start + safePageSize).map(toListItem);
 
     return { items, total: browsable.length };
@@ -540,6 +936,7 @@ export async function upsertCrawledJob(job: CrawledJob): Promise<UpsertCrawledJo
     roles: job.roles.filter(isJobRole),
     regions: job.regions.filter(isJobRegion),
     companySize: isCompanySize(job.companySize) ? job.companySize : COMPANY_SIZES[0],
+    showInJobBoard: isBrowsableCrawledJob(job),
     updatedAt: new Date().toISOString(),
   });
 

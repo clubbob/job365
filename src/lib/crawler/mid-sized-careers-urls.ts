@@ -1,5 +1,5 @@
 import { isStorableCareersUrl } from '@/lib/mid-sized-companies/careers-url-policy';
-import { loadMidSizedRegistryDbCompanies } from '@/lib/mid-sized-companies/registry-db';
+import { loadMidSizedRegistryDbCompanies, loadMidSizedRegistryDbFromDisk } from '@/lib/mid-sized-companies/registry-db';
 
 /**
  * 중견기업 채용 URL 목록 (대기업 `enterprise-careers-urls.ts`와 동일 역할).
@@ -31,5 +31,7 @@ export function getMidSizedCareersConfigs(): MidSizedCareersUrlConfig[] {
 }
 
 export function countMidSizedCareersConfigs(): number {
+  const file = loadMidSizedRegistryDbFromDisk();
+  if (typeof file?.careersUrlLinkedCount === 'number') return file.careersUrlLinkedCount;
   return getMidSizedCareersConfigs().length;
 }

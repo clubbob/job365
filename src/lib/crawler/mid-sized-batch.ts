@@ -1,7 +1,7 @@
 import type { CrawlerCompany } from '@/lib/crawler/companies';
 
-/** 연결된 중견기업은 기본적으로 매일 전부 수집합니다. */
-const DEFAULT_BATCH_SIZE = 10_000;
+/** 연결 URL 약 6,065곳을 7일에 한 바퀴(하루 900). 환경 변수로 조절 가능. */
+const DEFAULT_BATCH_SIZE = 900;
 
 function dayIndexKst(): number {
   const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
