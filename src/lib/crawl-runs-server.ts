@@ -27,8 +27,17 @@ function mapCrawlRunDoc(id: string, data: DocumentData): CrawlRunListItem {
         ? data.createdAt
         : null;
 
+  const runKindRaw = data.runKind;
+  const runKind =
+    runKindRaw === 'mid-sized-only' || runKindRaw === 'daily'
+      ? runKindRaw
+      : Array.isArray(data.sources) && data.sources.length <= 3
+        ? 'mid-sized-only'
+        : 'daily';
+
   return {
     id,
+    runKind,
     startedAt: String(data.startedAt ?? ''),
     finishedAt: String(data.finishedAt ?? ''),
     sources: Array.isArray(data.sources) ? data.sources : [],

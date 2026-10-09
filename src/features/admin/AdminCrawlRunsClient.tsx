@@ -19,6 +19,7 @@ type CrawlSourceResult = {
 
 type CrawlRun = {
   id: string;
+  runKind?: 'daily' | 'mid-sized-only';
   startedAt: string;
   finishedAt: string;
   totalUpserted: number;
@@ -139,6 +140,8 @@ function CrawlRunCard({ run, defaultExpanded = false }: { run: CrawlRun; default
   const sources = useMemo(() => sortSourcesForDisplay(run.sources), [run.sources]);
   const errorSourceCount = sources.filter((source) => source.errors.length > 0).length;
   const successSourceCount = sources.filter((source) => source.upserted > 0).length;
+  const runKindLabel =
+    run.runKind === 'mid-sized-only' ? '중견만' : run.runKind === 'daily' ? '일일 전체' : null;
 
   return (
     <Card>
@@ -151,6 +154,11 @@ function CrawlRunCard({ run, defaultExpanded = false }: { run: CrawlRun; default
         <div>
           <p className="text-sm font-semibold text-foreground">
             {formatInquiryDateTime(run.finishedAt || run.startedAt)}
+            {runKindLabel ? (
+              <span className="ml-2 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-muted">
+                {runKindLabel}
+              </span>
+            ) : null}
           </p>
           <p className="mt-0.5 text-xs text-muted">
             소스 {sources.length}곳 · 저장 있음 {successSourceCount}곳

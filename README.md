@@ -26,3 +26,18 @@ pnpm dev
 4. 공고 조회 & 지원
 5. 마이페이지 & 알림
 6. 애드센스 & 관리자
+
+## 채용 공고 자동 수집
+
+| 항목 | 내용 |
+|------|------|
+| 일정 | 매일 **06:00 (한국 시간)** GitHub Actions **1회** |
+| 대기업·계열 | 매일 **전부** 수집 |
+| 중견기업 | 연결된 채용 URL **하루 900곳** 순환 → **약 7일**에 전체 한 바퀴 |
+| 실행 시간 | 최대 **2시간** (GitHub). **Vercel**은 사이트만 — 수집 비용 거의 없음 |
+| 수동 전체 | 로컬 `pnpm crawl` (Firebase Admin 설정 필요) |
+| 중견만 대량 | `pnpm crawl:mid-sized` — **자동 수집과 별도** |
+
+배치 크기는 `src/lib/crawler/schedule.ts`의 `CRAWL_MID_SIZED_SITES_PER_RUN`과 `.github/workflows/crawl-daily.yml`에서 맞춥니다.
+
+Firestore 복합 인덱스 배포: `firebase deploy --only firestore:indexes`

@@ -9,7 +9,10 @@ export type CrawlerSourceResult = {
   syncEmpty?: boolean;
 };
 
+export type CrawlRunKind = 'daily' | 'mid-sized-only';
+
 export type CrawlRunSummary = {
+  runKind: CrawlRunKind;
   startedAt: string;
   finishedAt: string;
   sources: Array<{

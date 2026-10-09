@@ -1,5 +1,6 @@
 /**
- * 중견기업 채용 공고만 수집 (DB에 연결된 URL + 고용24)
+ * 중견기업 채용 공고만 수집 (DB에 연결된 URL + 고용24).
+ * 일상 자동 수집(GitHub Actions `pnpm crawl`)과 별도 — 수동·대량 테스트용.
  * pnpm crawl:mid-sized
  */
 import { readFileSync } from 'node:fs';

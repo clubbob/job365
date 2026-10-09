@@ -169,6 +169,7 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
 
     const finishedAt = new Date().toISOString();
     const run: CrawlRunSummary = {
+      runKind: process.env.CRAWL_MID_SIZED_ONLY === '1' ? 'mid-sized-only' : 'daily',
       startedAt,
       finishedAt,
       sources: sourceSummaries,

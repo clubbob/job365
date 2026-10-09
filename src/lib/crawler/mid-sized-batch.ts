@@ -1,7 +1,7 @@
 import type { CrawlerCompany } from '@/lib/crawler/companies';
+import { CRAWL_MID_SIZED_SITES_PER_RUN } from '@/lib/crawler/schedule';
 
-/** 연결 URL 약 6,065곳을 7일에 한 바퀴(하루 900). 환경 변수로 조절 가능. */
-const DEFAULT_BATCH_SIZE = 900;
+const DEFAULT_BATCH_SIZE = CRAWL_MID_SIZED_SITES_PER_RUN;
 
 function dayIndexKst(): number {
   const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);

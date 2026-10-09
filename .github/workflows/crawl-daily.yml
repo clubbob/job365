@@ -34,5 +34,6 @@ jobs:
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           CRAWLER_USE_SAMPLES: 'false'
+          # src/lib/crawler/schedule.ts CRAWL_MID_SIZED_SITES_PER_RUN 과 동일
           CRAWL_MID_SIZED_BATCH_SIZE: '900'
           CRAWL_MID_SIZED_DB_BATCH_SIZE: '900'

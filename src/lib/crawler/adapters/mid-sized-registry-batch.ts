@@ -8,6 +8,7 @@ import {
   getMidSizedCareersConfigs,
 } from '@/lib/crawler/mid-sized-careers-urls';
 import { getUniqueMidSizedRegistryForCrawl } from '@/lib/mid-sized-companies/registry-for-crawl';
+import { CRAWL_MID_SIZED_SITES_PER_RUN } from '@/lib/crawler/schedule';
 import type { CrawlerSourceResult } from '@/lib/crawler/types';
 import type { CrawledJob } from '@/types/crawled-job';
 
@@ -71,7 +72,11 @@ async function crawlOneRecord(record: {
 function selectCareersConfigBatch(configs: ReturnType<typeof getMidSizedCareersConfigs>) {
   const batchSize = Math.max(
     1,
-    Number(process.env.CRAWL_MID_SIZED_DB_BATCH_SIZE ?? process.env.CRAWL_MID_SIZED_BATCH_SIZE ?? 900) || 900,
+    Number(
+      process.env.CRAWL_MID_SIZED_DB_BATCH_SIZE ??
+        process.env.CRAWL_MID_SIZED_BATCH_SIZE ??
+        CRAWL_MID_SIZED_SITES_PER_RUN,
+    ) || CRAWL_MID_SIZED_SITES_PER_RUN,
   );
   if (configs.length <= batchSize) return configs;
   const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);

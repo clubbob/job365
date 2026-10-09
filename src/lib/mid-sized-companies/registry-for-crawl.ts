@@ -1,4 +1,5 @@
 import { countMidSizedCareersConfigs } from '@/lib/crawler/mid-sized-careers-urls';
+import { CRAWL_MID_SIZED_SITES_PER_RUN } from '@/lib/crawler/schedule';
 import {
   loadMidSizedRegistryDbCompanies,
   type MidSizedRegistryDbCompany,
@@ -14,7 +15,11 @@ export function getUniqueMidSizedRegistryForCrawl(): MidSizedRegistryCrawlRecord
 export function selectMidSizedDbBatch(records: MidSizedRegistryCrawlRecord[]): MidSizedRegistryCrawlRecord[] {
   const batchSize = Math.max(
     1,
-    Number(process.env.CRAWL_MID_SIZED_DB_BATCH_SIZE ?? process.env.CRAWL_MID_SIZED_BATCH_SIZE ?? 900) || 900,
+    Number(
+      process.env.CRAWL_MID_SIZED_DB_BATCH_SIZE ??
+        process.env.CRAWL_MID_SIZED_BATCH_SIZE ??
+        CRAWL_MID_SIZED_SITES_PER_RUN,
+    ) || CRAWL_MID_SIZED_SITES_PER_RUN,
   );
   if (records.length <= batchSize) return records;
 

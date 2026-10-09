@@ -1,6 +1,9 @@
 /** Vercel cron은 UTC 기준입니다. 한국 06:00 = 전날 UTC 21:00 */
 export const CRAWL_CRON_UTC = '0 21 * * *';
 
+/** 연결된 중견 채용 URL을 하루에 순환 수집하는 건수(약 7일 한 바퀴). GitHub Actions·코드 기본값과 맞춥니다. */
+export const CRAWL_MID_SIZED_SITES_PER_RUN = 900;
+
 export const CRAWL_SCHEDULE = {
   timezone: 'Asia/Seoul',
   localTime: '06:00',
@@ -12,5 +15,5 @@ export const CRAWL_SCHEDULE = {
   frequency: 'daily',
   runner: 'GitHub Actions',
   maxRunnerMinutes: 120,
-  midSizedSitesPerRun: 900,
+  midSizedSitesPerRun: CRAWL_MID_SIZED_SITES_PER_RUN,
 } as const;
