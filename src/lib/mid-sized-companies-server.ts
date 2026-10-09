@@ -1,13 +1,13 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { MID_SIZED_REGISTRY_SOURCE } from '@/lib/mid-sized-companies/registry-meta';
+import { loadMidSizedRegistryFromDisk } from '@/lib/mid-sized-companies/registry-mme-disk';
 import { dedupeMidSizedCompanies, isMidSizedCertificateActive } from '@/lib/mid-sized-companies/registry-dedupe';
-import type { MidSizedCompanyRecord, MidSizedRegistryFile } from '@/lib/mid-sized-companies/types';
+import type { MidSizedCompanyRecord } from '@/lib/mid-sized-companies/types';
 
 const COLLECTION = 'midSizedCompanies';
-const REGISTRY_PATH = resolve(process.cwd(), 'data/mid-sized-companies.json');
+
+export { loadMidSizedRegistryFromDisk };
 
 function normalizeBusinessNumber(value: string): string {
   return value.replace(/\D/g, '');
@@ -17,38 +17,6 @@ function docIdFor(record: Pick<MidSizedCompanyRecord, 'businessNumber' | 'compan
   const digits = normalizeBusinessNumber(record.businessNumber);
   if (digits) return digits;
   return `name-${record.companyName}`.replace(/\s+/g, '-').slice(0, 120);
-}
-
-function parseRegistryFile(raw: unknown): MidSizedRegistryFile | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const file = raw as Partial<MidSizedRegistryFile>;
-  if (file.version !== 1 || !Array.isArray(file.companies)) return null;
-  return {
-    version: 1,
-    source: 'mme',
-    sourceNote: typeof file.sourceNote === 'string' ? file.sourceNote : MID_SIZED_REGISTRY_SOURCE.note,
-    importedAt: typeof file.importedAt === 'string' ? file.importedAt : '',
-    companies: file.companies.filter((item): item is MidSizedCompanyRecord => {
-      return Boolean(item && typeof item.companyName === 'string' && typeof item.businessNumber === 'string');
-    }),
-  };
-}
-
-export function loadMidSizedRegistryFromDisk(): MidSizedRegistryFile {
-  try {
-    const text = readFileSync(REGISTRY_PATH, 'utf8');
-    const parsed = parseRegistryFile(JSON.parse(text));
-    if (parsed) return parsed;
-  } catch {
-    // 로컬 파일이 없으면 빈 목록입니다.
-  }
-  return {
-    version: 1,
-    source: 'mme',
-    sourceNote: MID_SIZED_REGISTRY_SOURCE.note,
-    importedAt: '',
-    companies: [],
-  };
 }
 
 export type MidSizedRegistryStats = {

@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadDiscoveryState } from '@/lib/mid-sized-companies/discovery-state';
 import { loadMidSizedCrawlTargets } from '@/lib/mid-sized-companies/crawl-targets';
-import { loadMidSizedRegistryFromDisk } from '@/lib/mid-sized-companies-server';
+import { loadMidSizedRegistryFromDisk } from '@/lib/mid-sized-companies/registry-mme-disk';
 import {
   dedupeMidSizedCompanies,
   normalizeBusinessNumber,
