@@ -4,7 +4,13 @@ import {
   type CrawlCompanyPolicy,
 } from '@/lib/crawl-company-policy-server';
 import { listCrawlSourcePolicies, type CrawlSourcePolicy } from '@/lib/crawl-source-policy-server';
-import { getCrawlerCompanies, type CrawlerCompany } from '@/lib/crawler/companies';
+import { countCrawlerCompaniesByTier, getCrawlerCompanies, type CrawlerCompany } from '@/lib/crawler/companies';
+import { countCrawlTargetsOnDisk } from '@/lib/mid-sized-companies/crawl-targets-map';
+import {
+  countMidSizedWithCareersUrl,
+  getUniqueMidSizedRegistryForCrawl,
+} from '@/lib/mid-sized-companies/registry-for-crawl';
+import { getMidSizedRegistryStats, type MidSizedRegistryStats } from '@/lib/mid-sized-companies-server';
 import {
   buildEnterpriseGroupRows,
   summarizeEnterpriseGroupRows,
@@ -42,10 +48,22 @@ export type JobCompaniesSummary = ReturnType<typeof summarizeEnterpriseGroupRows
   companyDisplayDisabledCount: number;
 };
 
+export type JobCompaniesCrawlMeta = {
+  enterpriseCrawlSources: number;
+  midSizedCrawlSources: number;
+  midSizedCrawlTargetsOnDisk: number;
+  extraCrawlSources: number;
+  midSizedRegistry: MidSizedRegistryStats;
+};
+
 export type JobCompaniesPayload = {
   summary: JobCompaniesSummary;
   groups: JobCompanyGroupView[];
+  /** 중견·기타 등 기업집단에 묶이지 않은 수집 소스 전체 */
   standaloneSources: JobCompanySourceView[];
+  midSizedSources: JobCompanySourceView[];
+  extraSources: JobCompanySourceView[];
+  crawlMeta: JobCompaniesCrawlMeta;
 };
 
 function defaultPolicy(): JobCompanySourcePolicyView {
@@ -227,9 +245,39 @@ export async function buildJobCompaniesPayload(options: {
     ? standaloneSources
     : standaloneSources.filter((source) => !source.policy.displayDisabled);
 
+  /** 배치 수집기는 회사별 sourceId로 공고가 쌓여 목록에 두면 0건으로 보입니다. 명단 UI만 사용합니다. */
+  const MID_SIZED_BATCH_SOURCE_IDS = new Set([
+    'mid-sized-registry-batch-careers',
+    'work24-mid-sized-batch-careers',
+  ]);
+
+  const filteredMidSized = filteredStandalone.filter((source) => {
+    if (MID_SIZED_BATCH_SOURCE_IDS.has(source.sourceId)) return false;
+    const crawler = crawlerBySourceId.get(source.sourceId);
+    return crawler?.tier === 'mid-sized';
+  });
+  const filteredExtra = filteredStandalone.filter((source) => {
+    const crawler = crawlerBySourceId.get(source.sourceId);
+    return crawler?.tier !== 'mid-sized';
+  });
+
+  const tierCounts = countCrawlerCompaniesByTier();
+  const midSizedRegistry = await getMidSizedRegistryStats();
+  const registryForCrawl = getUniqueMidSizedRegistryForCrawl();
+  const midSizedLinkedFromDb = countMidSizedWithCareersUrl(registryForCrawl);
+
   return {
     summary: buildSummary(groups, standaloneSources, companyPolicyMap),
     groups: filteredGroups,
     standaloneSources: filteredStandalone,
+    midSizedSources: filteredMidSized,
+    extraSources: filteredExtra,
+    crawlMeta: {
+      enterpriseCrawlSources: tierCounts.enterprise,
+      midSizedCrawlSources: midSizedLinkedFromDb,
+      midSizedCrawlTargetsOnDisk: countCrawlTargetsOnDisk(),
+      extraCrawlSources: tierCounts.extra,
+      midSizedRegistry,
+    },
   };
 }

@@ -19,12 +19,13 @@ import { isInvalidJobDescription } from '@/lib/crawler/job-quality';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 import {
   buildDescription,
-  defaultCompanySize,
   inferJobRoles,
   mapLocationToRegions,
   parseEmploymentTypesFromText,
+  resolveCompanySize,
   textSection,
 } from '@/lib/crawler/map-fields';
+import type { CompanySize } from '@/lib/job-board/constants';
 import { paceCrawlRequest } from '@/lib/crawler/crawl-throttle';
 import { fetchText } from '@/lib/crawler/fetch-text';
 import type { CrawledJob } from '@/types/crawled-job';
@@ -35,6 +36,7 @@ export type GenericHtmlConfig = {
   sourceName: string;
   companyName: string;
   careersUrl: string;
+  companySize?: CompanySize;
 };
 
 const MAX_JOBS_PER_SOURCE = 100;
@@ -617,7 +619,7 @@ async function buildJobsFromCandidates(
       employmentTypes: parseEmploymentTypesFromText(`${title} ${candidate.roleHint ?? ''}`),
       roles: inferJobRoles(title, candidate.roleHint),
       regions: mapLocationToRegions(locationSource),
-      companySize: defaultCompanySize(companyName),
+      companySize: resolveCompanySize(companyName, config.companySize),
       headcount: detail?.headcount ?? null,
       deadline: detail?.deadline ?? candidate.deadline ?? null,
       applyUrl: candidate.applyUrl,

@@ -4,7 +4,7 @@ import { closeExpiredCrawledJobs, listActiveJobIdsBySource, markCrawledJobsClose
 import { closeBrowserCrawlSession } from '@/lib/crawler/browser-page-crawl';
 import { pauseBetweenCrawlSources } from '@/lib/crawler/crawl-throttle';
 import { isCareersUrlRobotsAllowed } from '@/lib/crawler/robots';
-import { getCompanyCrawlers } from '@/lib/crawler/registry';
+import { getCompanyCrawlersForRun } from '@/lib/crawler/registry';
 import type { CrawlRunSummary, CrawlerSourceResult } from '@/lib/crawler/types';
 import { saveCrawlRun } from '@/lib/crawl-runs-server';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
@@ -16,11 +16,16 @@ function shouldSyncSource(result: CrawlerSourceResult): boolean {
   return result.errors.length === 0;
 }
 
-async function syncSource(result: CrawlerSourceResult) {
-  const seenIds = new Set(result.jobs.map((job) => job.id));
+async function syncSourceForId(
+  sourceId: string,
+  sourceName: string,
+  jobs: CrawlerSourceResult['jobs'],
+  errors: string[],
+) {
+  const seenIds = new Set(jobs.map((job) => job.id));
   let upserted = 0;
 
-  for (const job of result.jobs) {
+  for (const job of jobs) {
     if (await isCompanyCrawlDisabled(job.sourceId, job.companyName)) {
       seenIds.add(job.id);
       continue;
@@ -29,11 +34,44 @@ async function syncSource(result: CrawlerSourceResult) {
     if (writeResult !== 'unchanged') upserted += 1;
   }
 
-  const activeIds = await listActiveJobIdsBySource(result.sourceId);
+  const activeIds = await listActiveJobIdsBySource(sourceId);
   const staleIds = activeIds.filter((id) => !seenIds.has(id));
   const closed = await markCrawledJobsClosed(staleIds, new Date().toISOString());
 
-  return { fetched: result.jobs.length, upserted, closed, errors: result.errors };
+  return { sourceId, sourceName, fetched: jobs.length, upserted, closed, errors };
+}
+
+async function syncSource(result: CrawlerSourceResult) {
+  const bySource = new Map<string, CrawlerSourceResult['jobs']>();
+  for (const job of result.jobs) {
+    const list = bySource.get(job.sourceId) ?? [];
+    list.push(job);
+    bySource.set(job.sourceId, list);
+  }
+
+  if (bySource.size <= 1) {
+    const summary = await syncSourceForId(result.sourceId, result.sourceName, result.jobs, result.errors);
+    return {
+      fetched: summary.fetched,
+      upserted: summary.upserted,
+      closed: summary.closed,
+      errors: summary.errors,
+    };
+  }
+
+  let fetched = 0;
+  let upserted = 0;
+  let closed = 0;
+  const errors = [...result.errors];
+  for (const [sourceId, jobs] of bySource) {
+    const name = jobs[0]?.companyName ? `${jobs[0].companyName} 채용` : result.sourceName;
+    const summary = await syncSourceForId(sourceId, name, jobs, []);
+    fetched += summary.fetched;
+    upserted += summary.upserted;
+    closed += summary.closed;
+    errors.push(...summary.errors);
+  }
+  return { fetched, upserted, closed, errors };
 }
 
 export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
@@ -44,7 +82,7 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
 
   try {
     let isFirstSource = true;
-    for (const { company, crawl } of getCompanyCrawlers()) {
+    for (const { company, crawl } of getCompanyCrawlersForRun()) {
       if (!isFirstSource) {
         await pauseBetweenCrawlSources();
       }
@@ -63,7 +101,11 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
           continue;
         }
 
-        if (!(await isCareersUrlRobotsAllowed(company.careersUrl))) {
+        if (
+          company.adapter !== 'mid-sized-registry-batch' &&
+          company.adapter !== 'work24-mid-sized-batch' &&
+          !(await isCareersUrlRobotsAllowed(company.careersUrl))
+        ) {
           sourceSummaries.push({
             sourceId: company.sourceId,
             sourceName: company.sourceName,

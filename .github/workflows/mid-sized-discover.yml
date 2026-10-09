@@ -1,0 +1,68 @@
+name: Mid-sized careers URL discovery
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    # 매일 한국 02:00 = 전날 UTC 17:00 (수집 전 URL 탐색 배치)
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+    inputs:
+      offset:
+        description: DISCOVER_OFFSET (0 = 처음부터)
+        required: false
+        default: '0'
+      limit:
+        description: DISCOVER_LIMIT (비우면 자동 일일 배치)
+        required: false
+        default: ''
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Discover careers URLs (daily batch)
+        env:
+          DISCOVER_CONCURRENCY: '16'
+          DISCOVER_LIMIT: ${{ github.event.inputs.limit || '4000' }}
+          DISCOVER_OFFSET_INPUT: ${{ github.event.inputs.offset }}
+          DISCOVER_AUTO_RECONCILE: '0'
+        run: |
+          if [ -n "$DISCOVER_OFFSET_INPUT" ]; then
+            export DISCOVER_OFFSET="$DISCOVER_OFFSET_INPUT"
+          else
+            DAY=$(date -u +%j)
+            export DISCOVER_OFFSET=$(( (DAY * 4000) % 6732 ))
+          fi
+          echo "DISCOVER_OFFSET=$DISCOVER_OFFSET DISCOVER_LIMIT=$DISCOVER_LIMIT"
+          pnpm discover:mid-sized:urls
+
+      - name: Reconcile registry DB and Firestore
+        run: pnpm reconcile:mid-sized
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+
+      - name: Commit crawl targets and registry DB
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/mid-sized-crawl-targets.json data/mid-sized-discovery-state.json data/mid-sized-registry-db.json
+          git diff --staged --quiet || git commit -m "chore: mid-sized careers URLs from web discovery"
+          git push

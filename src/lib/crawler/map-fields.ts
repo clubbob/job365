@@ -116,6 +116,10 @@ export function defaultCompanySize(companyName: string): CompanySize {
   return '중견기업';
 }
 
+export function resolveCompanySize(companyName: string, preferred?: CompanySize): CompanySize {
+  return preferred ?? defaultCompanySize(companyName);
+}
+
 export function buildDescription(parts: Array<string | null | undefined>): string {
   return parts.filter(Boolean).join('');
 }

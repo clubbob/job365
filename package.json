@@ -20,8 +20,22 @@
     "start": "next start",
     "lint": "next lint",
     "crawl": "tsx scripts/crawl-direct.ts",
+    "crawl:mid-sized": "tsx scripts/crawl-mid-sized.ts",
     "crawl:api": "node scripts/run-crawl.mjs",
     "setup:crawl-secrets": "node scripts/set-github-crawl-secrets.mjs",
+    "import:mid-sized": "node scripts/import-mme-mid-sized.mjs",
+    "fetch:mid-sized": "node scripts/fetch-mme-registry.mjs",
+    "discover:mid-sized": "node scripts/discover-mid-sized-careers.mjs",
+    "discover:mid-sized:urls": "node scripts/run-discover-urls.mjs",
+    "maximize:mid-sized:urls": "node scripts/run-maximize-mid-sized-urls.mjs",
+    "discover:mid-sized:db": "node scripts/run-discover-urls.mjs",
+    "extract:all": "node scripts/extract-all-careers.mjs",
+    "extract:mid-sized": "node scripts/extract-mid-sized-all.mjs",
+    "sync:mid-sized": "tsx scripts/sync-mid-sized-registry.ts",
+    "reconcile:mid-sized": "tsx scripts/reconcile-mid-sized-registry.ts",
+    "preprocess:mid-sized": "node scripts/preprocess-mid-sized.mjs",
+    "maximize:mid-sized": "node scripts/preprocess-mid-sized.mjs && pnpm crawl:mid-sized",
+    "sync:mid-sized:full": "node scripts/sync-mid-sized-full.mjs",
     "job-alerts": "node scripts/run-job-alerts.mjs",
     "job-alerts:direct": "node scripts/job-alerts-direct.mjs"
   },
@@ -49,6 +63,7 @@
     "libsodium-wrappers": "^0.8.4",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "xlsx": "^0.18.5"
   }
 }

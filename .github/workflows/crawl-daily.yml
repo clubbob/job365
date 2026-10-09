@@ -33,3 +33,4 @@ jobs:
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           CRAWLER_USE_SAMPLES: 'false'
+          CRAWL_MID_SIZED_BATCH_SIZE: '10000'

@@ -1,10 +1,11 @@
 import {
   buildDescription,
-  defaultCompanySize,
   inferJobRoles,
   mapLocationToRegions,
   parseEmploymentTypesFromText,
+  resolveCompanySize,
 } from '@/lib/crawler/map-fields';
+import type { CompanySize } from '@/lib/job-board/constants';
 import { fetchJson } from '@/lib/crawler/fetch-json';
 import type { CrawledJob } from '@/types/crawled-job';
 import type { CrawlerSourceResult } from '@/lib/crawler/types';
@@ -16,6 +17,7 @@ export type GreenhouseCompanyConfig = {
   boardToken: string;
   careersUrl: string;
   koreaOnly?: boolean;
+  companySize?: CompanySize;
 };
 
 type GreenhouseJob = {
@@ -70,7 +72,7 @@ function toCrawledJob(job: GreenhouseJob, config: GreenhouseCompanyConfig, crawl
     employmentTypes: parseEmploymentTypesFromText(title),
     roles: inferJobRoles(title, undefined, locationName),
     regions: mapLocationToRegions(locationName),
-    companySize: defaultCompanySize(config.companyName),
+    companySize: resolveCompanySize(config.companyName, config.companySize),
     headcount: null,
     deadline: null,
     applyUrl: toKoreanApplyUrl(job.absolute_url),

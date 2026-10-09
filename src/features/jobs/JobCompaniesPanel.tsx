@@ -11,6 +11,7 @@ import type {
   JobCompanyGroupView,
   JobCompanySourceView,
 } from '@/lib/job-companies-server';
+import MidSizedRegistryBrowser from '@/features/admin/MidSizedRegistryBrowser';
 import { cn } from '@/lib/utils';
 
 type AdminSourcePatch = Partial<
@@ -593,18 +594,49 @@ function EnterpriseGroupSearchResults({
 }
 
 function StandaloneSourceList({
+  title,
   sources,
+  emptyMessage,
+  searchValue,
+  onSearchChange,
+  searchPlaceholder,
   busyKey,
   onUpdateSource,
 }: {
+  title: string;
   sources: JobCompanySourceView[];
+  emptyMessage?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
   busyKey: string | null;
   onUpdateSource?: (sourceId: string, patch: AdminSourcePatch, confirmMessage?: string) => void;
 }) {
-  if (sources.length === 0) return null;
+  const showSearch = onSearchChange != null && searchValue != null;
+
+  if (sources.length === 0 && !showSearch) {
+    return emptyMessage ? <p className="text-sm text-muted">{emptyMessage}</p> : null;
+  }
 
   return (
-    <Card title="기타 채용 사이트">
+    <Card title={title}>
+      {showSearch ? (
+        <div className="mb-4">
+          <label className="sr-only" htmlFor={`${title}-search`}>{searchPlaceholder ?? '검색'}</label>
+          <input
+            id={`${title}-search`}
+            type="search"
+            value={searchValue}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder={searchPlaceholder}
+            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
+          />
+        </div>
+      ) : null}
+
+      {sources.length === 0 ? (
+        emptyMessage ? <p className="text-sm text-muted">{emptyMessage}</p> : null
+      ) : (
       <ul className="divide-y divide-border rounded-lg border border-border">
         {sources.map((source) => (
           <li key={source.sourceId} className="space-y-3 px-3 py-3 sm:px-4">
@@ -642,7 +674,23 @@ function StandaloneSourceList({
           </li>
         ))}
       </ul>
+      )}
     </Card>
+  );
+}
+
+type CompaniesSegment = 'enterprise' | 'mid-sized';
+
+const SEGMENT_TABS: Array<{ id: CompaniesSegment; label: string }> = [
+  { id: 'enterprise', label: '대기업·계열사' },
+  { id: 'mid-sized', label: '중견기업' },
+];
+
+function filterSourcesByQuery(sources: JobCompanySourceView[], query: string): JobCompanySourceView[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return sources;
+  return sources.filter((source) =>
+    [source.companyName, source.sourceName, source.sourceId].join(' ').toLowerCase().includes(q),
   );
 }
 
@@ -664,14 +712,15 @@ export default function JobCompaniesPanel({
     confirmMessage?: string,
   ) => void;
 }) {
+  const [segment, setSegment] = useState<CompaniesSegment>('enterprise');
   const [query, setQuery] = useState('');
-  const { summary, groups, standaloneSources } = data;
+  const { summary, groups, extraSources, crawlMeta } = data;
 
   return (
     <div className="space-y-5">
       <PageHeader
         title="채용 공고 회사"
-        description="대기업·계열사 채용 사이트와 수집·노출 설정을 한곳에서 관리합니다. 기업 이의 제기 시 노출 중단만 누르면 됩니다."
+        description="대기업·계열사와 중견기업 채용 사이트의 수집·노출을 관리합니다. 기업 이의 제기 시 노출 중단만 누르면 됩니다."
         homeHref="/admin"
         homeLabel="대시보드"
       />
@@ -681,11 +730,25 @@ export default function JobCompaniesPanel({
       ) : null}
 
       <Card>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <p className="text-xs text-muted">수집 일정</p>
             <p className="mt-1 text-sm font-semibold text-foreground">{CRAWL_SCHEDULE.label}</p>
             <p className="text-xs text-subtle">{CRAWL_SCHEDULE.runner} · cron UTC {CRAWL_SCHEDULE.cronUtc}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted">중견기업</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
+              고유 {crawlMeta.midSizedRegistry.uniqueCompanyCount.toLocaleString('ko-KR')}곳 · 채용 URL 연결{' '}
+              {crawlMeta.midSizedRegistry.careersUrlLinkedCount.toLocaleString('ko-KR')}곳
+            </p>
+            <p className="text-xs text-subtle">
+              유효 인증 {crawlMeta.midSizedRegistry.activeCertificateCount.toLocaleString('ko-KR')}곳 · 마당 원본{' '}
+              {crawlMeta.midSizedRegistry.rawRowCount.toLocaleString('ko-KR')}행
+              {crawlMeta.midSizedRegistry.importedAt
+                ? ` · 명단 갱신 ${crawlMeta.midSizedRegistry.importedAt.slice(0, 10)}`
+                : ' · 마당 엑셀 미반영'}
+            </p>
           </div>
           <div>
             <p className="text-xs text-muted">모집 중 채용 공고</p>
@@ -720,35 +783,131 @@ export default function JobCompaniesPanel({
         </div>
       </Card>
 
-      <Card title="대기업·계열사">
-        <div className="mb-4">
-          <label className="sr-only" htmlFor="enterprise-group-search">기업집단·계열사 검색</label>
-          <input
-            id="enterprise-group-search"
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="기업집단·대표님·계열사 검색"
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
-          />
-        </div>
+      <div
+        className="-mx-1 flex gap-1 overflow-x-auto border-b border-border px-1"
+        role="tablist"
+        aria-label="채용 공고 회사 구분"
+      >
+        {SEGMENT_TABS.map((item) => {
+          const active = segment === item.id;
+          const enterpriseSiteCount = groups.length + extraSources.length;
+          const registryTotal = crawlMeta.midSizedRegistry.uniqueCompanyCount;
+          const midSizedCollectCount = crawlMeta.midSizedCrawlSources;
+          const ariaDetail =
+            item.id === 'enterprise'
+              ? `수집 사이트 ${enterpriseSiteCount}곳`
+              : `명단 ${registryTotal.toLocaleString('ko-KR')}건, 채용 URL 연결 ${midSizedCollectCount}곳`;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              aria-label={`${item.label}, ${ariaDetail}`}
+              onClick={() => setSegment(item.id)}
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-semibold transition-colors',
+                active
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted hover:text-foreground',
+              )}
+            >
+              {item.label}
+              {item.id === 'enterprise' ? (
+                <span
+                  className={cn(
+                    'rounded-full px-1.5 py-0.5 text-[11px] font-semibold',
+                    active ? 'bg-primary/10 text-primary' : 'bg-neutral-100 text-muted',
+                  )}
+                >
+                  {enterpriseSiteCount}곳
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1">
+                  <span
+                    className={cn(
+                      'rounded-full px-1.5 py-0.5 text-[11px] font-semibold',
+                      active ? 'bg-neutral-100 text-muted' : 'bg-neutral-100 text-subtle',
+                    )}
+                    title="중견기업정보마당 명단"
+                  >
+                    명단 {registryTotal.toLocaleString('ko-KR')}
+                  </span>
+                  <span
+                    className={cn(
+                      'rounded-full px-1.5 py-0.5 text-[11px] font-semibold',
+                      active ? 'bg-primary/10 text-primary' : 'bg-neutral-100 text-muted',
+                    )}
+                    title="채용 페이지 URL을 찾아 DB에 연결한 회사 수(연결된 곳만 공고 수집 가능)"
+                  >
+                    URL 연결 {midSizedCollectCount}곳
+                  </span>
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-        <EnterpriseGroupSearchResults groups={groups} query={query}>
-          <EnterpriseGroupList
-            groups={groups}
-            query={query}
+      {segment === 'enterprise' ? (
+        <div className="space-y-5" role="tabpanel">
+          <Card title="대기업·계열사">
+            <div className="mb-4">
+              <label className="sr-only" htmlFor="enterprise-group-search">기업집단·계열사 검색</label>
+              <input
+                id="enterprise-group-search"
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="기업집단·대표님·계열사 검색"
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
+              />
+            </div>
+
+            <EnterpriseGroupSearchResults groups={groups} query={query}>
+              <EnterpriseGroupList
+                groups={groups}
+                query={query}
+                busyKey={busyKey}
+                onUpdateSource={onUpdateSource}
+                onUpdateCompany={onUpdateCompany}
+              />
+            </EnterpriseGroupSearchResults>
+
+            {groups.length === 0 ? (
+              <p className="mt-3 text-sm text-muted">표시할 채용 사이트가 없습니다.</p>
+            ) : null}
+          </Card>
+
+          <StandaloneSourceList
+            title="기타 채용 사이트"
+            sources={extraSources}
             busyKey={busyKey}
             onUpdateSource={onUpdateSource}
-            onUpdateCompany={onUpdateCompany}
           />
-        </EnterpriseGroupSearchResults>
+        </div>
+      ) : (
+        <div className="space-y-5" role="tabpanel">
+          <Card>
+            <p className="text-sm text-muted">
+              명단{' '}
+              <span className="font-semibold text-foreground">
+                {crawlMeta.midSizedRegistry.uniqueCompanyCount.toLocaleString('ko-KR')}곳
+              </span>
+              마당은 <span className="font-semibold text-foreground">회사명·사업자번호</span>만 쓰고, 채용 URL은 웹·ATS·
+              잡코리아·사람인 등 탐색으로 DB에 쌓습니다. 탭의{' '}
+              <span className="font-semibold text-foreground">URL 연결</span>은 수집 가능한 주소가 있는 회사 수입니다(
+              {crawlMeta.midSizedRegistry.careersUrlLinkedCount.toLocaleString('ko-KR')}곳). 미연결 회사는{' '}
+              <span className="font-mono text-xs text-foreground">pnpm maximize:mid-sized:urls</span>로 재탐색할 수
+              있습니다. 고용24 인증키가 있으면 URL 없는 회사 공고를 추가로 조회합니다. 수집 결과는{' '}
+              <span className="font-semibold text-foreground">수집 실행 내역</span>·
+              <span className="font-semibold text-foreground">수집 채용 공고</span>에서 확인합니다.
+            </p>
+          </Card>
 
-        {groups.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">표시할 채용 사이트가 없습니다.</p>
-        ) : null}
-      </Card>
-
-      <StandaloneSourceList sources={standaloneSources} busyKey={busyKey} onUpdateSource={onUpdateSource} />
+          <MidSizedRegistryBrowser />
+        </div>
+      )}
     </div>
   );
 }

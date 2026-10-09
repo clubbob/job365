@@ -81,7 +81,7 @@ export default function AdminCrawlRunsClient() {
     <div className="space-y-5">
       <PageHeader
         title="수집 실행 내역"
-        description="자동 수집 실행 결과와 소스별 저장·마감 건수를 확인합니다."
+        description="대기업·중견기업 채용 사이트 자동 수집 결과와 소스별 저장·마감 건수를 확인합니다."
         homeHref="/admin"
         homeLabel="대시보드"
       />

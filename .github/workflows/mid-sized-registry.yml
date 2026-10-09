@@ -1,0 +1,54 @@
+name: Mid-sized company registry
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    # 매주 월요일 한국 03:00 = 일요일 UTC 18:00
+    - cron: '0 18 * * 0'
+  workflow_dispatch:
+
+jobs:
+  fetch-and-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Fetch MME registry
+        run: pnpm fetch:mid-sized
+
+      - name: Import MME JSON
+        run: pnpm import:mid-sized
+
+      - name: Preprocess careers URLs into DB (대기업 URL 파일과 동일 역할)
+        run: pnpm preprocess:mid-sized
+        env:
+          SKIP_DISCOVER: '1'
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+
+      - name: Commit registry JSON
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/mid-sized-companies.json
+          git diff --staged --quiet || git commit -m "chore: refresh mid-sized company registry from MME"
+          git push
