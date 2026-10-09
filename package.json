@@ -21,6 +21,7 @@
     "lint": "next lint",
     "crawl": "tsx scripts/crawl-direct.ts",
     "crawl:mid-sized": "tsx scripts/crawl-mid-sized.ts",
+    "work24:test": "node scripts/test-work24-auth.mjs",
     "crawl:api": "node scripts/run-crawl.mjs",
     "setup:crawl-secrets": "node scripts/set-github-crawl-secrets.mjs",
     "import:mid-sized": "node scripts/import-mme-mid-sized.mjs",

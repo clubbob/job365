@@ -102,7 +102,16 @@ async function main() {
   await setSecret(token, 'FIREBASE_PROJECT_ID', projectId);
   await setSecret(token, 'FIREBASE_CLIENT_EMAIL', clientEmail);
   await setSecret(token, 'FIREBASE_PRIVATE_KEY', privateKey);
-  console.log('GitHub Actions Secrets 3개를 등록했습니다.');
+
+  const work24Key = env.WORK24_AUTH_KEY?.trim();
+  if (work24Key) {
+    await setSecret(token, 'WORK24_AUTH_KEY', work24Key);
+    console.log('WORK24_AUTH_KEY도 등록했습니다.');
+  } else {
+    console.log('WORK24_AUTH_KEY가 없어 GitHub에는 넣지 않았습니다. (.env.local에 있으면 다시 실행)');
+  }
+
+  console.log('GitHub Actions Secrets(Firebase 3개 + 고용24 선택)를 반영했습니다.');
 
   await dispatchWorkflow(token);
   console.log('Daily job crawl 워크플로를 실행했습니다.');

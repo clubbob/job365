@@ -37,3 +37,4 @@ jobs:
           # src/lib/crawler/schedule.ts CRAWL_MID_SIZED_SITES_PER_RUN 과 동일
           CRAWL_MID_SIZED_BATCH_SIZE: '900'
           CRAWL_MID_SIZED_DB_BATCH_SIZE: '900'
+          WORK24_AUTH_KEY: ${{ secrets.WORK24_AUTH_KEY }}

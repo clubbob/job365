@@ -101,8 +101,19 @@ async function fetchWork24List(
   });
   if (!res.ok) return { items: [], total: 0 };
   const xml = await res.text();
-  if (/ERROR|인증|authKey/i.test(xml) && !/<wanted>/i.test(xml)) {
-    throw new Error('WORK24_API_ERROR');
+  if (!/<wanted>/i.test(xml)) {
+    const apiError = xml.match(/<error>([\s\S]*?)<\/error>/i)?.[1]?.trim();
+    if (apiError) {
+      if (/개인회원/i.test(apiError)) {
+        throw new Error(
+          '고용24 OPEN-API: 개인회원은 채용정보 API를 사용할 수 없습니다. 기업회원으로 신청·승인이 필요합니다.',
+        );
+      }
+      throw new Error(`고용24 OPEN-API: ${apiError}`);
+    }
+    if (/ERROR|인증|authKey/i.test(xml)) {
+      throw new Error('고용24 OPEN-API 인증 또는 요청 형식 오류입니다. WORK24_AUTH_KEY를 확인해 주세요.');
+    }
   }
   return { items: parseWork24Items(xml), total: parseTotalCount(xml) };
 }
