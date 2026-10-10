@@ -10,6 +10,7 @@ import { useAuth } from '@/features/auth/auth-context';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import { MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site-menu-copy';
 import { JOB_BOARD_RESET_EVENT } from '@/lib/job-board/reset';
+import { cn } from '@/lib/utils';
 import type { CrawledJobListItem } from '@/types/crawled-job';
 
 type JobBoardListProps = {
@@ -161,11 +162,7 @@ export default function JobBoardList({
     setFilters(next);
     setPage(1);
     setTodayPage(1);
-    setItems(EMPTY);
-    setTodayItems(EMPTY);
-    setHasMore(false);
-    setTodayHasMore(false);
-    setTotal(0);
+    setError(null);
   }, []);
 
   useEffect(() => {
@@ -310,9 +307,10 @@ export default function JobBoardList({
   }, [mainFetchKey, canUsePrefetchedOnly]);
 
   const countLabel = useMemo(() => {
-    if (loading) return '불러오는 중…';
+    if (loading && items.length === 0) return '불러오는 중…';
+    if (loading) return `모집 중 총 ${total}건 · 갱신 중…`;
     return `모집 중 총 ${total}건`;
-  }, [loading, total]);
+  }, [loading, total, items.length]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -414,13 +412,19 @@ export default function JobBoardList({
               <JobCardSkeleton key={index} />
             ))}
           </div>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        ) : items.length > 0 ? (
+          <div
+            className={cn(
+              'grid gap-3 transition-opacity duration-150 sm:grid-cols-2 lg:grid-cols-3',
+              loading && 'pointer-events-none opacity-55',
+            )}
+            aria-busy={loading}
+          >
             {items.map((job) => (
               <CrawledJobCard key={job.id} job={job} todayDate={todayDate} />
             ))}
           </div>
-        )}
+        ) : null}
 
         {!loading && items.length === 0 && !error && mode !== 'matched' ? (
           <p className="rounded-xl border border-border bg-surface px-4 py-8 text-center text-sm text-muted">
