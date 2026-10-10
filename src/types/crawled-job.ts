@@ -20,6 +20,8 @@ export type CrawledJob = {
   crawledAt: string;
   createdAt: string;
   closedAt: string | null;
+  /** Firestore: 목록 노출 가능(수집 시 isBrowsableCrawledJob 결과) */
+  showInJobBoard?: boolean;
 };
 
 export type DiscoveredAffiliate = {

@@ -14,8 +14,12 @@ import { SAMPLE_CRAWLED_JOBS } from '@/lib/job-board/sample-jobs';
 import { getDisplayDisabledCompanyKeys, isCompanyCrawlDisabled } from '@/lib/crawl-company-policy-server';
 import { getDisplayDisabledSourceIds, isDisplayDisabled } from '@/lib/crawl-source-policy-server';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
-import { isBrowsableCrawledJob, shouldPersistCrawledJob } from '@/lib/crawler/job-quality';
-import { matchesCrawledJobKeyword } from '@/lib/job-board/match';
+import {
+  isBrowsableCrawledJob,
+  isInvalidJobTitle,
+  shouldPersistCrawledJob,
+} from '@/lib/crawler/job-quality';
+import { jobMatchesBoardFilters, matchesCrawledJobKeyword, type JobBoardFilters } from '@/lib/job-board/match';
 import type {
   CrawledJob,
   CrawledJobListItem,
@@ -47,6 +51,8 @@ const ADMIN_LIST_SELECT_FIELDS = [
   'createdAt',
   'closedAt',
 ] as const;
+
+const BOARD_LIST_SELECT_FIELDS = [...ADMIN_LIST_SELECT_FIELDS, 'showInJobBoard'] as const;
 
 let listCache: { expiresAt: number; items: CrawledJobListItem[] } | null = null;
 let browsableJobsCache: { expiresAt: number; jobs: CrawledJob[] } | null = null;
@@ -145,7 +151,16 @@ function fromDoc(id: string, data: DocumentData): CrawledJob | null {
     crawledAt,
     createdAt,
     closedAt: serializeTimestamp(data.closedAt),
+    showInJobBoard:
+      data.showInJobBoard === true ? true : data.showInJobBoard === false ? false : undefined,
   };
+}
+
+function isJobEligibleForBoardList(job: CrawledJob): boolean {
+  if (job.status !== 'active' || isInvalidJobTitle(job.title)) return false;
+  if (job.showInJobBoard === true) return true;
+  if (job.showInJobBoard === false) return false;
+  return isBrowsableCrawledJob(job);
 }
 
 function toListItem(job: CrawledJob): CrawledJobListItem {
@@ -182,7 +197,7 @@ function toListItem(job: CrawledJob): CrawledJobListItem {
 }
 
 async function filterBrowsableJobs(jobs: CrawledJob[]): Promise<CrawledJob[]> {
-  const active = jobs.filter((job) => job.status === 'active' && isBrowsableCrawledJob(job));
+  const active = jobs.filter((job) => isJobEligibleForBoardList(job));
   return filterDisplayableJobs(active);
 }
 
@@ -354,7 +369,11 @@ async function listActiveFromFirestore(): Promise<CrawledJob[]> {
   const db = getAdminFirestore();
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
 
-  const snap = await db.collection(COLLECTION).where('status', '==', 'active').get();
+  const snap = await db
+    .collection(COLLECTION)
+    .where('status', '==', 'active')
+    .select(...BOARD_LIST_SELECT_FIELDS)
+    .get();
   return snap.docs
     .map((doc) => fromDoc(doc.id, doc.data()))
     .filter((item): item is CrawledJob => Boolean(item))
@@ -819,6 +838,25 @@ export async function countActiveCrawledJobs(): Promise<number> {
     const all = await listCrawledJobs();
     return all.filter((job) => job.status === 'active').length;
   }
+}
+
+/** 검색·빠른 필터·상세 필터 (캐시된 목록 필드만 사용) */
+export async function listFilteredCrawledJobsPage(
+  page: number,
+  pageSize: number,
+  filters: JobBoardFilters,
+): Promise<{ items: CrawledJobListItem[]; total: number }> {
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.max(1, Math.min(pageSize, 50));
+  const start = (safePage - 1) * safePageSize;
+
+  const jobs = await getBrowsableCrawledJobs();
+  const filtered = jobs.map(toListItem).filter((item) => jobMatchesBoardFilters(item, filters));
+
+  return {
+    items: filtered.slice(start, start + safePageSize),
+    total: filtered.length,
+  };
 }
 
 /** 필터 없는 목록: 페이지당 pageSize개만 조회 */

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
-import { jobMatchesBoardFilters } from '@/lib/job-board/match';
-import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
-import { listActiveCrawledJobsPage, listCrawledJobs } from '@/lib/crawled-jobs-server';
+import { JOB_LIST_PAGE_SIZE, type EmploymentType } from '@/lib/job-board/constants';
+import type { JobBoardFilters } from '@/lib/job-board/match';
+import { listActiveCrawledJobsPage, listFilteredCrawledJobsPage } from '@/lib/crawled-jobs-server';
 import {
   isEmploymentType,
   isJobRegion,
@@ -48,28 +48,26 @@ export async function GET(request: Request) {
       });
     }
 
-    const all = await listCrawledJobs();
-    const filtered = all.filter((job) =>
-      jobMatchesBoardFilters(job, {
-        q,
-        quickFilter:
-          quickFilter === '신입' ||
-          quickFilter === '경력' ||
-          quickFilter === '인턴' ||
-          quickFilter === '계약직'
-            ? quickFilter
-            : 'all',
-        employmentTypes,
-        roles,
-        regions,
-        todayOnly,
-        todayDate,
-      }),
-    );
+    const quick: JobBoardFilters['quickFilter'] =
+      quickFilter === '신입' ||
+      quickFilter === '경력' ||
+      quickFilter === '인턴' ||
+      quickFilter === '계약직'
+        ? (quickFilter as EmploymentType)
+        : 'all';
 
-    const total = filtered.length;
+    const boardFilters: JobBoardFilters = {
+      q,
+      quickFilter: quick,
+      employmentTypes,
+      roles,
+      regions,
+      todayOnly,
+      todayDate,
+    };
+
+    const { items, total } = await listFilteredCrawledJobsPage(page, pageSize, boardFilters);
     const start = (page - 1) * pageSize;
-    const items = filtered.slice(start, start + pageSize);
     const hasMore = start + items.length < total;
 
     return NextResponse.json({

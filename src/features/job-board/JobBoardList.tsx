@@ -87,6 +87,7 @@ export default function JobBoardList({
 }: JobBoardListProps) {
   const { user } = useAuth();
   const [filters, setFilters] = useState<JobBoardFilterState>(INITIAL_FILTERS);
+  const [debouncedQ, setDebouncedQ] = useState('');
   const [items, setItems] = useState<CrawledJobListItem[]>(prefetchedItems ?? EMPTY);
   const [todayItems, setTodayItems] = useState<CrawledJobListItem[]>(EMPTY);
   const [todayDate, setTodayDate] = useState('');
@@ -103,14 +104,24 @@ export default function JobBoardList({
 
   const todayOnly = mode === 'today';
 
+  useEffect(() => {
+    const handle = window.setTimeout(() => setDebouncedQ(filters.q), 300);
+    return () => window.clearTimeout(handle);
+  }, [filters.q]);
+
+  const filtersForFetch = useMemo(
+    () => ({ ...filters, q: debouncedQ }),
+    [filters, debouncedQ],
+  );
+
   const todayListQuery = useMemo(
-    () => buildQuery(filters, todayPage, true, pageSize),
-    [filters, todayPage, pageSize],
+    () => buildQuery(filtersForFetch, todayPage, true, pageSize),
+    [filtersForFetch, todayPage, pageSize],
   );
 
   const mainListQuery = useMemo(
-    () => buildQuery(filters, page, todayOnly, pageSize),
-    [filters, page, todayOnly, pageSize],
+    () => buildQuery(filtersForFetch, page, todayOnly, pageSize),
+    [filtersForFetch, page, todayOnly, pageSize],
   );
 
   const todayFetchKey = useMemo(
@@ -126,13 +137,13 @@ export default function JobBoardList({
   const canUsePrefetchedOnly = useMemo(() => {
     if (!prefetchedItems?.length || page !== 1 || mode !== 'all' || todayOnly) return false;
     return (
-      filters.q === '' &&
+      debouncedQ === '' &&
       filters.quickFilter === 'all' &&
       filters.employmentTypes.length === 0 &&
       filters.roles.length === 0 &&
       filters.regions.length === 0
     );
-  }, [prefetchedItems, page, mode, todayOnly, filters]);
+  }, [prefetchedItems, page, mode, todayOnly, filters, debouncedQ]);
 
   const resetList = useCallback(() => {
     setFilters(INITIAL_FILTERS);
