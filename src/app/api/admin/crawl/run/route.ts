@@ -3,8 +3,8 @@ import { requireAdminSession } from '@/lib/admin-auth';
 import { formatCrawlRunErrorMessage } from '@/lib/crawler/crawl-error-message';
 import { runCrawlPipeline } from '@/lib/crawler/run';
 
-/** Vercel Hobby 등은 플랫폼 상한(약 300초)이 있습니다. 로컬·Pro에서는 더 길게 돌 수 있습니다. */
-export const maxDuration = 800;
+/** Vercel Hobby 상한 300초. Pro는 800까지 가능하나 배포 호환을 위해 300으로 고정합니다. */
+export const maxDuration = 300;
 
 export async function POST() {
   const unauthorized = await requireAdminSession();
