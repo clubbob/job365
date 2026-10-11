@@ -136,7 +136,7 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
 
   const closed = job.status === 'closed';
   const originalJobUrl = getCrawledJobOriginalUrl(job.applyUrl);
-  const inquiryHref = buildJobInquiryHref('crawled', job.id, {
+  const inquiryHref = buildJobInquiryHref(job.id, {
     title: job.title,
     companyName: job.companyName,
   });

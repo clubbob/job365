@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import SignupConsent, {
   createSignupConsentState,
   isRequiredSignupConsentMet,
@@ -72,7 +72,9 @@ export default function SignupConsentPageClient() {
 
       <Card>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <SignupConsent value={consent} onChange={setConsent} />
+          <Suspense fallback={<p className="text-sm text-muted">약관 항목을 불러오는 중…</p>}>
+            <SignupConsent value={consent} onChange={setConsent} />
+          </Suspense>
 
           {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
 

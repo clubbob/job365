@@ -1,8 +1,18 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { type ReactNode } from 'react';
+import { getSafeReturnPath } from '@/lib/auth-return';
 import { cn } from '@/lib/utils';
+
+function useLegalDocumentHref(path: string): string {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
+  const returnPath = next ? getSafeReturnPath(next) : pathname;
+  return `${path}?next=${encodeURIComponent(returnPath)}`;
+}
 
 function ConsentRow({
   id,
@@ -76,6 +86,10 @@ export function isRequiredSignupConsentMet(consent: SignupConsentState): boolean
 }
 
 export default function SignupConsent({ value, onChange, className }: SignupConsentProps) {
+  const termsHref = useLegalDocumentHref('/terms');
+  const privacyHref = useLegalDocumentHref('/privacy');
+  const marketingHref = useLegalDocumentHref('/marketing');
+
   function handleAgreeAll(checked: boolean) {
     onChange({
       agreedAll: checked,
@@ -122,9 +136,9 @@ export default function SignupConsent({ value, onChange, className }: SignupCons
         required
       >
         <>
-          이용약관에 동의합니다.{' '}
-          <Link href="/terms" target="_blank" rel="noopener noreferrer" className={linkClassName}>
-            이용약관
+          이용약관 동의{' '}
+          <Link href={termsHref} className={linkClassName}>
+            보기
           </Link>
         </>
       </ConsentRow>
@@ -136,9 +150,9 @@ export default function SignupConsent({ value, onChange, className }: SignupCons
         required
       >
         <>
-          개인정보처리방침(개인정보 국외 이전 포함)에 동의합니다.{' '}
-          <Link href="/privacy" target="_blank" rel="noopener noreferrer" className={linkClassName}>
-            개인정보처리방침
+          개인정보처리방침 동의(개인정보 국외 이전 포함){' '}
+          <Link href={privacyHref} className={linkClassName}>
+            보기
           </Link>
         </>
       </ConsentRow>
@@ -149,9 +163,9 @@ export default function SignupConsent({ value, onChange, className }: SignupCons
         onChange={(checked) => patchConsent({ agreedMarketing: checked })}
       >
         <>
-          마케팅 활용 및 광고성 정보 수신에 동의합니다.{' '}
-          <Link href="/marketing" target="_blank" rel="noopener noreferrer" className={linkClassName}>
-            마케팅 수신 동의
+          마케팅 수신 동의{' '}
+          <Link href={marketingHref} className={linkClassName}>
+            보기
           </Link>
         </>
       </ConsentRow>

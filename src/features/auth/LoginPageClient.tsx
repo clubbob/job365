@@ -99,17 +99,7 @@ export default function LoginPageClient() {
           </div>
 
           <div>
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <FieldLabel htmlFor="login-password" required className="mb-0">
-                비밀번호
-              </FieldLabel>
-              <Link
-                href="/forgot-password"
-                className="text-xs font-semibold text-primary hover:underline"
-              >
-                비밀번호 찾기
-              </Link>
-            </div>
+            <FieldLabel htmlFor="login-password" required>비밀번호</FieldLabel>
             <input
               id="login-password"
               type="password"
@@ -138,15 +128,22 @@ export default function LoginPageClient() {
           </Button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-muted">
-          계정이 없나요?{' '}
-          <Link
-            href={`/signup${returnPath !== '/' ? `?next=${encodeURIComponent(returnPath)}` : ''}`}
-            className="font-semibold text-primary hover:underline"
-          >
-            회원가입
-          </Link>
-        </p>
+        <div className="mt-4 space-y-2 text-center text-sm text-muted">
+          <p>
+            <Link href="/forgot-password" className="font-semibold text-primary hover:underline">
+              비밀번호 찾기
+            </Link>
+          </p>
+          <p>
+            계정이 없나요?{' '}
+            <Link
+              href={`/signup${returnPath !== '/' ? `?next=${encodeURIComponent(returnPath)}` : ''}`}
+              className="font-semibold text-primary hover:underline"
+            >
+              회원가입
+            </Link>
+          </p>
+        </div>
       </Card>
     </div>
   );

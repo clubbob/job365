@@ -45,12 +45,16 @@ const NAV_ITEMS: Array<{
 }> = [
   { href: '/jobs', label: '채용 공고', exact: false },
   { href: '/my-jobs', label: MATCHED_JOBS_PAGE_TITLE, exact: false, authOnly: true },
+  { href: '/notices', label: '공지 사항', exact: false },
 ];
 
 function isNavActive(pathname: string, href: string, exact: boolean): boolean {
   if (exact) return pathname === href;
   if (href === '/jobs') {
     return pathname === '/jobs' || pathname.startsWith('/jobs/');
+  }
+  if (href === '/notices') {
+    return pathname === '/notices' || pathname.startsWith('/notices/');
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }

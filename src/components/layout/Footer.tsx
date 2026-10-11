@@ -23,6 +23,9 @@ export default function Footer() {
           <Link href="/marketing" className={navLinkClassName}>
             마케팅 수신 동의
           </Link>
+          <Link href="/notices" className={navLinkClassName}>
+            공지 사항
+          </Link>
           <Link href="/inquiry" className={navLinkClassName}>
             문의하기
           </Link>

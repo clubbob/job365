@@ -161,7 +161,7 @@ export default function JobDetailActions({ job }: { job: JobPosting }) {
         )}
 
         <JobInquiryButton
-          inquiryHref={buildJobInquiryHref('member', job.id, {
+          inquiryHref={buildJobInquiryHref(job.id, {
             title: job.title,
             companyName: job.companyName,
           })}

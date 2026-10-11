@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Logo from '@/components/brand/Logo';
+import { openInDesktopBrowserWindow } from '@/components/navigation/HomeBackLink';
 import { useAdminAuth } from '@/features/admin/admin-auth-context';
 import { cn } from '@/lib/utils';
 
@@ -12,6 +13,7 @@ const NAV_ITEMS = [
   { href: '/admin/users', label: '회원', exact: false },
   { href: '/admin/jobs', label: '채용 정보', exact: false },
   { href: '/admin/inquiries', label: '문의', exact: false },
+  { href: '/admin/notices', label: '공지 사항', exact: false },
 ];
 
 function isActive(pathname: string, href: string, exact: boolean): boolean {
@@ -63,12 +65,16 @@ export default function AdminHeader() {
         )}
 
         <div className="ml-auto flex items-center gap-2">
-          <Link
+          <a
             href="/"
             className="rounded-lg px-3.5 py-2 text-sm font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-foreground"
+            onClick={(event) => {
+              event.preventDefault();
+              openInDesktopBrowserWindow('/');
+            }}
           >
             사이트
-          </Link>
+          </a>
           {!authReady ? (
             <span className="text-sm text-muted">확인 중…</span>
           ) : loggedIn ? (

@@ -2,8 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { updateProfile } from 'firebase/auth';
+import SignupConsent, {
+  createSignupConsentState,
+  isRequiredSignupConsentMet,
+} from '@/components/auth/SignupConsent';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Button, Card, FieldLabel } from '@/components/ui/Card';
 import { FieldFeedback, FormFeedback } from '@/components/ui/FormFeedback';
@@ -12,13 +16,14 @@ import { useAuth } from '@/features/auth/auth-context';
 import { getSafeReturnPath } from '@/lib/auth-return';
 import { authFormInputClassName } from '@/lib/auth-ui';
 import { getClientAuth } from '@/lib/firebase';
+import { saveSignupConsents } from '@/lib/signup-consents-client';
 
 export default function SignupPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnPath = getSafeReturnPath(searchParams.get('next'));
   const loginHref = `/login${returnPath !== '/' ? `?next=${encodeURIComponent(returnPath)}` : ''}`;
-  const { user, loading, needsConsent, signUpWithEmail } = useAuth();
+  const { user, loading, needsConsent, signUpWithEmail, refreshConsentStatus } = useAuth();
   const [email, setEmail] = useState('');
   const [emailChecked, setEmailChecked] = useState(false);
   const [emailAvailable, setEmailAvailable] = useState(false);
@@ -30,9 +35,13 @@ export default function SignupPageClient() {
   const [checkingNickname, setCheckingNickname] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [consent, setConsent] = useState(createSignupConsentState);
+  const [completingRegistration, setCompletingRegistration] = useState(false);
+
+  const requiredConsentsMet = isRequiredSignupConsentMet(consent);
 
   useEffect(() => {
-    if (loading || !user) return;
+    if (loading || !user || completingRegistration) return;
 
     if (needsConsent) {
       const next = returnPath === '/' ? '' : `?next=${encodeURIComponent(returnPath)}`;
@@ -41,7 +50,7 @@ export default function SignupPageClient() {
     }
 
     router.replace(returnPath);
-  }, [user, loading, needsConsent, returnPath, router]);
+  }, [user, loading, needsConsent, returnPath, router, completingRegistration]);
 
   async function handleCheckEmail() {
     const value = email.trim();
@@ -138,7 +147,13 @@ export default function SignupPageClient() {
       return;
     }
 
+    if (!requiredConsentsMet) {
+      setError('필수 약관에 모두 동의해 주세요.');
+      return;
+    }
+
     setPending(true);
+    setCompletingRegistration(true);
     try {
       await signUpWithEmail(email, password);
 
@@ -165,19 +180,28 @@ export default function SignupPageClient() {
       if (!registerRes.ok || !registerJson.ok) {
         throw new Error(registerJson.error?.message ?? '닉네임 등록에 실패했습니다.');
       }
+
+      const saved = await saveSignupConsents(consent.agreedMarketing);
+      if (!saved) {
+        throw new Error('약관 동의 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+      await refreshConsentStatus();
     } catch (err) {
-      setError(getAuthErrorMessage(err, '회원가입에 실패했습니다.'));
+      setError(
+        err instanceof Error ? err.message : getAuthErrorMessage(err, '회원가입에 실패했습니다.'),
+      );
     } finally {
       setPending(false);
+      setCompletingRegistration(false);
     }
   }
 
-  if (loading || user) {
+  if (loading || (user && !completingRegistration)) {
     return (
       <div className="flex flex-col gap-5">
         <PageHeader
           title="회원가입"
-          description={needsConsent ? '약관 동의 페이지로 이동 중입니다.' : '불러오는 중…'}
+          description={needsConsent ? '약관 동의 페이지로 이동 중입니다.' : '가입이 완료되었습니다. 이동 중입니다.'}
           showRefresh={false}
         />
       </div>
@@ -268,11 +292,22 @@ export default function SignupPageClient() {
             ) : null}
           </div>
 
+          <Suspense fallback={<p className="text-sm text-muted">약관 항목을 불러오는 중…</p>}>
+            <SignupConsent value={consent} onChange={setConsent} />
+          </Suspense>
+
           {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
 
           <Button
             type="submit"
-            disabled={pending || !emailChecked || !emailAvailable || !nicknameChecked || !nicknameAvailable}
+            disabled={
+              pending ||
+              !emailChecked ||
+              !emailAvailable ||
+              !nicknameChecked ||
+              !nicknameAvailable ||
+              !requiredConsentsMet
+            }
           >
             {pending ? '가입 중…' : '회원가입'}
           </Button>

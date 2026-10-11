@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import LegalPageShell from '@/components/legal/LegalPageShell';
 import MarketingConsentDocument, {
   MARKETING_CONSENT_EFFECTIVE_DATE,
@@ -10,8 +11,10 @@ export const metadata: Metadata = {
 
 export default function MarketingPage() {
   return (
-    <LegalPageShell title="마케팅 수신 동의" effectiveDate={MARKETING_CONSENT_EFFECTIVE_DATE}>
-      <MarketingConsentDocument />
-    </LegalPageShell>
+    <Suspense fallback={<p className="text-sm text-muted">불러오는 중…</p>}>
+      <LegalPageShell title="마케팅 수신 동의" effectiveDate={MARKETING_CONSENT_EFFECTIVE_DATE}>
+        <MarketingConsentDocument />
+      </LegalPageShell>
+    </Suspense>
   );
 }

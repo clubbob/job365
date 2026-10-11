@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { LegalOl, LegalP, LegalSection, LegalUl } from '@/components/legal/LegalDocument';
+import { Suspense } from 'react';
+import { LegalOl, LegalP, LegalSection } from '@/components/legal/LegalDocument';
 import LegalPageShell from '@/components/legal/LegalPageShell';
 import { COMPANY } from '@/lib/company';
 import { LEGAL_EFFECTIVE_DATE } from '@/lib/legal-effective-date';
@@ -23,6 +24,7 @@ function MailLink() {
 
 export default function PrivacyPage() {
   return (
+    <Suspense fallback={<p className="text-sm text-muted">불러오는 중…</p>}>
     <LegalPageShell
       title="개인정보처리방침"
       effectiveDate={EFFECTIVE_DATE}
@@ -38,20 +40,19 @@ export default function PrivacyPage() {
       <LegalSection title="2. 처리 목적 및 항목">
         <LegalP>회사는 다음 목적에 필요한 범위에서만 개인정보를 처리합니다.</LegalP>
         <LegalOl>
-          <li>회원 가입·로그인·이용 주체 구분, 계정·동의 기록 관리</li>
-          <li>이력서·회사 정보·회원 등록 채용 정보 등록·열람·매칭(지원·면접 제안 등)</li>
+          <li>회원 가입·로그인, 계정·동의 기록 관리</li>
           <li>수집 채용 공고 찜, 맞춤 채용 설정·이메일(「채용 공고 이메일 받기」 선택·저장 시)</li>
-          <li>사업자등록번호 상태조회, 문의·답변·첨부, 비밀번호 재설정·운영 안내</li>
+          <li>문의·답변·첨부, 비밀번호 재설정·운영 안내</li>
           <li>부정 이용 방지, 서비스 개선, 마케팅 수신 동의 시 광고성 안내(선택)</li>
         </LegalOl>
         <LegalP>
-          주요 항목: 이메일, 닉네임, 비밀번호(암호화), 이력서·채용·회사 정보 입력 내용, 찜·맞춤 설정, 문의 내용,
-          접속·쿠키·기기 정보 등. 수집 채용 공고는 공개 채용 정보를 요약 제공하며, 개인 식별 정보는 원칙적으로
-          다루지 않습니다.
+          주요 항목: 이메일, 닉네임, 비밀번호(암호화), 찜·맞춤 설정, 문의 내용, 접속·쿠키·기기 정보 등. 수집 채용 공고는
+          공개 채용 정보를 요약 제공하며, 개인 식별 정보는 원칙적으로 다루지 않습니다. 구인자·구직자 구분으로 채용
+          공고·이력서·인재 프로필을 회원이 등록하는 기능은 제공하지 않습니다.
         </LegalP>
         <LegalP>
-          계정·이력서·찜·맞춤 설정·문의 등은 서버(Firebase 등)에, 입사 지원·면접 제안·관심 회사·열람 제한 등은 브라우저
-          저장소에 저장될 수 있습니다.
+          계정·찜·맞춤 설정·문의 등은 서버(Firebase 등)에 저장될 수 있습니다. 일부 기능은 이용 기기 브라우저 저장소를
+          사용할 수 있습니다.
         </LegalP>
       </LegalSection>
 
@@ -64,12 +65,9 @@ export default function PrivacyPage() {
 
       <LegalSection title="4. 제3자 제공·위탁·국외 이전">
         <LegalP>동의 또는 법령에 따른 경우에만 제3자에게 제공합니다.</LegalP>
-        <LegalUl>
-          <li>국세청(공공데이터포털): 사업자등록번호 상태조회</li>
-          <li>입사 지원·면접 제안 상대 회원: 공개된 지원·이력서 정보(면접 수락 시 구직자 실명)</li>
-        </LegalUl>
+        <LegalP>법령에 따른 제공이 필요한 경우에 한해 관계 기관에 제공할 수 있습니다.</LegalP>
         <LegalP>
-          위탁: Google(Firebase·인증·저장), 네이버 메일 SMTP(운영·맞춤 채용 메일 등). Firebase 이용에 따라 개인정보가
+          위탁: Google(Firebase·이메일·비밀번호 인증·저장). Firebase 이용에 따라 개인정보가
           미국으로 이전될 수 있으며, 회원가입 시 개인정보처리방침(국외 이전 포함) 동의로 이전·이용합니다.
         </LegalP>
       </LegalSection>
@@ -96,5 +94,6 @@ export default function PrivacyPage() {
         <LegalP>방침 변경 시 서비스에 게시하며, 중요한 변경은 시행 7일 전부터 알립니다.</LegalP>
       </LegalSection>
     </LegalPageShell>
+    </Suspense>
   );
 }

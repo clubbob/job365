@@ -9,7 +9,7 @@ export default function AdminDashboard() {
     <div className="space-y-5">
       <PageHeader
         title="관리자"
-        description="회원, 탈퇴 내역, 크롤링, 문의를 확인합니다."
+        description="회원, 탈퇴 내역, 채용 정보, 공지 사항, 문의를 확인합니다."
         homeHref="/"
         homeLabel="사이트로"
         homeOpenInNewWindow
@@ -58,6 +58,14 @@ export default function AdminDashboard() {
             className="mt-auto inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
           >
             문의 보기
+          </Link>
+        </Card>
+        <Card className="flex h-full flex-col" title="공지 사항" description="사이트에 표시할 공지를 등록·수정합니다.">
+          <Link
+            href="/admin/notices"
+            className="mt-auto inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
+          >
+            공지 사항 관리
           </Link>
         </Card>
       </div>

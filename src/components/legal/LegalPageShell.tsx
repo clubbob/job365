@@ -1,10 +1,16 @@
-import LegalCloseButton from '@/components/legal/LegalCloseButton';
+'use client';
+
+import { useSearchParams } from 'next/navigation';
 import LegalCompanyInfo from '@/components/legal/LegalCompanyInfo';
+import PageHeader from '@/components/navigation/PageHeader';
+import { Card } from '@/components/ui/Card';
+import { getSafeReturnPath } from '@/lib/auth-return';
 
 type LegalPageShellProps = {
   title: string;
   effectiveDate: string;
   companySectionTitle?: string;
+  /** 마이페이지 등 오버레이에서 문서만 닫을 때 */
   onClose?: () => void;
   children: React.ReactNode;
 };
@@ -16,31 +22,26 @@ export default function LegalPageShell({
   onClose,
   children,
 }: LegalPageShellProps) {
+  const searchParams = useSearchParams();
+  const backHref = getSafeReturnPath(searchParams.get('next'));
+
   return (
     <div className="flex flex-col gap-5">
-      <header className="rounded-xl border border-border bg-surface px-4 py-5 shadow-card sm:px-8 sm:py-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 space-y-2">
-            <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{title}</h1>
-            <p className="text-sm text-muted">시행일: {effectiveDate}</p>
-          </div>
-          <LegalCloseButton onClose={onClose} />
-        </div>
-      </header>
+      <PageHeader
+        title={title}
+        description={`시행일: ${effectiveDate}`}
+        showRefresh={false}
+        homeHref={onClose ? undefined : backHref}
+        homeLabel="돌아가기"
+        onHomeClick={onClose}
+      />
 
-      <article className="rounded-xl border border-border bg-surface p-4 shadow-card sm:p-8">
+      <Card>
         <div className="space-y-8 [&_strong]:font-semibold [&_strong]:text-foreground">
           {children}
           <LegalCompanyInfo title={companySectionTitle} />
         </div>
-      </article>
-
-      <div className="flex justify-center pb-2">
-        <LegalCloseButton
-          onClose={onClose}
-          className="inline-flex w-full max-w-xs items-center justify-center rounded-lg border border-border-strong bg-surface px-6 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:border-primary hover:bg-neutral-50 hover:text-primary active:scale-[0.99] sm:w-auto"
-        />
-      </div>
+      </Card>
     </div>
   );
 }

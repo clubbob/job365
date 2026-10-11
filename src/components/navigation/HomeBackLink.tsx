@@ -5,7 +5,7 @@ import Link from 'next/link';
 const linkClassName =
   'inline-flex shrink-0 items-center justify-center rounded-lg border border-border-strong bg-surface px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:border-primary hover:bg-neutral-50 hover:text-primary active:scale-[0.99] print:hidden';
 
-function openInDesktopBrowserWindow(href: string) {
+export function openInDesktopBrowserWindow(href: string) {
   const url = new URL(href, window.location.origin).toString();
   const width = Math.min(window.screen.availWidth, Math.max(1280, Math.round(window.screen.availWidth * 0.92)));
   const height = Math.min(window.screen.availHeight, Math.max(800, Math.round(window.screen.availHeight * 0.92)));
@@ -32,11 +32,21 @@ export default function HomeBackLink({
   href = '/',
   label = '홈으로',
   openInNewWindow = false,
+  onClick,
 }: {
   href?: string;
   label?: string;
   openInNewWindow?: boolean;
+  onClick?: () => void;
 }) {
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={linkClassName}>
+        ← {label}
+      </button>
+    );
+  }
+
   if (openInNewWindow) {
     return (
       <a

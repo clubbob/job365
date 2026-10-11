@@ -8,18 +8,25 @@ export default function PageActions({
   homeHref,
   homeLabel,
   homeOpenInNewWindow,
+  onHomeClick,
 }: {
   showHome?: boolean;
   showRefresh?: boolean;
   homeHref?: string;
   homeLabel?: string;
   homeOpenInNewWindow?: boolean;
+  onHomeClick?: () => void;
 }) {
   return (
     <div className="flex shrink-0 items-center gap-2">
       {showRefresh ? <RefreshButton /> : null}
       {showHome ? (
-        <HomeBackLink href={homeHref} label={homeLabel} openInNewWindow={homeOpenInNewWindow} />
+        <HomeBackLink
+          href={homeHref}
+          label={homeLabel}
+          openInNewWindow={homeOpenInNewWindow}
+          onClick={onHomeClick}
+        />
       ) : null}
     </div>
   );

@@ -8,6 +8,7 @@ export default function PageHeader({
   homeHref,
   homeLabel,
   homeOpenInNewWindow,
+  onHomeClick,
 }: {
   title: string;
   description?: string;
@@ -15,6 +16,8 @@ export default function PageHeader({
   homeHref?: string;
   homeLabel?: string;
   homeOpenInNewWindow?: boolean;
+  /** 링크 대신 버튼(오버레이 닫기 등) */
+  onHomeClick?: () => void;
 }) {
   return (
     <header className="flex min-w-0 items-start justify-between gap-3">
@@ -27,6 +30,7 @@ export default function PageHeader({
         homeHref={homeHref}
         homeLabel={homeLabel}
         homeOpenInNewWindow={homeOpenInNewWindow}
+        onHomeClick={onHomeClick}
       />
     </header>
   );

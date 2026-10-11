@@ -29,10 +29,10 @@ export default function MarketingConsentDocument() {
       </LegalSection>
 
       <LegalSection title="2. 내용·항목·수단">
-        <LegalP>이벤트·혜택·신규 기능·채용·취업 관련 소식 등을 이메일로 보낼 수 있습니다.</LegalP>
+        <LegalP>이벤트·혜택·신규 기능·채용·취업 관련 소식 등을 이메일 또는 문자로 보낼 수 있습니다.</LegalP>
         <LegalUl>
           <li>이용 항목: 이메일, 닉네임, 이용 주체, 동의·철회 일시</li>
-          <li>수단: 이메일(문자·전화 광고는 하지 않음)</li>
+          <li>수단: 이메일 또는 문자</li>
           <li>보유: 동의 철회 또는 탈퇴 시까지</li>
         </LegalUl>
       </LegalSection>
