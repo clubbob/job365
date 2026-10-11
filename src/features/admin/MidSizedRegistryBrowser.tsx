@@ -13,8 +13,8 @@ import {
   COMPANY_REGISTRY_STAT_EMPTY,
   RegistryCareersUrlLink,
   RegistryDetailButton,
-  RegistryTableEmptyCell,
   adminRegistryTableClassName,
+  formatRegistryActiveJobCount,
   adminRegistryTableWrapClassName,
   formatCompanyRegistryResultMeta,
 } from '@/features/admin/AdminRegistryListChrome';
@@ -30,6 +30,7 @@ type RegistryRow = {
   linked: boolean;
   careersDiscoveryStatus: CareersDiscoveryStatus;
   careersUrlCheckedAt: string | null;
+  activeJobCount: number;
 };
 
 type RegistryResponse = {
@@ -152,7 +153,7 @@ export default function MidSizedRegistryBrowser() {
                     <td className="px-3 py-2 text-muted">{row.active ? '유효' : '만료'}</td>
                     <td className="px-3 py-2 text-muted">{discoveryLabel(row.careersDiscoveryStatus)}</td>
                     <td className="px-3 py-2 text-muted">
-                      <RegistryTableEmptyCell />
+                      {formatRegistryActiveJobCount(row.activeJobCount)}
                     </td>
                     <td className="px-3 py-2">
                       <RegistryCareersUrlLink url={row.careersUrl} />

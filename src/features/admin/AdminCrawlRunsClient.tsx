@@ -4,7 +4,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { ADMIN_CRAWL_RUNS_PAGE_SIZE, ADMIN_CRAWL_RUNS_RETENTION_DAYS } from '@/lib/admin-constants';
-import { adminDangerActionClassName, adminJson, adminPrimaryActionClassName } from '@/lib/admin-ui';
+import {
+  adminDangerActionClassName,
+  adminJson,
+  adminPrimaryActionClassName,
+  humanizeAdminFetchError,
+} from '@/lib/admin-ui';
+import { FormFeedback } from '@/components/ui/FormFeedback';
 import { CRAWL_SCHEDULE } from '@/lib/crawler/schedule';
 import { formatInquiryDateTime } from '@/lib/inquiry-display';
 import { cn } from '@/lib/utils';
@@ -45,6 +51,19 @@ function isCrawlSourceMemoLine(line: string): boolean {
   if (t.startsWith('고용24')) return true;
   if (t.includes('WORK24_AUTH_KEY')) return true;
   return false;
+}
+
+function summarizeSourceMemos(memos: string[]): string | null {
+  if (memos.length === 0) return null;
+  if (memos.some((line) => line.includes('WORK24_AUTH_KEY'))) {
+    return '고용24 API 키 없음';
+  }
+  const batch = memos.find((line) => line.startsWith('DB 배치:'));
+  if (batch) {
+    return batch.replace(/^DB 배치:\s*/, 'DB 배치 · ');
+  }
+  const first = memos[0].trim();
+  return first.length > 56 ? `${first.slice(0, 56)}…` : first;
 }
 
 function splitCrawlSourceMessages(errors: string[]): { memos: string[]; issues: string[] } {
@@ -156,6 +175,18 @@ function CrawlErrorSummary({ errors }: { errors: string[] }) {
 const PAGE_BUTTON =
   'inline-flex min-w-9 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors';
 
+function formatCrawlEtaLabel(seconds: number): string {
+  if (seconds <= 0) return '곧 끝납니다';
+  if (seconds < 60) return '1분 이내';
+  const minutes = Math.ceil(seconds / 60);
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    return rest > 0 ? `약 ${hours}시간 ${rest}분` : `약 ${hours}시간`;
+  }
+  return `약 ${minutes}분`;
+}
+
 function CrawlRunCard({ run, defaultExpanded = false }: { run: CrawlRun; defaultExpanded?: boolean }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const sources = useMemo(() => sortSourcesForDisplay(run.sources), [run.sources]);
@@ -163,10 +194,8 @@ function CrawlRunCard({ run, defaultExpanded = false }: { run: CrawlRun; default
     (source) => splitCrawlSourceMessages(source.errors).issues.length > 0,
   ).length;
   const successSourceCount = sources.filter((source) => source.upserted > 0).length;
-  const isCompactMidSizedRun =
-    run.runKind === 'mid-sized-only' || (sources.length <= 3 && sources.every((s) => s.sourceName.includes('중견')));
   const runKindLabel =
-    run.runKind === 'mid-sized-only' ? '중견만' : run.runKind === 'daily' ? '일일 전체' : null;
+    run.runKind === 'mid-sized-only' ? '중견만' : run.runKind === 'daily' ? '전체 수집' : null;
 
   return (
     <Card>
@@ -186,9 +215,9 @@ function CrawlRunCard({ run, defaultExpanded = false }: { run: CrawlRun; default
             ) : null}
           </p>
           <p className="mt-0.5 text-xs text-muted">
-            수집 소스 {sources.length}곳 · 저장 있음 {successSourceCount}곳
+            소스 {sources.length}곳
+            {successSourceCount > 0 ? ` · 저장 ${successSourceCount}곳` : ''}
             {errorSourceCount > 0 ? ` · 오류 ${errorSourceCount}곳` : ''}
-            {isCompactMidSizedRun ? ' · 중견은 회사별이 아니라 배치 2줄로 표시' : ''}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -209,14 +238,15 @@ function CrawlRunCard({ run, defaultExpanded = false }: { run: CrawlRun; default
                 <th className="whitespace-nowrap py-2 pr-4 font-semibold">가져온 공고</th>
                 <th className="whitespace-nowrap py-2 pr-4 font-semibold">저장</th>
                 <th className="whitespace-nowrap py-2 pr-4 font-semibold">마감</th>
-                <th className="py-2 font-semibold">진행·오류</th>
+                <th className="py-2 font-semibold">안내</th>
               </tr>
             </thead>
             <tbody>
               {sources.map((source, index) => {
                 const { memos, issues } = splitCrawlSourceMessages(source.errors);
                 const hasIssues = issues.length > 0;
-                const rowMuted = source.upserted === 0 && source.fetched === 0 && !hasIssues && memos.length === 0;
+                const memoSummary = summarizeSourceMemos(memos);
+                const rowMuted = source.upserted === 0 && source.fetched === 0 && !hasIssues && !memoSummary;
                 return (
                   <tr
                     key={`${source.sourceName}-${index}`}
@@ -241,15 +271,14 @@ function CrawlRunCard({ run, defaultExpanded = false }: { run: CrawlRun; default
                     <td className="whitespace-nowrap py-2.5 pr-4 align-top text-muted">
                       {source.closed.toLocaleString('ko-KR')}
                     </td>
-                    <td className="min-w-[10rem] py-2.5 align-top">
-                      {memos.length > 0 ? (
-                        <ul className="mb-2 space-y-1 text-xs text-muted">
-                          {memos.map((memo) => (
-                            <li key={memo}>{memo}</li>
-                          ))}
-                        </ul>
+                    <td className="min-w-[8rem] max-w-[18rem] py-2.5 align-top">
+                      {memoSummary && !hasIssues ? (
+                        <p className="text-xs text-muted">{memoSummary}</p>
                       ) : null}
-                      <CrawlErrorSummary errors={issues} />
+                      {hasIssues ? <CrawlErrorSummary errors={issues} /> : null}
+                      {!memoSummary && !hasIssues ? (
+                        <span className="text-xs text-subtle">—</span>
+                      ) : null}
                     </td>
                   </tr>
                 );
@@ -272,6 +301,25 @@ export default function AdminCrawlRunsClient() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [purging, setPurging] = useState(false);
+  const [crawlEtaSeconds, setCrawlEtaSeconds] = useState(0);
+  const crawlEtaInitialSeconds = CRAWL_SCHEDULE.localManualRunEstimateMinutes * 60;
+
+  useEffect(() => {
+    if (!running) {
+      setCrawlEtaSeconds(0);
+      return;
+    }
+    setCrawlEtaSeconds(crawlEtaInitialSeconds);
+    const tick = window.setInterval(() => {
+      setCrawlEtaSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(tick);
+  }, [running, crawlEtaInitialSeconds]);
+
+  const crawlEtaProgress =
+    crawlEtaInitialSeconds > 0
+      ? Math.min(100, ((crawlEtaInitialSeconds - crawlEtaSeconds) / crawlEtaInitialSeconds) * 100)
+      : 0;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -295,7 +343,11 @@ export default function AdminCrawlRunsClient() {
       setTotal(json.data.total);
       setTotalPages(json.data.totalPages);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '수집 실행 내역을 불러오지 못했습니다.');
+      setError(
+        humanizeAdminFetchError(
+          err instanceof Error ? err.message : '수집 실행 내역을 불러오지 못했습니다.',
+        ),
+      );
     } finally {
       setLoading(false);
     }
@@ -340,7 +392,11 @@ export default function AdminCrawlRunsClient() {
         await load();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '오래된 실행 내역을 삭제하지 못했습니다.');
+      setError(
+        humanizeAdminFetchError(
+          err instanceof Error ? err.message : '오래된 실행 내역을 삭제하지 못했습니다.',
+        ),
+      );
     } finally {
       setPurging(false);
     }
@@ -366,7 +422,7 @@ export default function AdminCrawlRunsClient() {
         throw new Error(message ?? '수집을 실행하지 못했습니다.');
       }
       setRunMessage(
-        `수집을 완료했습니다. 저장 ${json.data.summary.totalUpserted}건 · 마감 ${json.data.summary.totalClosed}건`,
+        `수집 완료 — 저장 ${json.data.summary.totalUpserted.toLocaleString('ko-KR')}건 · 마감 ${json.data.summary.totalClosed.toLocaleString('ko-KR')}건`,
       );
       if (page !== 1) {
         setPage(1);
@@ -374,7 +430,14 @@ export default function AdminCrawlRunsClient() {
         await load();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '수집을 실행하지 못했습니다.');
+      const base = humanizeAdminFetchError(
+        err instanceof Error ? err.message : '수집을 실행하지 못했습니다.',
+      );
+      const timedOutHint =
+        base.includes('서버에 연결하지 못했습니다')
+          ? ' 브라우저 요청은 약 5분에서 끊길 수 있지만, 중견 배치는 회사마다 DB에 저장하므로 이미 쌓인 공고는 「수집 채용 공고」에서 확인해 보세요. 로컬에서 끝까지 돌리려면 터미널에서 pnpm crawl 을 사용하세요.'
+          : '';
+      setError(`${base}${timedOutHint}`);
     } finally {
       setRunning(false);
     }
@@ -384,55 +447,85 @@ export default function AdminCrawlRunsClient() {
     <div className="space-y-5">
       <PageHeader
         title="수집 실행 내역"
-        description="실행마다 채용 사이트(소스)별로 가져온 공고·저장·마감 건수를 봅니다. 대기업은 사이트마다 한 줄, 중견은 DB·고용24 배치 두 줄로 묶여 표시됩니다."
+        description="자동·수동 수집 결과를 날짜별로 확인합니다."
         homeHref="/admin"
         homeLabel="대시보드"
       />
 
       <Card>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground">수집 일정</p>
             <p className="mt-1 text-sm text-muted">{CRAWL_SCHEDULE.label}</p>
-            <p className="mt-1 text-sm text-muted">{CRAWL_SCHEDULE.detail}</p>
-            <p className="mt-1 text-xs text-subtle">
-              자동 실행은 {CRAWL_SCHEDULE.runner}에서 최대 {CRAWL_SCHEDULE.maxRunnerMinutes}분까지 돌아갑니다. Vercel
-              요금과 무관합니다. 로컬 개발 서버에서는 cron이 돌지 않습니다.
-            </p>
+            <details className="mt-2 text-xs text-muted">
+              <summary className="cursor-pointer font-semibold text-subtle hover:text-foreground">
+                자동·로컬 수집 안내
+              </summary>
+              <ul className="mt-2 list-disc space-y-1 pl-4 leading-relaxed">
+                <li>{CRAWL_SCHEDULE.detail}</li>
+                <li>
+                  자동 수집은 {CRAWL_SCHEDULE.runner}에서 {CRAWL_SCHEDULE.label}에 실행됩니다(한 번 최대{' '}
+                  {CRAWL_SCHEDULE.maxRunnerMinutes}분). 개발 PC에서는 예약 실행이 없습니다.
+                </li>
+              </ul>
+            </details>
           </div>
           <button
             type="button"
             onClick={() => void handleRunNow()}
             disabled={running}
-            className={adminPrimaryActionClassName}
+            className={cn(adminPrimaryActionClassName, 'shrink-0')}
           >
             {running ? '수집 중…' : '지금 수집 실행'}
           </button>
         </div>
+        {running ? (
+          <div className="mt-4 rounded-lg border border-primary/25 bg-primary/5 px-4 py-3">
+            <p className="text-sm font-semibold text-foreground">
+              예상 남은 시간 {formatCrawlEtaLabel(crawlEtaSeconds)}
+            </p>
+            <div
+              className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-200/90"
+              role="progressbar"
+              aria-valuenow={Math.round(crawlEtaProgress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="수집 진행(예상)"
+            >
+              <div
+                className="h-full rounded-full bg-primary transition-[width] duration-1000 ease-linear"
+                style={{ width: `${crawlEtaProgress}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-muted">
+              처음 {CRAWL_SCHEDULE.localManualRunEstimateMinutes}분 기준으로 줄어 듭니다. 실제로는 더 길거나 짧을 수
+              있어요. 이 탭을 닫지 마세요.
+            </p>
+          </div>
+        ) : null}
       </Card>
 
-      {error ? <p className="text-sm text-red-700">{error}</p> : null}
-      {runMessage ? <p className="text-sm font-medium text-foreground">{runMessage}</p> : null}
+      {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
+      {runMessage ? <FormFeedback variant="success">{runMessage}</FormFeedback> : null}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        {total > 0 ? (
-          <p className="text-xs text-subtle">
-            실행 {total.toLocaleString('ko-KR')}회 · {page}/{totalPages}페이지
-            {loading ? ' · 불러오는 중…' : ''}
-          </p>
-        ) : (
-          <p className="text-xs text-subtle">실행 내역은 관리용 로그입니다. 채용 공고와는 별도로 저장됩니다.</p>
-        )}
-        <button
-          type="button"
-          disabled={purging || loading || running}
-          onClick={() => void handlePurgeOldRuns()}
-          className={adminDangerActionClassName}
-        >
-          {purging ? '삭제 중…' : `${ADMIN_CRAWL_RUNS_RETENTION_DAYS}일 이전 내역 삭제`}
-        </button>
-      </div>
-
+      <Card
+        title="실행 내역"
+        description={
+          total > 0
+            ? `총 ${total.toLocaleString('ko-KR')}회 · ${page}/${totalPages}페이지${loading ? ' · 불러오는 중…' : ''}`
+            : '채용 공고 데이터와 별도로 저장되는 관리 로그입니다.'
+        }
+        action={
+          <button
+            type="button"
+            disabled={purging || loading || running}
+            onClick={() => void handlePurgeOldRuns()}
+            className={adminDangerActionClassName}
+          >
+            {purging ? '삭제 중…' : `${ADMIN_CRAWL_RUNS_RETENTION_DAYS}일 이전 삭제`}
+          </button>
+        }
+      >
       {loading && runs.length === 0 ? <p className="text-sm text-muted">불러오는 중…</p> : null}
 
       <div className={cn('space-y-3', loading && runs.length > 0 && 'opacity-60')}>
@@ -441,6 +534,7 @@ export default function AdminCrawlRunsClient() {
         ))}
         {!loading && runs.length === 0 ? <p className="text-sm text-muted">실행 내역이 없습니다.</p> : null}
       </div>
+      </Card>
 
       {totalPages > 1 ? (
         <nav className="flex flex-wrap items-center justify-center gap-2" aria-label="수집 실행 내역 페이지">

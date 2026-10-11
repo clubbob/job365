@@ -1,3 +1,11 @@
+export function humanizeAdminFetchError(message: string): string {
+  const trimmed = message.trim();
+  if (trimmed === 'Failed to fetch') {
+    return '서버에 연결하지 못했습니다. 개발 서버가 실행 중인지 확인해 주세요.';
+  }
+  return trimmed;
+}
+
 export function firebaseAdminUnavailableText(message?: string | null) {
   return (
     message?.trim() ||

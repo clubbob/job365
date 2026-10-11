@@ -14,10 +14,10 @@ export function isThinCrawledDescription(description: string): boolean {
   return false;
 }
 
-/** 안내 팝업·푸터 등 공고가 아닌 내용 */
+/** 안내 팝업·푸터 등 공고가 아닌 내용(스팸·오탐). 설명이 짧은 공고는 제외하지 않습니다. */
 export function isInvalidJobDescription(description: string): boolean {
-  if (isThinCrawledDescription(description)) return true;
   const text = htmlToPlainText(description);
+  if (!text) return false;
   if (/이메일\s*주소\s*무단\s*수집/.test(text)) return true;
   if (/정보통신망법에\s*의해\s*형사처벌/.test(text)) return true;
   if (/^닫기\s*$/i.test(text)) return true;

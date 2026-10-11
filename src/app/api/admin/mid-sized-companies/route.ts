@@ -6,6 +6,10 @@ import {
 } from '@/lib/mid-sized-companies/registry-db';
 import { isMidSizedCertificateActive } from '@/lib/mid-sized-companies/registry-dedupe';
 import { loadMidSizedRegistryFromDisk } from '@/lib/mid-sized-companies-server';
+import {
+  activeJobCountForMidSizedCrawlSource,
+  getCrawledJobSourceStats,
+} from '@/lib/crawled-jobs-server';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
@@ -72,10 +76,30 @@ export async function GET(request: Request) {
 
   const page = rows.slice(offset, offset + limit);
 
+  let jobCountsBySource: Record<string, number> = {};
+  try {
+    const stats = await getCrawledJobSourceStats({ skipDisplayFilters: true });
+    jobCountsBySource = stats.jobCountsBySource;
+  } catch {
+    jobCountsBySource = {};
+  }
+
+  const items = page.map((row) => ({
+    companyName: row.companyName,
+    businessNumber: row.businessNumber,
+    validTo: row.validTo,
+    active: row.active,
+    careersUrl: row.careersUrl,
+    linked: row.linked,
+    careersDiscoveryStatus: row.careersDiscoveryStatus,
+    careersUrlCheckedAt: row.careersUrlCheckedAt,
+    activeJobCount: activeJobCountForMidSizedCrawlSource(row.crawlSourceId, jobCountsBySource),
+  }));
+
   return NextResponse.json({
     ok: true,
     data: {
-      items: page,
+      items,
       total,
       linkedCount,
       offset,

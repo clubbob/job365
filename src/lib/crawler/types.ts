@@ -9,6 +9,13 @@ export type CrawlerSourceResult = {
   syncEmpty?: boolean;
 };
 
+/** 회사·소스 단위로 수집 직후 DB에 반영할 때 사용합니다. */
+export type CrawlSourceResultSink = (result: CrawlerSourceResult) => void | Promise<void>;
+
+export type CrawlBatchOptions = {
+  onSourceResult?: CrawlSourceResultSink;
+};
+
 export type CrawlRunKind = 'daily' | 'mid-sized-only';
 
 export type CrawlRunSummary = {

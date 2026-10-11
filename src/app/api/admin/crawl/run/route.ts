@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/admin-auth';
+import { formatCrawlRunErrorMessage } from '@/lib/crawler/crawl-error-message';
 import { runCrawlPipeline } from '@/lib/crawler/run';
 
-export const maxDuration = 300;
+/** Vercel Hobby 등은 플랫폼 상한(약 300초)이 있습니다. 로컬·Pro에서는 더 길게 돌 수 있습니다. */
+export const maxDuration = 800;
 
 export async function POST() {
   const unauthorized = await requireAdminSession();
@@ -18,7 +20,7 @@ export async function POST() {
         ok: false,
         error: {
           code: 'CRAWL_FAILED',
-          message: error instanceof Error ? error.message : '수집에 실패했습니다.',
+          message: formatCrawlRunErrorMessage(error),
         },
       },
       { status: 500 },

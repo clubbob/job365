@@ -228,6 +228,10 @@ export function RegistryTableEmptyCell() {
   return <span className="text-muted">−</span>;
 }
 
+export function formatRegistryActiveJobCount(activeJobCount: number): string {
+  return activeJobCount > 0 ? `${activeJobCount.toLocaleString('ko-KR')}건` : '−';
+}
+
 export function AdminCompanyRegistryTableHead() {
   return (
     <thead className={adminRegistryTableHeadClassName}>

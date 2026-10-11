@@ -308,8 +308,9 @@ export default function JobBoardList({
 
   const countLabel = useMemo(() => {
     if (loading && items.length === 0) return '불러오는 중…';
-    if (loading) return `모집 중 총 ${total}건 · 갱신 중…`;
-    return `모집 중 총 ${total}건`;
+    const totalLabel = total.toLocaleString('ko-KR');
+    if (loading) return `모집 중 총 ${totalLabel}건 · 갱신 중…`;
+    return `모집 중 총 ${totalLabel}건`;
   }, [loading, total, items.length]);
 
   return (

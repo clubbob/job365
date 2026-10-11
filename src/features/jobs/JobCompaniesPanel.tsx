@@ -20,6 +20,7 @@ import {
   adminRegistryTableClassName,
   adminRegistryTableWrapClassName,
   formatCompanyRegistryResultMeta,
+  formatRegistryActiveJobCount,
 } from '@/features/admin/AdminRegistryListChrome';
 import MidSizedRegistryBrowser from '@/features/admin/MidSizedRegistryBrowser';
 import { adminPrimaryActionClassName } from '@/lib/admin-ui';
@@ -527,7 +528,7 @@ function enterpriseDiscoveryLabel(
 }
 
 function enterpriseActiveJobsLabel(activeJobCount: number): string {
-  return activeJobCount > 0 ? `${activeJobCount.toLocaleString('ko-KR')}건` : '−';
+  return formatRegistryActiveJobCount(activeJobCount);
 }
 
 function EnterpriseGroupBrowser({

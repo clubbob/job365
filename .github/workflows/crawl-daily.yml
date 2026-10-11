@@ -2,15 +2,15 @@ name: Daily job crawl
 
 on:
   schedule:
-    # 한국 06:00 = UTC 21:00 (전날)
+    # 한국 06:00 ≈ UTC 21:00(전날), 매일
     - cron: '0 21 * * *'
   workflow_dispatch:
 
 jobs:
   crawl:
     runs-on: ubuntu-latest
-    # 비용 최소: 하루 1회·최대 2시간 (GitHub Actions 분). Vercel 함수는 사용하지 않음.
-    timeout-minutes: 120
+    # 매일 1회·중견 배치 확대 (GitHub Actions 분). Vercel 함수는 사용하지 않음.
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
 
@@ -35,6 +35,9 @@ jobs:
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           CRAWLER_USE_SAMPLES: 'false'
           # src/lib/crawler/schedule.ts CRAWL_MID_SIZED_SITES_PER_RUN 과 동일
-          CRAWL_MID_SIZED_BATCH_SIZE: '900'
-          CRAWL_MID_SIZED_DB_BATCH_SIZE: '900'
+          CRAWL_MID_SIZED_BATCH_SIZE: '1200'
+          CRAWL_MID_SIZED_DB_BATCH_SIZE: '1200'
+          CRAWL_SOURCE_DELAY_MS: '1200'
+          CRAWL_REQUEST_GAP_MS: '300'
           WORK24_AUTH_KEY: ${{ secrets.WORK24_AUTH_KEY }}
+          WORK24_BULK_MAX_PAGES: '400'

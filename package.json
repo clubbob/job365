@@ -38,7 +38,8 @@
     "maximize:mid-sized": "node scripts/preprocess-mid-sized.mjs && pnpm crawl:mid-sized",
     "sync:mid-sized:full": "node scripts/sync-mid-sized-full.mjs",
     "job-alerts": "node scripts/run-job-alerts.mjs",
-    "job-alerts:direct": "node scripts/job-alerts-direct.mjs"
+    "job-alerts:direct": "node scripts/job-alerts-direct.mjs",
+    "playwright:install": "playwright install chromium"
   },
   "dependencies": {
     "clsx": "^2.1.1",

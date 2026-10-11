@@ -8,7 +8,7 @@ import {
 } from '@/lib/crawler/map-fields';
 import { getUniqueMidSizedRegistryForCrawl } from '@/lib/mid-sized-companies/registry-for-crawl';
 import { normalizeBusinessNumber } from '@/lib/mid-sized-companies/registry-dedupe';
-import type { CrawlerSourceResult } from '@/lib/crawler/types';
+import type { CrawlBatchOptions, CrawlerSourceResult } from '@/lib/crawler/types';
 import type { CrawledJob } from '@/types/crawled-job';
 
 const BATCH_SOURCE_ID = 'work24-mid-sized-batch';
@@ -16,7 +16,7 @@ const BATCH_SOURCE_NAME = '중견기업 고용24';
 const API_BASE = 'https://www.work24.go.kr/cm/openApi/call/hr/callOpenApiSvcInfo313L01.do';
 
 const BUSI_CONCURRENCY = Math.max(2, Number(process.env.WORK24_CONCURRENCY ?? 6) || 6);
-const BULK_MAX_PAGES = Math.min(800, Number(process.env.WORK24_BULK_MAX_PAGES ?? 200) || 200);
+const BULK_MAX_PAGES = Math.min(800, Number(process.env.WORK24_BULK_MAX_PAGES ?? 350) || 350);
 
 function xmlTag(block: string, tag: string): string | null {
   const match = block.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, 'i'));
@@ -132,6 +132,7 @@ async function crawlWork24BulkList(
   authKey: string,
   byBusi: Map<string, { companyName: string; crawlSourceId: string }>,
   crawledAt: string,
+  onSourceResult?: CrawlBatchOptions['onSourceResult'],
 ): Promise<CrawledJob[]> {
   const jobs: CrawledJob[] = [];
   let page = 1;
@@ -145,6 +146,11 @@ async function crawlWork24BulkList(
     if (page === 1) total = reportedTotal;
     if (items.length === 0) break;
 
+    const pageJobsBySource = new Map<
+      string,
+      { sourceName: string; jobs: CrawledJob[] }
+    >();
+
     for (const itemXml of items) {
       const busiRaw = xmlTag(itemXml, 'busiNo') ?? xmlTag(itemXml, 'busiBusiNo');
       const bn = normalizeBusiKey(busiRaw);
@@ -152,7 +158,25 @@ async function crawlWork24BulkList(
       const meta = byBusi.get(bn)!;
       const sourceId = `${meta.crawlSourceId}-work24-careers`;
       const job = toCrawledJob(itemXml, meta.companyName, sourceId, crawledAt);
-      if (job) jobs.push(job);
+      if (!job) continue;
+      jobs.push(job);
+      const bucket = pageJobsBySource.get(sourceId) ?? {
+        sourceName: `${meta.companyName} 채용 (고용24)`,
+        jobs: [],
+      };
+      bucket.jobs.push(job);
+      pageJobsBySource.set(sourceId, bucket);
+    }
+
+    if (onSourceResult) {
+      for (const [sourceId, bucket] of pageJobsBySource) {
+        await onSourceResult({
+          sourceId,
+          sourceName: bucket.sourceName,
+          jobs: bucket.jobs,
+          errors: [],
+        });
+      }
     }
 
     if (reportedTotal > 0 && page * 100 >= reportedTotal) break;
@@ -166,6 +190,7 @@ async function crawlWork24ByBusiNumbers(
   authKey: string,
   records: ReturnType<typeof getUniqueMidSizedRegistryForCrawl>,
   crawledAt: string,
+  onSourceResult?: CrawlBatchOptions['onSourceResult'],
 ): Promise<{ jobs: CrawledJob[]; queried: number; withJobs: number }> {
   const jobs: CrawledJob[] = [];
   let queried = 0;
@@ -187,12 +212,23 @@ async function crawlWork24ByBusiNumbers(
           display: '100',
           busiNo,
         });
-        if (items.length === 0) continue;
-        withJobs += 1;
         const sourceId = `${record.crawlSourceId}-work24-careers`;
+        const sourceName = `${record.companyName} 채용 (고용24)`;
+        const companyJobs: CrawledJob[] = [];
         for (const itemXml of items) {
           const job = toCrawledJob(itemXml, record.companyName, sourceId, crawledAt);
-          if (job) jobs.push(job);
+          if (job) companyJobs.push(job);
+        }
+        if (companyJobs.length > 0) withJobs += 1;
+        jobs.push(...companyJobs);
+        if (onSourceResult) {
+          await onSourceResult({
+            sourceId,
+            sourceName,
+            jobs: companyJobs,
+            errors: [],
+            syncEmpty: true,
+          });
         }
       } catch {
         // skip single company failure
@@ -207,7 +243,9 @@ async function crawlWork24ByBusiNumbers(
 /**
  * 중견기업 명단 사업자번호로 고용24 채용정보를 조회합니다. WORK24_AUTH_KEY 필요.
  */
-export async function crawlWork24MidSizedBatch(): Promise<CrawlerSourceResult> {
+export async function crawlWork24MidSizedBatch(
+  options?: CrawlBatchOptions,
+): Promise<CrawlerSourceResult> {
   const authKey = process.env.WORK24_AUTH_KEY?.trim();
   const all = getUniqueMidSizedRegistryForCrawl();
   const crawledAt = new Date().toISOString();
@@ -230,7 +268,7 @@ export async function crawlWork24MidSizedBatch(): Promise<CrawlerSourceResult> {
 
   if (process.env.WORK24_FULL_SCAN !== '0') {
     try {
-      const bulkJobs = await crawlWork24BulkList(authKey, byBusi, crawledAt);
+      const bulkJobs = await crawlWork24BulkList(authKey, byBusi, crawledAt, options?.onSourceResult);
       jobs.push(...bulkJobs);
       errors.push(`고용24 목록 스캔: 공고 ${bulkJobs.length}건 (페이지 최대 ${BULK_MAX_PAGES})`);
     } catch (error) {
@@ -238,7 +276,12 @@ export async function crawlWork24MidSizedBatch(): Promise<CrawlerSourceResult> {
     }
   }
 
-  const { jobs: busiJobs, queried, withJobs } = await crawlWork24ByBusiNumbers(authKey, all, crawledAt);
+  const { jobs: busiJobs, queried, withJobs } = await crawlWork24ByBusiNumbers(
+    authKey,
+    all,
+    crawledAt,
+    options?.onSourceResult,
+  );
   jobs.push(...busiJobs);
   errors.unshift(
     `고용24 사업자번호 조회: ${queried}/${all.length}곳 · 공고 있는 회사 ${withJobs}곳 · 누적 공고 ${jobs.length}건`,

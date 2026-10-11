@@ -39,7 +39,7 @@ export type GenericHtmlConfig = {
   companySize?: CompanySize;
 };
 
-const MAX_JOBS_PER_SOURCE = 100;
+const MAX_JOBS_PER_SOURCE = 150;
 const DETAIL_FETCH_CONCURRENCY = 4;
 
 type JobCandidate = {

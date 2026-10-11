@@ -9,7 +9,7 @@ import {
 } from '@/lib/crawler/mid-sized-careers-urls';
 import { getUniqueMidSizedRegistryForCrawl } from '@/lib/mid-sized-companies/registry-for-crawl';
 import { CRAWL_MID_SIZED_SITES_PER_RUN } from '@/lib/crawler/schedule';
-import type { CrawlerSourceResult } from '@/lib/crawler/types';
+import type { CrawlBatchOptions, CrawlerSourceResult } from '@/lib/crawler/types';
 import type { CrawledJob } from '@/types/crawled-job';
 
 const BATCH_SOURCE_ID = 'mid-sized-registry-batch-careers';
@@ -89,7 +89,9 @@ function selectCareersConfigBatch(configs: ReturnType<typeof getMidSizedCareersC
   return batch;
 }
 
-export async function crawlMidSizedRegistryBatch(): Promise<CrawlerSourceResult> {
+export async function crawlMidSizedRegistryBatch(
+  options?: CrawlBatchOptions,
+): Promise<CrawlerSourceResult> {
   const registrySize = getUniqueMidSizedRegistryForCrawl().length;
   const allConfigs = getMidSizedCareersConfigs();
   const batch = selectCareersConfigBatch(allConfigs);
@@ -124,6 +126,12 @@ export async function crawlMidSizedRegistryBatch(): Promise<CrawlerSourceResult>
         careersAdapter: record.adapter,
         greenhouseBoard: record.greenhouseBoard,
       });
+      if (options?.onSourceResult) {
+        await options.onSourceResult({
+          ...result,
+          syncEmpty: result.syncEmpty ?? (result.jobs.length === 0 && result.errors.length === 0),
+        });
+      }
       jobs.push(...result.jobs);
       if (result.errors.length > 0) {
         errors.push(`${record.name}: ${result.errors.join('; ')}`);

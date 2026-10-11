@@ -554,6 +554,18 @@ export async function countActiveJobsBySource(): Promise<Record<string, number>>
   return jobCountsBySource;
 }
 
+/** 중견 명단 회사 crawlSourceId — 채용 URL·고용24 수집 sourceId 합산 */
+export function activeJobCountForMidSizedCrawlSource(
+  crawlSourceId: string,
+  jobCountsBySource: Record<string, number>,
+): number {
+  const base = crawlSourceId.trim();
+  if (!base) return 0;
+  return (
+    (jobCountsBySource[`${base}-careers`] ?? 0) + (jobCountsBySource[`${base}-work24-careers`] ?? 0)
+  );
+}
+
 /** 채용 사이트(sourceId)별 active 공고에서 확인된 모집 회사(계열사) 목록 */
 export async function listDiscoveredAffiliatesBySource(): Promise<Record<string, DiscoveredAffiliate[]>> {
   const { discoveredBySource } = await getCrawledJobSourceStats();

@@ -10,8 +10,15 @@ import {
 import { closeBrowserCrawlSession } from '@/lib/crawler/browser-page-crawl';
 import { pauseBetweenCrawlSources } from '@/lib/crawler/crawl-throttle';
 import { isCareersUrlRobotsAllowed } from '@/lib/crawler/robots';
+import { crawlMidSizedRegistryBatch } from '@/lib/crawler/adapters/mid-sized-registry-batch';
+import { crawlWork24MidSizedBatch } from '@/lib/crawler/adapters/work24-mid-sized';
 import { getCompanyCrawlersForRun } from '@/lib/crawler/registry';
-import type { CrawlRunSummary, CrawlerSourceResult } from '@/lib/crawler/types';
+import type {
+  CrawlRunSummary,
+  CrawlSourceResultSink,
+  CrawlerSourceResult,
+} from '@/lib/crawler/types';
+import type { CrawledJob } from '@/types/crawled-job';
 import { saveCrawlRun } from '@/lib/crawl-runs-server';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 
@@ -80,6 +87,48 @@ async function syncSource(result: CrawlerSourceResult) {
   return { fetched, upserted, closed, errors };
 }
 
+function createIncrementalSyncAccumulator() {
+  const jobsBySource = new Map<string, { sourceName: string; jobs: Map<string, CrawledJob> }>();
+  let fetched = 0;
+  let upserted = 0;
+  let closed = 0;
+
+  const sink: CrawlSourceResultSink = async (result) => {
+    let bucket = jobsBySource.get(result.sourceId);
+    if (!bucket) {
+      bucket = { sourceName: result.sourceName, jobs: new Map() };
+      jobsBySource.set(result.sourceId, bucket);
+    }
+    bucket.sourceName = result.sourceName;
+    for (const job of result.jobs) {
+      bucket.jobs.set(job.id, job);
+    }
+
+    const mergedJobs = [...bucket.jobs.values()];
+    const payload: CrawlerSourceResult = {
+      sourceId: result.sourceId,
+      sourceName: bucket.sourceName,
+      jobs: mergedJobs,
+      errors: result.errors,
+      syncEmpty: result.syncEmpty ?? mergedJobs.length === 0,
+    };
+    if (!shouldSyncSource(payload)) return;
+
+    fetched += result.jobs.length;
+    const summary = await syncSourceForId(result.sourceId, bucket.sourceName, mergedJobs, result.errors);
+    upserted += summary.upserted;
+    closed += summary.closed;
+    if (summary.upserted > 0 || summary.closed > 0) {
+      invalidateCrawledJobsListCache();
+    }
+  };
+
+  return {
+    sink,
+    getTotals: () => ({ fetched, upserted, closed }),
+  };
+}
+
 export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
   const startedAt = new Date().toISOString();
   const sourceSummaries = [];
@@ -123,7 +172,42 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
           continue;
         }
 
-        const result = await crawl();
+        let result: CrawlerSourceResult;
+        if (company.adapter === 'mid-sized-registry-batch') {
+          const incremental = createIncrementalSyncAccumulator();
+          result = await crawlMidSizedRegistryBatch({ onSourceResult: incremental.sink });
+          const totals = incremental.getTotals();
+          sourceSummaries.push({
+            sourceId: result.sourceId,
+            sourceName: result.sourceName,
+            fetched: totals.fetched,
+            upserted: totals.upserted,
+            closed: totals.closed,
+            errors: result.errors,
+          });
+          totalUpserted += totals.upserted;
+          totalClosed += totals.closed;
+          continue;
+        }
+
+        if (company.adapter === 'work24-mid-sized-batch') {
+          const incremental = createIncrementalSyncAccumulator();
+          result = await crawlWork24MidSizedBatch({ onSourceResult: incremental.sink });
+          const totals = incremental.getTotals();
+          sourceSummaries.push({
+            sourceId: result.sourceId,
+            sourceName: result.sourceName,
+            fetched: totals.fetched,
+            upserted: totals.upserted,
+            closed: totals.closed,
+            errors: result.errors,
+          });
+          totalUpserted += totals.upserted;
+          totalClosed += totals.closed;
+          continue;
+        }
+
+        result = await crawl();
 
         if (shouldSyncSource(result)) {
           const summary = await syncSource(result);
