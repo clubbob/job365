@@ -158,8 +158,10 @@ function fromDoc(id: string, data: DocumentData): CrawledJob | null {
 
 function isJobEligibleForBoardList(job: CrawledJob): boolean {
   if (job.status !== 'active' || isInvalidJobTitle(job.title)) return false;
-  if (job.showInJobBoard === true) return true;
   if (job.showInJobBoard === false) return false;
+  if (job.showInJobBoard === true) return true;
+  // 목록 조회는 description을 생략할 수 있음(구버전·select). 저장된 active 공고는 노출 후보로 둠.
+  if (!job.description?.trim()) return true;
   return isBrowsableCrawledJob(job);
 }
 
@@ -218,7 +220,7 @@ function isJobVisibleOnBoard(
   hiddenSources: Set<string>,
   hiddenCompanies: Set<string>,
 ): boolean {
-  if (!isBrowsableCrawledJob(job)) return false;
+  if (!isJobEligibleForBoardList(job)) return false;
   if (hiddenSources.has(job.sourceId)) return false;
   const companyKey = `${job.sourceId}::${job.companyName.trim()}`;
   return !hiddenCompanies.has(companyKey);
@@ -869,22 +871,11 @@ export async function listActiveCrawledJobsPage(
   const start = (safePage - 1) * safePageSize;
 
   try {
-    if (browsableJobsCache && browsableJobsCache.expiresAt > Date.now()) {
-      const jobs = browsableJobsCache.jobs;
-      return {
-        items: jobs.slice(start, start + safePageSize).map(toListItem),
-        total: jobs.length,
-      };
-    }
-
-    if (safePageSize <= 24) {
-      return await listBrowsableJobsWindow(safePage, safePageSize);
-    }
-
     const browsable = await getBrowsableCrawledJobs();
-    const items = browsable.slice(start, start + safePageSize).map(toListItem);
-
-    return { items, total: browsable.length };
+    return {
+      items: browsable.slice(start, start + safePageSize).map(toListItem),
+      total: browsable.length,
+    };
   } catch (error) {
     console.warn('[crawled-jobs] paged list failed, falling back to full list', error);
     const all = await listCrawledJobs();
