@@ -171,7 +171,7 @@ export default function JobseekerManagePanel({
     setBusyId(resume.id);
     try {
       const { downloadResumeFile } = await import('@/lib/resume-file');
-      await downloadResumeFile(resume, userId);
+      await downloadResumeFile(resume);
     } finally {
       setBusyId(null);
     }

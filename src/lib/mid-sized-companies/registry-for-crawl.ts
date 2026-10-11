@@ -33,6 +33,6 @@ export function selectMidSizedDbBatch(records: MidSizedRegistryCrawlRecord[]): M
   return batch;
 }
 
-export function countMidSizedWithCareersUrl(_records?: MidSizedRegistryCrawlRecord[]): number {
+export function countMidSizedWithCareersUrl(): number {
   return countMidSizedCareersConfigs();
 }

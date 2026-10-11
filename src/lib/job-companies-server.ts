@@ -290,6 +290,7 @@ export async function buildJobCompaniesPayload(options: {
   ]);
 
   const filteredExtra = filteredStandalone.filter((source) => {
+    if (MID_SIZED_BATCH_SOURCE_IDS.has(source.sourceId)) return false;
     const crawler = crawlerBySourceId.get(source.sourceId);
     return crawler?.tier !== 'mid-sized';
   });

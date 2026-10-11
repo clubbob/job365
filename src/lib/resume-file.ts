@@ -259,7 +259,7 @@ async function renderResumePdf(html: string, filename: string): Promise<void> {
   }
 }
 
-export async function downloadResumeFile(talent: TalentProfile, _userId?: string): Promise<void> {
+export async function downloadResumeFile(talent: TalentProfile): Promise<void> {
   try {
     await renderResumePdf(buildResumeFileHtml(talent), resumeFileName(talentResumeTitle(talent)));
   } catch {

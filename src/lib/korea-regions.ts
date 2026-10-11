@@ -246,7 +246,7 @@ export function isResidenceCity(value: unknown): value is ResidenceCity {
   return typeof value === 'string' && (RESIDENCE_CITIES as readonly string[]).includes(value);
 }
 
-export function isCompleteResidence(city: string, _district?: string): boolean {
+export function isCompleteResidence(city: string): boolean {
   return isResidenceCity(city);
 }
 

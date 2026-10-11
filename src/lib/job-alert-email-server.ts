@@ -124,7 +124,7 @@ export async function sendDailyJobAlertEmails(): Promise<JobAlertEmailRunSummary
 
   const [recipients, allJobs] = await Promise.all([listDigestRecipients(), listCrawledJobs()]);
   let sent = 0;
-  let skipped = 0;
+  const skipped = 0;
   let failed = 0;
 
   for (const recipient of recipients) {
