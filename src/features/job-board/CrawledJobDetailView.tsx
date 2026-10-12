@@ -18,23 +18,6 @@ import type { ReactNode } from 'react';
 export const crawledJobExternalLinkClass =
   'font-medium text-primary underline decoration-primary/30 underline-offset-[3px] hover:decoration-primary/60';
 
-export function CrawledJobSourceNotice({ originalJobUrl }: { originalJobUrl: string }) {
-  return (
-    <p className="rounded-xl border border-border bg-neutral-50 px-4 py-3 text-sm text-muted">
-      이 공고는 외부 채용 사이트에서 수집했습니다.{' '}
-      <a
-        href={originalJobUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={crawledJobExternalLinkClass}
-      >
-        원문 공고
-      </a>
-      에서 직접 확인할 수 있습니다.
-    </p>
-  );
-}
-
 export default function CrawledJobDetailView({
   job,
   todayDate,
@@ -84,8 +67,6 @@ export default function CrawledJobDetailView({
 
   return (
     <article className="space-y-4">
-      <CrawledJobSourceNotice originalJobUrl={originalJobUrl} />
-
       <DetailHero
         eyebrow={heading.employer}
         title={crawledJobDetailTitle(job.title, heading.title, heading.employer, workField?.value)}
@@ -101,8 +82,8 @@ export default function CrawledJobDetailView({
 
       <DetailSection title="모집 요강">
         <DetailStatGrid embedded embeddedColumns={4} items={outlineItems} />
-        <p className="mt-4 border-t border-border pt-4 text-sm text-muted">
-          상세 내용은{' '}
+        <p className="mt-4 border-t border-border pt-4 text-sm leading-relaxed text-muted">
+          이 공고는 외부 채용 사이트에서 수집했습니다. 상세 내용은{' '}
           <a
             href={originalJobUrl}
             target="_blank"
@@ -111,7 +92,7 @@ export default function CrawledJobDetailView({
           >
             원문 공고
           </a>
-          에서 확인하세요. 지원하기 클릭 시 해당 사이트로 연결됩니다. 찜하기 클릭 시 마이페이지에서 조회 가능합니다.
+          에서 직접 확인하세요. 지원하기를 누르면 해당 사이트로 연결되고, 찜하기를 누르면 마이페이지 찜한 공고에서 다시 볼 수 있습니다.
         </p>
       </DetailSection>
 

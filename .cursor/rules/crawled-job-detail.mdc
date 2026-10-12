@@ -35,9 +35,8 @@ alwaysApply: false
 
 순서:
 
-1. `CrawledJobSourceNotice` (원문 링크)
-2. `DetailHero` — `eyebrow`: 모집 회사, `title`: `crawledJobDetailTitle(..., workField?.value)`, 뱃지: 채용 형태·New
-3. `DetailSection` **모집 요강** — `DetailStatGrid` 4열 **만** (별도 「공고 요약」 섹션 없음)
+1. `DetailHero` — `eyebrow`: 모집 회사, `title`: `crawledJobDetailTitle(..., workField?.value)`, 뱃지: 채용 형태·New
+2. `DetailSection` **모집 요강** — `DetailStatGrid` 4열 **만** (별도 「공고 요약」 섹션 없음). 그리드 아래 안내 문구에 수집·원문·지원·찜 설명 통합 (상단 별도 수집 안내 박스 없음)
 
 `outlineItems` (순서·병합 유지):
 
@@ -50,7 +49,7 @@ alwaysApply: false
 
 `description` 원문 HTML 전체는 사용자 화면에 노출하지 않는다. 모집 요강에 넣을 **업무·전형**만 `getCrawledJobSummaryFields`로 추출한다.
 
-하단: 원문·지원·찜 안내 문구 + `actions`(지원·찜).
+하단: `actions`(지원·찜). 원문·수집·찜 안내는 모집 요강 그리드 아래 문단에만.
 
 ## 요약 추출 (`CrawledJobDescriptionSummary`)
 
