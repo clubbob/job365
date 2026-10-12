@@ -7,11 +7,30 @@ export function normalizeCompanyLabel(name: string): string {
     .toLowerCase();
 }
 
+/** 제목 앞 (주) 표기를 반각 괄호·일반 공백으로 맞춥니다. */
+export function normalizeCorpTitlePrefix(title: string): string {
+  return decodeHtmlEntities(title)
+    .replace(/\u00a0/g, ' ')
+    .replace(/（/g, '(')
+    .replace(/）/g, ')')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /** 제목·블록에 적힌 (주)회사명 */
 export function extractCompanyHintFromTitle(title: string): string | null {
-  const decoded = decodeHtmlEntities(title);
-  const match = decoded.match(/\(\s*주\s*\)\s*([가-힣A-Za-z0-9&.·]+)/);
-  return match?.[1]?.trim() ?? null;
+  const decoded = normalizeCorpTitlePrefix(title);
+  const match = decoded.match(/\(\s*주\s*\)\s*([가-힣A-Za-z0-9&.·\s]+?)(?=\s*\[|\s+[^\s]|\s*$)/);
+  const core = match?.[1]?.replace(/\s+/g, '').trim();
+  return core && core.length >= 2 ? core : null;
+}
+
+/** 제목 앞에 회사명이 이미 포함돼 있는지(모집 회사 중복 표시 방지) */
+export function companyLabelContainedInTitle(title: string, companyName: string): boolean {
+  const titleNorm = normalizeCompanyLabel(title);
+  const companyNorm = normalizeCompanyLabel(companyName);
+  if (!titleNorm || !companyNorm || companyNorm.length < 2) return false;
+  return titleNorm.startsWith(companyNorm) || titleNorm.includes(companyNorm);
 }
 
 export function companyLabelsMatch(a: string, b: string): boolean {

@@ -45,8 +45,8 @@ export function DetailHero({
   facts?: Array<{ label: string; value: string }>;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-primary/15 bg-surface shadow-card">
-      <div className="bg-gradient-to-br from-primary/12 via-primary/[0.04] to-surface p-5 sm:p-7">
+    <div className="rounded-2xl border border-primary/15 bg-surface shadow-card">
+      <div className="rounded-2xl bg-gradient-to-br from-primary/12 via-primary/[0.04] to-surface p-5 sm:p-7">
         <div className="flex items-start gap-4">
           {photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -57,27 +57,28 @@ export function DetailHero({
             />
           ) : null}
           <div className="min-w-0 flex-1">
-            {eyebrow || badges ? (
-              <div
-                className={cn(
-                  'flex flex-wrap items-center gap-x-3 gap-y-2',
-                  eyebrow && badges ? 'justify-between' : badges ? 'justify-end' : undefined,
-                )}
-              >
-                {eyebrow ? <p className="text-sm font-semibold text-primary">{eyebrow}</p> : null}
-                {badges ? <div className="flex flex-wrap justify-end gap-1.5">{badges}</div> : null}
-              </div>
+            {eyebrow ? (
+              <p className="text-sm font-semibold text-primary" title={eyebrow}>
+                {eyebrow}
+              </p>
             ) : null}
             <h2
               className={cn(
-                'break-words text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl',
-                (eyebrow || badges) && 'mt-3',
+                'block w-full min-w-0 whitespace-normal break-words text-xl font-bold leading-snug tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-2xl',
+                eyebrow ? 'mt-2' : badges ? 'mt-0' : undefined,
               )}
+              title={title}
             >
               {title}
             </h2>
+            {badges ? (
+              <div className="mt-3 flex flex-wrap justify-end gap-1.5">{badges}</div>
+            ) : null}
             {subtitle ? (
-              <p className="mt-1.5 text-sm font-medium text-muted">
+              <p
+                className="mt-1.5 line-clamp-1 text-sm font-medium text-muted"
+                title={subtitle}
+              >
                 {subtitleHref ? (
                   <a
                     href={subtitleHref}
@@ -127,7 +128,13 @@ export function DetailStatGrid({
   embeddedColumns = 3,
 }: {
   title?: string;
-  items: Array<{ label: string; value?: string | null; href?: string }>;
+  items: Array<{
+    label: string;
+    value?: string | null;
+    href?: string;
+    colSpan?: 2 | 4;
+    hrefWrap?: boolean;
+  }>;
   embedded?: boolean;
   embeddedColumns?: 3 | 4;
 }) {
@@ -143,12 +150,20 @@ export function DetailStatGrid({
         return (
           <div
             key={item.label}
-            className={embedded ? undefined : 'rounded-xl border border-border bg-surface px-3.5 py-3 shadow-sm'}
+            className={cn(
+              embedded ? undefined : 'rounded-xl border border-border bg-surface px-3.5 py-3 shadow-sm',
+              item.colSpan === 4 && embedded && embeddedColumns === 4
+                ? 'col-span-2 sm:col-span-4'
+                : item.colSpan === 2 && embedded
+                  ? 'col-span-2 sm:col-span-2'
+                  : undefined,
+            )}
           >
             <dt className="text-[11px] font-medium tracking-wide text-subtle">{item.label}</dt>
             <dd
               className={cn(
-                'mt-1 min-w-0 break-words whitespace-pre-wrap text-sm font-semibold leading-snug',
+                'mt-1 min-w-0 text-sm font-semibold leading-snug',
+                item.href && value !== '—' ? 'overflow-x-auto' : 'break-words whitespace-pre-wrap',
                 value === '—' ? 'text-subtle' : 'text-foreground',
               )}
             >
@@ -157,12 +172,17 @@ export function DetailStatGrid({
                   href={item.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="break-all text-primary underline decoration-primary/30 underline-offset-[3px] hover:decoration-primary/60"
+                  className={cn(
+                    'text-primary underline decoration-primary/30 underline-offset-[3px] hover:decoration-primary/60',
+                    item.hrefWrap
+                      ? 'inline break-words whitespace-normal'
+                      : 'inline-block whitespace-nowrap',
+                  )}
                 >
                   {value}
                 </a>
               ) : (
-                value
+                <span title={value !== '—' ? value : undefined}>{value}</span>
               )}
             </dd>
           </div>

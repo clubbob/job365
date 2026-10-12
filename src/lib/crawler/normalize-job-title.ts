@@ -9,6 +9,8 @@ function stripPortalListNoise(title: string): string {
   return title
     .replace(/\s*\.{2,}\s*(\d+\s*일\s*남음)?\s*$/u, '')
     .replace(/\s+\d+\s*일\s*남음\s*$/u, '')
+    .replace(/\s*채용\s*시까지\s*$/u, '')
+    .replace(/\s*모집\s*채용\s*시까지\s*$/u, '')
     .trim();
 }
 
@@ -21,9 +23,7 @@ export function normalizeJobTitle(raw: string): string {
   // "농심태경 농심태경 하반기 ..." → "농심태경 하반기 ..."
   title = title.replace(/^(\S{2,20})\s+\1\s+/, '$1 ');
 
-  /** Firestore·상세 화면용. 목록 카드는 CSS line-clamp로 줄입니다. */
-  const maxLength = 220;
-  if (title.length > maxLength) return title.slice(0, maxLength).trim();
+  /** 목록 카드는 CSS line-clamp로 줄입니다. 저장·상세는 전체 제목을 유지합니다. */
   return title;
 }
 

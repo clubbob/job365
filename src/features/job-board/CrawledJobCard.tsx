@@ -1,10 +1,19 @@
 import Link from 'next/link';
+import {
+  crawledJobDetailTitle,
+  shouldShowCrawledCollectSource,
+  splitCrawledJobHeading,
+} from '@/lib/job-display';
 import { isJobNewToday } from '@/lib/job-board/match';
 import { cn } from '@/lib/utils';
 import type { CrawledJobListItem } from '@/types/crawled-job';
 
 function employmentLabel(types: CrawledJobListItem['employmentTypes']): string {
   return types.length > 0 ? types.join(' · ') : '—';
+}
+
+function roleLabel(roles: CrawledJobListItem['roles']): string {
+  return roles.length > 0 ? roles.join(', ') : '—';
 }
 
 function regionLabel(regions: CrawledJobListItem['regions']): string {
@@ -28,6 +37,9 @@ export default function CrawledJobCard({
   className?: string;
 }) {
   const isNew = todayDate ? isJobNewToday(job, todayDate) : false;
+  const heading = splitCrawledJobHeading(job.companyName, job.title);
+  const displayTitle = crawledJobDetailTitle(job.title, heading.title, heading.employer);
+  const showCollectSource = shouldShowCrawledCollectSource(heading.employer, heading.sourceCompany);
 
   return (
     <Link
@@ -45,13 +57,39 @@ export default function CrawledJobCard({
         {isNew ? (
           <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">New</span>
         ) : null}
-        <span className="text-xs text-subtle">{job.sourceName}</span>
       </div>
 
-      <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground sm:text-base">{job.title}</h3>
-      <p className="mt-1 truncate text-sm font-medium text-muted">{job.companyName}</p>
-      <p className="mt-1 truncate text-xs text-muted sm:text-sm">{regionLabel(job.regions)}</p>
-      <p className="mt-1 truncate text-xs text-muted sm:text-sm">{job.roles.join(', ')}</p>
+      {heading.employer ? (
+        <p className="line-clamp-1 text-sm font-bold leading-snug text-primary sm:text-base" title={heading.employer}>
+          {heading.employer}
+        </p>
+      ) : null}
+      <h3
+        className={cn(
+          'line-clamp-3 min-h-[2.75rem] break-words text-sm font-bold leading-snug text-foreground [overflow-wrap:anywhere] sm:min-h-[3rem] sm:text-base',
+          heading.employer ? 'mt-1.5' : undefined,
+        )}
+        title={displayTitle}
+      >
+        {displayTitle}
+      </h3>
+      {showCollectSource ? (
+        <p className="mt-1.5 line-clamp-1 text-xs text-subtle">
+          {heading.sourceCompany}
+        </p>
+      ) : null}
+      <dl
+        className={cn('space-y-1', showCollectSource ? 'mt-1' : 'mt-1.5')}
+      >
+        <div className="flex min-w-0 gap-2 text-xs sm:text-sm">
+          <dt className="shrink-0 font-medium text-subtle">직무</dt>
+          <dd className="min-w-0 truncate font-medium text-foreground/85">{roleLabel(job.roles)}</dd>
+        </div>
+        <div className="flex min-w-0 gap-2 text-xs sm:text-sm">
+          <dt className="shrink-0 font-medium text-subtle">지역</dt>
+          <dd className="min-w-0 truncate font-medium text-foreground/85">{regionLabel(job.regions)}</dd>
+        </div>
+      </dl>
 
       <div className="mt-auto pt-3 text-xs text-muted sm:text-sm">
         마감 {deadlineLabel(job.deadline)}

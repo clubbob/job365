@@ -1,12 +1,20 @@
-import { DetailSection } from '@/components/ui/PostingDetail';
+import { normalizeCompanyLabel } from '@/lib/crawler/company-name-match';
+import { htmlToPlainText } from '@/lib/crawler/job-quality';
 
 const MAX_ROW_LENGTH = 90;
 
-const QUALIFICATION_TITLES = new Set(['자격 요건']);
-const PROCESS_TITLES = new Set(['전형 절차', '전형 일정', '접수 기간', '전형 절차 및 일정']);
-const APPLICATION_TITLES = new Set(['지원 방법']);
-
-const APPLICATION_BOILERPLATE = /서류\s*반환|반환신청|반환해\s*드리|지원가이드|불편을\s*최소화/;
+const QUALIFICATION_TITLES = new Set([
+  '자격 요건',
+  '지원 자격',
+  '응시 자격',
+  '모집 요건',
+  '자격 및 우대사항',
+  '자격 및 우대',
+  '필요 자격',
+]);
+const PROCESS_TITLES = new Set(['전형 절차', '전형 일정', '전형 절차 및 일정']);
+const PERIOD_SECTION_TITLES = new Set(['접수 기간', '모집 기간', '지원 기간', '서류 접수 기간']);
+const WORK_SECTION_TITLES = new Set(['주요 업무', '업무 내용', '담당 업무', '수행 업무', '업무 개요']);
 const QUALIFICATION_SKIP = /병역|군필|해외여행|입영|면제|불합격|제출\s*서류/;
 
 type DescriptionSection = {
@@ -104,6 +112,35 @@ function collectSectionText(sections: DescriptionSection[], titles: Set<string>)
     .join('\n');
 }
 
+function sectionMatchesQualification(title: string): boolean {
+  const normalized = normalizeSectionTitle(title);
+  return /자격요건|지원자격|응시자격|모집요건|자격및우대|필요자격|지원요건|모집자격/.test(
+    normalized,
+  );
+}
+
+function collectQualificationText(sections: DescriptionSection[], html: string): string {
+  const titled = sections
+    .filter((section) => QUALIFICATION_TITLES.has(section.title) || sectionMatchesQualification(section.title))
+    .map((section) => stripRedundantLines(htmlToSummaryText(section.body)))
+    .filter(Boolean)
+    .join('\n');
+  if (titled) return titled;
+
+  const plain = stripRedundantLines(htmlToSummaryText(html));
+  const labeledLine = plain
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => /^(?:지원\s*자격|자격\s*요건|모집\s*요건|응시\s*자격)\s*[:：]/.test(line));
+  if (labeledLine) return labeledLine;
+
+  if (sections.length === 1 && (sections[0].title === '요약' || sections[0].title === '상세 내용')) {
+    return stripRedundantLines(htmlToSummaryText(sections[0].body));
+  }
+
+  return plain;
+}
+
 function normalizeSectionTitle(title: string): string {
   return title.replace(/\s+/g, '');
 }
@@ -195,6 +232,15 @@ function condenseQualifications(text: string): string | null {
   }
 
   if (/관련\s*전공|전공자/.test(plain)) parts.push('관련 전공 우대');
+
+  if (/요양보호사/.test(plain)) {
+    if (/자격증|자격\s*보유|면허|취득/.test(plain)) parts.push('요양보호사 자격증');
+    else if (!parts.some((p) => p.includes('요양'))) parts.push('요양보호사 관련');
+  }
+
+  if (/고졸\s*이상|대졸\s*이상|대학교\s*졸업/.test(plain) && parts.length === 0) {
+    parts.push(plain.match(/(?:고졸|대졸|초대졸|대학교)\s*(?:이상|졸업)?/)?.[0] ?? '학력 요건 있음');
+  }
 
   const certMatch = plain.match(/([가-힣]{2,}기사|[가-힣]{2,}산업기사)/);
   if (certMatch && /우대|필수|보유/.test(plain)) {
@@ -309,14 +355,6 @@ function condenseProcess(text: string): string | null {
   return null;
 }
 
-function domainFromUrl(url: string): string | null {
-  try {
-    return new URL(url).hostname.replace(/^www\./i, '');
-  } catch {
-    return null;
-  }
-}
-
 function extractDeadlineShort(text: string): string | null {
   const detailed = text.match(
     /(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일[^.\n]*?(오전|오후)?\s*(\d{1,2})시/,
@@ -324,6 +362,13 @@ function extractDeadlineShort(text: string): string | null {
   if (detailed) {
     const [, year, month, day, , hour] = detailed;
     return `${year}.${month.padStart(2, '0')}.${day.padStart(2, '0')} ${hour}시 마감`;
+  }
+
+  const range = text.match(
+    /(\d{4})[.\-/년]\s*(\d{1,2})[.\-/월]\s*(\d{1,2})\s*일?\s*[~\-–]\s*(\d{4})[.\-/년]?\s*(\d{1,2})[.\-/월]?\s*(\d{1,2})\s*일?/,
+  );
+  if (range) {
+    return `${range[1]}.${range[2].padStart(2, '0')}.${range[3].padStart(2, '0')} ~ ${range[4]}.${range[5].padStart(2, '0')}.${range[6].padStart(2, '0')}`;
   }
 
   const simple = text.match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
@@ -341,106 +386,191 @@ function formatDeadlineForSummary(deadline: string | null | undefined): string |
   return `${match[1]}.${match[2]}.${match[3]} 마감`;
 }
 
-function extractApplicationDomain(text: string, originalJobUrl: string): string | null {
-  const urlMatch = text.match(/https?:\/\/(?:www\.)?([^/\s)）]+)/i);
-  const domain = urlMatch?.[1] ?? domainFromUrl(originalJobUrl);
-  return domain?.replace(/[)）].*$/, '').trim() || null;
+function isGenericOpenDeadline(text: string): boolean {
+  return /채용\s*시까지|상시\s*채용|상시\s*모집|수시\s*모집|미정/.test(text) && !/\d{4}/.test(text);
 }
 
-function condenseApplication(
-  text: string,
-  originalJobUrl: string,
+function condenseApplicationDeadline(
+  sections: DescriptionSection[],
+  html: string,
   deadline: string | null | undefined,
 ): string | null {
-  const plain = toPlainText(text);
-  const domain = extractApplicationDomain(plain, originalJobUrl);
-  const deadlineText = extractDeadlineShort(plain) ?? formatDeadlineForSummary(deadline);
-
-  const parts = [domain, deadlineText].filter(Boolean);
-  if (parts.length > 0) return clipOneLine(parts.join(' · '));
-
-  if (/로그인|회원\s*가입|지원서/.test(plain) && domain) {
-    return clipOneLine(`${domain} · 온라인 지원`);
-  }
-
-  return null;
-}
-
-function prepareJobSummaryRows(
-  html: string,
-  originalJobUrl: string,
-  deadline: string | null | undefined,
-): SummaryRow[] {
-  const sections = parseDescriptionSections(html);
-
-  return [
-    { label: '자격', value: condenseQualifications(collectSectionText(sections, QUALIFICATION_TITLES)) },
-    { label: '전형', value: condenseProcess(collectProcessText(sections, html)) },
-    {
-      label: '지원',
-      value: condenseApplication(collectSectionText(sections, APPLICATION_TITLES), originalJobUrl, deadline),
-    },
-  ];
-}
-
-function hasAnySummaryValue(rows: SummaryRow[]): boolean {
-  return rows.some((row) => row.value);
-}
-
-type CrawledJobDescriptionSummaryProps = {
-  html: string;
-  originalJobUrl: string;
-  deadline?: string | null;
-  linkClassName: string;
-};
-
-export default function CrawledJobDescriptionSummary({
-  html,
-  originalJobUrl,
-  deadline,
-  linkClassName,
-}: CrawledJobDescriptionSummaryProps) {
-  const rows = prepareJobSummaryRows(html, originalJobUrl, deadline);
-
-  if (!hasAnySummaryValue(rows)) {
-    return (
-      <DetailSection title="안내">
-        <p className="text-sm text-muted">
-          요약을 표시할 내용이 없습니다.{' '}
-          <a href={originalJobUrl} target="_blank" rel="noopener noreferrer" className={linkClassName}>
-            원문 공고
-          </a>
-          에서 확인해 주세요.
-        </p>
-      </DetailSection>
+  const sectionText = collectSectionText(sections, PERIOD_SECTION_TITLES);
+  const plain = htmlToSummaryText(sectionText || html);
+  const periodLine = plain
+    .split('\n')
+    .map((line) => line.trim())
+    .find(
+      (line) =>
+        /(?:접수|모집|지원|서류)\s*기간|접수\s*마감|지원\s*마감|마감\s*일/.test(line) && /\d/.test(line),
     );
+  const fromLine = periodLine
+    ? clipOneLine(periodLine.replace(/^[^:：\n]+[:：]\s*/, ''))
+    : null;
+  const fromText = extractDeadlineShort(plain);
+  const fromJob = formatDeadlineForSummary(deadline);
+
+  const candidate = fromLine ?? fromText ?? fromJob;
+  if (!candidate || isGenericOpenDeadline(candidate)) return null;
+  return candidate;
+}
+
+function normalizeWorkSummaryText(text: string): string {
+  return text
+    .replace(/^상세\s*내용\s*/u, '')
+    .replace(/채용\s*시까지\s*/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildCompanyNameVariants(name: string): string[] {
+  const trimmed = name.trim();
+  if (!trimmed) return [];
+  const withoutCorp = trimmed.replace(/^\(\s*주\s*\)\s*/u, '').replace(/주식회사$/u, '').trim();
+  const variants = new Set<string>([trimmed, withoutCorp]);
+  if (withoutCorp.length >= 2) {
+    variants.add(`(주)${withoutCorp}`);
+    variants.add(`(주) ${withoutCorp}`);
+    variants.add(`${withoutCorp}주식회사`);
+    variants.add(`㈜${withoutCorp}`);
+  }
+  return [...variants].filter((value) => value.length >= 2);
+}
+
+function cleanWorkSummaryTail(text: string, companyHints: string[]): string {
+  let result = text.trim();
+
+  result = result.replace(/\(\s*주\s*\)\s*[가-힣A-Za-z0-9·&.]+\s*$/u, '').trim();
+  result = result.replace(/[가-힣A-Za-z0-9·&.]+\s*주식회사\s*$/u, '').trim();
+  result = result.replace(/㈜\s*[가-힣A-Za-z0-9·&.]+\s*$/u, '').trim();
+
+  const variants = new Set<string>();
+  for (const hint of companyHints) {
+    for (const variant of buildCompanyNameVariants(hint)) variants.add(variant);
   }
 
-  return (
-    <>
-      <DetailSection title="공고 요약">
-        <dl className="divide-y divide-border">
-          {rows.map((row) => {
-            const value = row.value?.trim() ? row.value : '—';
-            return (
-              <div
-                key={row.label}
-                className="grid grid-cols-[3.5rem_1fr] gap-x-4 gap-y-1 py-3 first:pt-0 last:pb-0 sm:grid-cols-[4.5rem_1fr]"
-              >
-                <dt className="text-sm font-semibold text-foreground">{row.label}</dt>
-                <dd className="text-sm leading-relaxed text-muted">{value}</dd>
-              </div>
-            );
-          })}
-        </dl>
-      </DetailSection>
-      <p className="text-sm text-muted">
-        상세 내용은{' '}
-        <a href={originalJobUrl} target="_blank" rel="noopener noreferrer" className={linkClassName}>
-          원문 공고
-        </a>
-        에서 확인하세요. 지원하기 클릭 시 해당 사이트로 연결됩니다. 찜하기 클릭 시 마이페이지에서 조회 가능합니다.
-      </p>
-    </>
+  for (const variant of variants) {
+    const escaped = escapeRegExp(variant);
+    result = result.replace(new RegExp(`[,.\\s]*${escaped}\\s*$`, 'iu'), '').trim();
+    result = result.replace(new RegExp(`^\\s*${escaped}\\s*[:：\\-·]\\s*`, 'iu'), '').trim();
+  }
+
+  const trailingCompany = result.match(/(?:^|[,.。\s])(\(\s*주\s*\)\s*)?([가-힣A-Za-z0-9·&.]{2,40})\s*$/u);
+  if (trailingCompany?.[2]) {
+    const tailNorm = normalizeCompanyLabel(trailingCompany[2]);
+    for (const hint of companyHints) {
+      const hintNorm = normalizeCompanyLabel(hint);
+      if (
+        hintNorm.length >= 3 &&
+        (tailNorm === hintNorm || tailNorm.includes(hintNorm) || hintNorm.includes(tailNorm))
+      ) {
+        result = result.slice(0, result.length - trailingCompany[0].length).trim();
+        break;
+      }
+    }
+  }
+
+  result = result.replace(/[,.]?\s*\(\s*주\s*\)\s*$/u, '').trim();
+  return result.replace(/[,.。\s]+$/, '').trim();
+}
+
+function stripNoiseHtml(html: string): string {
+  return html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
+}
+
+function looksLikeHtmlMarkup(text: string): boolean {
+  return /<[a-z!/]/i.test(text) || /\bclass\s*=|data-v-|dark:bg-|bg-gray-/i.test(text);
+}
+
+function hasMeaningfulKorean(text: string): boolean {
+  const hangul = (text.match(/[가-힣]/g) ?? []).length;
+  return hangul >= 6;
+}
+
+function isLowQualityWorkSummary(text: string): boolean {
+  if (!text || text.length < 10) return true;
+  if (/^상세\s*내용/.test(text)) return true;
+  if (/채용\s*시까지/.test(text)) return true;
+  if (looksLikeHtmlMarkup(text)) return true;
+  if (!hasMeaningfulKorean(text)) return true;
+  return false;
+}
+
+function pickWorkSummaryFromPlain(plain: string, companyHints: string[]): string | null {
+  const condensed = clipOneLine(cleanWorkSummaryTail(normalizeWorkSummaryText(plain), companyHints));
+  if (!condensed || isLowQualityWorkSummary(condensed)) return null;
+  return condensed;
+}
+
+function lineLooksLikeWorkSummary(line: string): boolean {
+  if (line.length < 12 || line.length > MAX_ROW_LENGTH + 40) return false;
+  if (/전형|접수\s*기간|지원\s*방법|자격\s*요건|모집\s*인원/.test(line)) return false;
+  return true;
+}
+
+function pickWorkSummaryFromHtml(html: string, companyHints: string[]): string | null {
+  const plain = stripRedundantLines(htmlToSummaryText(stripNoiseHtml(html)));
+  const lines = plain.split('\n').map((item) => item.trim()).filter(Boolean);
+
+  for (const line of lines) {
+    if (!lineLooksLikeWorkSummary(line)) continue;
+    const picked = pickWorkSummaryFromPlain(line, companyHints);
+    if (picked) return picked;
+  }
+
+  const fallback = pickWorkSummaryFromPlain(plain, companyHints);
+  if (fallback) return fallback;
+
+  return pickWorkSummaryFromPlain(htmlToPlainText(stripNoiseHtml(html)), companyHints);
+}
+
+function condenseWorkSummary(
+  sections: DescriptionSection[],
+  html: string,
+  companyHints: string[],
+): string | null {
+  const sectionText = collectSectionText(sections, WORK_SECTION_TITLES);
+  if (sectionText) {
+    const picked = pickWorkSummaryFromHtml(sectionText, companyHints);
+    if (picked) return picked;
+  }
+
+  const detailSection = sections.find((section) =>
+    /^(상세\s*내용|요약)$/.test(section.title.replace(/\s+/g, '')),
   );
+  if (detailSection?.body) {
+    const picked = pickWorkSummaryFromHtml(detailSection.body, companyHints);
+    if (picked) return picked;
+  }
+
+  return pickWorkSummaryFromHtml(html, companyHints);
+}
+
+function prepareJobSummaryRows(html: string, companyHints: string[]): SummaryRow[] {
+  const sections = parseDescriptionSections(html);
+  const rows: SummaryRow[] = [];
+
+  const work = condenseWorkSummary(sections, html, companyHints);
+  if (work) rows.push({ label: '업무', value: work });
+
+  const process = condenseProcess(collectProcessText(sections, html));
+  if (process) rows.push({ label: '전형', value: process });
+
+  return rows;
+}
+
+export type CrawledJobSummaryField = { label: string; value: string };
+
+/** 모집 요강에 넣을 업무·전형 등 본문 요약 필드 */
+export function getCrawledJobSummaryFields(
+  html: string,
+  companyHints: string[],
+): CrawledJobSummaryField[] {
+  return prepareJobSummaryRows(html, companyHints)
+    .filter((row) => row.value?.trim())
+    .map((row) => ({ label: row.label, value: row.value!.trim() }));
 }

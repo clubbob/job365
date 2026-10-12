@@ -1,3 +1,11 @@
+import {
+  companyLabelContainedInTitle,
+  companyLabelsMatch,
+  extractCompanyHintFromTitle,
+  normalizeCorpTitlePrefix,
+} from '@/lib/crawler/company-name-match';
+import { extractHeadcountFromJobContent } from '@/lib/crawler/parse-headcount';
+import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 import { formatKoreaDateWithWeekday } from '@/lib/datetime';
 import { jobOccupationsLabel, jobRegionsLabel } from '@/lib/work-preferences';
 import {
@@ -100,6 +108,17 @@ export function crawledJobHeadcountLabel(headcount: string | null | undefined): 
   return trimmed;
 }
 
+/** 저장된 인원이 없으면 공고 요약·상세 HTML에서 추출합니다. */
+export function crawledJobHeadcountDisplay(
+  headcount: string | null | undefined,
+  description?: string | null,
+): string | undefined {
+  const stored = crawledJobHeadcountLabel(headcount);
+  if (stored) return stored;
+  if (!description?.trim()) return undefined;
+  return crawledJobHeadcountLabel(extractHeadcountFromJobContent(description));
+}
+
 export function jobRecentDate(job: Pick<JobPosting, 'createdAt' | 'updatedAt'>): string {
   return job.updatedAt || job.createdAt;
 }
@@ -155,4 +174,163 @@ export function jobSearchText(job: JobPosting): string {
   ]
     .filter(Boolean)
     .join(' ');
+}
+
+/** `[모집 회사] 공고 제목` (포털·계열사 목록) */
+const LEADING_BRACKETED_COMPANY_RE = /^(\[[^\]]{2,80}\])\s*(.+)$/u;
+
+/** (주) 회사명 뒤에 `[지점]`이 붙는 포털 제목 */
+const LEADING_CORP_WITH_BRACKET_RE =
+  /^(\(\s*주\s*\)\s*[가-힣A-Za-z0-9][가-힣A-Za-z0-9·&.\-]*?)(\s*\[.+)$/u;
+
+const LEADING_COMPANY_IN_TITLE_RE =
+  /^((?:\(주\)\s*)?[가-힣A-Za-z0-9][가-힣A-Za-z0-9·&.\-]*?(?:주식회사|㈜)?)\s+(.+)$/u;
+
+function splitBracketedCompanyPrefix(full: string): { employer: string; title: string } | null {
+  const match = full.match(LEADING_BRACKETED_COMPANY_RE);
+  if (!match) return null;
+  const employer = match[1].slice(1, -1).trim();
+  const position = match[2].trim();
+  if (employer.length < 2 || position.length < 2) return null;
+  return { employer, title: position };
+}
+
+function trySplitLeadingEmployer(full: string): { employer: string; title: string } | null {
+  const bracketCompany = splitBracketedCompanyPrefix(full);
+  if (bracketCompany) return bracketCompany;
+
+  for (const re of [LEADING_CORP_WITH_BRACKET_RE, LEADING_COMPANY_IN_TITLE_RE]) {
+    const match = full.match(re);
+    if (!match) continue;
+    const employer = match[1].trim();
+    const position = match[2].trim();
+    if (employer.length >= 2 && position.length >= 2) {
+      return { employer, title: position };
+    }
+  }
+
+  const hint = extractCompanyHintFromTitle(full);
+  if (hint) {
+    const corpPrefix = full.match(/^(\(\s*주\s*\)\s*[가-힣A-Za-z0-9·&.\-\s]+?)(?=\s*\[|\s+[^\s[]|\s*$)/u)?.[1]?.trim();
+    const employer = corpPrefix ?? `(주) ${hint}`;
+    const rest = full.slice(employer.length).trim();
+    if (rest.length >= 2) {
+      return { employer, title: rest };
+    }
+  }
+
+  return null;
+}
+
+function stripLeadingCompanyPrefix(title: string, companyName: string): string | null {
+  const cn = companyName.trim();
+  if (!cn) return null;
+  const prefixes = [
+    cn,
+    cn.replace(/주식회사/g, '').trim(),
+    `(주)${cn.replace(/\(주\)/g, '').trim()}`,
+  ];
+  for (const prefix of prefixes) {
+    if (prefix.length >= 2 && title.startsWith(prefix)) {
+      const rest = title.slice(prefix.length).trim();
+      if (rest.length >= 4) return rest;
+    }
+  }
+  return null;
+}
+
+/**
+ * 수집 명단 회사(sourceCompanyName)와 공고 제목을 나눕니다.
+ * - employer: 실제 모집 회사(제목 앞부분)
+ * - title: 모집 제목
+ * - sourceCompany: 수집·연결된 명단 회사(출처)
+ */
+export function splitCrawledJobHeading(
+  sourceCompanyName: string,
+  title: string,
+): { employer: string; title: string; sourceCompany: string } {
+  const full = normalizeCorpTitlePrefix(normalizeJobTitle(title));
+  const sourceCompany = sourceCompanyName.trim();
+
+  const split = trySplitLeadingEmployer(full);
+  if (split) {
+    return { ...split, sourceCompany };
+  }
+
+  const stripped = stripLeadingCompanyPrefix(full, sourceCompany);
+  if (stripped) {
+    return { employer: sourceCompany, title: stripped, sourceCompany };
+  }
+
+  if (!extractCompanyHintFromTitle(full)) {
+    const cn = sourceCompany.trim();
+    if (cn && !companyLabelContainedInTitle(full, cn)) {
+      return { employer: cn, title: full, sourceCompany: cn };
+    }
+  }
+
+  return { employer: '', title: full, sourceCompany };
+}
+
+function looksIncompleteRecruitmentTitle(title: string): boolean {
+  const text = title.trim();
+  if (!text) return true;
+  if (/(?:채용|모집|지원)(?:합|함)$/u.test(text)) return true;
+  if (/채용$/u.test(text) && !/채용합니다|채용\s*공고/u.test(text)) return true;
+  if (/모집$/u.test(text) && !/모집합니다|모집\s*공고/u.test(text)) return true;
+  return false;
+}
+
+function mendTruncatedRecruitmentTitle(title: string): string {
+  let text = title.trim();
+  text = text.replace(/(채용|모집|지원)합$/u, '$1합니다');
+  text = text.replace(/(채용|모집|지원)함$/u, '$1합니다');
+  if (/채용$/u.test(text) && !/채용합니다/u.test(text)) text = `${text}합니다`;
+  if (/모집$/u.test(text) && !/모집합니다/u.test(text)) text = `${text}합니다`;
+  return text.trim();
+}
+
+function recruitmentTitleFromWorkSummary(workSummary: string): string | null {
+  const cleaned = workSummary
+    .trim()
+    .replace(/[,.]?\s*\(\s*주\s*\)\s*$/u, '')
+    .trim();
+  if (cleaned.length < 8) return null;
+  return mendTruncatedRecruitmentTitle(cleaned);
+}
+
+/** 상세 히어로 제목 — 모집 회사는 eyebrow에만 두고, 잘린 수집 제목은 복원합니다. */
+export function crawledJobDetailTitle(
+  rawTitle: string,
+  headingTitle: string,
+  employer: string,
+  workSummary?: string | null,
+): string {
+  const full = normalizeCorpTitlePrefix(normalizeJobTitle(rawTitle));
+  let candidate = headingTitle.trim() || full;
+
+  const withoutEmployer =
+    stripLeadingCompanyPrefix(candidate, employer) ??
+    stripLeadingCompanyPrefix(full, employer);
+  if (withoutEmployer && withoutEmployer.length >= 4) {
+    candidate = withoutEmployer;
+  }
+
+  if (looksIncompleteRecruitmentTitle(candidate)) {
+    candidate = mendTruncatedRecruitmentTitle(candidate);
+  }
+
+  if (looksIncompleteRecruitmentTitle(candidate) && workSummary?.trim()) {
+    const fromWork = recruitmentTitleFromWorkSummary(workSummary);
+    if (fromWork) candidate = fromWork;
+  }
+
+  return candidate.trim() || full;
+}
+
+/** 모집 회사와 다를 때만 「수집 출처」 명단 회사를 보여 줍니다. */
+export function shouldShowCrawledCollectSource(employer: string, sourceCompany: string): boolean {
+  if (!sourceCompany.trim()) return false;
+  if (!employer.trim()) return true;
+  return !companyLabelsMatch(employer, sourceCompany);
 }

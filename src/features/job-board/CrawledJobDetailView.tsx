@@ -4,13 +4,13 @@ import {
   DetailSection,
   DetailStatGrid,
 } from '@/components/ui/PostingDetail';
-import CrawledJobDescriptionSummary from '@/features/job-board/CrawledJobDescriptionSummary';
+import { getCrawledJobSummaryFields } from '@/features/job-board/CrawledJobDescriptionSummary';
+import { getCrawledJobOriginalUrl } from '@/lib/crawler/source-url';
 import {
-  getCrawledJobOriginalUrl,
-  getCrawledJobSourcePageUrl,
-} from '@/lib/crawler/source-url';
-import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
-import { crawledJobHeadcountLabel } from '@/lib/job-display';
+  crawledJobDetailTitle,
+  crawledJobHeadcountDisplay,
+  splitCrawledJobHeading,
+} from '@/lib/job-display';
 import { isJobNewToday } from '@/lib/job-board/match';
 import type { CrawledJob } from '@/types/crawled-job';
 import type { ReactNode } from 'react';
@@ -45,17 +45,50 @@ export default function CrawledJobDetailView({
   actions?: ReactNode;
 }) {
   const isNew = todayDate ? isJobNewToday(job, todayDate) : false;
-  const sourcePageUrl = getCrawledJobSourcePageUrl(job.sourceId, job.applyUrl);
   const originalJobUrl = getCrawledJobOriginalUrl(job.applyUrl);
-  const displayTitle = normalizeJobTitle(job.title);
+  const heading = splitCrawledJobHeading(job.companyName, job.title);
+  const companyHints = [heading.employer, heading.sourceCompany, job.companyName].filter(Boolean);
+  const descriptionFields = job.description
+    ? getCrawledJobSummaryFields(job.description, companyHints)
+    : [];
+
+  const workField = descriptionFields.find((field) => field.label === '업무');
+  const processField = descriptionFields.find((field) => field.label === '전형');
+  const headcount = crawledJobHeadcountDisplay(job.headcount, job.description);
+  const deadline = job.deadline ?? '채용 시까지';
+
+  const outlineItems = [
+    { label: '모집 회사', value: heading.employer },
+    { label: '직무', value: job.roles.join(', ') },
+    { label: '지역', value: job.regions.join(', ') },
+    { label: '채용 형태', value: job.employmentTypes.join(', ') },
+    ...(processField
+      ? [
+          { label: '채용 인원', value: headcount },
+          { label: '마감일', value: deadline },
+          { label: '전형', value: processField.value, colSpan: 2 as const },
+        ]
+      : [
+          { label: '채용 인원', value: headcount, colSpan: 2 as const },
+          { label: '마감일', value: deadline, colSpan: 2 as const },
+        ]),
+    ...(workField ? [{ label: '업무', value: workField.value, colSpan: 4 as const }] : []),
+    {
+      label: '수집 출처',
+      value: heading.sourceCompany,
+      href: originalJobUrl,
+      colSpan: 4 as const,
+      hrefWrap: true,
+    },
+  ];
 
   return (
     <article className="space-y-4">
       <CrawledJobSourceNotice originalJobUrl={originalJobUrl} />
 
       <DetailHero
-        eyebrow={job.companyName}
-        title={displayTitle}
+        eyebrow={heading.employer}
+        title={crawledJobDetailTitle(job.title, heading.title, heading.employer, workField?.value)}
         badges={
           <>
             {job.employmentTypes.map((type) => (
@@ -67,29 +100,20 @@ export default function CrawledJobDetailView({
       />
 
       <DetailSection title="모집 요강">
-        <DetailStatGrid
-          embedded
-          embeddedColumns={4}
-          items={[
-            { label: '회사', value: job.companyName },
-            { label: '채용 형태', value: job.employmentTypes.join(', ') },
-            { label: '직무', value: job.roles.join(', ') },
-            { label: '지역', value: job.regions.join(', ') },
-            { label: '채용 인원', value: crawledJobHeadcountLabel(job.headcount) },
-            { label: '마감일', value: job.deadline ?? '채용 시까지' },
-            { label: '출처', value: job.sourceName, href: sourcePageUrl },
-          ]}
-        />
+        <DetailStatGrid embedded embeddedColumns={4} items={outlineItems} />
+        <p className="mt-4 border-t border-border pt-4 text-sm text-muted">
+          상세 내용은{' '}
+          <a
+            href={originalJobUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={crawledJobExternalLinkClass}
+          >
+            원문 공고
+          </a>
+          에서 확인하세요. 지원하기 클릭 시 해당 사이트로 연결됩니다. 찜하기 클릭 시 마이페이지에서 조회 가능합니다.
+        </p>
       </DetailSection>
-
-      {job.description ? (
-        <CrawledJobDescriptionSummary
-          html={job.description}
-          originalJobUrl={originalJobUrl}
-          deadline={job.deadline}
-          linkClassName={crawledJobExternalLinkClass}
-        />
-      ) : null}
 
       {actions ? <div className="flex flex-col gap-2">{actions}</div> : null}
     </article>

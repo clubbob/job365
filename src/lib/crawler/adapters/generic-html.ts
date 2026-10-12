@@ -19,6 +19,7 @@ import { isLikelyJobPosting, isLikelyJobTitle } from '@/lib/crawler/job-heuristi
 import { isPortalCareersUrl } from '@/lib/mid-sized-companies/careers-url-policy';
 import { isInvalidJobDescription, isInvalidJobTitle } from '@/lib/crawler/job-quality';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
+import { extractHeadcountFromJobContent } from '@/lib/crawler/parse-headcount';
 import {
   buildDescription,
   inferJobRoles,
@@ -101,7 +102,9 @@ function shortenAnchorTitle(value: string): string {
   );
   if (labeled?.[0]) return cleanText(labeled[0]);
 
-  const byKeyword = cleaned.match(/[가-힣A-Za-z0-9()[\]㈜\s]{8,100}?(?:채용|모집)/);
+  const byKeyword = cleaned.match(
+    /[가-힣A-Za-z0-9()[\]㈜\s]{4,200}?(?:채용합니다|모집합니다|채용\s*공고|모집\s*공고|채용하십시오)/u,
+  );
   if (byKeyword?.[0]) return cleanText(byKeyword[0]);
 
   return cleaned.slice(0, 120).trim();
@@ -640,7 +643,7 @@ async function buildJobsFromCandidates(
       roles: inferJobRoles(title, candidate.roleHint),
       regions: mapLocationToRegions(locationSource),
       companySize: resolveCompanySize(companyName, config.companySize),
-      headcount: detail?.headcount ?? null,
+      headcount: detail?.headcount ?? extractHeadcountFromJobContent(description) ?? null,
       deadline: detail?.deadline ?? candidate.deadline ?? null,
       applyUrl: candidate.applyUrl,
       description,
