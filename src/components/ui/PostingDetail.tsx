@@ -68,7 +68,12 @@ export function DetailHero({
                 {badges ? <div className="flex flex-wrap justify-end gap-1.5">{badges}</div> : null}
               </div>
             ) : null}
-            <h2 className={cn('text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl', (eyebrow || badges) && 'mt-3')}>
+            <h2
+              className={cn(
+                'break-words text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl',
+                (eyebrow || badges) && 'mt-3',
+              )}
+            >
               {title}
             </h2>
             {subtitle ? (

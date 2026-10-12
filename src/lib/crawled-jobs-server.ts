@@ -15,6 +15,7 @@ import { getDisplayDisabledCompanyKeys, isCompanyCrawlDisabled } from '@/lib/cra
 import { getDisplayDisabledSourceIds, isDisplayDisabled } from '@/lib/crawl-source-policy-server';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { decodeHtmlEntities } from '@/lib/crawler/decode-html-text';
+import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 import {
   isBrowsableCrawledJob,
   isInvalidJobTitle,
@@ -117,7 +118,8 @@ function parseStringArray<T extends string>(
 function fromDoc(id: string, data: DocumentData): CrawledJob | null {
   const companyName =
     typeof data.companyName === 'string' ? decodeHtmlEntities(data.companyName).trim() : '';
-  const title = typeof data.title === 'string' ? decodeHtmlEntities(data.title).trim() : '';
+  const titleRaw = typeof data.title === 'string' ? decodeHtmlEntities(data.title).trim() : '';
+  const title = titleRaw ? normalizeJobTitle(titleRaw) : '';
   const sourceId = typeof data.sourceId === 'string' ? data.sourceId.trim() : '';
   const sourceName = typeof data.sourceName === 'string' ? data.sourceName.trim() : '';
   const applyUrl = typeof data.applyUrl === 'string' ? data.applyUrl.trim() : '';
@@ -969,7 +971,7 @@ export async function upsertCrawledJob(job: CrawledJob): Promise<UpsertCrawledJo
   const normalizedJob: CrawledJob = {
     ...job,
     companyName: decodeHtmlEntities(job.companyName).trim(),
-    title: decodeHtmlEntities(job.title).trim(),
+    title: normalizeJobTitle(decodeHtmlEntities(job.title)),
     description: decodeHtmlEntities(job.description),
   };
 

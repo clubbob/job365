@@ -9,6 +9,7 @@ import {
   getCrawledJobOriginalUrl,
   getCrawledJobSourcePageUrl,
 } from '@/lib/crawler/source-url';
+import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 import { crawledJobHeadcountLabel } from '@/lib/job-display';
 import { isJobNewToday } from '@/lib/job-board/match';
 import type { CrawledJob } from '@/types/crawled-job';
@@ -46,6 +47,7 @@ export default function CrawledJobDetailView({
   const isNew = todayDate ? isJobNewToday(job, todayDate) : false;
   const sourcePageUrl = getCrawledJobSourcePageUrl(job.sourceId, job.applyUrl);
   const originalJobUrl = getCrawledJobOriginalUrl(job.applyUrl);
+  const displayTitle = normalizeJobTitle(job.title);
 
   return (
     <article className="space-y-4">
@@ -53,7 +55,7 @@ export default function CrawledJobDetailView({
 
       <DetailHero
         eyebrow={job.companyName}
-        title={job.title}
+        title={displayTitle}
         badges={
           <>
             {job.employmentTypes.map((type) => (
