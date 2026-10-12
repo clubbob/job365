@@ -1,5 +1,7 @@
+import { decodeHtmlEntities } from '@/lib/crawler/decode-html-text';
+
 function cleanText(value: string): string {
-  return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return decodeHtmlEntities(value).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 /** 목록 링크에 붙은 회사명 중복 등을 정리합니다. */

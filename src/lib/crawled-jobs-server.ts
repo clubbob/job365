@@ -14,6 +14,7 @@ import { SAMPLE_CRAWLED_JOBS } from '@/lib/job-board/sample-jobs';
 import { getDisplayDisabledCompanyKeys, isCompanyCrawlDisabled } from '@/lib/crawl-company-policy-server';
 import { getDisplayDisabledSourceIds, isDisplayDisabled } from '@/lib/crawl-source-policy-server';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
+import { decodeHtmlEntities } from '@/lib/crawler/decode-html-text';
 import {
   isBrowsableCrawledJob,
   isInvalidJobTitle,
@@ -114,8 +115,9 @@ function parseStringArray<T extends string>(
 }
 
 function fromDoc(id: string, data: DocumentData): CrawledJob | null {
-  const companyName = typeof data.companyName === 'string' ? data.companyName.trim() : '';
-  const title = typeof data.title === 'string' ? data.title.trim() : '';
+  const companyName =
+    typeof data.companyName === 'string' ? decodeHtmlEntities(data.companyName).trim() : '';
+  const title = typeof data.title === 'string' ? decodeHtmlEntities(data.title).trim() : '';
   const sourceId = typeof data.sourceId === 'string' ? data.sourceId.trim() : '';
   const sourceName = typeof data.sourceName === 'string' ? data.sourceName.trim() : '';
   const applyUrl = typeof data.applyUrl === 'string' ? data.applyUrl.trim() : '';
@@ -964,20 +966,27 @@ export async function upsertCrawledJob(job: CrawledJob): Promise<UpsertCrawledJo
     return 'unchanged';
   }
 
-  if (await isCompanyCrawlDisabled(job.sourceId, job.companyName)) {
+  const normalizedJob: CrawledJob = {
+    ...job,
+    companyName: decodeHtmlEntities(job.companyName).trim(),
+    title: decodeHtmlEntities(job.title).trim(),
+    description: decodeHtmlEntities(job.description),
+  };
+
+  if (await isCompanyCrawlDisabled(normalizedJob.sourceId, normalizedJob.companyName)) {
     return 'unchanged';
   }
 
-  const createdAt = existingJob?.createdAt ?? job.createdAt;
+  const createdAt = existingJob?.createdAt ?? normalizedJob.createdAt;
 
   await ref.set({
-    ...job,
+    ...normalizedJob,
     createdAt,
-    employmentTypes: job.employmentTypes.filter(isEmploymentType),
-    roles: job.roles.filter(isJobRole),
-    regions: job.regions.filter(isJobRegion),
-    companySize: isCompanySize(job.companySize) ? job.companySize : COMPANY_SIZES[0],
-    showInJobBoard: isBrowsableCrawledJob(job),
+    employmentTypes: normalizedJob.employmentTypes.filter(isEmploymentType),
+    roles: normalizedJob.roles.filter(isJobRole),
+    regions: normalizedJob.regions.filter(isJobRegion),
+    companySize: isCompanySize(normalizedJob.companySize) ? normalizedJob.companySize : COMPANY_SIZES[0],
+    showInJobBoard: isBrowsableCrawledJob(normalizedJob),
     updatedAt: new Date().toISOString(),
   });
 

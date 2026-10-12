@@ -1,5 +1,8 @@
+import { jobMatchesExpectedCompany } from '@/lib/crawler/company-name-match';
+import { decodeHtmlEntities } from '@/lib/crawler/decode-html-text';
 import { isLikelyJobPosting, isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
+import { isPortalCareersUrl } from '@/lib/mid-sized-companies/careers-url-policy';
 
 export type HtmlListCandidate = {
   title: string;
@@ -24,7 +27,7 @@ function resolveUrl(href: string, baseUrl: string): string | null {
 }
 
 function cleanText(value: string): string {
-  return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return decodeHtmlEntities(value).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function parseSeq(raw: string | null | undefined): string | null {
@@ -97,6 +100,13 @@ export function extractCandidatesFromHtmlFragment(
 
     if (!applyUrl || seen.has(applyUrl)) continue;
     if (!isLikelyJobPosting(title, applyUrl, careersUrl) && !seq) continue;
+    if (
+      careersUrl &&
+      isPortalCareersUrl(careersUrl) &&
+      !jobMatchesExpectedCompany(defaultCompanyName, title, companyName)
+    ) {
+      continue;
+    }
 
     seen.add(applyUrl);
     candidates.push({
@@ -112,6 +122,7 @@ export function extractCandidatesFromHtmlFragment(
   }
 
   for (const match of html.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    if (careersUrl && isPortalCareersUrl(careersUrl)) continue;
     const href = match[1]?.trim();
     const title = cleanText(match[2] ?? '');
     if (!href || !title || !isLikelyJobPosting(title, href, careersUrl)) continue;

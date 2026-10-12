@@ -14,7 +14,9 @@ import { fetchRecruitListCandidates, type JsonRecruitListCandidate } from '@/lib
 import { fetchRecruiterNoticeCandidates, type RecruiterNoticeCandidate } from '@/lib/crawler/recruiter-notice-api';
 import { fetchHanwhainRecruitDetail, parseHanwhainRtSeq } from '@/lib/crawler/hanwha-career-api';
 import { fetchTossCareerCandidates } from '@/lib/crawler/toss-career-api';
+import { jobMatchesExpectedCompany } from '@/lib/crawler/company-name-match';
 import { isLikelyJobPosting, isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
+import { isPortalCareersUrl } from '@/lib/mid-sized-companies/careers-url-policy';
 import { isInvalidJobDescription, isInvalidJobTitle } from '@/lib/crawler/job-quality';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 import {
@@ -589,6 +591,12 @@ async function buildJobsFromCandidates(
   const jobs: CrawledJob[] = [];
 
   await mapWithConcurrency(limited, DETAIL_FETCH_CONCURRENCY, async (candidate) => {
+    if (
+      isPortalCareersUrl(config.careersUrl) &&
+      !jobMatchesExpectedCompany(config.companyName, candidate.title, candidate.companyName)
+    ) {
+      return;
+    }
     const hasListDescription =
       candidate.listDescription && !isInvalidJobDescription(candidate.listDescription);
     const hanwhainRtSeq = hasListDescription ? null : parseHanwhainRtSeq(candidate.applyUrl);
@@ -605,7 +613,14 @@ async function buildJobsFromCandidates(
     const detail = jsonDetail ?? htmlDetail;
     const title = normalizeJobTitle(detail?.title ?? candidate.title);
     if (isInvalidJobTitle(title)) return;
-    const companyName = detail?.companyName ?? candidate.companyName;
+    let companyName = detail?.companyName ?? candidate.companyName;
+    if (
+      isPortalCareersUrl(config.careersUrl) &&
+      !jobMatchesExpectedCompany(config.companyName, title, companyName)
+    ) {
+      return;
+    }
+    if (!companyName?.trim()) companyName = config.companyName;
     const description =
       candidate.listDescription && !isInvalidJobDescription(candidate.listDescription)
         ? candidate.listDescription
