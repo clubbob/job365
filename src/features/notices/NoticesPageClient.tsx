@@ -10,14 +10,14 @@ export default function NoticesPageClient({ notices }: { notices: Notice[] }) {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="공지 사항"
+        title="공지사항"
         description="서비스 이용 안내와 업데이트 소식입니다. 제목을 눌러 전체 내용을 확인할 수 있습니다."
         showRefresh={false}
       />
 
       <Card>
         {notices.length === 0 ? (
-          <p className="text-sm text-muted">등록된 공지 사항이 없습니다.</p>
+          <p className="text-sm text-muted">등록된 공지사항이 없습니다.</p>
         ) : (
           <ul className="space-y-2">
             {notices.map((notice) => (

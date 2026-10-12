@@ -61,14 +61,14 @@ export default function AdminNoticeFormClient({
         );
         if (cancelled) return;
         if (!data.ok || !data.data.notice) {
-          setError('공지 사항을 찾을 수 없습니다.');
+          setError('공지사항을 찾을 수 없습니다.');
           return;
         }
         const next = draftFromNotice(data.data.notice);
         setSaved(next);
         setDraft(next);
       } catch {
-        if (!cancelled) setError('공지 사항을 불러오지 못했습니다.');
+        if (!cancelled) setError('공지사항을 불러오지 못했습니다.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -121,26 +121,26 @@ export default function AdminNoticeFormClient({
             });
 
       if (!data.ok) {
-        setError(data.error?.message ?? '공지 사항을 저장하지 못했습니다.');
+        setError(data.error?.message ?? '공지사항을 저장하지 못했습니다.');
         return;
       }
 
       router.push('/admin/notices');
       router.refresh();
     } catch {
-      setError('공지 사항을 저장하지 못했습니다.');
+      setError('공지사항을 저장하지 못했습니다.');
     } finally {
       setPending(false);
     }
   }
 
-  const titleLabel = mode === 'create' ? '공지 사항 등록' : '공지 사항 수정';
+  const titleLabel = mode === 'create' ? '공지사항 등록' : '공지사항 수정';
 
   return (
     <div className="space-y-5">
       <PageHeader
         title={titleLabel}
-        description="공개한 공지만 사이트 공지 사항 메뉴에 표시됩니다."
+        description="공개한 공지만 사이트 공지사항 메뉴에 표시됩니다."
         homeHref="/admin/notices"
         homeLabel="목록으로"
         showRefresh={false}

@@ -9,9 +9,9 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-border bg-surface print:hidden">
-      <div className="mx-auto w-full min-w-0 max-w-4xl px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center text-xs leading-5 text-muted sm:px-6">
+      <div className="mx-auto w-full min-w-0 max-w-6xl px-4 py-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center text-xs leading-relaxed text-muted sm:px-8 sm:text-sm">
         <nav
-          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 sm:text-sm"
+          className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1"
           aria-label="법적 고지"
         >
           <Link href="/terms" className={navLinkClassName}>
@@ -21,43 +21,39 @@ export default function Footer() {
             개인정보처리방침
           </Link>
           <Link href="/marketing" className={navLinkClassName}>
-            마케팅 수신 동의
+            마케팅수신동의
           </Link>
           <Link href="/notices" className={navLinkClassName}>
-            공지 사항
+            공지사항
           </Link>
           <Link href="/inquiry" className={navLinkClassName}>
             문의하기
           </Link>
         </nav>
 
-        <p className="mt-2">
-          <Link
-            href="/"
-            className="font-semibold text-foreground transition-colors hover:text-primary"
-          >
-            {COMPANY.serviceName}
-          </Link>
-        </p>
+        <div className="mt-3 space-y-1.5 break-words">
+          <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 md:gap-x-4">
+            <span>상호 : {COMPANY.name}</span>
+            <span className="text-subtle" aria-hidden>|</span>
+            <span>대표 : {COMPANY.ceo}</span>
+            <span className="text-subtle" aria-hidden>|</span>
+            <span>사업자등록번호 : {COMPANY.businessNumber}</span>
+          </p>
 
-        <p className="mt-0.5 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 break-words">
-          <span>회사명 : {COMPANY.name}</span>
-          <span className="text-subtle" aria-hidden>|</span>
-          <span>대표 : {COMPANY.ceo}</span>
-          <span className="text-subtle" aria-hidden>|</span>
-          <span>사업자등록번호 : {COMPANY.businessNumber}</span>
-        </p>
+          <p className="flex flex-col flex-wrap items-center justify-center gap-1 md:flex-row md:gap-x-4">
+            <span>주소 : {COMPANY.address}</span>
+            <span className="hidden text-subtle md:inline" aria-hidden>|</span>
+            <span>직업정보제공사업신고 : {COMPANY.jobInfoProviderReportNo}</span>
+          </p>
 
-        <p>
-          <a
-            href={`mailto:${COMPANY.email}`}
-            className="transition-colors hover:text-foreground hover:underline hover:underline-offset-2"
-          >
-            이메일 : {COMPANY.email}
-          </a>
-        </p>
+          <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 md:gap-x-4">
+            <span>전화 : {COMPANY.phone}</span>
+            <span className="text-subtle" aria-hidden>|</span>
+            <span>이메일 : {COMPANY.email}</span>
+          </p>
+        </div>
 
-        <p className="mt-1 text-subtle">
+        <p className="mt-2 text-subtle">
           Copyright © {year} {COMPANY.serviceName}. All rights reserved.
         </p>
       </div>

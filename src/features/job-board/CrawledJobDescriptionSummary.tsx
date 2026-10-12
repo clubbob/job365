@@ -418,9 +418,23 @@ function condenseApplicationDeadline(
 function normalizeWorkSummaryText(text: string): string {
   return text
     .replace(/^상세\s*내용\s*/u, '')
+    .replace(/^\d{1,3}일\s*남음\s*/u, '')
+    .replace(/^(?:D-?\d{1,3}|마감\s*\d{1,3}일)\s*/iu, '')
     .replace(/채용\s*시까지\s*/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/** 포털 목록·카드에 붙는 마감 카운트·공고 제목 한 줄 */
+function looksLikePortalJobTitleLine(line: string): boolean {
+  const text = line.trim();
+  if (!text) return true;
+  if (/^\d{1,3}일\s*남음/u.test(text)) return true;
+  if (/\d{1,3}일\s*남음/u.test(text) && /채용|모집|디자이너|개발|담당|매니저/u.test(text)) return true;
+  if (/채용\s*주식회사/u.test(text)) return true;
+  if (/\|\s*(?:중소|중견|대)기업/u.test(text)) return true;
+  if (/\(\s*신입\s*[~\-]?\s*\d+\s*년차\s*\)/u.test(text) && /채용/u.test(text)) return true;
+  return false;
 }
 
 function escapeRegExp(value: string): string {
@@ -495,6 +509,7 @@ function isLowQualityWorkSummary(text: string): boolean {
   if (!text || text.length < 10) return true;
   if (/^상세\s*내용/.test(text)) return true;
   if (/채용\s*시까지/.test(text)) return true;
+  if (looksLikePortalJobTitleLine(text)) return true;
   if (looksLikeHtmlMarkup(text)) return true;
   if (!hasMeaningfulKorean(text)) return true;
   return false;
@@ -509,6 +524,7 @@ function pickWorkSummaryFromPlain(plain: string, companyHints: string[]): string
 function lineLooksLikeWorkSummary(line: string): boolean {
   if (line.length < 12 || line.length > MAX_ROW_LENGTH + 40) return false;
   if (/전형|접수\s*기간|지원\s*방법|자격\s*요건|모집\s*인원/.test(line)) return false;
+  if (looksLikePortalJobTitleLine(line)) return false;
   return true;
 }
 

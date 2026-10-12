@@ -39,7 +39,7 @@ export async function GET() {
     });
   } catch {
     return NextResponse.json(
-      { ok: false, error: { code: 'LOAD_FAILED', message: '공지 사항을 불러오지 못했습니다.' } },
+      { ok: false, error: { code: 'LOAD_FAILED', message: '공지사항을 불러오지 못했습니다.' } },
       { status: 500 },
     );
   }
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, data: { notice } });
   } catch {
     return NextResponse.json(
-      { ok: false, error: { code: 'SAVE_FAILED', message: '공지 사항을 저장하지 못했습니다.' } },
+      { ok: false, error: { code: 'SAVE_FAILED', message: '공지사항을 저장하지 못했습니다.' } },
       { status: 500 },
     );
   }

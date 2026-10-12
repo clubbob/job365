@@ -37,12 +37,12 @@ export default function AdminNoticesClient() {
     setError('');
     try {
       const data = await adminJson<ListResponse>('/api/admin/notices');
-      if (!data.ok) throw new Error(data.error?.message || '공지 사항을 불러오지 못했습니다.');
+      if (!data.ok) throw new Error(data.error?.message || '공지사항을 불러오지 못했습니다.');
       setRows(data.data.notices);
       setFirebaseAdminMessage(data.data.firebaseReady === false ? data.data.firebaseAdminMessage ?? '' : '');
     } catch (err) {
       setRows([]);
-      setError(err instanceof Error ? err.message : '공지 사항을 불러오지 못했습니다.');
+      setError(err instanceof Error ? err.message : '공지사항을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
@@ -53,14 +53,14 @@ export default function AdminNoticesClient() {
   }, []);
 
   async function handleDelete(item: Notice) {
-    if (!window.confirm(`「${item.title}」 공지 사항을 삭제할까요?`)) return;
+    if (!window.confirm(`「${item.title}」 공지사항을 삭제할까요?`)) return;
     setDeletingId(item.id);
     try {
       await adminJson(`/api/admin/notices/${encodeURIComponent(item.id)}`, { method: 'DELETE' });
       setRows((current) => current.filter((row) => row.id !== item.id));
       router.refresh();
     } catch {
-      setError('공지 사항을 삭제하지 못했습니다.');
+      setError('공지사항을 삭제하지 못했습니다.');
     } finally {
       setDeletingId(null);
     }
@@ -71,11 +71,11 @@ export default function AdminNoticesClient() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="공지 사항"
+        title="공지사항"
         description={
           rows.length > 0
             ? `전체 ${rows.length}건 · 공개 ${publishedCount}건`
-            : '사이트에 올릴 공지 사항을 등록·수정합니다.'
+            : '사이트에 올릴 공지사항을 등록·수정합니다.'
         }
         homeHref="/admin"
         homeLabel="대시보드"
@@ -84,7 +84,7 @@ export default function AdminNoticesClient() {
 
       <div className="flex justify-end">
         <Link href="/admin/notices/new" className={adminPrimaryActionClassName}>
-          공지 사항 등록
+          공지사항 등록
         </Link>
       </div>
 
@@ -96,7 +96,7 @@ export default function AdminNoticesClient() {
 
       <Card>
         {!loading && rows.length === 0 ? (
-          <p className="text-sm text-muted">등록된 공지 사항이 없습니다.</p>
+          <p className="text-sm text-muted">등록된 공지사항이 없습니다.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">

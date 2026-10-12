@@ -34,7 +34,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     return NextResponse.json({ ok: true, data: { notice } });
   } catch {
     return NextResponse.json(
-      { ok: false, error: { code: 'LOAD_FAILED', message: '공지 사항을 불러오지 못했습니다.' } },
+      { ok: false, error: { code: 'LOAD_FAILED', message: '공지사항을 불러오지 못했습니다.' } },
       { status: 500 },
     );
   }
@@ -74,14 +74,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const notice = await updateNotice(id, parsed.data);
     if (!notice) {
       return NextResponse.json(
-        { ok: false, error: { code: 'NOT_FOUND', message: '공지 사항을 찾을 수 없습니다.' } },
+        { ok: false, error: { code: 'NOT_FOUND', message: '공지사항을 찾을 수 없습니다.' } },
         { status: 404 },
       );
     }
     return NextResponse.json({ ok: true, data: { notice } });
   } catch {
     return NextResponse.json(
-      { ok: false, error: { code: 'SAVE_FAILED', message: '공지 사항을 저장하지 못했습니다.' } },
+      { ok: false, error: { code: 'SAVE_FAILED', message: '공지사항을 저장하지 못했습니다.' } },
       { status: 500 },
     );
   }
@@ -103,14 +103,14 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
     const deleted = await deleteNotice(id);
     if (!deleted) {
       return NextResponse.json(
-        { ok: false, error: { code: 'NOT_FOUND', message: '공지 사항을 찾을 수 없습니다.' } },
+        { ok: false, error: { code: 'NOT_FOUND', message: '공지사항을 찾을 수 없습니다.' } },
         { status: 404 },
       );
     }
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
-      { ok: false, error: { code: 'DELETE_FAILED', message: '공지 사항을 삭제하지 못했습니다.' } },
+      { ok: false, error: { code: 'DELETE_FAILED', message: '공지사항을 삭제하지 못했습니다.' } },
       { status: 500 },
     );
   }

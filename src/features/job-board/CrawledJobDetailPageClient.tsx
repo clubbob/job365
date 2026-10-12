@@ -158,12 +158,12 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
         todayDate={todayDate}
         actions={
           <>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <a
                 href={originalJobUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-hover"
+                className="inline-flex w-full justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-hover sm:w-auto"
               >
                 지원하기
               </a>
@@ -172,19 +172,22 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
                   type="button"
                   disabled={bookmarkPending}
                   onClick={() => void toggleBookmark()}
-                  className="inline-flex rounded-lg border border-border-strong bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-neutral-50 disabled:opacity-60"
+                  className="inline-flex w-full justify-center rounded-lg border border-border-strong bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-neutral-50 disabled:opacity-60 sm:w-auto"
                 >
                   {bookmarkPending ? '처리 중…' : bookmarked ? '찜 해제' : '찜하기'}
                 </button>
               ) : (
                 <Link
                   href={`/login?next=/jobs/${job.id}`}
-                  className="inline-flex rounded-lg border border-border-strong bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-neutral-50"
+                  className="inline-flex w-full justify-center rounded-lg border border-border-strong bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-neutral-50 sm:w-auto"
                 >
                   로그인 후 찜하기
                 </Link>
               )}
-              <JobInquiryButton inquiryHref={inquiryHref} />
+              <JobInquiryButton
+                inquiryHref={inquiryHref}
+                className="w-full justify-center sm:w-auto"
+              />
             </div>
             {bookmarkMessage ? (
               <FormFeedback variant={bookmarkMessage.type === 'success' ? 'success' : 'error'}>
