@@ -10,7 +10,7 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const notice = await getPublishedNotice(id);
-  if (!notice) return { title: '공지사항' };
+  if (!notice) return { title: '공지 사항' };
   return { title: notice.title };
 }
 

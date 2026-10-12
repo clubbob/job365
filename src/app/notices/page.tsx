@@ -3,7 +3,7 @@ import NoticesPageClient from '@/features/notices/NoticesPageClient';
 import { listPublishedNotices } from '@/lib/notices-server';
 
 export const metadata: Metadata = {
-  title: '공지사항',
+  title: '공지 사항',
 };
 
 export default async function NoticesPage() {
