@@ -9,6 +9,7 @@ export type UserAccountData = {
   settings: UserSettings;
   marketingAgreed: boolean;
   company: BizVerifyRecord | null;
+  createdAt: string | null;
 };
 
 export type UpdateUserAccountPayload = {

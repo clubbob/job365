@@ -520,10 +520,10 @@ export default function JobCreateForm({
   return (
     <div className="space-y-4">
       <nav
-        className="sticky top-14 z-40 -mx-4 overflow-x-auto border-b border-border bg-background/95 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-xl sm:border"
+        className="sticky top-14 z-40 border-b border-border bg-background/95 py-2 backdrop-blur sm:rounded-xl sm:border"
         aria-label="채용 정보 항목"
       >
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           {SECTIONS.map((item) => {
             const complete = isSectionComplete(item.id, values, companyComplete);
             return (

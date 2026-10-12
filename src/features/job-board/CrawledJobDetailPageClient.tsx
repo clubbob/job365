@@ -204,11 +204,6 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
       />
 
       <AdSlot placement="detail" />
-
-      <section className="rounded-xl border border-border bg-surface p-4">
-        <h2 className="text-base font-bold text-foreground">댓글</h2>
-        <p className="mt-2 text-sm text-muted">댓글 기능은 준비 중입니다.</p>
-      </section>
     </div>
   );
 }

@@ -40,12 +40,12 @@ export default function Footer() {
           </Link>
         </p>
 
-        <p className="mt-0.5">
-          <span className="whitespace-nowrap">회사명 : {COMPANY.name}</span>
-          <span className="mx-1.5 text-subtle" aria-hidden>|</span>
-          <span className="whitespace-nowrap">대표 : {COMPANY.ceo}</span>
-          <span className="mx-1.5 text-subtle" aria-hidden>|</span>
-          <span className="whitespace-nowrap">사업자등록번호 : {COMPANY.businessNumber}</span>
+        <p className="mt-0.5 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 break-words">
+          <span>회사명 : {COMPANY.name}</span>
+          <span className="text-subtle" aria-hidden>|</span>
+          <span>대표 : {COMPANY.ceo}</span>
+          <span className="text-subtle" aria-hidden>|</span>
+          <span>사업자등록번호 : {COMPANY.businessNumber}</span>
         </p>
 
         <p>

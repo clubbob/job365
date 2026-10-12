@@ -13,6 +13,7 @@ import WithdrawAccountForm from '@/features/mypage/WithdrawAccountForm';
 import InquiryPanel from '@/features/mypage/InquiryPanel';
 import { useAuth } from '@/features/auth/auth-context';
 import { fetchUserAccount } from '@/lib/users-api';
+import { formatKoreaDateWithWeekday } from '@/lib/datetime';
 import { getUserNicknameFallback } from '@/lib/user-display';
 import { MATCHED_JOBS_PAGE_TITLE, MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site-menu-copy';
 import { cn } from '@/lib/utils';
@@ -60,6 +61,9 @@ export default function MyPageClient() {
 
   const nickname = account?.profile.nickname || getUserNicknameFallback(user);
   const email = account?.profile.email || user.email || '—';
+  const joinedAtLabel = account?.createdAt
+    ? formatKoreaDateWithWeekday(account.createdAt.slice(0, 10))
+    : '—';
 
   return (
     <div className="flex flex-col gap-5">
@@ -69,7 +73,7 @@ export default function MyPageClient() {
         showRefresh={false}
       />
 
-      <nav className="flex gap-2 overflow-x-auto pb-1" aria-label="마이페이지 메뉴">
+      <nav className="flex flex-wrap gap-2" aria-label="마이페이지 메뉴">
         {TABS.map((item) => {
           const active = tab === item.id;
           return (
@@ -100,6 +104,10 @@ export default function MyPageClient() {
               <div className="flex gap-3">
                 <dt className="w-20 shrink-0 text-muted">이메일</dt>
                 <dd className="min-w-0 break-all font-semibold text-foreground">{email}</dd>
+              </div>
+              <div className="flex gap-3">
+                <dt className="w-20 shrink-0 text-muted">가입일</dt>
+                <dd className="min-w-0 font-semibold text-foreground">{joinedAtLabel}</dd>
               </div>
             </dl>
           </Card>

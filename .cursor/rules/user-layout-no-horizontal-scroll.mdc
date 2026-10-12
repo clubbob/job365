@@ -1,0 +1,13 @@
+---
+description: 사용자 화면은 가로 스크롤 없이 세로로만 보여 준다 (관리자 제외)
+globs: src/components/layout/**,src/features/**,src/app/**/page.tsx
+alwaysApply: false
+---
+
+# 사용자 화면 가로 스크롤
+
+- **관리자**(`/admin/**`)는 표·넓은 UI에서 `overflow-x-auto` 허용.
+- **그 외 사용자 페이지**는 화면 전체가 **옆으로 스크롤되지 않게** 한다. `body`·`MainLayout`·일반 `main`에 `overflow-x-clip` / `min-w-0` 유지.
+- 탭·단계 네비는 `overflow-x-auto` 대신 **`flex-wrap`**으로 줄바꿈.
+- 긴 URL·회사명·링크는 `break-words` / `[overflow-wrap:anywhere]`, `whitespace-nowrap`로 폭을 밀지 않는다.
+- 폼 상단 sticky 네비에 `-mx-4` + 가로 스크롤 패턴을 쓰지 않는다.

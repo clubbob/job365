@@ -14,6 +14,7 @@ export type UserAccount = {
   settings: UserSettings;
   marketingAgreed: boolean;
   company: BizVerifyRecord | null;
+  createdAt: string | null;
 };
 
 export async function getUserAccount(uid: string): Promise<UserAccount | null> {
@@ -46,11 +47,27 @@ export async function getUserAccount(uid: string): Promise<UserAccount | null> {
     notifyEmailAgreed: settingsData?.notifyEmailAgreed !== false,
   };
 
+  let createdAt = serializeTimestamp(userData.createdAt);
+  if (!createdAt) {
+    const app = getAdminApp();
+    if (app) {
+      try {
+        const authUser = await getAuth(app).getUser(uid);
+        createdAt = authUser.metadata.creationTime
+          ? new Date(authUser.metadata.creationTime).toISOString()
+          : null;
+      } catch {
+        createdAt = null;
+      }
+    }
+  }
+
   return {
     profile,
     settings,
     marketingAgreed: userData.marketingAgreed === true,
     company: parseBizVerifyRecord(userData.company),
+    createdAt,
   };
 }
 

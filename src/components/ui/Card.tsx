@@ -37,7 +37,7 @@ export function Card({ children, className, id, title, description, action }: Ca
             </div>
           )}
           {action && (
-            <div className="w-full overflow-x-auto sm:ml-auto sm:w-auto sm:shrink-0">{action}</div>
+            <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto sm:shrink-0">{action}</div>
           )}
         </div>
       )}

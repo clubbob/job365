@@ -57,23 +57,27 @@ export function DetailHero({
             />
           ) : null}
           <div className="min-w-0 flex-1">
-            {eyebrow ? (
-              <p className="text-sm font-semibold text-primary" title={eyebrow}>
-                {eyebrow}
-              </p>
-            ) : null}
-            <h2
-              className={cn(
-                'block w-full min-w-0 whitespace-normal break-words text-xl font-bold leading-snug tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-2xl',
-                eyebrow ? 'mt-2' : badges ? 'mt-0' : undefined,
-              )}
-              title={title}
-            >
-              {title}
-            </h2>
-            {badges ? (
-              <div className="mt-3 flex flex-wrap justify-end gap-1.5">{badges}</div>
-            ) : null}
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                {eyebrow ? (
+                  <p className="text-sm font-semibold text-primary" title={eyebrow}>
+                    {eyebrow}
+                  </p>
+                ) : null}
+                <h2
+                  className={cn(
+                    'block w-full min-w-0 whitespace-normal break-words text-xl font-bold leading-snug tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-2xl',
+                    eyebrow ? 'mt-2' : undefined,
+                  )}
+                  title={title}
+                >
+                  {title}
+                </h2>
+              </div>
+              {badges ? (
+                <div className="flex max-w-[45%] shrink-0 flex-wrap justify-end gap-1.5">{badges}</div>
+              ) : null}
+            </div>
             {subtitle ? (
               <p
                 className="mt-1.5 line-clamp-1 text-sm font-medium text-muted"
@@ -162,8 +166,8 @@ export function DetailStatGrid({
             <dt className="text-[11px] font-medium tracking-wide text-subtle">{item.label}</dt>
             <dd
               className={cn(
-                'mt-1 min-w-0 text-sm font-semibold leading-snug',
-                item.href && value !== '—' ? 'overflow-x-auto' : 'break-words whitespace-pre-wrap',
+                'mt-1 min-w-0 break-words text-sm font-semibold leading-snug',
+                item.href && value !== '—' ? 'whitespace-normal' : 'whitespace-pre-wrap',
                 value === '—' ? 'text-subtle' : 'text-foreground',
               )}
             >
@@ -172,12 +176,7 @@ export function DetailStatGrid({
                   href={item.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={cn(
-                    'text-primary underline decoration-primary/30 underline-offset-[3px] hover:decoration-primary/60',
-                    item.hrefWrap
-                      ? 'inline break-words whitespace-normal'
-                      : 'inline-block whitespace-nowrap',
-                  )}
+                  className="text-primary underline decoration-primary/30 underline-offset-[3px] [overflow-wrap:anywhere] hover:decoration-primary/60"
                 >
                   {value}
                 </a>

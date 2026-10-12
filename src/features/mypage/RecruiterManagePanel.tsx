@@ -182,7 +182,7 @@ export default function RecruiterManagePanel({
   return (
     <div className="space-y-4">
       <div
-        className="-mx-1 flex gap-1 overflow-x-auto border-b border-border px-1"
+        className="-mx-1 flex flex-wrap gap-1 border-b border-border px-1"
         role="tablist"
         aria-label="채용 관리"
       >
