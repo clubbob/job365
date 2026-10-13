@@ -3,8 +3,6 @@ import { loadBizVerify } from '@/lib/biz-verify-store';
 import { getKoreaDateTimeLocalMin } from '@/lib/datetime';
 import { jobMatchesFollowedCompany } from '@/lib/followed-companies';
 import { findMyTalentProfile } from '@/lib/my-talent-profile';
-import { listMyJobPostings } from '@/lib/my-job-posts';
-import type { JobPosting } from '@/types/job';
 
 export type ResumeViewBlock = {
   key: string;
@@ -49,31 +47,21 @@ function writeStore(store: Store): void {
 
 export function recruiterCompanyFromJobs(
   recruiterId: string,
-): Pick<JobPosting, 'companyName' | 'businessNumber'> | null {
+): { companyName: string; businessNumber?: string } | null {
   return recruiterCompaniesForViewer(recruiterId)[0] ?? null;
 }
 
 export function recruiterCompaniesForViewer(
   recruiterId: string,
-): Array<Pick<JobPosting, 'companyName' | 'businessNumber'>> {
-  const seen = new Set<string>();
-  const companies: Array<Pick<JobPosting, 'companyName' | 'businessNumber'>> = [];
-
-  function add(companyName: string, businessNumber?: string) {
-    const name = companyName.trim();
-    if (!name) return;
-    const key = `${digitsOnly(businessNumber ?? '')}|${name}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    companies.push({ companyName: name, businessNumber });
-  }
-
+): Array<{ companyName: string; businessNumber?: string }> {
   const verified = loadBizVerify(recruiterId);
-  if (verified) add(verified.companyName, verified.businessNumber);
-  for (const job of listMyJobPostings(recruiterId)) {
-    add(job.companyName, job.businessNumber);
-  }
-  return companies;
+  if (!verified?.companyName?.trim()) return [];
+  return [
+    {
+      companyName: verified.companyName.trim(),
+      businessNumber: digitsOnly(verified.businessNumber ?? '') || undefined,
+    },
+  ];
 }
 
 export function listResumeViewBlocks(userId: string): ResumeViewBlock[] {

@@ -5,7 +5,6 @@ import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { adminDangerActionClassName, adminJson, firebaseAdminUnavailableText } from '@/lib/admin-ui';
 import { clearBizVerify } from '@/lib/biz-verify-store';
-import { deleteAllMyJobPostings } from '@/lib/my-job-posts';
 import { deleteMyTalentProfile } from '@/lib/my-talent-profile';
 import type { AdminUserListItem } from '@/types/user';
 
@@ -117,7 +116,6 @@ export default function AdminUsersClient() {
       if (!data.ok) {
         throw new Error(data.error?.message || '회원을 삭제하지 못했습니다.');
       }
-      deleteAllMyJobPostings(user.id);
       deleteMyTalentProfile(user.id);
       clearBizVerify(user.id);
       setUsers((current) => current.filter((item) => item.id !== user.id));

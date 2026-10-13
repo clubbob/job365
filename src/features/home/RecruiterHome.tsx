@@ -15,10 +15,10 @@ export default function RecruiterHome() {
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
-            href="/mypage?tab=jobs"
+            href="/talents"
             className="inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition hover:bg-blue-50"
           >
-            채용 관리
+            인재 정보
           </Link>
         </div>
       </section>

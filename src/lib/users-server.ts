@@ -2,7 +2,6 @@ import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { parseBizVerifyRecord, type BizVerifyRecord } from '@/lib/biz-verify-store';
 import { getAdminApp, getAdminFirestore } from '@/lib/firebaseAdmin';
-import { deleteStoredJobPostingsByOwner } from '@/lib/jobs-server';
 import { parseFirestoreTimestamp } from '@/lib/firestore-timestamp';
 import { parseJobAlertPrefs } from '@/lib/job-alert-prefs-server';
 import { omitUndefined } from '@/lib/omit-undefined';
@@ -146,7 +145,6 @@ export async function deleteUserAccount(uid: string): Promise<void> {
   const db = getAdminFirestore();
   if (!db) throw new Error('Firestore Admin not available');
 
-  await deleteStoredJobPostingsByOwner(uid);
   await deleteStoredTalentProfilesByOwner(uid);
 
   const batch = db.batch();

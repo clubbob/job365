@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import AdSlot from '@/components/ads/AdSlot';
-import JobList from '@/features/jobs/JobList';
+import JobBoardList from '@/features/job-board/JobBoardList';
+import { JOB_HOME_PAGE_SIZE } from '@/lib/job-board/constants';
 
 export default function JobseekerHome() {
   return (
@@ -11,7 +12,7 @@ export default function JobseekerHome() {
           지금 지원할 수 있는 채용 정보를 찾아 보세요
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-blue-100 sm:text-base">
-          채용 정보를 선택해 바로 지원할 수 있습니다. 이용료는 없습니다.
+          수집된 채용 공고를 확인하고 원문 사이트에서 지원할 수 있습니다. 이용료는 없습니다.
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
@@ -25,17 +26,14 @@ export default function JobseekerHome() {
 
       <AdSlot placement="header" />
 
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-foreground">최근 채용 정보</h2>
-          <p className="mt-1 text-sm text-muted">공개된 채용 정보를 확인해 보세요.</p>
-        </div>
-        <Link href="/jobs" className="text-sm font-semibold text-primary hover:underline">
-          전체 보기
-        </Link>
-      </div>
-
-      <JobList limit={6} hideFilters />
+      <JobBoardList
+        showFilters={false}
+        listTitle="최근 채용 공고"
+        listMoreHref="/jobs"
+        showCount={false}
+        showLoadMore={false}
+        pageSize={JOB_HOME_PAGE_SIZE}
+      />
     </div>
   );
 }

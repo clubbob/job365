@@ -3,14 +3,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FieldLabel } from '@/components/ui/Card';
 import { FormFeedback } from '@/components/ui/FormFeedback';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
-import { authInputClassName } from '@/lib/auth-ui';
 import { firstRequiredError } from '@/lib/form-required';
-import { listPublishedMyJobPostings } from '@/lib/my-job-posts';
 import { missingProposeRequirements, type ProposeRequirement } from '@/lib/recruiter-ready';
+import { recruiterCompanyFromJobs } from '@/lib/resume-view-blocks';
 import {
   getTalentProposalView,
   saveTalentProposal,
@@ -18,7 +16,6 @@ import {
 } from '@/lib/talent-proposals';
 import { cn } from '@/lib/utils';
 import { buttonBaseClassName, buttonPrimaryClassName, buttonSizeDefaultClassName } from '@/lib/button-ui';
-import type { JobPosting } from '@/types/job';
 
 export default function TalentProposeButton({
   talentId,
@@ -32,8 +29,6 @@ export default function TalentProposeButton({
   const pathname = usePathname();
   const [status, setStatus] = useState<TalentProposalStatus>('none');
   const [linkedJobTitle, setLinkedJobTitle] = useState('');
-  const [jobs, setJobs] = useState<JobPosting[]>([]);
-  const [selectedJobId, setSelectedJobId] = useState('');
   const [error, setError] = useState('');
   const [missing, setMissing] = useState<ProposeRequirement[]>([]);
   const loginHref = `/login?next=${encodeURIComponent(pathname || `/talents/${talentId}`)}`;
@@ -42,8 +37,6 @@ export default function TalentProposeButton({
     if (!user) {
       setStatus('none');
       setLinkedJobTitle('');
-      setJobs([]);
-      setSelectedJobId('');
       setError('');
       setMissing([]);
       onStatusChange('none');
@@ -54,15 +47,11 @@ export default function TalentProposeButton({
     setLinkedJobTitle(next.jobTitle);
     onStatusChange(next.status);
     setMissing(mode === 'recruiter' ? missingProposeRequirements(user.uid) : []);
-    setJobs(mode === 'recruiter' ? listPublishedMyJobPostings(user.uid) : []);
-    setSelectedJobId('');
     setError('');
   }, [mode, onStatusChange, talentId, user]);
 
   if (loading) {
-    return (
-      <p className="text-center text-sm text-muted">불러오는 중…</p>
-    );
+    return <p className="text-center text-sm text-muted">불러오는 중…</p>;
   }
 
   if (!user) {
@@ -108,29 +97,18 @@ export default function TalentProposeButton({
   }
 
   const blocked = missing.length > 0;
-  const onlyJob = jobs.length === 1 ? jobs[0] : null;
   const gate = blocked ? (
     <p className="rounded-lg bg-neutral-50 px-4 py-3 text-sm text-muted">
-      {missing.length > 1
-        ? '회사 정보와 채용 정보를 모두 등록해야 제안할 수 있습니다.'
-        : missing[0] === '회사 정보'
-          ? '회사 정보를 등록해야 제안할 수 있습니다.'
-          : '채용 정보를 등록해야 제안할 수 있습니다.'}{' '}
-      {missing.includes('회사 정보') ? (
-        <Link href="/jobs/new?from=mypage" className="font-semibold text-primary hover:underline">
-          회사 정보
-        </Link>
-      ) : null}
-      {missing.length > 1 ? ' · ' : null}
-      {missing.includes('채용 정보') ? (
-        <Link href="/mypage?tab=jobs&sub=jobs" className="font-semibold text-primary hover:underline">
-          채용 정보 관리
-        </Link>
-      ) : null}
+      회사 정보를 등록해야 제안할 수 있습니다.{' '}
+      <Link href="/mypage?tab=account" className="font-semibold text-primary hover:underline">
+        회원 정보
+      </Link>
+      에서 사업자 인증을 완료해 주세요.
     </p>
   ) : null;
 
   const recruiterId = user.uid;
+  const companyLabel = recruiterCompanyFromJobs(recruiterId)?.companyName ?? '우리 회사';
 
   function handlePropose() {
     const nextMissing = missingProposeRequirements(recruiterId);
@@ -138,19 +116,18 @@ export default function TalentProposeButton({
       setMissing(nextMissing);
       return;
     }
-    const job = onlyJob ?? jobs.find((item) => item.id === selectedJobId);
     const requiredError = firstRequiredError([
-      { ok: Boolean(job), message: '연결할 채용 정보를 선택하세요.' },
+      { ok: Boolean(companyLabel.trim()), message: '회사 정보를 등록해 주세요.' },
     ]);
-    if (requiredError || !job) {
-      setError(requiredError ?? '연결할 채용 정보를 선택하세요.');
+    if (requiredError) {
+      setError(requiredError);
       return;
     }
-    if (!window.confirm(`「${job.title}」으로 면접을 제안할까요?`)) return;
-    saveTalentProposal(recruiterId, talentId, 'pending', job.id);
+    if (!window.confirm(`「${companyLabel}」에서 면접을 제안할까요?`)) return;
+    saveTalentProposal(recruiterId, talentId, 'pending', companyLabel);
     const next = getTalentProposalView(recruiterId, talentId);
     if (next.status !== 'pending') {
-      setError('연결할 채용 정보를 선택하세요.');
+      setError('제안을 보내지 못했습니다. 회사 정보를 확인해 주세요.');
       return;
     }
     setError('');
@@ -159,36 +136,9 @@ export default function TalentProposeButton({
     onStatusChange('pending');
   }
 
-  const jobPicker =
-    !blocked && jobs.length > 1 ? (
-      <div>
-        <FieldLabel htmlFor="propose-job" required>
-          채용 정보
-        </FieldLabel>
-        <select
-          id="propose-job"
-          value={selectedJobId}
-          onChange={(event) => {
-            setSelectedJobId(event.target.value);
-            setError('');
-          }}
-          className={cn(authInputClassName, !selectedJobId && 'font-normal text-subtle')}
-        >
-          <option value="">선택</option>
-          {jobs.map((job) => (
-            <option key={job.id} value={job.id}>
-              {job.title}
-            </option>
-          ))}
-        </select>
-      </div>
-    ) : null;
-
   const intro = blocked
     ? null
-    : onlyJob
-      ? `「${onlyJob.title}」 채용 정보로 면접을 제안합니다. 구직자가 이 제안을 수락하면 실명이 공개됩니다.`
-      : '어느 채용 정보로 제안할지 고른 뒤 보내 주세요. 구직자가 이 제안을 수락하면 실명이 공개됩니다.';
+    : `「${companyLabel}」에서 면접을 제안합니다. 구직자가 수락하면 실명이 이 계정에만 공개됩니다.`;
 
   if (status === 'rejected') {
     return (
@@ -200,7 +150,6 @@ export default function TalentProposeButton({
         </p>
         {gate}
         {intro ? <p className="text-sm text-muted">{intro}</p> : null}
-        {jobPicker}
         {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
         <button
           type="button"
@@ -218,7 +167,6 @@ export default function TalentProposeButton({
     <div className="space-y-2">
       {gate}
       {intro ? <p className="text-sm text-muted">{intro}</p> : null}
-      {jobPicker}
       {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
       <button
         type="button"

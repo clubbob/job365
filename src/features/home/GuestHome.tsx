@@ -39,7 +39,7 @@ const AUDIENCES: Array<{
 const HIGHLIGHTS = [
   {
     title: '이용료 없음',
-    body: '채용 정보 열람·지원, 채용 정보 등록 모두 이용 수수료가 없습니다.',
+    body: '채용 공고 열람·이력서 등록 모두 이용 수수료가 없습니다.',
   },
   {
     title: '한 계정, 두 가지 이용',

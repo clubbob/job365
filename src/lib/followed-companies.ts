@@ -1,7 +1,5 @@
 import { digitsOnly } from '@/lib/business-number';
 import { getKoreaDateTimeLocalMin } from '@/lib/datetime';
-import { listJobs } from '@/lib/job-catalog';
-import type { JobPosting } from '@/types/job';
 
 export type FollowedCompany = {
   key: string;
@@ -53,26 +51,32 @@ export function listFollowedCompanies(userId: string): FollowedCompany[] {
   return [...(readStore()[userId] ?? [])].sort((a, b) => b.followedAt.localeCompare(a.followedAt));
 }
 
-export function isCompanyFollowed(userId: string, job: Pick<JobPosting, 'companyName' | 'businessNumber'>): boolean {
-  const key = followedCompanyKey(job.companyName, job.businessNumber);
+export function isCompanyFollowed(
+  userId: string,
+  company: { companyName: string; businessNumber?: string },
+): boolean {
+  const key = followedCompanyKey(company.companyName, company.businessNumber);
   return listFollowedCompanies(userId).some((item) => item.key === key);
 }
 
-export function followCompany(userId: string, job: Pick<JobPosting, 'companyName' | 'businessNumber'>): FollowedCompany {
-  const key = followedCompanyKey(job.companyName, job.businessNumber);
+export function followCompany(
+  userId: string,
+  company: { companyName: string; businessNumber?: string },
+): FollowedCompany {
+  const key = followedCompanyKey(company.companyName, company.businessNumber);
   const existing = listFollowedCompanies(userId).find((item) => item.key === key);
   if (existing) return existing;
 
-  const company: FollowedCompany = {
+  const next: FollowedCompany = {
     key,
-    companyName: job.companyName.trim(),
-    businessNumber: digitsOnly(job.businessNumber ?? '') || undefined,
+    companyName: company.companyName.trim(),
+    businessNumber: digitsOnly(company.businessNumber ?? '') || undefined,
     followedAt: getKoreaDateTimeLocalMin(),
   };
   const store = readStore();
-  store[userId] = [company, ...(store[userId] ?? [])];
+  store[userId] = [next, ...(store[userId] ?? [])];
   writeStore(store);
-  return company;
+  return next;
 }
 
 export function unfollowCompany(userId: string, key: string): boolean {
@@ -87,17 +91,11 @@ export function unfollowCompany(userId: string, key: string): boolean {
 }
 
 export function jobMatchesFollowedCompany(
-  job: Pick<JobPosting, 'companyName' | 'businessNumber'>,
+  job: { companyName: string; businessNumber?: string },
   company: Pick<FollowedCompany, 'companyName' | 'businessNumber'>,
 ): boolean {
   const jobBiz = digitsOnly(job.businessNumber ?? '');
   const followedBiz = digitsOnly(company.businessNumber ?? '');
   if (jobBiz && followedBiz) return jobBiz === followedBiz;
   return job.companyName.trim() === company.companyName.trim();
-}
-
-export function listFollowedCompanyJobs(userId: string): JobPosting[] {
-  const companies = listFollowedCompanies(userId);
-  if (companies.length === 0) return [];
-  return listJobs().filter((job) => companies.some((company) => jobMatchesFollowedCompany(job, company)));
 }

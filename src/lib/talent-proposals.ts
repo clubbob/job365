@@ -1,14 +1,11 @@
 import { digitsOnly } from '@/lib/business-number';
 import { getKoreaDateTimeLocalMin } from '@/lib/datetime';
 import { followedCompanyKey } from '@/lib/followed-companies';
-import { getJobById } from '@/lib/job-catalog';
-import { listPublishedMyJobPostings } from '@/lib/my-job-posts';
 import { findMyTalentProfile, getMyTalentProfile, listMyTalentProfilesForUser } from '@/lib/my-talent-profile';
 import { recruiterCompanyFromJobs } from '@/lib/resume-view-blocks';
 import { missingProposeRequirements } from '@/lib/recruiter-ready';
 import { getTalentById } from '@/lib/talent-catalog';
 import { talentResumeTitle } from '@/lib/talent-display';
-import type { JobPosting } from '@/types/job';
 import type { TalentProfile } from '@/types/talent';
 
 export type TalentProposalStatus = 'none' | 'pending' | 'accepted' | 'rejected';
@@ -114,21 +111,10 @@ function companyForRecruiter(
 }
 
 function linkedJob(record: ProposalRecord): { jobId?: string; jobTitle: string } {
-  const storedTitle = record.jobTitle?.trim() ?? '';
-  if (!record.jobId) return { jobTitle: storedTitle };
-  const live = getJobById(record.jobId);
   return {
     jobId: record.jobId,
-    jobTitle: live?.title?.trim() || storedTitle,
+    jobTitle: record.jobTitle?.trim() ?? '',
   };
-}
-
-export function resolveProposeJob(recruiterId: string, jobId?: string): JobPosting | null {
-  const jobs = listPublishedMyJobPostings(recruiterId);
-  if (jobs.length === 0) return null;
-  if (jobId) return jobs.find((job) => job.id === jobId) ?? null;
-  if (jobs.length === 1) return jobs[0] ?? null;
-  return null;
 }
 
 export function getTalentProposalStatus(recruiterId: string, talentId: string): TalentProposalStatus {
@@ -146,7 +132,7 @@ export function saveTalentProposal(
   recruiterId: string,
   talentId: string,
   status: Exclude<TalentProposalStatus, 'none'>,
-  jobId?: string,
+  jobTitle?: string,
 ): void {
   if (status === 'pending' && missingProposeRequirements(recruiterId).length > 0) return;
   const owned = findMyTalentProfile(talentId);
@@ -154,13 +140,12 @@ export function saveTalentProposal(
   const identity = recruiterCompanyFromJobs(recruiterId);
   const current = asRecord(readStore()[recruiterId]?.[talentId]);
   const sendingAgain = status === 'pending' && current?.status === 'rejected';
-  let nextJobId = current?.jobId;
+  const nextJobId = undefined;
   let nextJobTitle = current?.jobTitle;
   if (status === 'pending') {
-    const job = resolveProposeJob(recruiterId, jobId);
-    if (!job) return;
-    nextJobId = job.id;
-    nextJobTitle = job.title;
+    const trimmed = jobTitle?.trim() || identity?.companyName?.trim() || '';
+    if (!trimmed) return;
+    nextJobTitle = trimmed;
   }
   const record: ProposalRecord = {
     status,

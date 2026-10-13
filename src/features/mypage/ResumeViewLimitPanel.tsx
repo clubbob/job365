@@ -7,7 +7,6 @@ import { isPublishedTalent, type TalentProfile } from '@/types/talent';
 import { digitsOnly } from '@/lib/business-number';
 import { getKoreaDateTimeLocalMin } from '@/lib/datetime';
 import { followedCompanyKey } from '@/lib/followed-companies';
-import { listJobs } from '@/lib/job-catalog';
 import { listProposedCompaniesForJobseeker } from '@/lib/talent-proposals';
 import {
   listResumeViewBlocks,
@@ -15,17 +14,17 @@ import {
   type ResumeViewBlock,
 } from '@/lib/resume-view-blocks';
 
-function listKnownCompanies(): ResumeViewBlock[] {
+function listKnownCompanies(userId: string): ResumeViewBlock[] {
   const map = new Map<string, ResumeViewBlock>();
-  for (const job of listJobs()) {
-    const companyName = job.companyName.trim();
+  for (const proposal of listProposedCompaniesForJobseeker(userId)) {
+    const companyName = proposal.companyName.trim();
     if (!companyName) continue;
-    const key = followedCompanyKey(companyName, job.businessNumber);
+    const key = followedCompanyKey(companyName, proposal.businessNumber);
     if (map.has(key)) continue;
     map.set(key, {
       key,
       companyName,
-      businessNumber: digitsOnly(job.businessNumber ?? '') || undefined,
+      businessNumber: digitsOnly(proposal.businessNumber ?? '') || undefined,
       blockedAt: '',
     });
   }
@@ -66,7 +65,7 @@ export default function ResumeViewLimitPanel({
   }, [userId]);
 
   const proposed = useMemo(() => listProposedCompaniesForJobseeker(userId), [userId, saved]);
-  const known = useMemo(() => listKnownCompanies(), [userId]);
+  const known = useMemo(() => listKnownCompanies(userId), [userId]);
 
   const draftKeys = new Set(draft.map((item) => item.key));
   const proposedToAdd = proposed.filter((item) => !draftKeys.has(item.key));
