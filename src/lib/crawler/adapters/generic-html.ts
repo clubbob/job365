@@ -32,6 +32,14 @@ import type { CompanySize } from '@/lib/job-board/constants';
 import { paceCrawlRequest } from '@/lib/crawler/crawl-throttle';
 import { fetchText } from '@/lib/crawler/fetch-text';
 import type { CrawledJob } from '@/types/crawled-job';
+import {
+  genericDetailFetchConcurrency,
+  isGenericBrowserEnabled,
+  isGenericFastDetailMode,
+  jsonListMaxPagesForCompany,
+  skipHtmlWhenApiCandidatesFound,
+} from '@/lib/crawler/generic-crawl-mode';
+import { maxJobsPerGenericSource } from '@/lib/crawler/generic-html-limits';
 import type { CrawlerSourceResult } from '@/lib/crawler/types';
 
 export type GenericHtmlConfig = {
@@ -41,9 +49,9 @@ export type GenericHtmlConfig = {
   careersUrl: string;
   companySize?: CompanySize;
 };
-
-const MAX_JOBS_PER_SOURCE = 150;
-const DETAIL_FETCH_CONCURRENCY = 4;
+function jobLimit(config: GenericHtmlConfig): number {
+  return maxJobsPerGenericSource(config.companySize);
+}
 
 type JobCandidate = {
   title: string;
@@ -201,7 +209,7 @@ function walkJsonForCandidates(
   seen: Set<string>,
   detailUrlPrefix: string | null,
 ): void {
-  if (candidates.length >= MAX_JOBS_PER_SOURCE) return;
+  if (candidates.length >= jobLimit(config)) return;
 
   if (Array.isArray(value)) {
     for (const item of value) {
@@ -589,11 +597,11 @@ async function buildJobsFromCandidates(
   candidates: JobCandidate[],
   crawledAt: string,
 ): Promise<CrawledJob[]> {
-  const limited = candidates.slice(0, MAX_JOBS_PER_SOURCE);
+  const limited = candidates.slice(0, jobLimit(config));
 
   const jobs: CrawledJob[] = [];
 
-  await mapWithConcurrency(limited, DETAIL_FETCH_CONCURRENCY, async (candidate) => {
+  await mapWithConcurrency(limited, genericDetailFetchConcurrency(), async (candidate) => {
     if (
       isPortalCareersUrl(config.careersUrl) &&
       !jobMatchesExpectedCompany(config.companyName, candidate.title, candidate.companyName)
@@ -602,6 +610,7 @@ async function buildJobsFromCandidates(
     }
     const hasListDescription =
       candidate.listDescription && !isInvalidJobDescription(candidate.listDescription);
+    const fast = isGenericFastDetailMode();
     const hanwhainRtSeq = hasListDescription ? null : parseHanwhainRtSeq(candidate.applyUrl);
     const jsonDetailUrl = hasListDescription
       ? null
@@ -612,7 +621,9 @@ async function buildJobsFromCandidates(
         ? await fetchJsonJobDetail(jsonDetailUrl, config.careersUrl)
         : null;
     const htmlDetail =
-      hasListDescription || jsonDetail ? null : await fetchJobDetail(candidate.applyUrl, config.careersUrl);
+      hasListDescription || jsonDetail || fast
+        ? null
+        : await fetchJobDetail(candidate.applyUrl, config.careersUrl);
     const detail = jsonDetail ?? htmlDetail;
     const title = normalizeJobTitle(detail?.title ?? candidate.title);
     if (isInvalidJobTitle(title)) return;
@@ -657,25 +668,43 @@ async function buildJobsFromCandidates(
   return jobs;
 }
 
+async function collectApiJobCandidates(config: GenericHtmlConfig): Promise<JobCandidate[]> {
+  const maxPages = jsonListMaxPagesForCompany(config.companySize);
+  const [jsonList, recruiter, toss] = await Promise.all([
+    fetchRecruitListCandidates(config.careersUrl, config.companyName, { maxPages }),
+    fetchRecruiterNoticeCandidates(config.careersUrl, config.companyName),
+    fetchTossCareerCandidates(config.careersUrl),
+  ]);
+  return [...jsonList, ...recruiter, ...toss].map(toJobCandidate);
+}
+
 export async function crawlGenericHtmlCareers(config: GenericHtmlConfig): Promise<CrawlerSourceResult> {
   const errors: string[] = [];
   const crawledAt = new Date().toISOString();
 
   try {
-    const { html: initialHtml, cookieHeader } = await fetchWithSessionCookies(config.careersUrl);
-    let html = initialHtml;
+    let candidates = await collectApiJobCandidates(config);
+    const apiListHit = candidates.length > 0;
+    let html = '';
 
-    let candidates = [
-      ...extractCandidatesFromJson(html, config),
-      ...extractCandidatesFromLinks(html, config.careersUrl, config),
-      ...(await fetchRecruitListCandidates(config.careersUrl, config.companyName)).map(toJobCandidate),
-      ...(await fetchRecruiterNoticeCandidates(config.careersUrl, config.companyName)).map(toJobCandidate),
-      ...(await fetchTossCareerCandidates(config.careersUrl)).map(toJobCandidate),
-      ...await tryHtmlListApis(config.careersUrl, cookieHeader, config),
-      ...await tryDiscoveredApis(config.careersUrl, html, cookieHeader, config),
-    ];
+    if (!apiListHit || !skipHtmlWhenApiCandidatesFound()) {
+      const { html: initialHtml, cookieHeader } = await fetchWithSessionCookies(config.careersUrl);
+      html = initialHtml;
 
-    if (needsBrowserRendering(html, candidates.length, config.careersUrl)) {
+      candidates = [
+        ...candidates,
+        ...extractCandidatesFromJson(html, config),
+        ...extractCandidatesFromLinks(html, config.careersUrl, config),
+        ...(await tryHtmlListApis(config.careersUrl, cookieHeader, config)),
+        ...(await tryDiscoveredApis(config.careersUrl, html, cookieHeader, config)),
+      ];
+    }
+
+    if (
+      !apiListHit &&
+      isGenericBrowserEnabled() &&
+      needsBrowserRendering(html, candidates.length, config.careersUrl)
+    ) {
       try {
         const rendered = await crawlPageWithBrowser(config.careersUrl);
         html = rendered.html;
@@ -691,6 +720,12 @@ export async function crawlGenericHtmlCareers(config: GenericHtmlConfig): Promis
           `${config.companyName}: JavaScript 렌더링 수집 실패 (${error instanceof Error ? error.message : '알 수 없음'})`,
         );
       }
+    } else if (
+      !apiListHit &&
+      !isGenericBrowserEnabled() &&
+      needsBrowserRendering(html, candidates.length, config.careersUrl)
+    ) {
+      errors.push(`${config.companyName}: 브라우저 수집이 비활성화되어 목록을 확보하지 못했습니다.`);
     }
 
     const deduped = candidates.filter(
@@ -708,7 +743,7 @@ export async function crawlGenericHtmlCareers(config: GenericHtmlConfig): Promis
       sourceName: config.sourceName,
       jobs,
       errors,
-      syncEmpty: true,
+      syncEmpty: jobs.length === 0 && errors.length === 0,
     };
   } catch (error) {
     errors.push(`${config.companyName}: ${error instanceof Error ? error.message : '수집 실패'}`);

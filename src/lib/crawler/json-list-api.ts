@@ -158,6 +158,7 @@ function buildListApiUrl(origin: string, apiPath: string, page: number, pageSize
 export async function fetchRecruitListCandidates(
   careersUrl: string,
   defaultCompanyName: string,
+  options?: { maxPages?: number },
 ): Promise<JsonRecruitListCandidate[]> {
   const origin = new URL(careersUrl).origin;
   const candidates: JsonRecruitListCandidate[] = [];
@@ -180,7 +181,8 @@ export async function fetchRecruitListCandidates(
 
     const allItems = [...first.items];
     const pageSize = 100;
-    const totalPages = Math.min(10, Math.ceil(first.total / pageSize));
+    const pageCap = Math.max(1, options?.maxPages ?? 10);
+    const totalPages = Math.min(pageCap, Math.ceil(first.total / pageSize));
 
     for (let page = 2; page <= totalPages; page += 1) {
       const payload = await fetchJson(buildListApiUrl(origin, apiPath, page, pageSize), careersUrl);

@@ -59,7 +59,7 @@ function discoveryLabel(status: CareersDiscoveryStatus): string {
 
 export default function MidSizedRegistryBrowser() {
   const [query, setQuery] = useState('');
-  const [activeOnly, setActiveOnly] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [linkedOnly, setLinkedOnly] = useState(false);
   const [notFoundOnly, setNotFoundOnly] = useState(false);
   const [pendingOnly, setPendingOnly] = useState(false);
@@ -67,6 +67,15 @@ export default function MidSizedRegistryBrowser() {
   const [data, setData] = useState<RegistryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query), 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    setOffset(0);
+  }, [debouncedQuery, linkedOnly, notFoundOnly, pendingOnly]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,8 +85,7 @@ export default function MidSizedRegistryBrowser() {
         offset: String(offset),
         limit: String(PAGE_SIZE),
       });
-      if (query.trim()) params.set('q', query.trim());
-      if (activeOnly) params.set('activeOnly', '1');
+      if (debouncedQuery.trim()) params.set('q', debouncedQuery.trim());
       if (linkedOnly) params.set('linkedOnly', '1');
       if (notFoundOnly) params.set('notFoundOnly', '1');
       if (pendingOnly) params.set('pendingOnly', '1');
@@ -93,28 +101,26 @@ export default function MidSizedRegistryBrowser() {
     } finally {
       setLoading(false);
     }
-  }, [activeOnly, linkedOnly, notFoundOnly, offset, pendingOnly, query]);
+  }, [debouncedQuery, linkedOnly, notFoundOnly, offset, pendingOnly]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    setOffset(0);
-  }, [query, activeOnly, linkedOnly, notFoundOnly, pendingOnly]);
-
   const resultTotal = data?.total ?? 0;
+  const initialLoading = loading && data === null;
+  const refreshing = loading && data !== null;
 
   return (
-    <Card title="목록 검색" description={COMPANY_REGISTRY_LIST_CARD_DESCRIPTION}>
+    <Card
+      title="목록 검색"
+      description={`${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 목록은 유명도 순입니다.`}
+    >
       <AdminCompanyRegistryStatGrid
         uniqueCompanies={
           data ? `${data.uniqueCompanyCount.toLocaleString('ko-KR')}곳` : COMPANY_REGISTRY_STAT_EMPTY
         }
         linkedUrl={data ? `${data.linkedCount.toLocaleString('ko-KR')}곳` : COMPANY_REGISTRY_STAT_EMPTY}
-        validCert={
-          data ? `${data.activeCertificateCount.toLocaleString('ko-KR')}곳` : COMPANY_REGISTRY_STAT_EMPTY
-        }
       />
 
       <AdminCompanyRegistrySearchAndFilters
@@ -122,11 +128,9 @@ export default function MidSizedRegistryBrowser() {
         query={query}
         onQueryChange={setQuery}
         filters={{
-          activeOnly,
           linkedOnly,
           notFoundOnly,
           pendingOnly,
-          onActiveOnly: setActiveOnly,
           onLinkedOnly: setLinkedOnly,
           onNotFoundOnly: setNotFoundOnly,
           onPendingOnly: setPendingOnly,
@@ -134,13 +138,16 @@ export default function MidSizedRegistryBrowser() {
       />
 
       <AdminListResultMeta>
-        {data ? formatCompanyRegistryResultMeta(resultTotal, query) : formatCompanyRegistryResultMeta(0, query)}
+        {data
+          ? formatCompanyRegistryResultMeta(resultTotal, debouncedQuery)
+          : formatCompanyRegistryResultMeta(0, debouncedQuery)}
+        {refreshing ? ' · 갱신 중' : ''}
       </AdminListResultMeta>
 
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
-      {loading ? <p className="text-sm text-muted">불러오는 중…</p> : null}
+      {initialLoading ? <p className="text-sm text-muted">불러오는 중…</p> : null}
 
-      {!loading && data && data.items.length > 0 ? (
+      {data && data.items.length > 0 ? (
         <>
           <div className={adminRegistryTableWrapClassName}>
             <table className={adminRegistryTableClassName}>
@@ -150,7 +157,6 @@ export default function MidSizedRegistryBrowser() {
                   <tr key={row.businessNumber} className="text-foreground">
                     <td className="px-3 py-2 font-medium">{row.companyName}</td>
                     <td className="px-3 py-2 text-muted">{row.businessNumber}</td>
-                    <td className="px-3 py-2 text-muted">{row.active ? '유효' : '만료'}</td>
                     <td className="px-3 py-2 text-muted">{discoveryLabel(row.careersDiscoveryStatus)}</td>
                     <td className="px-3 py-2 text-muted">
                       {formatRegistryActiveJobCount(row.activeJobCount)}

@@ -1,11 +1,12 @@
 import type { EmploymentType, JobRegion, JobRole } from '@/lib/job-board/constants';
+import { companySegmentsForJob, type JobBoardCompanySegment } from '@/lib/job-board/company-segment';
 import type { CrawledJobListItem } from '@/types/crawled-job';
 import type { JobAlertPrefs } from '@/types/job-alert-prefs';
 
 export type JobBoardFilters = {
   q?: string;
-  quickFilter?: 'all' | EmploymentType;
   employmentTypes?: EmploymentType[];
+  companySegments?: JobBoardCompanySegment[];
   roles?: JobRole[];
   regions?: JobRegion[];
   todayOnly?: boolean;
@@ -55,11 +56,8 @@ export function jobMatchesBoardFilters(job: CrawledJobListItem, filters: JobBoar
 
   if (!matchesKeyword(job, filters.q ?? '')) return false;
 
-  if (filters.quickFilter && filters.quickFilter !== 'all') {
-    if (!job.employmentTypes.includes(filters.quickFilter)) return false;
-  }
-
   if (!overlaps(filters.employmentTypes ?? [], job.employmentTypes)) return false;
+  if (!overlaps(filters.companySegments ?? [], companySegmentsForJob(job))) return false;
   if (!overlaps(filters.roles ?? [], job.roles)) return false;
   if (!overlaps(filters.regions ?? [], job.regions)) return false;
 

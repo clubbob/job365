@@ -7,7 +7,7 @@ import {
   isCompanySize,
   isEmploymentType,
   isJobRegion,
-  isJobRole,
+  parseJobRoles,
 } from '@/lib/job-board/constants';
 import { ADMIN_CRAWLED_JOBS_PAGE_SIZE } from '@/lib/admin-constants';
 import { SAMPLE_CRAWLED_JOBS } from '@/lib/job-board/sample-jobs';
@@ -143,7 +143,7 @@ function fromDoc(id: string, data: DocumentData): CrawledJob | null {
     companyName,
     title,
     employmentTypes: parseStringArray(data.employmentTypes, isEmploymentType),
-    roles: parseStringArray(data.roles, isJobRole),
+    roles: parseJobRoles(data.roles),
     regions: parseStringArray(data.regions, isJobRegion),
     companySize: companySizeRaw,
     headcount:
@@ -985,7 +985,7 @@ export async function upsertCrawledJob(job: CrawledJob): Promise<UpsertCrawledJo
     ...normalizedJob,
     createdAt,
     employmentTypes: normalizedJob.employmentTypes.filter(isEmploymentType),
-    roles: normalizedJob.roles.filter(isJobRole),
+    roles: parseJobRoles(normalizedJob.roles),
     regions: normalizedJob.regions.filter(isJobRegion),
     companySize: isCompanySize(normalizedJob.companySize) ? normalizedJob.companySize : COMPANY_SIZES[0],
     showInJobBoard: isBrowsableCrawledJob(normalizedJob),

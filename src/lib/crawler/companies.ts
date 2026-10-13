@@ -76,6 +76,7 @@ function buildFtcCrawlerCompanies(): CrawlerCompany[] {
     adapter: config.adapter ?? 'generic',
     greenhouseBoard: config.greenhouseBoard,
     koreaOnly: config.koreaOnly,
+    companySize: '대기업',
   }));
 }
 

@@ -24,22 +24,22 @@ const LOCATION_MAP: Record<string, JobRegion> = {
 };
 
 const PART_ROLE_MAP: Record<string, JobRole> = {
-  TECHNOLOGY: 'IT·개발',
+  TECHNOLOGY: 'IT, 프로그래밍',
   DESIGN: '디자인',
   BUSINESS_SERVICES: '서비스·고객 관리',
   STAFF: '경영·사무',
 };
 
 const TITLE_ROLE_KEYWORDS: Array<{ pattern: RegExp; role: JobRole }> = [
-  { pattern: /개발|엔지니어|Engineer|SW|백엔드|프론트|서버|DevOps|SRE/i, role: 'IT·개발' },
-  { pattern: /데이터|Data|ML|AI|Research/i, role: 'IT·개발' },
+  { pattern: /개발|엔지니어|Engineer|SW|백엔드|프론트|서버|DevOps|SRE/i, role: 'IT, 프로그래밍' },
+  { pattern: /데이터|Data|ML|AI|Research/i, role: 'IT, 프로그래밍' },
   { pattern: /기획|PM|Product/i, role: '기획·PM' },
   { pattern: /디자인|Design|UX|UI/i, role: '디자인' },
   { pattern: /마케팅|Marketing|광고|브랜드/i, role: '마케팅·광고' },
   { pattern: /영업|Sales/i, role: '영업·판매' },
   { pattern: /인사|HR|총무|경영|사무|회계|재무|Finance/i, role: '경영·사무' },
   { pattern: /연구|R&D/i, role: '연구·개발' },
-  { pattern: /QA|품질/i, role: 'IT·개발' },
+  { pattern: /QA|품질/i, role: 'IT, 프로그래밍' },
   { pattern: /교육|강사/i, role: '교육' },
 ];
 
@@ -48,7 +48,7 @@ export function parseEmploymentTypesFromTitle(title: string): EmploymentType[] {
 }
 
 const NAVER_CLASS_ROLE_MAP: Record<string, JobRole> = {
-  Tech: 'IT·개발',
+  Tech: 'IT, 프로그래밍',
   Design: '디자인',
   'Service & Business': '기획·PM',
 };

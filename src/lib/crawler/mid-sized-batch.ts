@@ -1,4 +1,5 @@
 import type { CrawlerCompany } from '@/lib/crawler/companies';
+import { enterpriseFameRankByCrawlSourceId } from '@/lib/enterprise-groups/fame-order';
 import { CRAWL_MID_SIZED_SITES_PER_RUN } from '@/lib/crawler/schedule';
 
 const DEFAULT_BATCH_SIZE = CRAWL_MID_SIZED_SITES_PER_RUN;
@@ -14,7 +15,13 @@ export function selectCompaniesForCrawlRun(companies: CrawlerCompany[]): Crawler
     50,
     Number(process.env.CRAWL_MID_SIZED_BATCH_SIZE ?? DEFAULT_BATCH_SIZE) || DEFAULT_BATCH_SIZE,
   );
-  const enterprise = companies.filter((item) => item.tier !== 'mid-sized');
+  const enterprise = companies
+    .filter((item) => item.tier !== 'mid-sized')
+    .sort(
+      (a, b) =>
+        enterpriseFameRankByCrawlSourceId(a.id) - enterpriseFameRankByCrawlSourceId(b.id) ||
+        a.name.localeCompare(b.name, 'ko'),
+    );
   const midSized = companies.filter((item) => item.tier === 'mid-sized');
 
   if (midSized.length <= batchSize) {

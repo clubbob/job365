@@ -34,8 +34,8 @@ const EMPTY: CrawledJobListItem[] = [];
 
 const INITIAL_FILTERS: JobBoardFilterState = {
   q: '',
-  quickFilter: 'all',
   employmentTypes: [],
+  companySegments: [],
   roles: [],
   regions: [],
 };
@@ -62,11 +62,11 @@ function buildQuery(
 ) {
   const params = new URLSearchParams();
   if (state.q.trim()) params.set('q', state.q.trim());
-  if (state.quickFilter !== 'all') params.set('quick', state.quickFilter);
   if (todayOnly) params.set('today', '1');
   params.set('page', String(page));
   params.set('pageSize', String(pageSize));
   for (const item of state.employmentTypes) params.append('employmentType', item);
+  for (const item of state.companySegments) params.append('companySegment', item);
   for (const item of state.roles) params.append('role', item);
   for (const item of state.regions) params.append('region', item);
   return params.toString();
@@ -139,8 +139,8 @@ export default function JobBoardList({
     if (!prefetchedItems?.length || page !== 1 || mode !== 'all' || todayOnly) return false;
     return (
       debouncedQ === '' &&
-      filters.quickFilter === 'all' &&
       filters.employmentTypes.length === 0 &&
+      filters.companySegments.length === 0 &&
       filters.roles.length === 0 &&
       filters.regions.length === 0
     );

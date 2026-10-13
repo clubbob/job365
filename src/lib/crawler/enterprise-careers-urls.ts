@@ -1,4 +1,5 @@
 import type { CrawlerAdapterId } from '@/lib/crawler/companies';
+import { getFtcEnterpriseGroups } from '@/lib/enterprise-groups';
 
 export type EnterpriseCareersConfig = {
   ftcName: string;
@@ -13,7 +14,7 @@ export type EnterpriseCareersConfig = {
  * 공정거래위원회 2026년 공시대상 기업집단 102개 채용 사이트.
  * adapter를 지정하지 않으면 generic HTML 수집기를 사용합니다.
  */
-export const ENTERPRISE_CAREERS_CONFIGS: EnterpriseCareersConfig[] = [
+const ENTERPRISE_CAREERS_CONFIG_RECORDS: EnterpriseCareersConfig[] = [
   { ftcName: '삼성', crawlSourceId: 'samsung', careersUrl: 'https://www.samsungcareers.com/hr/?search=' },
   { ftcName: '에스케이', crawlSourceId: 'sk', careersUrl: 'https://www.skcareers.com/Recruit' },
   { ftcName: '현대자동차', crawlSourceId: 'hyundai', careersUrl: 'https://talent.hyundai.com/apply/applyList.hc' },
@@ -135,6 +136,20 @@ export const ENTERPRISE_CAREERS_CONFIGS: EnterpriseCareersConfig[] = [
   { ftcName: '아이에스지주', crawlSourceId: 'isg', careersUrl: 'https://recruit.isgholdings.com' },
   { ftcName: '일진글로벌', crawlSourceId: 'iljin', careersUrl: 'https://recruit.iljin.co.kr' },
 ];
+
+/** 공시 집단 유명도(순위) 순 — 수집·관리자 목록과 동일 */
+export const ENTERPRISE_CAREERS_CONFIGS: EnterpriseCareersConfig[] = (() => {
+  const byFtcName = new Map(ENTERPRISE_CAREERS_CONFIG_RECORDS.map((item) => [item.ftcName, item]));
+  const ordered: EnterpriseCareersConfig[] = [];
+  for (const group of getFtcEnterpriseGroups()) {
+    const config = byFtcName.get(group.name);
+    if (config) ordered.push(config);
+  }
+  for (const config of ENTERPRISE_CAREERS_CONFIG_RECORDS) {
+    if (!ordered.includes(config)) ordered.push(config);
+  }
+  return ordered;
+})();
 
 const CONFIG_BY_FTC_NAME = new Map(ENTERPRISE_CAREERS_CONFIGS.map((item) => [item.ftcName, item]));
 

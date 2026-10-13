@@ -12,7 +12,6 @@ import {
   AdminCompanyRegistryStatGrid,
   COMPANY_REGISTRY_EMPTY_LIST_MESSAGE,
   COMPANY_REGISTRY_LIST_CARD_DESCRIPTION,
-  COMPANY_REGISTRY_STAT_EMPTY,
   COMPANY_REGISTRY_TABLE_COLUMN_COUNT,
   RegistryCareersUrlLink,
   RegistryDetailButton,
@@ -22,6 +21,7 @@ import {
   formatCompanyRegistryResultMeta,
   formatRegistryActiveJobCount,
 } from '@/features/admin/AdminRegistryListChrome';
+import ItCompaniesBrowser from '@/features/admin/ItCompaniesBrowser';
 import MidSizedRegistryBrowser from '@/features/admin/MidSizedRegistryBrowser';
 import { adminPrimaryActionClassName } from '@/lib/admin-ui';
 import type { EnterpriseGroupCrawlStatus } from '@/lib/crawler/enterprise-group-rows';
@@ -552,7 +552,6 @@ function EnterpriseGroupBrowser({
   ) => void;
 }) {
   const [query, setQuery] = useState('');
-  const [activeOnly, setActiveOnly] = useState(false);
   const [linkedOnly, setLinkedOnly] = useState(false);
   const [notFoundOnly, setNotFoundOnly] = useState(false);
   const [pendingOnly, setPendingOnly] = useState(false);
@@ -570,8 +569,8 @@ function EnterpriseGroupBrowser({
 
   const filteredRows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return groups.filter((row) => {
-      if (activeOnly) return false;
+    return groups
+      .filter((row) => {
       if (linkedOnly && row.crawlStatus === 'unlinked') return false;
       if (notFoundOnly && row.crawlStatus !== 'unlinked') return false;
       if (pendingOnly && row.crawlStatus !== 'pending') return false;
@@ -586,8 +585,9 @@ function EnterpriseGroupBrowser({
         .join(' ')
         .toLowerCase();
       return haystack.includes(q);
-    });
-  }, [groups, query, activeOnly, linkedOnly, notFoundOnly, pendingOnly]);
+    })
+      .sort((a, b) => a.rank - b.rank);
+  }, [groups, query, linkedOnly, notFoundOnly, pendingOnly]);
 
   const total = filteredRows.length;
   const pageRows = filteredRows.slice(offset, offset + ENTERPRISE_PAGE_SIZE);
@@ -597,22 +597,24 @@ function EnterpriseGroupBrowser({
   useEffect(() => {
     setOffset(0);
     setExpandedKey(null);
-  }, [query, activeOnly, linkedOnly, notFoundOnly, pendingOnly]);
+  }, [query, linkedOnly, notFoundOnly, pendingOnly]);
 
   const filteredExtrasForList = useMemo(() => {
-    if (activeOnly || notFoundOnly || pendingOnly) return [];
+    if (notFoundOnly || pendingOnly) return [];
     return filteredExtras;
-  }, [activeOnly, filteredExtras, notFoundOnly, pendingOnly]);
+  }, [filteredExtras, notFoundOnly, pendingOnly]);
 
   const listTotal = total + (offset === 0 ? filteredExtrasForList.length : 0);
   const uniqueEnterpriseCount = summary.groupCount + extraSources.length;
 
   return (
-    <Card title="목록 검색" description={COMPANY_REGISTRY_LIST_CARD_DESCRIPTION}>
+    <Card
+      title="목록 검색"
+      description={`${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 목록은 공시 집단 유명도(순위) 순입니다.`}
+    >
       <AdminCompanyRegistryStatGrid
         uniqueCompanies={`${uniqueEnterpriseCount.toLocaleString('ko-KR')}곳`}
         linkedUrl={`${summary.linkedCount.toLocaleString('ko-KR')}곳`}
-        validCert={COMPANY_REGISTRY_STAT_EMPTY}
       />
 
       <AdminCompanyRegistrySearchAndFilters
@@ -620,11 +622,9 @@ function EnterpriseGroupBrowser({
         query={query}
         onQueryChange={setQuery}
         filters={{
-          activeOnly,
           linkedOnly,
           notFoundOnly,
           pendingOnly,
-          onActiveOnly: setActiveOnly,
           onLinkedOnly: setLinkedOnly,
           onNotFoundOnly: setNotFoundOnly,
           onPendingOnly: setPendingOnly,
@@ -654,9 +654,6 @@ function EnterpriseGroupBrowser({
                           {row.source?.policy.displayDisabled ? (
                             <span className="ml-1 text-xs font-semibold text-red-700">노출 중단</span>
                           ) : null}
-                        </td>
-                        <td className="px-3 py-2 text-muted">
-                          <RegistryTableEmptyCell />
                         </td>
                         <td className="px-3 py-2 text-muted">
                           <RegistryTableEmptyCell />
@@ -711,9 +708,6 @@ function EnterpriseGroupBrowser({
                         <Fragment key={rowKey}>
                           <tr className="text-foreground">
                             <td className="px-3 py-2 font-medium">{source.companyName}</td>
-                            <td className="px-3 py-2 text-muted">
-                              <RegistryTableEmptyCell />
-                            </td>
                             <td className="px-3 py-2 text-muted">
                               <RegistryTableEmptyCell />
                             </td>
@@ -773,11 +767,12 @@ function EnterpriseGroupBrowser({
   );
 }
 
-type CompaniesSegment = 'enterprise' | 'mid-sized';
+type CompaniesSegment = 'enterprise' | 'mid-sized' | 'it';
 
 const SEGMENT_TABS: Array<{ id: CompaniesSegment; label: string }> = [
   { id: 'enterprise', label: '대기업·계열사' },
   { id: 'mid-sized', label: '중견기업' },
+  { id: 'it', label: 'IT 기업' },
 ];
 
 export default function JobCompaniesPanel({
@@ -801,8 +796,23 @@ export default function JobCompaniesPanel({
   ) => void;
 }) {
   const [segment, setSegment] = useState<CompaniesSegment>('enterprise');
+  const [itCompanyCount, setItCompanyCount] = useState<number | null>(null);
   const { summary, groups, extraSources, crawlMeta } = data;
   const enterpriseSiteCount = groups.length + extraSources.length;
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch('/api/admin/it-companies?limit=1');
+        const json = (await res.json()) as { ok?: boolean; data?: { uniqueCompanyCount: number } };
+        if (res.ok && json.ok && json.data) {
+          setItCompanyCount(json.data.uniqueCompanyCount);
+        }
+      } catch {
+        setItCompanyCount(null);
+      }
+    })();
+  }, []);
 
   return (
     <div className={cn('space-y-5', loading && 'opacity-70')}>
@@ -825,7 +835,11 @@ export default function JobCompaniesPanel({
           const countLabel =
             item.id === 'enterprise'
               ? `${enterpriseSiteCount.toLocaleString('ko-KR')}곳`
-              : `${crawlMeta.midSizedRegistry.careersUrlLinkedCount.toLocaleString('ko-KR')}곳`;
+              : item.id === 'mid-sized'
+                ? `${crawlMeta.midSizedRegistry.careersUrlLinkedCount.toLocaleString('ko-KR')}곳`
+                : itCompanyCount !== null
+                  ? `${itCompanyCount.toLocaleString('ko-KR')}곳`
+                  : '—';
           return (
             <button
               key={item.id}
@@ -863,11 +877,19 @@ export default function JobCompaniesPanel({
             onUpdateCompany={onUpdateCompany}
           />
         </div>
-      ) : (
+      ) : null}
+
+      {segment === 'mid-sized' ? (
         <div className="space-y-4" role="tabpanel">
           <MidSizedRegistryBrowser />
         </div>
-      )}
+      ) : null}
+
+      {segment === 'it' ? (
+        <div className="space-y-4" role="tabpanel">
+          <ItCompaniesBrowser />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -8,7 +8,7 @@ import {
 import {
   isEmploymentType,
   isJobRegion,
-  isJobRole,
+  parseJobRoles,
 } from '@/lib/job-board/constants';
 
 async function requireUser(request: Request) {
@@ -40,7 +40,7 @@ function parsePatch(body: Record<string, unknown>): UpdateJobAlertPrefsInput | n
 
   if (body.roles !== undefined) {
     if (!Array.isArray(body.roles)) return null;
-    patch.roles = body.roles.filter(isJobRole);
+    patch.roles = parseJobRoles(body.roles);
   }
 
   if (body.regions !== undefined) {

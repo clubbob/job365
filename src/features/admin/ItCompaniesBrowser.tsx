@@ -1,0 +1,203 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { Card } from '@/components/ui/Card';
+import {
+  AdminCompanyRegistrySearchAndFilters,
+  AdminCompanyRegistryStatGrid,
+  AdminListPagination,
+  AdminListResultMeta,
+  COMPANY_REGISTRY_EMPTY_LIST_MESSAGE,
+  COMPANY_REGISTRY_LIST_CARD_DESCRIPTION,
+  COMPANY_REGISTRY_STAT_EMPTY,
+  RegistryCareersUrlLink,
+  RegistryDetailButton,
+  adminRegistryTableClassName,
+  adminRegistryTableWrapClassName,
+  formatCompanyRegistryResultMeta,
+  formatRegistryActiveJobCount,
+} from '@/features/admin/AdminRegistryListChrome';
+
+type ItRegistryRow = {
+  companyName: string;
+  businessNumber: string;
+  segment: '대기업·계열' | '별도 등록' | '중견기업';
+  active: boolean | null;
+  careersUrl: string | null;
+  linked: boolean;
+  careersDiscoveryStatus: 'pending' | 'found' | 'not_found' | 'enterprise';
+  careersUrlCheckedAt: string | null;
+  activeJobCount: number;
+};
+
+type RegistryResponse = {
+  items: ItRegistryRow[];
+  total: number;
+  linkedCount: number;
+  offset: number;
+  limit: number;
+  hasMore: boolean;
+  uniqueCompanyCount: number;
+  enterpriseCount: number;
+  midSizedCount: number;
+  activeCertificateCount: number;
+  probedCount: number;
+  notFoundCount: number;
+  pendingCount: number;
+  targetsOnDisk: number;
+};
+
+const PAGE_SIZE = 50;
+
+function discoveryLabel(status: ItRegistryRow['careersDiscoveryStatus']): string {
+  if (status === 'enterprise') return '대기업·별도 URL';
+  if (status === 'found') return 'URL 연결';
+  if (status === 'not_found') return '탐색 완료(미연결)';
+  return '미탐색';
+}
+
+export default function ItCompaniesBrowser() {
+  const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [linkedOnly, setLinkedOnly] = useState(false);
+  const [notFoundOnly, setNotFoundOnly] = useState(false);
+  const [pendingOnly, setPendingOnly] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [data, setData] = useState<RegistryResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query), 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    setOffset(0);
+  }, [debouncedQuery, linkedOnly, notFoundOnly, pendingOnly]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({
+        offset: String(offset),
+        limit: String(PAGE_SIZE),
+      });
+      if (debouncedQuery.trim()) params.set('q', debouncedQuery.trim());
+      if (linkedOnly) params.set('linkedOnly', '1');
+      if (notFoundOnly) params.set('notFoundOnly', '1');
+      if (pendingOnly) params.set('pendingOnly', '1');
+      const res = await fetch(`/api/admin/it-companies?${params}`);
+      const json = (await res.json()) as { ok?: boolean; data?: RegistryResponse };
+      if (!res.ok || !json.ok || !json.data) {
+        throw new Error('IT 기업 명단을 불러오지 못했습니다.');
+      }
+      setData(json.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'IT 기업 명단을 불러오지 못했습니다.');
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedQuery, linkedOnly, notFoundOnly, offset, pendingOnly]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const resultTotal = data?.total ?? 0;
+  const initialLoading = loading && data === null;
+  const refreshing = loading && data !== null;
+
+  return (
+    <Card
+      title="목록 검색"
+      description={`${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 전산·소프트웨어·프로그래밍·정보서비스(SI 등) 관련 회사만 모았습니다. 목록은 유명도 순입니다.`}
+    >
+      <AdminCompanyRegistryStatGrid
+        uniqueCompanies={
+          data ? `${data.uniqueCompanyCount.toLocaleString('ko-KR')}곳` : COMPANY_REGISTRY_STAT_EMPTY
+        }
+        linkedUrl={data ? `${data.linkedCount.toLocaleString('ko-KR')}곳` : COMPANY_REGISTRY_STAT_EMPTY}
+      />
+
+      <AdminCompanyRegistrySearchAndFilters
+        searchId="it-companies-registry-search"
+        query={query}
+        onQueryChange={setQuery}
+        filters={{
+          linkedOnly,
+          notFoundOnly,
+          pendingOnly,
+          onLinkedOnly: setLinkedOnly,
+          onNotFoundOnly: setNotFoundOnly,
+          onPendingOnly: setPendingOnly,
+        }}
+      />
+
+      <AdminListResultMeta>
+        {data
+          ? formatCompanyRegistryResultMeta(resultTotal, debouncedQuery)
+          : formatCompanyRegistryResultMeta(0, debouncedQuery)}
+        {refreshing ? ' · 갱신 중' : ''}
+      </AdminListResultMeta>
+
+      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      {initialLoading ? <p className="text-sm text-muted">불러오는 중…</p> : null}
+
+      {data && data.items.length > 0 ? (
+        <>
+          <div className={adminRegistryTableWrapClassName}>
+            <table className={adminRegistryTableClassName}>
+              <thead className="bg-neutral-50 text-left text-xs text-muted">
+                <tr>
+                  <th className="px-3 py-2 font-semibold">구분</th>
+                  <th className="px-3 py-2 font-semibold">기업명</th>
+                  <th className="px-3 py-2 font-semibold">사업자번호</th>
+                  <th className="px-3 py-2 font-semibold">탐색</th>
+                  <th className="px-3 py-2 font-semibold">수집 공고</th>
+                  <th className="px-3 py-2 font-semibold">채용 URL</th>
+                  <th className="px-3 py-2 font-semibold">상세</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {data.items.map((row) => (
+                  <tr key={`${row.segment}-${row.companyName}-${row.businessNumber}`} className="text-foreground">
+                    <td className="px-3 py-2 text-muted">{row.segment}</td>
+                    <td className="px-3 py-2 font-medium">{row.companyName}</td>
+                    <td className="px-3 py-2 text-muted">{row.businessNumber}</td>
+                    <td className="px-3 py-2 text-muted">{discoveryLabel(row.careersDiscoveryStatus)}</td>
+                    <td className="px-3 py-2 text-muted">
+                      {formatRegistryActiveJobCount(row.activeJobCount)}
+                    </td>
+                    <td className="px-3 py-2">
+                      <RegistryCareersUrlLink url={row.careersUrl} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <RegistryDetailButton disabled />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <AdminListPagination
+            rangeStart={data.offset + 1}
+            rangeEnd={Math.min(data.offset + data.limit, data.total)}
+            total={data.total}
+            prevDisabled={data.offset === 0}
+            nextDisabled={!data.hasMore}
+            onPrev={() => setOffset((value) => Math.max(0, value - PAGE_SIZE))}
+            onNext={() => setOffset((value) => value + PAGE_SIZE)}
+          />
+        </>
+      ) : null}
+
+      {!loading && data && data.items.length === 0 ? (
+        <p className="text-sm text-muted">{COMPANY_REGISTRY_EMPTY_LIST_MESSAGE}</p>
+      ) : null}
+    </Card>
+  );
+}

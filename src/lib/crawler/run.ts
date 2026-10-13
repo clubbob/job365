@@ -13,6 +13,7 @@ import { isCareersUrlRobotsAllowed } from '@/lib/crawler/robots';
 import { crawlMidSizedRegistryBatch } from '@/lib/crawler/adapters/mid-sized-registry-batch';
 import { crawlWork24MidSizedBatch } from '@/lib/crawler/adapters/work24-mid-sized';
 import { getCompanyCrawlersForRun } from '@/lib/crawler/registry';
+import { shouldSyncCrawlSourceResult } from '@/lib/crawler/should-sync-source';
 import type {
   CrawlRunSummary,
   CrawlSourceResultSink,
@@ -21,13 +22,6 @@ import type {
 import type { CrawledJob } from '@/types/crawled-job';
 import { saveCrawlRun } from '@/lib/crawl-runs-server';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
-
-function shouldSyncSource(result: CrawlerSourceResult): boolean {
-  if (result.jobs.length > 0) return true;
-  if (result.syncEmpty) return true;
-  // 목록이 비었어도 수집 자체는 성공한 경우(현재 진행 공고 0건)만 동기화합니다.
-  return result.errors.length === 0;
-}
 
 async function syncSourceForId(
   sourceId: string,
@@ -110,9 +104,9 @@ function createIncrementalSyncAccumulator() {
       sourceName: bucket.sourceName,
       jobs: mergedJobs,
       errors: result.errors,
-      syncEmpty: result.syncEmpty ?? mergedJobs.length === 0,
+      syncEmpty: result.syncEmpty ?? (mergedJobs.length === 0 && result.errors.length === 0),
     };
-    if (!shouldSyncSource(payload)) return;
+    if (!shouldSyncCrawlSourceResult(payload)) return;
 
     fetched += result.jobs.length;
     const summary = await syncSourceForId(result.sourceId, bucket.sourceName, mergedJobs, result.errors);
@@ -209,7 +203,7 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
 
         result = await crawl();
 
-        if (shouldSyncSource(result)) {
+        if (shouldSyncCrawlSourceResult(result)) {
           const summary = await syncSource(result);
           sourceSummaries.push({
             sourceId: result.sourceId,

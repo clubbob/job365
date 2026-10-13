@@ -1,7 +1,7 @@
 import {
   isEmploymentType,
   isJobRegion,
-  isJobRole,
+  parseJobRoles,
 } from '@/lib/job-board/constants';
 import { parseFirestoreTimestamp } from '@/lib/firestore-timestamp';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
@@ -16,11 +16,7 @@ export function parseJobAlertPrefs(uid: string, data: Record<string, unknown> | 
       )
     : DEFAULT_JOB_ALERT_PREFS.employmentTypes;
 
-  const roles = Array.isArray(data?.roles)
-    ? data.roles.filter((v): v is JobAlertPrefs['roles'][number] =>
-        typeof v === 'string' && isJobRole(v),
-      )
-    : DEFAULT_JOB_ALERT_PREFS.roles;
+  const roles = Array.isArray(data?.roles) ? parseJobRoles(data.roles) : DEFAULT_JOB_ALERT_PREFS.roles;
 
   const regions = Array.isArray(data?.regions)
     ? data.regions.filter((v): v is JobAlertPrefs['regions'][number] =>

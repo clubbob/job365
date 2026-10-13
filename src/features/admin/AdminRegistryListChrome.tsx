@@ -8,13 +8,15 @@ export function AdminListStatGrid({
   columns = 4,
 }: {
   items: AdminListStatItem[];
-  columns?: 3 | 4;
+  columns?: 2 | 3 | 4;
 }) {
   return (
     <div
       className={cn(
         'mb-4 grid gap-2 rounded-lg border border-border bg-neutral-50 px-3 py-3 text-sm sm:grid-cols-2',
-        columns === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4',
+        columns === 2 && 'lg:grid-cols-2',
+        columns === 3 && 'lg:grid-cols-3',
+        columns === 4 && 'lg:grid-cols-4',
       )}
     >
       {items.map((item) => (
@@ -137,9 +139,8 @@ export const adminRegistryTableWrapClassName = 'overflow-x-auto rounded-lg borde
 export const COMPANY_REGISTRY_TABLE_COLUMNS = [
   '기업명',
   '사업자번호',
-  '인증',
   '탐색',
-  '모집 공고',
+  '수집 공고',
   '채용 URL',
   '상세',
 ] as const;
@@ -147,7 +148,7 @@ export const COMPANY_REGISTRY_TABLE_COLUMNS = [
 export const COMPANY_REGISTRY_TABLE_COLUMN_COUNT = COMPANY_REGISTRY_TABLE_COLUMNS.length;
 
 export const COMPANY_REGISTRY_LIST_CARD_DESCRIPTION =
-  '기업·채용 사이트 목록입니다. 「상세」에서 수집·노출을 바꿀 수 있습니다. 아직 없는 값은 −로 표시합니다. 모집 공고는 상단 메뉴 「수집 채용 공고」에서 확인합니다.';
+  '기업·채용 사이트 목록입니다. 「상세」에서 수집·노출을 바꿀 수 있습니다. 아직 없는 값은 −로 표시합니다. 수집 공고는 이 사이트 DB에 활성으로 남은 건수이며, 상단 「수집 채용 공고」에서 전체를 볼 수 있습니다.';
 
 export const COMPANY_REGISTRY_SEARCH_PLACEHOLDER = '기업명·사업자번호 검색';
 
@@ -158,26 +159,22 @@ export const COMPANY_REGISTRY_STAT_EMPTY = '−';
 export function AdminCompanyRegistryStatGrid({
   uniqueCompanies,
   linkedUrl,
-  validCert,
 }: {
   uniqueCompanies: ReactNode;
   linkedUrl: ReactNode;
-  validCert: ReactNode;
 }) {
   return (
     <AdminListStatGrid
-      columns={3}
+      columns={2}
       items={[
         { label: '고유 기업', value: uniqueCompanies },
         { label: '채용 URL 연결', value: linkedUrl },
-        { label: '유효 인증', value: validCert },
       ]}
     />
   );
 }
 
 export type CompanyRegistryFilterState = {
-  activeOnly: boolean;
   linkedOnly: boolean;
   notFoundOnly: boolean;
   pendingOnly: boolean;
@@ -193,14 +190,12 @@ export function AdminCompanyRegistrySearchAndFilters({
   query: string;
   onQueryChange: (value: string) => void;
   filters: CompanyRegistryFilterState & {
-    onActiveOnly: (value: boolean) => void;
     onLinkedOnly: (value: boolean) => void;
     onNotFoundOnly: (value: boolean) => void;
     onPendingOnly: (value: boolean) => void;
   };
 }) {
-  const { activeOnly, linkedOnly, notFoundOnly, pendingOnly, onActiveOnly, onLinkedOnly, onNotFoundOnly, onPendingOnly } =
-    filters;
+  const { linkedOnly, notFoundOnly, pendingOnly, onLinkedOnly, onNotFoundOnly, onPendingOnly } = filters;
 
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -211,7 +206,6 @@ export function AdminCompanyRegistrySearchAndFilters({
         onChange={onQueryChange}
         placeholder={COMPANY_REGISTRY_SEARCH_PLACEHOLDER}
       />
-      <AdminListFilterCheckbox checked={activeOnly} onChange={onActiveOnly} label="유효 인증만" />
       <AdminListFilterCheckbox checked={linkedOnly} onChange={onLinkedOnly} label="URL 연결만" />
       <AdminListFilterCheckbox checked={notFoundOnly} onChange={onNotFoundOnly} label="탐색 완료(미연결)" />
       <AdminListFilterCheckbox checked={pendingOnly} onChange={onPendingOnly} label="미탐색만" />

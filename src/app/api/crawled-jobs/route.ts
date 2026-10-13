@@ -1,31 +1,32 @@
 import { NextResponse } from 'next/server';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
-import { JOB_LIST_PAGE_SIZE, type EmploymentType } from '@/lib/job-board/constants';
+import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import type { JobBoardFilters } from '@/lib/job-board/match';
 import { listActiveCrawledJobsPage, listFilteredCrawledJobsPage } from '@/lib/crawled-jobs-server';
 import {
   isEmploymentType,
   isJobRegion,
-  isJobRole,
+  parseJobRoles,
 } from '@/lib/job-board/constants';
+import { parseJobBoardCompanySegments } from '@/lib/job-board/company-segment';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q') ?? '';
-  const quickFilter = searchParams.get('quick') ?? 'all';
   const todayOnly = searchParams.get('today') === '1';
   const page = Math.max(1, Number(searchParams.get('page') ?? '1') || 1);
   const pageSize = Math.min(50, Math.max(1, Number(searchParams.get('pageSize') ?? JOB_LIST_PAGE_SIZE) || JOB_LIST_PAGE_SIZE));
 
   const employmentTypes = searchParams.getAll('employmentType').filter(isEmploymentType);
-  const roles = searchParams.getAll('role').filter(isJobRole);
+  const companySegments = parseJobBoardCompanySegments(searchParams.getAll('companySegment'));
+  const roles = parseJobRoles(searchParams.getAll('role'));
   const regions = searchParams.getAll('region').filter(isJobRegion);
 
   const todayDate = getKoreaDateLocalToday();
   const isUnfiltered =
     !q &&
-    quickFilter === 'all' &&
     employmentTypes.length === 0 &&
+    companySegments.length === 0 &&
     roles.length === 0 &&
     regions.length === 0 &&
     !todayOnly;
@@ -48,18 +49,10 @@ export async function GET(request: Request) {
       });
     }
 
-    const quick: JobBoardFilters['quickFilter'] =
-      quickFilter === '신입' ||
-      quickFilter === '경력' ||
-      quickFilter === '인턴' ||
-      quickFilter === '계약직'
-        ? (quickFilter as EmploymentType)
-        : 'all';
-
     const boardFilters: JobBoardFilters = {
       q,
-      quickFilter: quick,
       employmentTypes,
+      companySegments,
       roles,
       regions,
       todayOnly,

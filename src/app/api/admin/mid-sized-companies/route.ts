@@ -10,6 +10,7 @@ import {
   activeJobCountForMidSizedCrawlSource,
   getCrawledJobSourceStats,
 } from '@/lib/crawled-jobs-server';
+import { compareMidSizedCompaniesByFame } from '@/lib/mid-sized-companies/fame-rank';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
@@ -74,8 +75,6 @@ export async function GET(request: Request) {
     }
   }
 
-  const page = rows.slice(offset, offset + limit);
-
   let jobCountsBySource: Record<string, number> = {};
   try {
     const stats = await getCrawledJobSourceStats({ skipDisplayFilters: true });
@@ -83,6 +82,15 @@ export async function GET(request: Request) {
   } catch {
     jobCountsBySource = {};
   }
+
+  const ranked = rows
+    .map((row) => ({
+      ...row,
+      activeJobCount: activeJobCountForMidSizedCrawlSource(row.crawlSourceId, jobCountsBySource),
+    }))
+    .sort(compareMidSizedCompaniesByFame);
+
+  const page = ranked.slice(offset, offset + limit);
 
   const items = page.map((row) => ({
     companyName: row.companyName,
@@ -93,7 +101,7 @@ export async function GET(request: Request) {
     linked: row.linked,
     careersDiscoveryStatus: row.careersDiscoveryStatus,
     careersUrlCheckedAt: row.careersUrlCheckedAt,
-    activeJobCount: activeJobCountForMidSizedCrawlSource(row.crawlSourceId, jobCountsBySource),
+    activeJobCount: row.activeJobCount,
   }));
 
   return NextResponse.json({
