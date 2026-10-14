@@ -1,0 +1,8 @@
+﻿*.tsbuildinfo
+tmp-*.json
+.tmp-*
+.crawl-after-discover.log
+data/mid-sized-companies.json
+data/mid-sized-crawl-targets.json
+data/mid-sized-discovery-state.json
+data/mid-sized-registry-db.json

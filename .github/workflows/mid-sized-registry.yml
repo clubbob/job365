@@ -41,6 +41,9 @@ jobs:
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
 
+      - name: Validate registry JSON before commit
+        run: pnpm validate:mid-sized-registry
+
       - name: Commit registry JSON
         run: |
           git config user.name "github-actions[bot]"

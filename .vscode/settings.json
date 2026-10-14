@@ -1,0 +1,18 @@
+{
+  "files.exclude": {
+    "**/*.tsbuildinfo": true
+  },
+  "files.watcherExclude": {
+    "**/*.tsbuildinfo": true,
+    "**/data/mid-sized-*.json": true,
+    "tmp-*.json": true,
+    ".tmp-*": true
+  },
+  "search.exclude": {
+    "**/*.tsbuildinfo": true,
+    "**/data/mid-sized-*.json": true,
+    "tmp-*.json": true
+  },
+  "git.openDiffOnClick": false,
+  "scm.diffDecorations": "none"
+}

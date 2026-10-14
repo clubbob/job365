@@ -5,9 +5,10 @@
  * - DISCOVER_AUTO_RECONCILE=0 이면 Firestore 반영 생략
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { isAcceptableCareersUrl, isStorableCareersUrl } from './lib/careers-url-policy.mjs';
+import { writeJsonAtomic } from './lib/write-json-atomic.mjs';
 import {
   crawlSourceId,
   discoverCareersUrl,
@@ -72,7 +73,7 @@ function loadDiscoveryState() {
 
 function saveDiscoveryState(entries) {
   const payload = { version: 1, updatedAt: new Date().toISOString(), entries };
-  writeFileSync(statePath, `${JSON.stringify(payload)}\n`, 'utf8');
+  writeJsonAtomic(statePath, payload);
 }
 
 function saveTargets(file, targets) {
@@ -81,7 +82,7 @@ function saveTargets(file, targets) {
     generatedAt: new Date().toISOString(),
     targets,
   };
-  writeFileSync(outPath, `${JSON.stringify(payload)}\n`, 'utf8');
+  writeJsonAtomic(outPath, payload);
 }
 
 async function mapPool(items, worker, onProgress) {

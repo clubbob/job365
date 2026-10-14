@@ -26,6 +26,7 @@
     "setup:crawl-secrets": "node scripts/set-github-crawl-secrets.mjs",
     "import:mid-sized": "node scripts/import-mme-mid-sized.mjs",
     "fetch:mid-sized": "node scripts/fetch-mme-registry.mjs",
+    "validate:mid-sized-registry": "node scripts/validate-mid-sized-registry.mjs",
     "discover:mid-sized": "node scripts/discover-mid-sized-careers.mjs",
     "discover:mid-sized:urls": "node scripts/run-discover-urls.mjs",
     "maximize:mid-sized:urls": "node scripts/run-maximize-mid-sized-urls.mjs",

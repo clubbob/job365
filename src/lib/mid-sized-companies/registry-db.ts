@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { stringifyJsonSafe } from '@/lib/json-safe-stringify';
 import { loadDiscoveryState } from '@/lib/mid-sized-companies/discovery-state';
 import { loadMidSizedCrawlTargets } from '@/lib/mid-sized-companies/crawl-targets';
 import { loadMidSizedRegistryFromDisk } from '@/lib/mid-sized-companies/registry-mme-disk';
@@ -126,7 +127,7 @@ export function buildMidSizedRegistryDbFile(): MidSizedRegistryDbFile {
 }
 
 export function saveMidSizedRegistryDbToDisk(file: MidSizedRegistryDbFile): void {
-  writeFileSync(MID_SIZED_REGISTRY_DB_PATH, `${JSON.stringify(file)}\n`, 'utf8');
+  writeFileSync(MID_SIZED_REGISTRY_DB_PATH, stringifyJsonSafe(file), 'utf8');
 }
 
 export function loadMidSizedRegistryDbFromDisk(): MidSizedRegistryDbFile | null {

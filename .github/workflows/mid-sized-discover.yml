@@ -36,6 +36,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Validate mid-sized registry JSON
+        run: pnpm validate:mid-sized-registry
+
       - name: Discover careers URLs (daily batch)
         env:
           DISCOVER_CONCURRENCY: '16'

@@ -3,9 +3,10 @@
  * 사용: pnpm import:mid-sized -- path/to/download.xlsx
  * 이후: pnpm sync:mid-sized (Firestore 반영, .env.local 필요)
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import XLSX from 'xlsx';
+import { writeJsonAtomic } from './lib/write-json-atomic.mjs';
 
 const root = process.cwd();
 const outPath = resolve(root, 'data/mid-sized-companies.json');
@@ -101,7 +102,7 @@ function main() {
     companies,
   };
 
-  writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+  writeJsonAtomic(outPath, payload);
   console.log(`저장: ${outPath} (${companies.length}건)`);
   console.log('Firestore 반영: pnpm sync:mid-sized');
 }

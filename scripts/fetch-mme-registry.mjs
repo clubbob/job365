@@ -1,9 +1,9 @@
 /**
  * 중견기업정보마당 발급정보 공개 엑셀 자동 다운로드 → data/mid-sized-companies.json
  */
-import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import XLSX from 'xlsx';
+import { writeJsonAtomic } from './lib/write-json-atomic.mjs';
 
 const root = process.cwd();
 const outPath = resolve(root, 'data/mid-sized-companies.json');
@@ -130,7 +130,7 @@ async function main() {
     companies,
   };
 
-  writeFileSync(outPath, `${JSON.stringify(payload)}\n`, 'utf8');
+  writeJsonAtomic(outPath, payload);
   console.log(`저장: ${outPath} (${companies.length}건)`);
 }
 

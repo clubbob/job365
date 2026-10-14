@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { stringifyJsonSafe } from '@/lib/json-safe-stringify';
 import { normalizeBusinessNumber } from '@/lib/mid-sized-companies/registry-dedupe';
 
 export type CareersDiscoveryStatus = 'pending' | 'found' | 'not_found';
@@ -32,7 +33,7 @@ export function loadDiscoveryState(): MidSizedDiscoveryStateFile {
 
 export function saveDiscoveryState(file: MidSizedDiscoveryStateFile): void {
   const payload = { ...file, updatedAt: new Date().toISOString() };
-  writeFileSync(STATE_PATH, `${JSON.stringify(payload)}\n`, 'utf8');
+  writeFileSync(STATE_PATH, stringifyJsonSafe(payload), 'utf8');
 }
 
 export function setDiscoveryEntry(

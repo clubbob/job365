@@ -1,0 +1,5 @@
+# Git/IDE diff on old one-line JSON blobs can crash the editor (stack overflow).
+data/mid-sized-companies.json binary linguist-generated
+data/mid-sized-crawl-targets.json binary linguist-generated
+data/mid-sized-discovery-state.json binary linguist-generated
+data/mid-sized-registry-db.json binary linguist-generated
