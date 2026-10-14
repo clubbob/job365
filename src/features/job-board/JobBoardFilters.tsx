@@ -25,6 +25,8 @@ export type JobBoardFilterState = {
 type JobBoardFiltersProps = {
   value: JobBoardFilterState;
   onChange: (next: JobBoardFilterState) => void;
+  /** 맞춤 채용 공고: 검색창만 */
+  variant?: 'full' | 'searchOnly';
   showDetailButton?: boolean;
 };
 
@@ -34,25 +36,33 @@ const searchClassName =
 export default function JobBoardFilters({
   value,
   onChange,
+  variant = 'full',
   showDetailButton = true,
 }: JobBoardFiltersProps) {
+  const searchOnly = variant === 'searchOnly';
+  const showDetailFilters = showDetailButton && !searchOnly;
+
   function patch(partial: Partial<JobBoardFilterState>) {
     onChange({ ...value, ...partial });
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <label className="sr-only" htmlFor="job-board-search">채용 공고 검색</label>
+      <label className="sr-only" htmlFor="job-board-search">
+        {searchOnly ? '맞춤 채용 공고 검색' : '채용 공고 검색'}
+      </label>
       <input
         id="job-board-search"
         type="search"
         value={value.q}
         onChange={(e) => patch({ q: e.target.value })}
-        placeholder="회사명, 공고 제목, 직무, 지역 검색"
+        placeholder={
+          searchOnly ? '모집 회사명, 공고 제목 검색' : '모집 회사명, 공고 제목, 직무, 지역 검색'
+        }
         className={searchClassName}
       />
 
-      {showDetailButton ? (
+      {showDetailFilters ? (
         <div className="rounded-xl border border-border bg-neutral-50/80 p-3">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <MultiSelect

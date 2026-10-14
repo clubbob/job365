@@ -1,15 +1,22 @@
 {
   "files.exclude": {
-    "**/*.tsbuildinfo": true
+    "**/*.tsbuildinfo": true,
+    "**/.next": true,
+    "**/.next-dev": true,
+    "**/data/mid-sized-*.json": true
   },
   "files.watcherExclude": {
     "**/*.tsbuildinfo": true,
+    "**/.next/**": true,
+    "**/.next-dev/**": true,
     "**/data/mid-sized-*.json": true,
     "tmp-*.json": true,
     ".tmp-*": true
   },
   "search.exclude": {
     "**/*.tsbuildinfo": true,
+    "**/.next/**": true,
+    "**/.next-dev/**": true,
     "**/data/mid-sized-*.json": true,
     "tmp-*.json": true
   },

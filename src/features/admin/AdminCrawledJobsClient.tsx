@@ -10,6 +10,7 @@ import {
   adminSecondaryActionClassName,
   firebaseAdminUnavailableText,
 } from '@/lib/admin-ui';
+import { formatKoreaDateTime } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
 import type { CrawledJobListItem, CrawledJobStatus } from '@/types/crawled-job';
 
@@ -44,11 +45,6 @@ function getPageGroupRange(currentPage: number, totalPages: number): { groupStar
   const groupStart = Math.floor((currentPage - 1) / PAGES_PER_GROUP) * PAGES_PER_GROUP + 1;
   const groupEnd = Math.min(groupStart + PAGES_PER_GROUP - 1, totalPages);
   return { groupStart, groupEnd };
-}
-
-function formatDate(value: string): string {
-  const date = value.slice(0, 10);
-  return date || value;
 }
 
 export default function AdminCrawledJobsClient() {
@@ -214,7 +210,7 @@ export default function AdminCrawledJobsClient() {
                 <col />
                 <col className="w-32" />
                 <col className="w-44" />
-                <col className="w-28" />
+                <col className="w-36" />
                 <col className="w-44" />
               </colgroup>
               <thead>
@@ -223,7 +219,7 @@ export default function AdminCrawledJobsClient() {
                   <th className="py-2 pr-4 font-semibold">제목</th>
                   <th className="whitespace-nowrap py-2 pr-4 font-semibold">회사</th>
                   <th className="whitespace-nowrap py-2 pr-6 font-semibold">수집 소스</th>
-                  <th className="whitespace-nowrap py-2 pl-2 pr-4 font-semibold">수집일</th>
+                  <th className="whitespace-nowrap py-2 pl-2 pr-4 font-semibold">수집일시</th>
                   <th className="whitespace-nowrap py-2 font-semibold">관리</th>
                 </tr>
               </thead>
@@ -280,7 +276,7 @@ export default function AdminCrawledJobsClient() {
                         {job.sourceName}
                       </td>
                       <td className="whitespace-nowrap py-2.5 pl-2 pr-4 align-middle text-muted">
-                        {formatDate(job.crawledAt)}
+                        {formatKoreaDateTime(job.crawledAt)}
                       </td>
                       <td className="whitespace-nowrap py-2.5 align-middle">
                         <div className="flex flex-nowrap items-center gap-1.5">

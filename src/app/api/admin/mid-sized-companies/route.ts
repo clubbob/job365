@@ -22,9 +22,6 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
   const activeOnly = searchParams.get('activeOnly') === '1';
-  const linkedOnly = searchParams.get('linkedOnly') === '1';
-  const notFoundOnly = searchParams.get('notFoundOnly') === '1';
-  const pendingOnly = searchParams.get('pendingOnly') === '1';
   const offset = Math.max(0, Number(searchParams.get('offset') ?? 0) || 0);
   const limit = Math.min(MAX_LIMIT, Math.max(1, Number(searchParams.get('limit') ?? DEFAULT_LIMIT) || DEFAULT_LIMIT));
 
@@ -48,13 +45,8 @@ export async function GET(request: Request) {
   });
 
   if (activeOnly) rows = rows.filter((row) => row.active);
-  if (linkedOnly) rows = rows.filter((row) => row.linked);
-  if (notFoundOnly) rows = rows.filter((row) => row.careersDiscoveryStatus === 'not_found');
-  if (pendingOnly) rows = rows.filter((row) => row.careersDiscoveryStatus === 'pending');
   if (q) {
-    rows = rows.filter((row) =>
-      [row.companyName, row.businessNumber].join(' ').toLowerCase().includes(q),
-    );
+    rows = rows.filter((row) => row.companyName.toLowerCase().includes(q));
   }
 
   const total = rows.length;

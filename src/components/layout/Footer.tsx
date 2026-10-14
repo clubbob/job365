@@ -23,9 +23,6 @@ export default function Footer() {
           <Link href="/marketing" className={navLinkClassName}>
             마케팅수신동의
           </Link>
-          <Link href="/notices" className={navLinkClassName}>
-            공지사항
-          </Link>
           <Link href="/inquiry" className={navLinkClassName}>
             문의하기
           </Link>
@@ -43,7 +40,7 @@ export default function Footer() {
           <p className="flex flex-col flex-wrap items-center justify-center gap-1 md:flex-row md:gap-x-4">
             <span>주소 : {COMPANY.address}</span>
             <span className="hidden text-subtle md:inline" aria-hidden>|</span>
-            <span>직업정보제공사업신고 : {COMPANY.jobInfoProviderReportNo}</span>
+            <span>직업정보제공사업 : {COMPANY.jobInfoProviderReportNo}</span>
           </p>
 
           <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 md:gap-x-4">

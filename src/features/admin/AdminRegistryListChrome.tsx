@@ -139,18 +139,14 @@ export const adminRegistryTableWrapClassName = 'overflow-x-auto rounded-lg borde
 export const COMPANY_REGISTRY_TABLE_COLUMNS = [
   '기업명',
   '사업자번호',
-  '탐색',
-  '수집 공고',
+  '모집 공고',
   '채용 URL',
-  '상세',
 ] as const;
 
-export const COMPANY_REGISTRY_TABLE_COLUMN_COUNT = COMPANY_REGISTRY_TABLE_COLUMNS.length;
-
 export const COMPANY_REGISTRY_LIST_CARD_DESCRIPTION =
-  '기업·채용 사이트 목록입니다. 「상세」에서 수집·노출을 바꿀 수 있습니다. 아직 없는 값은 −로 표시합니다. 수집 공고는 이 사이트 DB에 활성으로 남은 건수이며, 상단 「수집 채용 공고」에서 전체를 볼 수 있습니다.';
+  '명단에 있는 회사만 표시합니다. 모집 공고 건수는 수집 출처별 활성 공고입니다(대기업·계열은 공시 집단 명단). 없는 값은 −로 표시합니다.';
 
-export const COMPANY_REGISTRY_SEARCH_PLACEHOLDER = '기업명·사업자번호 검색';
+export const COMPANY_REGISTRY_SEARCH_PLACEHOLDER = '기업명 검색';
 
 export const COMPANY_REGISTRY_EMPTY_LIST_MESSAGE = '조건에 맞는 항목이 없습니다.';
 
@@ -158,47 +154,35 @@ export const COMPANY_REGISTRY_STAT_EMPTY = '−';
 
 export function AdminCompanyRegistryStatGrid({
   uniqueCompanies,
+  uniqueCompaniesLabel = '전체 기업',
   linkedUrl,
 }: {
   uniqueCompanies: ReactNode;
+  uniqueCompaniesLabel?: string;
   linkedUrl: ReactNode;
 }) {
   return (
     <AdminListStatGrid
       columns={2}
       items={[
-        { label: '고유 기업', value: uniqueCompanies },
+        { label: uniqueCompaniesLabel, value: uniqueCompanies },
         { label: '채용 URL 연결', value: linkedUrl },
       ]}
     />
   );
 }
 
-export type CompanyRegistryFilterState = {
-  linkedOnly: boolean;
-  notFoundOnly: boolean;
-  pendingOnly: boolean;
-};
-
 export function AdminCompanyRegistrySearchAndFilters({
   searchId,
   query,
   onQueryChange,
-  filters,
 }: {
   searchId: string;
   query: string;
   onQueryChange: (value: string) => void;
-  filters: CompanyRegistryFilterState & {
-    onLinkedOnly: (value: boolean) => void;
-    onNotFoundOnly: (value: boolean) => void;
-    onPendingOnly: (value: boolean) => void;
-  };
 }) {
-  const { linkedOnly, notFoundOnly, pendingOnly, onLinkedOnly, onNotFoundOnly, onPendingOnly } = filters;
-
   return (
-    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+    <div className="mb-4">
       <AdminListSearchField
         id={searchId}
         label={COMPANY_REGISTRY_SEARCH_PLACEHOLDER}
@@ -206,9 +190,6 @@ export function AdminCompanyRegistrySearchAndFilters({
         onChange={onQueryChange}
         placeholder={COMPANY_REGISTRY_SEARCH_PLACEHOLDER}
       />
-      <AdminListFilterCheckbox checked={linkedOnly} onChange={onLinkedOnly} label="URL 연결만" />
-      <AdminListFilterCheckbox checked={notFoundOnly} onChange={onNotFoundOnly} label="탐색 완료(미연결)" />
-      <AdminListFilterCheckbox checked={pendingOnly} onChange={onPendingOnly} label="미탐색만" />
     </div>
   );
 }
@@ -237,31 +218,6 @@ export function AdminCompanyRegistryTableHead() {
         ))}
       </tr>
     </thead>
-  );
-}
-
-export function RegistryDetailButton({
-  expanded = false,
-  disabled = false,
-  onClick,
-}: {
-  expanded?: boolean;
-  disabled?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        'rounded-lg border border-border-strong bg-surface px-2.5 py-1 text-xs font-semibold text-foreground',
-        disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-neutral-50',
-      )}
-      aria-expanded={disabled ? undefined : expanded}
-    >
-      {expanded ? '접기' : '상세'}
-    </button>
   );
 }
 

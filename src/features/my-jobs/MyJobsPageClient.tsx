@@ -39,7 +39,7 @@ export default function MyJobsPageClient() {
           {MATCHED_JOBS_SETTINGS_TITLE} 변경
         </Link>
       </header>
-      <JobBoardList mode="matched" showFilters={false} />
+      <JobBoardList mode="matched" />
     </div>
   );
 }

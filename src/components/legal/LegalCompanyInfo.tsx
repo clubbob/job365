@@ -25,7 +25,7 @@ export default function LegalCompanyInfo({ title = '회사 정보' }: { title?: 
           <dd className="inline break-words">{COMPANY.address}</dd>
         </div>
         <div>
-          <dt className="inline">직업정보제공사업신고 : </dt>
+          <dt className="inline">직업정보제공사업 : </dt>
           <dd className="inline break-all">{COMPANY.jobInfoProviderReportNo}</dd>
         </div>
         <div>

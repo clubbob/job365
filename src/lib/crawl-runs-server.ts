@@ -147,3 +147,51 @@ export async function deleteCrawlRunsOlderThanDays(
 
   return { deleted };
 }
+
+function crawlRunListTimestamp(run: CrawlRunListItem): Date | null {
+  const iso = run.finishedAt || run.startedAt || run.createdAt;
+  if (!iso) return null;
+  const parsed = new Date(iso);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/** 일별 수집 통계용 — 최근 N일(캘린더) 실행 로그를 시간순으로 반환합니다. */
+export async function listCrawlRunsForStatsWindow(days: number): Promise<CrawlRunListItem[]> {
+  const db = getAdminFirestore();
+  if (!db) return [];
+
+  const safeDays = Math.max(1, Math.min(Math.floor(days), 120));
+  const cutoff = new Date(Date.now() - safeDays * 86_400_000);
+
+  try {
+    const snap = await db
+      .collection(COLLECTION)
+      .where('createdAt', '>=', cutoff)
+      .orderBy('createdAt', 'asc')
+      .limit(2500)
+      .get();
+    return snap.docs.map((doc) => mapCrawlRunDoc(doc.id, doc.data()));
+  } catch {
+    const collected: CrawlRunListItem[] = [];
+    const pageSize = 50;
+    let page = 1;
+    let totalPages = 1;
+
+    while (page <= totalPages && page <= 40) {
+      const result = await listCrawlRunsPage(page, pageSize);
+      totalPages = result.totalPages;
+      for (const run of result.runs) {
+        const at = crawlRunListTimestamp(run);
+        if (at && at >= cutoff) collected.push(run);
+      }
+      page += 1;
+    }
+
+    collected.sort((a, b) => {
+      const left = crawlRunListTimestamp(a)?.getTime() ?? 0;
+      const right = crawlRunListTimestamp(b)?.getTime() ?? 0;
+      return left - right;
+    });
+    return collected;
+  }
+}

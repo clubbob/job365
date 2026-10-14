@@ -43,7 +43,7 @@ export default function AdminDashboard() {
         <Card
           className="flex h-full flex-col"
           title="채용 정보"
-          description="수집 공고와 채용 공고 회사 노출을 관리합니다."
+          description="수집 채용 공고와 수집 채용 회사를 관리합니다."
         >
           <Link
             href="/admin/jobs"

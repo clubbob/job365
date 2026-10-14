@@ -11,7 +11,6 @@ import {
   COMPANY_REGISTRY_LIST_CARD_DESCRIPTION,
   COMPANY_REGISTRY_STAT_EMPTY,
   RegistryCareersUrlLink,
-  RegistryDetailButton,
   adminRegistryTableClassName,
   adminRegistryTableWrapClassName,
   formatCompanyRegistryResultMeta,
@@ -49,19 +48,9 @@ type RegistryResponse = {
 
 const PAGE_SIZE = 50;
 
-function discoveryLabel(status: ItRegistryRow['careersDiscoveryStatus']): string {
-  if (status === 'enterprise') return '대기업·별도 URL';
-  if (status === 'found') return 'URL 연결';
-  if (status === 'not_found') return '탐색 완료(미연결)';
-  return '미탐색';
-}
-
 export default function ItCompaniesBrowser() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [linkedOnly, setLinkedOnly] = useState(false);
-  const [notFoundOnly, setNotFoundOnly] = useState(false);
-  const [pendingOnly, setPendingOnly] = useState(false);
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<RegistryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,7 +63,7 @@ export default function ItCompaniesBrowser() {
 
   useEffect(() => {
     setOffset(0);
-  }, [debouncedQuery, linkedOnly, notFoundOnly, pendingOnly]);
+  }, [debouncedQuery]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -85,9 +74,6 @@ export default function ItCompaniesBrowser() {
         limit: String(PAGE_SIZE),
       });
       if (debouncedQuery.trim()) params.set('q', debouncedQuery.trim());
-      if (linkedOnly) params.set('linkedOnly', '1');
-      if (notFoundOnly) params.set('notFoundOnly', '1');
-      if (pendingOnly) params.set('pendingOnly', '1');
       const res = await fetch(`/api/admin/it-companies?${params}`);
       const json = (await res.json()) as { ok?: boolean; data?: RegistryResponse };
       if (!res.ok || !json.ok || !json.data) {
@@ -100,7 +86,7 @@ export default function ItCompaniesBrowser() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedQuery, linkedOnly, notFoundOnly, offset, pendingOnly]);
+  }, [debouncedQuery, offset]);
 
   useEffect(() => {
     void load();
@@ -126,14 +112,6 @@ export default function ItCompaniesBrowser() {
         searchId="it-companies-registry-search"
         query={query}
         onQueryChange={setQuery}
-        filters={{
-          linkedOnly,
-          notFoundOnly,
-          pendingOnly,
-          onLinkedOnly: setLinkedOnly,
-          onNotFoundOnly: setNotFoundOnly,
-          onPendingOnly: setPendingOnly,
-        }}
       />
 
       <AdminListResultMeta>
@@ -155,10 +133,8 @@ export default function ItCompaniesBrowser() {
                   <th className="px-3 py-2 font-semibold">구분</th>
                   <th className="px-3 py-2 font-semibold">기업명</th>
                   <th className="px-3 py-2 font-semibold">사업자번호</th>
-                  <th className="px-3 py-2 font-semibold">탐색</th>
                   <th className="px-3 py-2 font-semibold">수집 공고</th>
                   <th className="px-3 py-2 font-semibold">채용 URL</th>
-                  <th className="px-3 py-2 font-semibold">상세</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -167,15 +143,11 @@ export default function ItCompaniesBrowser() {
                     <td className="px-3 py-2 text-muted">{row.segment}</td>
                     <td className="px-3 py-2 font-medium">{row.companyName}</td>
                     <td className="px-3 py-2 text-muted">{row.businessNumber}</td>
-                    <td className="px-3 py-2 text-muted">{discoveryLabel(row.careersDiscoveryStatus)}</td>
                     <td className="px-3 py-2 text-muted">
                       {formatRegistryActiveJobCount(row.activeJobCount)}
                     </td>
                     <td className="px-3 py-2">
                       <RegistryCareersUrlLink url={row.careersUrl} />
-                    </td>
-                    <td className="px-3 py-2">
-                      <RegistryDetailButton disabled />
                     </td>
                   </tr>
                 ))}

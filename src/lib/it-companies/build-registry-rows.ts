@@ -9,6 +9,7 @@ import { isMidSizedCertificateActive } from '@/lib/mid-sized-companies/registry-
 import { loadMidSizedRegistryDbCompanies } from '@/lib/mid-sized-companies/registry-db';
 import { activeJobCountForMidSizedCrawlSource } from '@/lib/crawled-jobs-server';
 import { compareItCompaniesByFame } from '@/lib/it-companies/fame-rank';
+import { resolveRegistryBusinessNumber } from '@/lib/recruiting-employers/careers-url-business-number';
 
 export type ItCompanyRegistryRow = {
   companyName: string;
@@ -35,13 +36,19 @@ function enterpriseItGroups() {
     if (!isIt) continue;
 
     const crawler = crawlSourceId ? crawlers.get(crawlSourceId) : undefined;
+    const careersUrl = crawler?.careersUrl ?? null;
     rows.push({
       companyName: group.name,
-      businessNumber: '—',
+      businessNumber: resolveRegistryBusinessNumber({
+        companyName: group.name,
+        careersUrl,
+        crawlSourceId: crawlSourceId ?? null,
+        sourceId: crawler?.sourceId ?? null,
+      }),
       segment: '대기업·계열',
       active: null,
-      careersUrl: crawler?.careersUrl ?? null,
-      linked: Boolean(crawler?.careersUrl),
+      careersUrl,
+      linked: Boolean(careersUrl),
       careersDiscoveryStatus: 'enterprise',
       careersUrlCheckedAt: null,
       activeJobCount: 0,
@@ -54,7 +61,12 @@ function enterpriseItGroups() {
     if (!isItComputingCompanyName(company.name)) continue;
     rows.push({
       companyName: company.name,
-      businessNumber: '—',
+      businessNumber: resolveRegistryBusinessNumber({
+        companyName: company.name,
+        careersUrl: company.careersUrl,
+        crawlSourceId: company.id,
+        sourceId: company.sourceId,
+      }),
       segment: '별도 등록',
       active: null,
       careersUrl: company.careersUrl,
@@ -77,7 +89,12 @@ function midSizedItRows(): ItCompanyRegistryRow[] {
       const careersUrl = record.careersUrl?.trim() || null;
       return {
         companyName: record.companyName,
-        businessNumber: record.businessNumber,
+        businessNumber: resolveRegistryBusinessNumber({
+          companyName: record.companyName,
+          careersUrl,
+          crawlSourceId: record.crawlSourceId,
+          existing: record.businessNumber,
+        }),
         segment: '중견기업' as const,
         active: isMidSizedCertificateActive(record.validTo),
         careersUrl,

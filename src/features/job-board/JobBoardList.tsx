@@ -59,12 +59,14 @@ function buildQuery(
   page: number,
   todayOnly: boolean,
   pageSize: number,
+  searchOnly = false,
 ) {
   const params = new URLSearchParams();
   if (state.q.trim()) params.set('q', state.q.trim());
-  if (todayOnly) params.set('today', '1');
   params.set('page', String(page));
   params.set('pageSize', String(pageSize));
+  if (searchOnly) return params.toString();
+  if (todayOnly) params.set('today', '1');
   for (const item of state.employmentTypes) params.append('employmentType', item);
   for (const item of state.companySegments) params.append('companySegment', item);
   for (const item of state.roles) params.append('role', item);
@@ -120,9 +122,11 @@ export default function JobBoardList({
     [filtersForFetch, todayPage, pageSize],
   );
 
+  const matchedSearchOnly = mode === 'matched';
+
   const mainListQuery = useMemo(
-    () => buildQuery(filtersForFetch, page, todayOnly, pageSize),
-    [filtersForFetch, page, todayOnly, pageSize],
+    () => buildQuery(filtersForFetch, page, todayOnly, pageSize, matchedSearchOnly),
+    [filtersForFetch, page, todayOnly, pageSize, matchedSearchOnly],
   );
 
   const todayFetchKey = useMemo(
@@ -238,9 +242,7 @@ export default function JobBoardList({
           }
 
           const token = await user.getIdToken();
-          const res = await fetch(
-            `/api/crawled-jobs/matched?page=${page}&pageSize=${pageSize}`,
-            {
+          const res = await fetch(`/api/crawled-jobs/matched?${mainListQuery}`, {
               headers: { Authorization: `Bearer ${token}` },
               signal: controller.signal,
               cache: 'no-store',
@@ -335,7 +337,11 @@ export default function JobBoardList({
       ) : null}
 
       {showFilters ? (
-        <JobBoardFilters value={filters} onChange={handleFiltersChange} showDetailButton={mode !== 'matched'} />
+        <JobBoardFilters
+          value={filters}
+          onChange={handleFiltersChange}
+          variant={matchedSearchOnly ? 'searchOnly' : 'full'}
+        />
       ) : null}
 
       {showNewSection && mode === 'all' && !hideNewSectionHeader ? (

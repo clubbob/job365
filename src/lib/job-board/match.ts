@@ -1,5 +1,6 @@
 import type { EmploymentType, JobRegion, JobRole } from '@/lib/job-board/constants';
 import { companySegmentsForJob, type JobBoardCompanySegment } from '@/lib/job-board/company-segment';
+import { crawledJobRecruitingCompanyName } from '@/lib/job-display';
 import type { CrawledJobListItem } from '@/types/crawled-job';
 import type { JobAlertPrefs } from '@/types/job-alert-prefs';
 
@@ -18,26 +19,36 @@ function overlaps<T extends string>(selected: T[], values: T[]): boolean {
   return selected.some((item) => values.includes(item));
 }
 
-/** 채용 공고 목록·관리자 수집 공고 검색 (공고 제목·회사·직무·지역·소스) */
+type CrawledJobKeywordFields = Pick<
+  CrawledJobListItem,
+  'title' | 'companyName' | 'sourceName' | 'roles' | 'regions'
+> & {
+  sourceId?: string;
+};
+
+/** 채용 공고 검색 — 회사명은 모집 회사(카드 표시) 기준. 관리자는 수집 명단·소스 포함 옵션. */
 export function matchesCrawledJobKeyword(
-  job: Pick<CrawledJobListItem, 'title' | 'companyName' | 'sourceName' | 'roles' | 'regions'> & {
-    sourceId?: string;
-  },
+  job: CrawledJobKeywordFields,
   keyword: string,
+  options?: {
+    includeCollectSource?: boolean;
+    /** 맞춤 채용 목록: 직무·지역은 설정으로 이미 걸러짐 */
+    titleAndRecruitingCompanyOnly?: boolean;
+  },
 ): boolean {
   const q = keyword.trim().toLowerCase();
   if (!q) return true;
 
-  const haystack = [
-    job.title,
-    job.companyName,
-    job.sourceName,
-    job.sourceId ?? '',
-    ...job.roles,
-    ...job.regions,
-  ]
-    .join(' ')
-    .toLowerCase();
+  const recruitingCompany = crawledJobRecruitingCompanyName(job);
+  const parts = options?.titleAndRecruitingCompanyOnly
+    ? [job.title, recruitingCompany]
+    : [job.title, recruitingCompany, ...job.roles, ...job.regions];
+
+  if (options?.includeCollectSource) {
+    parts.push(job.companyName, job.sourceName, job.sourceId ?? '');
+  }
+
+  const haystack = parts.filter(Boolean).join(' ').toLowerCase();
 
   return haystack.includes(q);
 }

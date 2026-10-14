@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { verifyIdToken } from '@/lib/auth-server';
 import { listCrawledJobs } from '@/lib/crawled-jobs-server';
 import { getJobAlertPrefs } from '@/lib/job-alert-prefs-server';
-import { hasJobAlertFilterPrefs, jobMatchesSavedPrefs } from '@/lib/job-board/match';
+import {
+  hasJobAlertFilterPrefs,
+  jobMatchesSavedPrefs,
+  matchesCrawledJobKeyword,
+} from '@/lib/job-board/match';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 
 export async function GET(request: Request) {
@@ -19,12 +23,16 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, Number(searchParams.get('page') ?? '1') || 1);
   const pageSize = Math.min(50, Math.max(1, Number(searchParams.get('pageSize') ?? JOB_LIST_PAGE_SIZE) || JOB_LIST_PAGE_SIZE));
+  const q = searchParams.get('q') ?? '';
 
   try {
     const [prefs, all] = await Promise.all([getJobAlertPrefs(decoded.uid), listCrawledJobs()]);
     const matched = all.filter((job) => jobMatchesSavedPrefs(job, prefs));
     const usedFallback = matched.length === 0 && hasJobAlertFilterPrefs(prefs);
-    const list = usedFallback ? all.filter((job) => job.status === 'active') : matched;
+    const baseList = usedFallback ? all.filter((job) => job.status === 'active') : matched;
+    const list = baseList.filter((job) =>
+      matchesCrawledJobKeyword(job, q, { titleAndRecruitingCompanyOnly: true }),
+    );
     const total = list.length;
     const start = (page - 1) * pageSize;
     const items = list.slice(start, start + pageSize);

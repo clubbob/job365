@@ -22,6 +22,21 @@ import {
   shouldPersistCrawledJob,
 } from '@/lib/crawler/job-quality';
 import { jobMatchesBoardFilters, matchesCrawledJobKeyword, type JobBoardFilters } from '@/lib/job-board/match';
+import {
+  addRecruitingEmployerToMap,
+  createRecruitingEmployerAggregateMap,
+  finalizeRecruitingEmployerAggregateMap,
+  type RecruitingEmployerAggregate,
+  type RecruitingEmployerJobRow,
+} from '@/lib/recruiting-employers/aggregate';
+import {
+  clearPersistedCrawledJobSourceStats,
+  readPersistedCrawledJobSourceStats,
+  type PersistedCrawledJobSourceStats,
+  writePersistedCrawledJobSourceStats,
+} from '@/lib/crawled-job-source-stats-persist';
+import { crawledJobRecruitingCompanyName } from '@/lib/job-display';
+import { normalizeCompanyLabel } from '@/lib/crawler/company-name-match';
 import type {
   CrawledJob,
   CrawledJobListItem,
@@ -75,6 +90,8 @@ export function invalidateCrawledJobsListCache(): void {
   adminJobsByStatusCache = {};
   adminJobsByStatusLoadPromise = {};
   sourceStatsCache = null;
+  sourceStatsInflight.clear();
+  clearPersistedCrawledJobSourceStats();
   browsableStatusCreatedAtIndexReady = null;
   void import('@/lib/job-companies-server')
     .then((mod) => mod.invalidateJobCompaniesPayloadCache())
@@ -456,45 +473,124 @@ async function listAllCrawledJobsForAggregation(): Promise<CrawledJob[]> {
 export type CrawledJobSourceStats = {
   jobCountsBySource: Record<string, number>;
   discoveredBySource: Record<string, DiscoveredAffiliate[]>;
+  recruitingEmployerCountByNorm: Record<string, number>;
+  recruitingEmployerAggregates: RecruitingEmployerAggregate[];
 };
 
+type CrawledJobSourceStatsInternal = CrawledJobSourceStats & {
+  _employerMap?: ReturnType<typeof createRecruitingEmployerAggregateMap>;
+};
+
+function statsFromPersisted(persisted: PersistedCrawledJobSourceStats): CrawledJobSourceStatsInternal {
+  return {
+    jobCountsBySource: persisted.jobCountsBySource,
+    discoveredBySource: persisted.discoveredBySource,
+    recruitingEmployerCountByNorm: persisted.recruitingEmployerCountByNorm,
+    recruitingEmployerAggregates: [],
+  };
+}
+
+function ensureRecruitingEmployerAggregates(stats: CrawledJobSourceStatsInternal): RecruitingEmployerAggregate[] {
+  if (stats.recruitingEmployerAggregates.length > 0) return stats.recruitingEmployerAggregates;
+  if (stats._employerMap) {
+    stats.recruitingEmployerAggregates = finalizeRecruitingEmployerAggregateMap(stats._employerMap);
+    return stats.recruitingEmployerAggregates;
+  }
+  stats.recruitingEmployerAggregates = Object.entries(stats.recruitingEmployerCountByNorm)
+    .map(([norm, activeJobCount]) => ({
+      companyName: norm,
+      activeJobCount,
+      sourceIds: [] as string[],
+    }))
+    .sort((a, b) => b.activeJobCount - a.activeJobCount || a.companyName.localeCompare(b.companyName, 'ko'));
+  return stats.recruitingEmployerAggregates;
+}
+
+function persistSourceStats(cacheKey: string, stats: CrawledJobSourceStatsInternal): void {
+  setImmediate(() => {
+    writePersistedCrawledJobSourceStats({
+      version: 1,
+      cachedAt: Date.now(),
+      cacheKey,
+      jobCountsBySource: stats.jobCountsBySource,
+      discoveredBySource: stats.discoveredBySource,
+      recruitingEmployerCountByNorm: stats.recruitingEmployerCountByNorm,
+    });
+  });
+}
+
 let sourceStatsCache: { expiresAt: number; data: CrawledJobSourceStats; key: string } | null = null;
-const SOURCE_STATS_TTL_MS = 60_000;
+const sourceStatsInflight = new Map<string, Promise<CrawledJobSourceStats>>();
+const SOURCE_STATS_TTL_MS = 120_000;
 
-const SOURCE_STATS_SELECT_FIELDS = ['sourceId', 'companyName', 'status'] as const;
+const SOURCE_STATS_SELECT_FIELDS = ['sourceId', 'companyName', 'title', 'status'] as const;
 
-function buildSourceStatsFromActiveRows(rows: Array<{ sourceId: string; companyName: string }>): CrawledJobSourceStats {
+function recruitingEmployerFromRow(
+  row: RecruitingEmployerJobRow,
+  cache: Map<string, string>,
+): string {
+  const cacheKey = `${row.sourceId}\u0001${row.companyName}\u0001${row.title}`;
+  const cached = cache.get(cacheKey);
+  if (cached !== undefined) return cached;
+  const employer = crawledJobRecruitingCompanyName(row).trim();
+  cache.set(cacheKey, employer);
+  return employer;
+}
+
+function buildSourceStatsFromActiveRows(rows: RecruitingEmployerJobRow[]): CrawledJobSourceStatsInternal {
   const jobCountsBySource: Record<string, number> = {};
   const bySource = new Map<string, Map<string, number>>();
+  const recruitingByEmployer = createRecruitingEmployerAggregateMap();
+  const employerParseCache = new Map<string, string>();
+  const recruitingEmployerCountByNorm: Record<string, number> = {};
 
   for (const row of rows) {
     jobCountsBySource[row.sourceId] = (jobCountsBySource[row.sourceId] ?? 0) + 1;
 
+    const employer = recruitingEmployerFromRow(row, employerParseCache);
+    if (!employer) continue;
+
+    addRecruitingEmployerToMap(recruitingByEmployer, row.sourceId, employer);
+
+    const norm = normalizeCompanyLabel(employer);
+    if (norm) recruitingEmployerCountByNorm[norm] = (recruitingEmployerCountByNorm[norm] ?? 0) + 1;
+
     if (!bySource.has(row.sourceId)) bySource.set(row.sourceId, new Map());
     const companies = bySource.get(row.sourceId)!;
-    companies.set(row.companyName, (companies.get(row.companyName) ?? 0) + 1);
+    companies.set(employer, (companies.get(employer) ?? 0) + 1);
   }
 
   const discoveredBySource: Record<string, DiscoveredAffiliate[]> = {};
   for (const [sourceId, companies] of bySource) {
-    discoveredBySource[sourceId] = [...companies.entries()]
-      .map(([companyName, activeJobCount]) => ({ companyName, activeJobCount }))
-      .sort((a, b) => a.companyName.localeCompare(b.companyName, 'ko'));
+    discoveredBySource[sourceId] = [...companies.entries()].map(([companyName, activeJobCount]) => ({
+      companyName,
+      activeJobCount,
+    }));
   }
 
-  return { jobCountsBySource, discoveredBySource };
+  return {
+    jobCountsBySource,
+    discoveredBySource,
+    recruitingEmployerCountByNorm,
+    recruitingEmployerAggregates: [],
+    _employerMap: recruitingByEmployer,
+  };
 }
 
 function buildSourceStats(jobs: CrawledJob[]): CrawledJobSourceStats {
   return buildSourceStatsFromActiveRows(
     jobs
       .filter((job) => job.status === 'active')
-      .map((job) => ({ sourceId: job.sourceId, companyName: job.companyName.trim() }))
-      .filter((row) => row.companyName),
+      .map((job) => ({
+        sourceId: job.sourceId,
+        companyName: job.companyName.trim(),
+        title: job.title,
+      }))
+      .filter((row) => row.companyName && row.title),
   );
 }
 
-async function listActiveJobRowsForSourceStats(): Promise<Array<{ sourceId: string; companyName: string }>> {
+async function listActiveJobRowsForSourceStats(): Promise<RecruitingEmployerJobRow[]> {
   const db = getAdminFirestore();
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
 
@@ -504,37 +600,44 @@ async function listActiveJobRowsForSourceStats(): Promise<Array<{ sourceId: stri
     .select(...SOURCE_STATS_SELECT_FIELDS)
     .get();
 
-  const rows: Array<{ sourceId: string; companyName: string }> = [];
+  const rows: RecruitingEmployerJobRow[] = [];
   for (const doc of snap.docs) {
     const data = doc.data();
     const sourceId = typeof data.sourceId === 'string' ? data.sourceId.trim() : '';
     const companyName = typeof data.companyName === 'string' ? data.companyName.trim() : '';
-    if (sourceId && companyName) rows.push({ sourceId, companyName });
+    const title = typeof data.title === 'string' ? data.title.trim() : '';
+    if (sourceId && companyName && title) rows.push({ sourceId, companyName, title });
   }
   return rows;
 }
 
-/** 채용 사이트별 공고 건수·계열사를 한 번의 조회로 집계합니다. */
-export async function getCrawledJobSourceStats(options?: {
+/** 모집 회사별 active 공고 건수(사이트·관리자 탭 집계) */
+export async function getRecruitingEmployerAggregates(options?: {
   skipDisplayFilters?: boolean;
-}): Promise<CrawledJobSourceStats> {
-  const cacheKey = options?.skipDisplayFilters ? 'all' : 'visible';
-  if (sourceStatsCache && sourceStatsCache.expiresAt > Date.now() && sourceStatsCache.key === cacheKey) {
-    return sourceStatsCache.data;
+}): Promise<RecruitingEmployerAggregate[]> {
+  const stats = await getCrawledJobSourceStats(options);
+  return ensureRecruitingEmployerAggregates(stats as CrawledJobSourceStatsInternal);
+}
+
+async function loadCrawledJobSourceStats(cacheKey: string, skipDisplayFilters: boolean): Promise<CrawledJobSourceStats> {
+  const persisted = readPersistedCrawledJobSourceStats(cacheKey);
+  if (persisted) {
+    return statsFromPersisted(persisted);
   }
 
-  let rows: Array<{ sourceId: string; companyName: string }>;
+  let rows: RecruitingEmployerJobRow[];
   try {
     rows = await listActiveJobRowsForSourceStats();
   } catch (error) {
     console.warn('[crawled-jobs] source stats select query failed, falling back to full scan', error);
     const allJobs = (await listAllCrawledJobsForAggregation()).filter((job) => job.status === 'active');
-    const jobs = options?.skipDisplayFilters ? allJobs : await filterDisplayableJobs(allJobs);
-    const data = buildSourceStats(jobs);
-    sourceStatsCache = { expiresAt: Date.now() + SOURCE_STATS_TTL_MS, data, key: cacheKey };
-    return data;
+    const jobs = skipDisplayFilters ? allJobs : await filterDisplayableJobs(allJobs);
+    const stats = buildSourceStats(jobs);
+    persistSourceStats(cacheKey, stats);
+    return stats;
   }
-  if (!options?.skipDisplayFilters) {
+
+  if (!skipDisplayFilters) {
     const [hiddenSources, hiddenCompanies] = await Promise.all([
       getDisplayDisabledSourceIds(),
       getDisplayDisabledCompanyKeys(),
@@ -547,9 +650,36 @@ export async function getCrawledJobSourceStats(options?: {
       });
     }
   }
-  const data = buildSourceStatsFromActiveRows(rows);
-  sourceStatsCache = { expiresAt: Date.now() + SOURCE_STATS_TTL_MS, data, key: cacheKey };
-  return data;
+
+  const stats = buildSourceStatsFromActiveRows(rows);
+  persistSourceStats(cacheKey, stats);
+  return stats;
+}
+
+/** 채용 사이트별 공고 건수·계열사를 한 번의 조회로 집계합니다. */
+export async function getCrawledJobSourceStats(options?: {
+  skipDisplayFilters?: boolean;
+}): Promise<CrawledJobSourceStats> {
+  const cacheKey = options?.skipDisplayFilters ? 'all' : 'visible';
+  if (sourceStatsCache && sourceStatsCache.expiresAt > Date.now() && sourceStatsCache.key === cacheKey) {
+    return sourceStatsCache.data;
+  }
+
+  const inflight = sourceStatsInflight.get(cacheKey);
+  if (inflight) return inflight;
+
+  const promise = loadCrawledJobSourceStats(cacheKey, Boolean(options?.skipDisplayFilters))
+    .then((data) => {
+      const entry = { expiresAt: Date.now() + SOURCE_STATS_TTL_MS, data, key: cacheKey };
+      sourceStatsCache = entry;
+      return data;
+    })
+    .finally(() => {
+      sourceStatsInflight.delete(cacheKey);
+    });
+
+  sourceStatsInflight.set(cacheKey, promise);
+  return promise;
 }
 
 /** 채용 사이트(sourceId)별 active 공고 건수 */
@@ -600,7 +730,7 @@ function toAdminCrawledJobRow(job: CrawledJob, hidden: Set<string>): AdminCrawle
 }
 
 function matchesAdminCrawledJobQuery(job: CrawledJob, q: string): boolean {
-  return matchesCrawledJobKeyword(job, q);
+  return matchesCrawledJobKeyword(job, q, { includeCollectSource: true });
 }
 
 function paginateAdminCrawledJobs(

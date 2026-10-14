@@ -12,7 +12,6 @@ import {
   COMPANY_REGISTRY_LIST_CARD_DESCRIPTION,
   COMPANY_REGISTRY_STAT_EMPTY,
   RegistryCareersUrlLink,
-  RegistryDetailButton,
   adminRegistryTableClassName,
   formatRegistryActiveJobCount,
   adminRegistryTableWrapClassName,
@@ -51,18 +50,9 @@ type RegistryResponse = {
 
 const PAGE_SIZE = 50;
 
-function discoveryLabel(status: CareersDiscoveryStatus): string {
-  if (status === 'found') return 'URL 연결';
-  if (status === 'not_found') return '탐색 완료(미연결)';
-  return '미탐색';
-}
-
 export default function MidSizedRegistryBrowser() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [linkedOnly, setLinkedOnly] = useState(false);
-  const [notFoundOnly, setNotFoundOnly] = useState(false);
-  const [pendingOnly, setPendingOnly] = useState(false);
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<RegistryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +65,7 @@ export default function MidSizedRegistryBrowser() {
 
   useEffect(() => {
     setOffset(0);
-  }, [debouncedQuery, linkedOnly, notFoundOnly, pendingOnly]);
+  }, [debouncedQuery]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,9 +76,6 @@ export default function MidSizedRegistryBrowser() {
         limit: String(PAGE_SIZE),
       });
       if (debouncedQuery.trim()) params.set('q', debouncedQuery.trim());
-      if (linkedOnly) params.set('linkedOnly', '1');
-      if (notFoundOnly) params.set('notFoundOnly', '1');
-      if (pendingOnly) params.set('pendingOnly', '1');
       const res = await fetch(`/api/admin/mid-sized-companies?${params}`);
       const json = (await res.json()) as { ok?: boolean; data?: RegistryResponse };
       if (!res.ok || !json.ok || !json.data) {
@@ -101,7 +88,7 @@ export default function MidSizedRegistryBrowser() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedQuery, linkedOnly, notFoundOnly, offset, pendingOnly]);
+  }, [debouncedQuery, offset]);
 
   useEffect(() => {
     void load();
@@ -127,14 +114,6 @@ export default function MidSizedRegistryBrowser() {
         searchId="mid-sized-registry-search"
         query={query}
         onQueryChange={setQuery}
-        filters={{
-          linkedOnly,
-          notFoundOnly,
-          pendingOnly,
-          onLinkedOnly: setLinkedOnly,
-          onNotFoundOnly: setNotFoundOnly,
-          onPendingOnly: setPendingOnly,
-        }}
       />
 
       <AdminListResultMeta>
@@ -157,15 +136,11 @@ export default function MidSizedRegistryBrowser() {
                   <tr key={row.businessNumber} className="text-foreground">
                     <td className="px-3 py-2 font-medium">{row.companyName}</td>
                     <td className="px-3 py-2 text-muted">{row.businessNumber}</td>
-                    <td className="px-3 py-2 text-muted">{discoveryLabel(row.careersDiscoveryStatus)}</td>
                     <td className="px-3 py-2 text-muted">
                       {formatRegistryActiveJobCount(row.activeJobCount)}
                     </td>
                     <td className="px-3 py-2">
                       <RegistryCareersUrlLink url={row.careersUrl} />
-                    </td>
-                    <td className="px-3 py-2">
-                      <RegistryDetailButton disabled />
                     </td>
                   </tr>
                 ))}
