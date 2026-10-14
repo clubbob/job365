@@ -26,8 +26,11 @@ function formatJsonSafe(value: unknown, depth: number): string {
     return `[\n${items.join(',\n')}\n${pad}]`;
   }
 
-  const keys = Object.keys(value);
+  const record = value as Record<string, unknown>;
+  const keys = Object.keys(record);
   if (keys.length === 0) return '{}';
-  const props = keys.map((key) => `${inner}${JSON.stringify(key)}: ${formatJsonSafe(value[key], depth + 1)}`);
+  const props = keys.map(
+    (key) => `${inner}${JSON.stringify(key)}: ${formatJsonSafe(record[key], depth + 1)}`,
+  );
   return `{\n${props.join(',\n')}\n${pad}}`;
 }
