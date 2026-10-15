@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -69,43 +69,51 @@ export default function AdminCrawledJobsClient() {
     setPage(1);
   }, [statusFilter, debouncedQuery]);
 
-  const load = useCallback(async () => {
+  useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
     setError('');
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        pageSize: String(ADMIN_CRAWLED_JOBS_PAGE_SIZE),
-        status: statusFilter,
-      });
-      if (debouncedQuery.trim()) {
-        params.set('q', debouncedQuery.trim());
-      }
 
-      const res = await fetch(`/api/admin/crawled-jobs?${params.toString()}`);
-      const json = (await res.json()) as ListResponse;
-      if (!res.ok || !json.ok) {
-        const message = json.ok === false ? json.error?.message : undefined;
-        throw new Error(message ?? '수집 공고를 불러오지 못했습니다.');
-      }
-      if (!json.data) {
-        throw new Error('수집 공고를 불러오지 못했습니다.');
-      }
+    void (async () => {
+      try {
+        const params = new URLSearchParams({
+          page: String(page),
+          pageSize: String(ADMIN_CRAWLED_JOBS_PAGE_SIZE),
+          status: statusFilter,
+        });
+        if (debouncedQuery.trim()) {
+          params.set('q', debouncedQuery.trim());
+        }
 
-      setJobs(json.data.jobs);
-      setTotal(json.data.total);
-      setTotalPages(json.data.totalPages);
-      setFirebaseAdminMessage(json.data.firebaseReady === false ? json.data.firebaseAdminMessage ?? '' : '');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '수집 공고를 불러오지 못했습니다.');
-    } finally {
-      setLoading(false);
-    }
+        const res = await fetch(`/api/admin/crawled-jobs?${params.toString()}`, {
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+        const json = (await res.json()) as ListResponse;
+        if (controller.signal.aborted) return;
+
+        if (!res.ok || !json.ok) {
+          const message = json.ok === false ? json.error?.message : undefined;
+          throw new Error(message ?? '수집 공고를 불러오지 못했습니다.');
+        }
+        if (!json.data) {
+          throw new Error('수집 공고를 불러오지 못했습니다.');
+        }
+
+        setJobs(json.data.jobs);
+        setTotal(json.data.total);
+        setTotalPages(json.data.totalPages);
+        setFirebaseAdminMessage(json.data.firebaseReady === false ? json.data.firebaseAdminMessage ?? '' : '');
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : '수집 공고를 불러오지 못했습니다.');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    })();
+
+    return () => controller.abort();
   }, [page, statusFilter, debouncedQuery]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   async function handleClose(job: AdminCrawledJob) {
     if (job.status === 'closed') return;

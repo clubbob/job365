@@ -85,9 +85,15 @@ export function hasJobAlertFilterPrefs(
   );
 }
 
-export function jobMatchesSavedPrefs(job: CrawledJobListItem, prefs: JobAlertPrefs): boolean {
+export function jobMatchesSavedPrefs(
+  job: CrawledJobListItem,
+  prefs: JobAlertPrefs,
+  options?: { requireFilterPrefs?: boolean },
+): boolean {
   if (job.status !== 'active') return false;
-  if (!hasJobAlertFilterPrefs(prefs)) return true;
+  if (!hasJobAlertFilterPrefs(prefs)) {
+    return options?.requireFilterPrefs ? false : true;
+  }
 
   return jobMatchesBoardFilters(job, {
     employmentTypes: prefs.employmentTypes,

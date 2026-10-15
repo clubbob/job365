@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import {
   AdminCompanyRegistrySearchAndFilters,
@@ -84,6 +84,11 @@ export default function RecruitingEmployerBrowser({
   const [data, setData] = useState<RegistryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const onListMetaRef = useRef(onListMeta);
+
+  useEffect(() => {
+    onListMetaRef.current = onListMeta;
+  }, [onListMeta]);
 
   const copy = SEGMENT_COPY[segment];
 
@@ -122,7 +127,7 @@ export default function RecruitingEmployerBrowser({
         }
 
         setData(json.data);
-        onListMeta?.({
+        onListMetaRef.current?.({
           segment,
           registryCount: json.data.registryCount,
           withActiveJobsCount: json.data.withActiveJobsCount,
@@ -137,7 +142,7 @@ export default function RecruitingEmployerBrowser({
     })();
 
     return () => controller.abort();
-  }, [debouncedQuery, offset, onListMeta, segment]);
+  }, [debouncedQuery, offset, segment]);
 
   const resultTotal = data?.total ?? 0;
   const initialLoading = loading && data === null;

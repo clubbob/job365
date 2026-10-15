@@ -4,11 +4,29 @@ function cleanText(value: string): string {
   return decodeHtmlEntities(value).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-/** 포털 목록에 붙는 말줄임·D-day 잔여 문구 */
+/** 목록·카드에 붙는 D-day·마감 임박 배지 (제목 앞·뒤) */
+export function stripJobTitleCountdownNoise(title: string): string {
+  let t = title.trim();
+  for (let i = 0; i < 4; i++) {
+    const next = t
+      .replace(/^(\d{1,3}\s*일\s*남음\s*)+(\d{1,3}\s*일\s*)?/u, '')
+      .replace(/^남음\s+\d{1,3}\s*일\s+/u, '')
+      .replace(/^D-\s*\d{1,3}\s+/iu, '')
+      .replace(/^마감\s*\d{1,3}\s*일\s*전\s*/u, '')
+      .replace(/^\d{1,3}\s+(?=\[)/u, '')
+      .replace(/\s*\.{2,}\s*(\d+\s*일\s*남음)?\s*$/u, '')
+      .replace(/\s+\d{1,3}\s*일\s*남음\s*$/u, '')
+      .replace(/\s+D-\s*\d{1,3}\s*$/iu, '')
+      .trim();
+    if (next === t) break;
+    t = next;
+  }
+  return t;
+}
+
+/** 포털 목록에 붙는 말줄임·마감 문구 */
 function stripPortalListNoise(title: string): string {
-  return title
-    .replace(/\s*\.{2,}\s*(\d+\s*일\s*남음)?\s*$/u, '')
-    .replace(/\s+\d+\s*일\s*남음\s*$/u, '')
+  return stripJobTitleCountdownNoise(title)
     .replace(/\s*채용\s*시까지\s*$/u, '')
     .replace(/\s*모집\s*채용\s*시까지\s*$/u, '')
     .trim();

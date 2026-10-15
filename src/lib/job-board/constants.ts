@@ -18,7 +18,7 @@ export const QUICK_EMPLOYMENT_TYPES = QUICK_FILTER_OPTIONS.filter(
 
 /** 관심 직무 */
 export const JOB_ROLES = [
-  'IT, 프로그래밍',
+  'IT·AI·프로그래밍',
   '기획·PM',
   '디자인',
   '마케팅·광고',
@@ -78,8 +78,10 @@ export function isEmploymentType(value: string): value is EmploymentType {
 }
 
 const LEGACY_JOB_ROLE_ALIASES: Record<string, JobRole> = {
-  'IT·개발': 'IT, 프로그래밍',
-  'IT. 개발': 'IT, 프로그래밍',
+  'IT·개발': 'IT·AI·프로그래밍',
+  'IT. 개발': 'IT·AI·프로그래밍',
+  'IT, 프로그래밍': 'IT·AI·프로그래밍',
+  'IT, AI, 프로그래밍': 'IT·AI·프로그래밍',
 };
 
 export function normalizeJobRole(value: string): JobRole | null {

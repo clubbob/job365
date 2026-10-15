@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import AdSlot from '@/components/ads/AdSlot';
 import PageHeader from '@/components/navigation/PageHeader';
 import { FormFeedback } from '@/components/ui/FormFeedback';
@@ -9,10 +10,23 @@ import CrawledJobDetailView from '@/features/job-board/CrawledJobDetailView';
 import { useAuth } from '@/features/auth/auth-context';
 import { getCrawledJobOriginalUrl } from '@/lib/crawler/source-url';
 import JobInquiryButton from '@/features/inquiry/JobInquiryButton';
+import {
+  crawledJobDetailHref,
+  crawledJobDetailListHref,
+  isCrawledJobDetailFromMyJobs,
+} from '@/lib/job-board/detail-navigation';
 import { buildJobInquiryHref } from '@/lib/job-inquiry';
+import { MATCHED_JOBS_PAGE_TITLE } from '@/lib/site-menu-copy';
 import type { CrawledJob } from '@/types/crawled-job';
 
 export default function CrawledJobDetailPageClient({ jobId }: { jobId: string }) {
+  const searchParams = useSearchParams();
+  const fromMyJobs = isCrawledJobDetailFromMyJobs(searchParams);
+  const listHref = crawledJobDetailListHref(searchParams);
+  const loginNext = useMemo(
+    () => crawledJobDetailHref(jobId, fromMyJobs ? 'my-jobs' : undefined),
+    [fromMyJobs, jobId],
+  );
   const { user } = useAuth();
   const [job, setJob] = useState<CrawledJob | null>(null);
   const [todayDate, setTodayDate] = useState('');
@@ -143,7 +157,12 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="채용 공고" homeHref="/jobs" homeLabel="목록으로" showRefresh={false} />
+      <PageHeader
+        title={fromMyJobs ? MATCHED_JOBS_PAGE_TITLE : '채용 공고'}
+        homeHref={listHref}
+        homeLabel="목록으로"
+        showRefresh={false}
+      />
 
       <AdSlot placement="header" />
 
@@ -178,7 +197,7 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
                 </button>
               ) : (
                 <Link
-                  href={`/login?next=/jobs/${job.id}`}
+                  href={`/login?next=${encodeURIComponent(loginNext)}`}
                   className="inline-flex w-full justify-center rounded-lg border border-border-strong bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-neutral-50 sm:w-auto"
                 >
                   로그인 후 찜하기

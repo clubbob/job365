@@ -15,12 +15,16 @@ import { getDisplayDisabledCompanyKeys, isCompanyCrawlDisabled } from '@/lib/cra
 import { getDisplayDisabledSourceIds, isDisplayDisabled } from '@/lib/crawl-source-policy-server';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { decodeHtmlEntities } from '@/lib/crawler/decode-html-text';
+import { inferJobRoles } from '@/lib/crawler/map-fields';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
+import { isLikelyJobUrl } from '@/lib/crawler/job-heuristics';
 import {
   isBrowsableCrawledJob,
   isInvalidJobTitle,
   shouldPersistCrawledJob,
 } from '@/lib/crawler/job-quality';
+import { isCrawledJobDeadlineOpen } from '@/lib/job-board/crawled-deadline';
+import { dedupeCrawledJobListItems } from '@/lib/job-board/dedupe-list-jobs';
 import { jobMatchesBoardFilters, matchesCrawledJobKeyword, type JobBoardFilters } from '@/lib/job-board/match';
 import {
   addRecruitingEmployerToMap,
@@ -32,6 +36,7 @@ import {
 import {
   clearPersistedCrawledJobSourceStats,
   readPersistedCrawledJobSourceStats,
+  readPersistedCrawledJobSourceStatsStale,
   type PersistedCrawledJobSourceStats,
   writePersistedCrawledJobSourceStats,
 } from '@/lib/crawled-job-source-stats-persist';
@@ -179,21 +184,23 @@ function fromDoc(id: string, data: DocumentData): CrawledJob | null {
 
 function isJobEligibleForBoardList(job: CrawledJob): boolean {
   if (job.status !== 'active' || isInvalidJobTitle(job.title)) return false;
+  if (!isCrawledJobDeadlineOpen(job.deadline)) return false;
   if (job.showInJobBoard === false) return false;
-  if (job.showInJobBoard === true) return true;
-  // 목록 조회는 description을 생략할 수 있음(구버전·select). 저장된 active 공고는 노출 후보로 둠.
-  if (!job.description?.trim()) return true;
+  // 목록 조회는 description을 생략할 수 있음(구버전·select). 제목·지원 URL이 공고 형태여야 함.
+  if (!job.description?.trim()) {
+    return typeof job.applyUrl === 'string' && job.applyUrl.trim() !== '' && isLikelyJobUrl(job.applyUrl);
+  }
   return isBrowsableCrawledJob(job);
 }
 
 function toListItem(job: CrawledJob): CrawledJobListItem {
+  // 저장된 roles는 예전 분류 규칙일 수 있어 제목 기준으로 다시 맞춥니다.
   const {
     id,
     sourceName,
     companyName,
     title,
     employmentTypes,
-    roles,
     regions,
     companySize,
     deadline,
@@ -208,7 +215,7 @@ function toListItem(job: CrawledJob): CrawledJobListItem {
     companyName,
     title,
     employmentTypes,
-    roles,
+    roles: inferJobRoles(title),
     regions,
     companySize,
     deadline,
@@ -413,7 +420,8 @@ async function getBrowsableCrawledJobs(): Promise<CrawledJob[]> {
   }
 
   browsableLoadPromise = (async () => {
-    const jobs = await filterBrowsableJobs(await listActiveFromFirestore());
+    const browsable = await filterBrowsableJobs(await listActiveFromFirestore());
+    const jobs = dedupeCrawledJobListItems(browsable);
     const expiresAt = Date.now() + LIST_CACHE_TTL_MS;
     browsableJobsCache = { expiresAt, jobs };
     listCache = { expiresAt, items: jobs.map(toListItem) };
@@ -619,12 +627,10 @@ export async function getRecruitingEmployerAggregates(options?: {
   return ensureRecruitingEmployerAggregates(stats as CrawledJobSourceStatsInternal);
 }
 
-async function loadCrawledJobSourceStats(cacheKey: string, skipDisplayFilters: boolean): Promise<CrawledJobSourceStats> {
-  const persisted = readPersistedCrawledJobSourceStats(cacheKey);
-  if (persisted) {
-    return statsFromPersisted(persisted);
-  }
-
+async function fetchCrawledJobSourceStatsFromStore(
+  cacheKey: string,
+  skipDisplayFilters: boolean,
+): Promise<CrawledJobSourceStats> {
   let rows: RecruitingEmployerJobRow[];
   try {
     rows = await listActiveJobRowsForSourceStats();
@@ -654,6 +660,30 @@ async function loadCrawledJobSourceStats(cacheKey: string, skipDisplayFilters: b
   const stats = buildSourceStatsFromActiveRows(rows);
   persistSourceStats(cacheKey, stats);
   return stats;
+}
+
+async function loadCrawledJobSourceStats(cacheKey: string, skipDisplayFilters: boolean): Promise<CrawledJobSourceStats> {
+  const persisted = readPersistedCrawledJobSourceStats(cacheKey);
+  if (persisted) {
+    return statsFromPersisted(persisted);
+  }
+
+  if (skipDisplayFilters) {
+    const stale = readPersistedCrawledJobSourceStatsStale(cacheKey);
+    if (stale) {
+      void fetchCrawledJobSourceStatsFromStore(cacheKey, true)
+        .then((data) => {
+          const entry = { expiresAt: Date.now() + SOURCE_STATS_TTL_MS, data, key: cacheKey };
+          sourceStatsCache = entry;
+        })
+        .catch((error) => {
+          console.warn('[crawled-jobs] background source stats refresh failed', error);
+        });
+      return statsFromPersisted(stale);
+    }
+  }
+
+  return fetchCrawledJobSourceStatsFromStore(cacheKey, skipDisplayFilters);
 }
 
 /** 채용 사이트별 공고 건수·계열사를 한 번의 조회로 집계합니다. */
@@ -953,15 +983,20 @@ export async function closeCrawledJobById(id: string): Promise<boolean> {
   return false;
 }
 
+function filterOpenDeadlineListItems(items: CrawledJobListItem[]): CrawledJobListItem[] {
+  return items.filter((job) => isCrawledJobDeadlineOpen(job.deadline));
+}
+
 export async function listCrawledJobs(): Promise<CrawledJobListItem[]> {
   if (listCache && listCache.expiresAt > Date.now()) {
-    return listCache.items;
+    return filterOpenDeadlineListItems(listCache.items);
   }
 
   try {
     const jobs = await getBrowsableCrawledJobs();
     if (jobs.length > 0) {
-      return listCache?.items ?? jobs.map(toListItem);
+      const items = listCache?.items ?? jobs.map(toListItem);
+      return filterOpenDeadlineListItems(items);
     }
     if (!shouldUseSampleFallback()) return [];
   } catch (error) {
@@ -969,7 +1004,7 @@ export async function listCrawledJobs(): Promise<CrawledJobListItem[]> {
     if (!shouldUseSampleFallback()) throw error;
   }
 
-  const items = SAMPLE_CRAWLED_JOBS.map(toListItem);
+  const items = filterOpenDeadlineListItems(SAMPLE_CRAWLED_JOBS.map(toListItem));
   listCache = { expiresAt: Date.now() + LIST_CACHE_TTL_MS, items };
   return items;
 }
@@ -982,9 +1017,19 @@ export async function countActiveCrawledJobs(): Promise<number> {
     const snap = await db.collection(COLLECTION).where('status', '==', 'active').count().get();
     return snap.data().count;
   } catch (error) {
-    console.warn('[crawled-jobs] active count failed, falling back to full list', error);
-    const all = await listCrawledJobs();
-    return all.filter((job) => job.status === 'active').length;
+    console.warn('[crawled-jobs] active count failed', error);
+    return 0;
+  }
+}
+
+/** 구직자 채용 공고 목록(`/jobs`)과 동일한 모집 중 건수 */
+export async function countBrowsableCrawledJobs(): Promise<number> {
+  try {
+    const { total } = await listActiveCrawledJobsPage(1, 1);
+    return total;
+  } catch (error) {
+    console.warn('[crawled-jobs] browsable count failed', error);
+    return 0;
   }
 }
 
@@ -1039,7 +1084,7 @@ export async function getCrawledJob(id: string): Promise<CrawledJob | null> {
     const snap = await db.collection(COLLECTION).doc(id).get();
     if (snap.exists) {
       const parsed = fromDoc(snap.id, snap.data() ?? {});
-      if (parsed && isBrowsableCrawledJob(parsed) && parsed.status === 'active') {
+      if (parsed && isJobEligibleForBoardList(parsed)) {
         if (await isDisplayDisabled(parsed.sourceId)) return null;
         return parsed;
       }
@@ -1179,7 +1224,7 @@ export async function closeExpiredCrawledJobs(todayDate: string): Promise<number
   const toClose = snap.docs
     .filter((doc) => {
       const deadline = doc.data().deadline;
-      return typeof deadline === 'string' && deadline < todayDate;
+      return typeof deadline === 'string' && !isCrawledJobDeadlineOpen(deadline, todayDate);
     })
     .map((doc) => doc.id);
 

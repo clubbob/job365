@@ -354,8 +354,49 @@ export default function AdminCrawlRunsClient() {
   }, [page]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    const controller = new AbortController();
+
+    void (async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const params = new URLSearchParams({
+          page: String(page),
+          pageSize: String(ADMIN_CRAWL_RUNS_PAGE_SIZE),
+        });
+        const res = await fetch(`/api/admin/crawl-runs?${params.toString()}`, {
+          signal: controller.signal,
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        const json = (await res.json()) as {
+          ok?: boolean;
+          data?: {
+            runs: CrawlRun[];
+            total: number;
+            page: number;
+            totalPages: number;
+          };
+        };
+        if (controller.signal.aborted) return;
+        if (!json.ok || !json.data) throw new Error('수집 실행 내역을 불러오지 못했습니다.');
+        setRuns(json.data.runs);
+        setTotal(json.data.total);
+        setTotalPages(json.data.totalPages);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setError(
+          humanizeAdminFetchError(
+            err instanceof Error ? err.message : '수집 실행 내역을 불러오지 못했습니다.',
+          ),
+        );
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    })();
+
+    return () => controller.abort();
+  }, [page]);
 
   async function handlePurgeOldRuns() {
     if (purging) return;

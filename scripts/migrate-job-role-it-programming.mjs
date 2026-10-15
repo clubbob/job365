@@ -1,5 +1,5 @@
 /**
- * crawledJobs·jobAlertPrefs의 직무 표기 IT·개발 → IT, 프로그래밍
+ * crawledJobs·jobAlertPrefs의 직무 표기 → IT·AI·프로그래밍
  * 사용: node scripts/migrate-job-role-it-programming.mjs
  */
 import { readFileSync } from 'node:fs';
@@ -7,8 +7,8 @@ import { resolve } from 'node:path';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const FROM = new Set(['IT·개발', 'IT. 개발']);
-const TO = 'IT, 프로그래밍';
+const FROM = new Set(['IT·개발', 'IT. 개발', 'IT, 프로그래밍', 'IT, AI, 프로그래밍']);
+const TO = 'IT·AI·프로그래밍';
 
 function loadEnvLocal() {
   const path = resolve(process.cwd(), '.env.local');

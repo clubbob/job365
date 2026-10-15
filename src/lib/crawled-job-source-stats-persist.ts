@@ -17,20 +17,33 @@ export type PersistedCrawledJobSourceStats = {
   recruitingEmployerCountByNorm: Record<string, number>;
 };
 
-export function readPersistedCrawledJobSourceStats(
-  cacheKey: string,
-): PersistedCrawledJobSourceStats | null {
+function readPersistedCrawledJobSourceStatsFile(cacheKey: string): PersistedCrawledJobSourceStats | null {
   if (!existsSync(CRAWLED_SOURCE_STATS_CACHE_PATH)) return null;
 
   try {
     const raw = JSON.parse(readFileSync(CRAWLED_SOURCE_STATS_CACHE_PATH, 'utf8')) as PersistedCrawledJobSourceStats;
     if (raw?.version !== 1 || raw.cacheKey !== cacheKey) return null;
-    if (Date.now() - raw.cachedAt > CRAWLED_SOURCE_STATS_DISK_TTL_MS) return null;
     if (!raw.jobCountsBySource || !raw.discoveredBySource || !raw.recruitingEmployerCountByNorm) return null;
     return raw;
   } catch {
     return null;
   }
+}
+
+export function readPersistedCrawledJobSourceStats(
+  cacheKey: string,
+): PersistedCrawledJobSourceStats | null {
+  const raw = readPersistedCrawledJobSourceStatsFile(cacheKey);
+  if (!raw) return null;
+  if (Date.now() - raw.cachedAt > CRAWLED_SOURCE_STATS_DISK_TTL_MS) return null;
+  return raw;
+}
+
+/** TTL이 지났어도 관리자 목록 등에서 즉시 응답용으로 씁니다. */
+export function readPersistedCrawledJobSourceStatsStale(
+  cacheKey: string,
+): PersistedCrawledJobSourceStats | null {
+  return readPersistedCrawledJobSourceStatsFile(cacheKey);
 }
 
 export function writePersistedCrawledJobSourceStats(payload: PersistedCrawledJobSourceStats): void {

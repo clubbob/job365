@@ -4,6 +4,10 @@ import {
   shouldShowCrawledCollectSource,
   splitCrawledJobHeading,
 } from '@/lib/job-display';
+import {
+  CRAWLED_JOB_DETAIL_FROM_MY_JOBS,
+  crawledJobDetailHref,
+} from '@/lib/job-board/detail-navigation';
 import { isJobNewToday } from '@/lib/job-board/match';
 import { cn } from '@/lib/utils';
 import type { CrawledJobListItem } from '@/types/crawled-job';
@@ -29,11 +33,13 @@ export default function CrawledJobCard({
   job,
   todayDate,
   onNavigate,
+  detailFrom,
   className,
 }: {
   job: CrawledJobListItem;
   todayDate?: string;
   onNavigate?: () => void;
+  detailFrom?: typeof CRAWLED_JOB_DETAIL_FROM_MY_JOBS;
   className?: string;
 }) {
   const isNew = todayDate ? isJobNewToday(job, todayDate) : false;
@@ -43,7 +49,7 @@ export default function CrawledJobCard({
 
   return (
     <Link
-      href={`/jobs/${job.id}`}
+      href={crawledJobDetailHref(job.id, detailFrom)}
       onClick={onNavigate}
       className={cn(
         'flex h-full flex-col rounded-xl border border-border bg-surface p-3 shadow-card transition hover:border-primary/40 hover:shadow-card-hover sm:p-4',

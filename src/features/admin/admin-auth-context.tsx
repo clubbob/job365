@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 type AdminAuthContextValue = {
@@ -18,15 +18,18 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const isAdminPath = pathname.startsWith('/admin');
   const [loading, setLoading] = useState(isAdminPath);
   const [loggedIn, setLoggedIn] = useState(false);
+  const sessionCheckedRef = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!isAdminPath) {
       setLoggedIn(false);
       setLoading(false);
+      sessionCheckedRef.current = false;
       return;
     }
 
-    setLoading(true);
+    const showBlockingLoader = !sessionCheckedRef.current;
+    if (showBlockingLoader) setLoading(true);
     try {
       const res = await fetch('/api/admin/session', { credentials: 'include' });
       const data = (await res.json()) as { ok?: boolean; data?: { authenticated?: boolean } };
@@ -34,6 +37,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setLoggedIn(false);
     } finally {
+      sessionCheckedRef.current = true;
       setLoading(false);
     }
   }, [isAdminPath]);

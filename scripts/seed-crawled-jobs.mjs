@@ -32,7 +32,7 @@ const samples = [
     companyName: '삼성전자',
     title: '소프트웨어 엔지니어 (신입)',
     employmentTypes: ['신입'],
-    roles: ['IT, 프로그래밍'],
+    roles: ['IT·AI·프로그래밍'],
     regions: ['경기'],
     companySize: '대기업',
     deadline: '2026-12-31',

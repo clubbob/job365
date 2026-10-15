@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AdminHeader from '@/components/layout/AdminHeader';
 import Logo from '@/components/brand/Logo';
 import { useAuth } from '@/features/auth/auth-context';
 import { getUserNicknameFallback } from '@/lib/user-display';
 import { requestJobBoardReset } from '@/lib/job-board/reset';
+import { isCrawledJobDetailFromMyJobs } from '@/lib/job-board/detail-navigation';
 import { MATCHED_JOBS_PAGE_TITLE } from '@/lib/site-menu-copy';
 import { cn } from '@/lib/utils';
 
@@ -48,10 +49,20 @@ const NAV_ITEMS: Array<{
   { href: '/notices', label: '공지 사항', exact: false },
 ];
 
-function isNavActive(pathname: string, href: string, exact: boolean): boolean {
+function isNavActive(
+  pathname: string,
+  href: string,
+  exact: boolean,
+  jobDetailFromMyJobs: boolean,
+): boolean {
   if (exact) return pathname === href;
   if (href === '/jobs') {
+    if (jobDetailFromMyJobs) return false;
     return pathname === '/jobs' || pathname.startsWith('/jobs/');
+  }
+  if (href === '/my-jobs') {
+    if (jobDetailFromMyJobs) return true;
+    return pathname === '/my-jobs' || pathname.startsWith('/my-jobs/');
   }
   if (href === '/notices') {
     return pathname === '/notices' || pathname.startsWith('/notices/');
@@ -62,7 +73,10 @@ function isNavActive(pathname: string, href: string, exact: boolean): boolean {
 export default function HeaderClient() {
   const { user, loading, logout } = useAuth();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
+  const jobDetailFromMyJobs =
+    pathname.startsWith('/jobs/') && isCrawledJobDetailFromMyJobs(searchParams);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -120,7 +134,7 @@ export default function HeaderClient() {
 
         <nav className="hidden items-center justify-center gap-1 md:flex" aria-label="주요 메뉴">
           {visibleNavItems.map((item) => {
-            const active = isNavActive(pathname, item.href, item.exact);
+            const active = isNavActive(pathname, item.href, item.exact, jobDetailFromMyJobs);
             return (
               <Link
                 key={item.href}
@@ -206,7 +220,7 @@ export default function HeaderClient() {
         >
           <div className="mx-auto max-w-4xl space-y-3 px-4 py-3 sm:px-6">
             {visibleNavItems.map((item) => {
-              const active = isNavActive(pathname, item.href, item.exact);
+              const active = isNavActive(pathname, item.href, item.exact, jobDetailFromMyJobs);
               return (
                 <Link
                   key={item.href}

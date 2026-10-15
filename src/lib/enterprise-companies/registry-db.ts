@@ -76,12 +76,20 @@ export function loadEnterpriseRegistryDbFromDisk(): EnterpriseRegistryDbFile | n
   return null;
 }
 
+let cachedEnterpriseRegistryCompanies: EnterpriseRegistryDbCompany[] | null = null;
+
 /** 관리자·수집에서 쓰는 대기업·계열 고정 명단(디스크 우선, 없으면 1회 생성). */
 export function loadEnterpriseRegistryDbCompanies(): EnterpriseRegistryDbCompany[] {
+  if (cachedEnterpriseRegistryCompanies) return cachedEnterpriseRegistryCompanies;
+
   const file = loadEnterpriseRegistryDbFromDisk();
-  if (file && file.companies.length > 0) return file.companies;
+  if (file && file.companies.length > 0) {
+    cachedEnterpriseRegistryCompanies = file.companies;
+    return file.companies;
+  }
 
   const built = buildEnterpriseRegistryDbFile();
   saveEnterpriseRegistryDbToDisk(built);
+  cachedEnterpriseRegistryCompanies = built.companies;
   return built.companies;
 }

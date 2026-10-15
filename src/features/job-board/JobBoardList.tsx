@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AdSlot from '@/components/ads/AdSlot';
 import { FormFeedback } from '@/components/ui/FormFeedback';
 import CrawledJobCard from '@/features/job-board/CrawledJobCard';
@@ -11,6 +11,14 @@ import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import { MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site-menu-copy';
 import { JOB_BOARD_RESET_EVENT } from '@/lib/job-board/reset';
 import { cn } from '@/lib/utils';
+import { dedupeCrawledJobListItems } from '@/lib/job-board/dedupe-list-jobs';
+import { CRAWLED_JOB_DETAIL_FROM_MY_JOBS } from '@/lib/job-board/detail-navigation';
+import {
+  clearJobBoardListRestore,
+  loadJobBoardListRestore,
+  saveJobBoardListRestore,
+  saveJobBoardListScroll,
+} from '@/lib/job-board/list-restore';
 import type { CrawledJobListItem } from '@/types/crawled-job';
 
 type JobBoardListProps = {
@@ -87,8 +95,12 @@ export default function JobBoardList({
   listMoreHref,
   hideNewSectionHeader = false,
   prefetchedItems,
+  persistKey,
 }: JobBoardListProps) {
   const { user } = useAuth();
+  const [ready, setReady] = useState(() => !persistKey);
+  const skipFetchOnceRef = useRef(false);
+  const didRestoreScrollRef = useRef(false);
   const [filters, setFilters] = useState<JobBoardFilterState>(INITIAL_FILTERS);
   const [debouncedQ, setDebouncedQ] = useState('');
   const [items, setItems] = useState<CrawledJobListItem[]>(prefetchedItems ?? EMPTY);
@@ -103,9 +115,13 @@ export default function JobBoardList({
   const [error, setError] = useState<string | null>(null);
   const [todayPage, setTodayPage] = useState(1);
   const [todayHasMore, setTodayHasMore] = useState(false);
-  const [usedFallback, setUsedFallback] = useState(false);
+  const [noMatches, setNoMatches] = useState(false);
 
   const todayOnly = mode === 'today';
+  /** 맞춤·전체 채용 목록: 페이지당 pageSize건, 이전/다음 (누적 더보기 없음) */
+  const pagedMainList = mode === 'matched' || mode === 'all';
+  const matchedDetailFrom =
+    mode === 'matched' ? CRAWLED_JOB_DETAIL_FROM_MY_JOBS : undefined;
 
   useEffect(() => {
     const handle = window.setTimeout(() => setDebouncedQ(filters.q), 300);
@@ -151,7 +167,9 @@ export default function JobBoardList({
   }, [prefetchedItems, page, mode, todayOnly, filters, debouncedQ]);
 
   const resetList = useCallback(() => {
+    if (persistKey) clearJobBoardListRestore(persistKey);
     setFilters(INITIAL_FILTERS);
+    setDebouncedQ('');
     setPage(1);
     setTodayPage(1);
     setItems(EMPTY);
@@ -160,7 +178,42 @@ export default function JobBoardList({
     setTodayHasMore(false);
     setTotal(0);
     setError(null);
-  }, []);
+  }, [persistKey]);
+
+  const persistListSnapshot = useCallback(() => {
+    if (!persistKey) return;
+    saveJobBoardListRestore(persistKey, {
+      mode,
+      filters,
+      page,
+      todayPage,
+      items: pagedMainList ? [] : items,
+      todayItems,
+      hasMore,
+      todayHasMore,
+      total,
+      scrollY: window.scrollY,
+      savedAt: Date.now(),
+    });
+  }, [
+    persistKey,
+    mode,
+    filters,
+    page,
+    todayPage,
+    items,
+    todayItems,
+    hasMore,
+    todayHasMore,
+    total,
+    pagedMainList,
+  ]);
+
+  const rememberListPosition = useCallback(() => {
+    if (!persistKey) return;
+    saveJobBoardListScroll(persistKey, window.scrollY);
+    persistListSnapshot();
+  }, [persistKey, persistListSnapshot]);
 
   const handleFiltersChange = useCallback((next: JobBoardFilterState) => {
     setFilters(next);
@@ -177,6 +230,65 @@ export default function JobBoardList({
     window.addEventListener(JOB_BOARD_RESET_EVENT, onReset);
     return () => window.removeEventListener(JOB_BOARD_RESET_EVENT, onReset);
   }, [resetList]);
+
+  useEffect(() => {
+    if (!persistKey) {
+      setReady(true);
+      return;
+    }
+    const restored = loadJobBoardListRestore(persistKey);
+    if (restored && restored.mode === mode) {
+      setFilters(restored.filters as JobBoardFilterState);
+      setDebouncedQ(restored.filters.q);
+      setPage(restored.page);
+      if (pagedMainList) {
+        setTotal(restored.total);
+        setHasMore(restored.hasMore);
+        if (mode === 'all') {
+          setTodayPage(restored.todayPage);
+          setTodayItems(restored.todayItems);
+          setTodayHasMore(restored.todayHasMore);
+        }
+      } else {
+        setTodayPage(restored.todayPage);
+        setItems(restored.items);
+        setTodayItems(restored.todayItems);
+        setHasMore(restored.hasMore);
+        setTodayHasMore(restored.todayHasMore);
+        setTotal(restored.total);
+        setLoading(false);
+        if (restored.items.length > 0) {
+          skipFetchOnceRef.current = true;
+        }
+      }
+    }
+    setReady(true);
+  }, [persistKey, mode]);
+
+  useEffect(() => {
+    if (!persistKey || !ready) return;
+    persistListSnapshot();
+  }, [persistKey, ready, persistListSnapshot]);
+
+  useEffect(() => {
+    if (!persistKey || !ready || didRestoreScrollRef.current) return;
+    if (items.length === 0) return;
+    const y = loadJobBoardListRestore(persistKey)?.scrollY ?? 0;
+    if (y <= 0) return;
+    didRestoreScrollRef.current = true;
+    const timer = window.setTimeout(() => window.scrollTo(0, y), 0);
+    return () => window.clearTimeout(timer);
+  }, [persistKey, ready, items.length]);
+
+  useEffect(() => {
+    if (!persistKey) return;
+    const key = persistKey;
+    function onScroll() {
+      saveJobBoardListScroll(key, window.scrollY);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [persistKey]);
 
   useEffect(() => {
     if (!showNewSection || mode !== 'all' || hideNewSectionHeader) return;
@@ -219,14 +331,20 @@ export default function JobBoardList({
   }, [todayFetchKey]);
 
   useEffect(() => {
+    if (!ready) return;
+    if (skipFetchOnceRef.current) {
+      skipFetchOnceRef.current = false;
+      return;
+    }
+
     const controller = new AbortController();
 
     async function load() {
-      const isLoadMore = page > 1;
-      const silentRefresh = canUsePrefetchedOnly && !isLoadMore;
+      const isLoadMore = page > 1 && !pagedMainList;
+      const silentRefresh = canUsePrefetchedOnly && page === 1 && !isLoadMore;
       if (isLoadMore) {
         setLoadingMore(true);
-      } else if (!silentRefresh) {
+      } else if (!silentRefresh || (pagedMainList && page > 1)) {
         setLoading(true);
       }
       setError(null);
@@ -254,7 +372,7 @@ export default function JobBoardList({
               items: CrawledJobListItem[];
               total: number;
               hasMore: boolean;
-              usedFallback?: boolean;
+              noMatches?: boolean;
             };
             error?: { message?: string };
           };
@@ -263,10 +381,10 @@ export default function JobBoardList({
             throw new Error(json.error?.message ?? '맞춤 채용 공고를 불러오지 못했습니다.');
           }
 
-          setItems((prev) => (page === 1 ? json.data!.items : [...prev, ...json.data!.items]));
+          setItems(dedupeCrawledJobListItems(json.data!.items));
           setTotal(json.data.total);
           setHasMore(json.data.hasMore);
-          setUsedFallback(Boolean(json.data.usedFallback));
+          setNoMatches(Boolean(json.data.noMatches));
           return;
         }
 
@@ -289,7 +407,15 @@ export default function JobBoardList({
           throw new Error(json.error?.message ?? '채용 공고를 불러오지 못했습니다.');
         }
 
-        setItems((prev) => (page === 1 ? json.data!.items : [...prev, ...json.data!.items]));
+        setItems((prev) =>
+          dedupeCrawledJobListItems(
+            pagedMainList
+              ? json.data!.items
+              : page === 1
+                ? json.data!.items
+                : [...prev, ...json.data!.items],
+          ),
+        );
         setTotal(json.data.total);
         setHasMore(json.data.hasMore);
         setTodayDate(json.data.todayDate);
@@ -306,7 +432,7 @@ export default function JobBoardList({
 
     void load();
     return () => controller.abort();
-  }, [mainFetchKey, canUsePrefetchedOnly]);
+  }, [mainFetchKey, canUsePrefetchedOnly, ready]);
 
   const countLabel = useMemo(() => {
     if (loading && items.length === 0) return '불러오는 중…';
@@ -326,9 +452,9 @@ export default function JobBoardList({
 
       <AdSlot placement="header" />
 
-      {mode === 'matched' && usedFallback && !loading ? (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          {MATCHED_JOBS_SETTINGS_TITLE}에 맞는 공고가 없어 전체 채용 공고를 보여 드립니다. 조건을 바꾸려면{' '}
+      {mode === 'matched' && noMatches && !loading ? (
+        <p className="rounded-xl border border-border bg-neutral-50 px-4 py-3 text-sm text-muted">
+          {MATCHED_JOBS_SETTINGS_TITLE}에 맞는 공고가 없습니다. 조건을 바꾸려면{' '}
           <a href="/mypage?tab=alerts" className="font-semibold text-primary hover:underline">
             {MATCHED_JOBS_SETTINGS_TITLE}
           </a>
@@ -363,7 +489,13 @@ export default function JobBoardList({
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {todayItems.map((job) => (
-                <CrawledJobCard key={job.id} job={job} todayDate={todayDate} />
+                <CrawledJobCard
+                  key={job.id}
+                  job={job}
+                  todayDate={todayDate}
+                  onNavigate={persistKey ? rememberListPosition : undefined}
+                  detailFrom={matchedDetailFrom}
+                />
               ))}
             </div>
           )}
@@ -428,7 +560,13 @@ export default function JobBoardList({
             aria-busy={loading}
           >
             {items.map((job) => (
-              <CrawledJobCard key={job.id} job={job} todayDate={todayDate} />
+              <CrawledJobCard
+                key={job.id}
+                job={job}
+                todayDate={todayDate}
+                onNavigate={persistKey ? rememberListPosition : undefined}
+                detailFrom={matchedDetailFrom}
+              />
             ))}
           </div>
         ) : null}
@@ -439,7 +577,31 @@ export default function JobBoardList({
           </p>
         ) : null}
 
-        {hasMore && showLoadMore ? (
+        {pagedMainList && (page > 1 || hasMore) && showLoadMore ? (
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {page > 1 ? (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="rounded-lg border border-border-strong bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-neutral-50 disabled:opacity-60"
+              >
+                이전
+              </button>
+            ) : null}
+            {hasMore ? (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => setPage((p) => p + 1)}
+                className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-60"
+              >
+                {loading ? '불러오는 중…' : '다음'}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+        {!pagedMainList && hasMore && showLoadMore ? (
           <button
             type="button"
             disabled={loadingMore}

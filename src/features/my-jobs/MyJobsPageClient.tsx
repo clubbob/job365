@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import JobBoardList from '@/features/job-board/JobBoardList';
+import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import { useAuth } from '@/features/auth/auth-context';
 import {
   MATCHED_JOBS_PAGE_DESCRIPTION,
@@ -39,7 +40,12 @@ export default function MyJobsPageClient() {
           {MATCHED_JOBS_SETTINGS_TITLE} 변경
         </Link>
       </header>
-      <JobBoardList mode="matched" />
+      <JobBoardList
+        mode="matched"
+        persistKey="jobs-matched"
+        pageSize={JOB_LIST_PAGE_SIZE}
+        showNewSection={false}
+      />
     </div>
   );
 }

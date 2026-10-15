@@ -1,4 +1,5 @@
 import { decodeHtmlEntities } from '@/lib/crawler/decode-html-text';
+import { stripJobTitleCountdownNoise } from '@/lib/crawler/normalize-job-title';
 
 export function normalizeCompanyLabel(name: string): string {
   return decodeHtmlEntities(name)
@@ -152,10 +153,12 @@ const ENGLISH_RECRUITING_EMPLOYER_NOISE = new Set([
 
 /** 포털 목록 줄 앞·뒤에 붙는 마감·형태 문구 */
 export function stripCrawledListTitleNoise(title: string): string {
-  return normalizeCorpTitlePrefix(title)
-    .replace(/^남음\s+\d+일\s+/u, '')
-    .replace(/\s+D-\d+\s+(?:신입|경력)(?:\s*·\s*경력)?\s*$/u, '')
-    .trim();
+  return stripJobTitleCountdownNoise(
+    normalizeCorpTitlePrefix(title).replace(
+      /\s+D-\d+\s+(?:신입|경력)(?:\s*·\s*경력)?\s*$/u,
+      '',
+    ),
+  ).trim();
 }
 
 function isJobTitleNoiseWord(word: string): boolean {

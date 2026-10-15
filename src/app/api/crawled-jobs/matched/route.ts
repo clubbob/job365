@@ -8,6 +8,7 @@ import {
   matchesCrawledJobKeyword,
 } from '@/lib/job-board/match';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
+import { dedupeCrawledJobListItems } from '@/lib/job-board/dedupe-list-jobs';
 
 export async function GET(request: Request) {
   const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
@@ -27,10 +28,12 @@ export async function GET(request: Request) {
 
   try {
     const [prefs, all] = await Promise.all([getJobAlertPrefs(decoded.uid), listCrawledJobs()]);
-    const matched = all.filter((job) => jobMatchesSavedPrefs(job, prefs));
-    const usedFallback = matched.length === 0 && hasJobAlertFilterPrefs(prefs);
-    const baseList = usedFallback ? all.filter((job) => job.status === 'active') : matched;
-    const list = baseList.filter((job) =>
+    const matched = dedupeCrawledJobListItems(
+      hasJobAlertFilterPrefs(prefs)
+        ? all.filter((job) => jobMatchesSavedPrefs(job, prefs, { requireFilterPrefs: true }))
+        : [],
+    );
+    const list = matched.filter((job) =>
       matchesCrawledJobKeyword(job, q, { titleAndRecruitingCompanyOnly: true }),
     );
     const total = list.length;
@@ -40,7 +43,15 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      data: { items, total, page, pageSize, hasMore, prefs, usedFallback },
+      data: {
+        items,
+        total,
+        page,
+        pageSize,
+        hasMore,
+        prefs,
+        noMatches: total === 0 && hasJobAlertFilterPrefs(prefs),
+      },
     });
   } catch (error) {
     console.error('[crawled-jobs/matched] failed', error);

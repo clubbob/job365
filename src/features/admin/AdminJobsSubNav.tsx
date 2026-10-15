@@ -1,15 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import AdminInstantLink from '@/features/admin/AdminInstantLink';
 import { cn } from '@/lib/utils';
 
 const ITEMS = [
-  {
-    href: '/admin/jobs/stats',
-    label: '수집 데이터 통계',
-    description: '일별 수집 채용 공고 추이',
-  },
   { href: '/admin/jobs/crawled', label: '수집 채용 공고', description: '외부 채용 사이트에서 가져온 채용 공고' },
   { href: '/admin/jobs/sources', label: '수집 채용 회사', description: '수집 채용 회사별 활성 공고 건수' },
   { href: '/admin/jobs/crawl-runs', label: '수집 실행 내역', description: '자동 수집 cron 결과' },
@@ -27,7 +22,7 @@ export default function AdminJobsSubNav() {
       {ITEMS.map((item) => {
         const active = isActive(pathname, item.href);
         return (
-          <Link
+          <AdminInstantLink
             key={item.href}
             href={item.href}
             className={cn(
@@ -39,7 +34,7 @@ export default function AdminJobsSubNav() {
             title={item.description}
           >
             {item.label}
-          </Link>
+          </AdminInstantLink>
         );
       })}
     </nav>
