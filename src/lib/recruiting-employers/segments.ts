@@ -8,7 +8,7 @@ import {
 } from '@/lib/mid-sized-companies/registry-db';
 import type { RecruitingEmployerAggregate } from '@/lib/recruiting-employers/aggregate';
 
-export type RecruitingEmployerAdminSegment = 'enterprise' | 'mid-sized' | 'it';
+export type RecruitingEmployerAdminSegment = 'enterprise' | 'mid-sized' | 'misc' | 'it';
 
 export type MidSizedRegistryRecordView = {
   companyName: string;
@@ -96,15 +96,14 @@ let segmentClassifier: SegmentClassifier | null = null;
 function createSegmentClassifier(): SegmentClassifier {
   const ftcGroups = getFtcEnterpriseGroups();
   const enterpriseCrawlers = getCrawlerCompanies().filter((company) => company.tier === 'enterprise');
-  const enterpriseSourceIds = new Set(
-    getCrawlerCompanies()
-      .filter((company) => company.tier === 'enterprise' || company.tier === 'extra')
-      .map((company) => company.sourceId),
-  );
+  const miscCrawlers = getCrawlerCompanies().filter((company) => company.tier === 'extra');
+  const enterpriseSourceIds = new Set(enterpriseCrawlers.map((company) => company.sourceId));
+  const miscSourceIds = new Set(miscCrawlers.map((company) => company.sourceId));
 
   const midSizedHit = new Map<string, MidSizedRegistryRecordView | null>();
   const ftcHit = new Map<string, boolean>();
   const enterpriseCrawlerHit = new Map<string, boolean>();
+  const miscCrawlerHit = new Map<string, boolean>();
 
   function midSizedRecord(name: string): MidSizedRegistryRecordView | undefined {
     const cacheKey = normalizeCompanyLabel(name);
@@ -134,6 +133,18 @@ function createSegmentClassifier(): SegmentClassifier {
     return sourceIds.some((sourceId) => enterpriseSourceIds.has(sourceId));
   }
 
+  function matchesMiscCrawlerCompany(name: string): boolean {
+    const cacheKey = normalizeCompanyLabel(name);
+    if (miscCrawlerHit.has(cacheKey)) return miscCrawlerHit.get(cacheKey)!;
+    const result = miscCrawlers.some((company) => companyLabelsMatch(name, company.name));
+    miscCrawlerHit.set(cacheKey, result);
+    return result;
+  }
+
+  function hasMiscTierSource(sourceIds: string[]): boolean {
+    return sourceIds.some((sourceId) => miscSourceIds.has(sourceId));
+  }
+
   return {
     inSegment(row, segment) {
       const name = row.companyName;
@@ -143,12 +154,18 @@ function createSegmentClassifier(): SegmentClassifier {
         return Boolean(midSized);
       }
 
+      if (segment === 'misc') {
+        if (midSized) return false;
+        return matchesMiscCrawlerCompany(name) || hasMiscTierSource(row.sourceIds);
+      }
+
       if (segment === 'it') {
         const industry = midSized?.industry ?? null;
         return isItComputingCompany(name, industry) || isItComputingCompanyName(name);
       }
 
       if (midSized) return false;
+      if (matchesMiscCrawlerCompany(name) || hasMiscTierSource(row.sourceIds)) return false;
 
       return (
         matchesFtcEnterpriseGroup(name) ||

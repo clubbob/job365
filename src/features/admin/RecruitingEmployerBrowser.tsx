@@ -18,7 +18,7 @@ import {
   formatRegistryActiveJobCount,
 } from '@/features/admin/AdminRegistryListChrome';
 
-type Segment = 'enterprise' | 'mid-sized' | 'it';
+type Segment = 'enterprise' | 'mid-sized' | 'misc' | 'it';
 
 type RegistryRow = {
   companyName: string;
@@ -49,6 +49,7 @@ const PAGE_SIZE = 50;
 const SEGMENT_REGISTRY_LABEL: Record<Segment, string> = {
   enterprise: '대기업·계열',
   'mid-sized': '중견 명단',
+  misc: '기타기업 명단',
   it: 'IT 명단',
 };
 
@@ -61,8 +62,12 @@ const SEGMENT_COPY: Record<Segment, { statHint: string; sortHint: string }> = {
     statHint: '중견 명단(수집 채용 회사명 매칭)',
     sortHint: '유명도 순',
   },
+  misc: {
+    statHint: '대·중 명단에 없는 별도 수집 소스(매일 전체 수집)',
+    sortHint: '공고 건수 순',
+  },
   it: {
-    statHint: 'IT 수집 채용 회사',
+    statHint: '대·중·기타 명단에서 IT만 모아 보기(수집 주기는 소속 구분 따름)',
     sortHint: '유명도·공고 건수 순',
   },
 };
@@ -156,9 +161,15 @@ export default function RecruitingEmployerBrowser({
       <AdminCompanyRegistryStatGrid
         uniqueCompaniesLabel={SEGMENT_REGISTRY_LABEL[segment]}
         uniqueCompanies={
-          data ? `${data.registryCount.toLocaleString('ko-KR')}곳` : COMPANY_REGISTRY_STAT_EMPTY
+          data && typeof data.registryCount === 'number'
+            ? `${data.registryCount.toLocaleString('ko-KR')}곳`
+            : COMPANY_REGISTRY_STAT_EMPTY
         }
-        linkedUrl={data ? `${data.linkedCount.toLocaleString('ko-KR')}곳` : COMPANY_REGISTRY_STAT_EMPTY}
+        linkedUrl={
+          data && typeof data.linkedCount === 'number'
+            ? `${data.linkedCount.toLocaleString('ko-KR')}곳`
+            : COMPANY_REGISTRY_STAT_EMPTY
+        }
       />
 
       <AdminCompanyRegistrySearchAndFilters

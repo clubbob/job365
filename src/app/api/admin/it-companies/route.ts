@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   let rows = buildItCompanyRegistryRows(jobCountsBySource);
 
   if (segment === 'enterprise') rows = rows.filter((row) => row.segment === '대기업·계열');
-  if (segment === 'extra') rows = rows.filter((row) => row.segment === '별도 등록');
+  if (segment === 'misc' || segment === 'extra') rows = rows.filter((row) => row.segment === '기타기업');
   if (segment === 'mid-sized') rows = rows.filter((row) => row.segment === '중견기업');
 
   if (activeOnly) rows = rows.filter((row) => row.active === true || row.active === null);

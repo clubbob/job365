@@ -6,11 +6,12 @@ import { FormFeedback } from '@/components/ui/FormFeedback';
 import RecruitingEmployerBrowser from '@/features/admin/RecruitingEmployerBrowser';
 import { cn } from '@/lib/utils';
 
-type CompaniesSegment = 'enterprise' | 'mid-sized' | 'it';
+type CompaniesSegment = 'enterprise' | 'mid-sized' | 'misc' | 'it';
 
 const SEGMENT_TABS: Array<{ id: CompaniesSegment; label: string }> = [
   { id: 'enterprise', label: '대기업·계열사' },
   { id: 'mid-sized', label: '중견기업' },
+  { id: 'misc', label: '기타기업' },
   { id: 'it', label: 'IT 기업' },
 ];
 
@@ -23,10 +24,11 @@ export default function JobCompaniesPanel({
 } = {}) {
   const [segment, setSegment] = useState<CompaniesSegment>('enterprise');
   const [segmentCounts, setSegmentCounts] = useState<
-    Record<'enterprise' | 'mid-sized' | 'it', number | null>
+    Record<CompaniesSegment, number | null>
   >({
     enterprise: null,
     'mid-sized': null,
+    misc: null,
     it: null,
   });
 
@@ -42,6 +44,7 @@ export default function JobCompaniesPanel({
         setSegmentCounts({
           enterprise: json.data.registryCounts.enterprise ?? null,
           'mid-sized': json.data.registryCounts['mid-sized'] ?? null,
+          misc: json.data.registryCounts.misc ?? null,
           it: json.data.registryCounts.it ?? null,
         });
       } catch {
@@ -52,6 +55,7 @@ export default function JobCompaniesPanel({
 
   const handleListMeta = useCallback(
     (meta: { segment: CompaniesSegment; registryCount: number }) => {
+      if (typeof meta.registryCount !== 'number' || !Number.isFinite(meta.registryCount)) return;
       setSegmentCounts((prev) => ({ ...prev, [meta.segment]: meta.registryCount }));
     },
     [],
@@ -75,9 +79,9 @@ export default function JobCompaniesPanel({
       >
         {SEGMENT_TABS.map((item) => {
           const active = segment === item.id;
-          const count =
-            segmentCounts[item.id] !== null ? segmentCounts[item.id]! : null;
-          const countLabel = count !== null ? `${count.toLocaleString('ko-KR')}곳` : '—';
+          const count = segmentCounts[item.id];
+          const countLabel =
+            typeof count === 'number' ? `${count.toLocaleString('ko-KR')}곳` : '—';
           return (
             <button
               key={item.id}
@@ -113,6 +117,12 @@ export default function JobCompaniesPanel({
       {segment === 'mid-sized' ? (
         <div className="space-y-4" role="tabpanel">
           <RecruitingEmployerBrowser segment="mid-sized" onListMeta={handleListMeta} />
+        </div>
+      ) : null}
+
+      {segment === 'misc' ? (
+        <div className="space-y-4" role="tabpanel">
+          <RecruitingEmployerBrowser segment="misc" onListMeta={handleListMeta} />
         </div>
       ) : null}
 

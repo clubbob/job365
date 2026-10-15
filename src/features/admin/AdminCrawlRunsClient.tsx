@@ -1,11 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
-import { ADMIN_CRAWL_RUNS_PAGE_SIZE, ADMIN_CRAWL_RUNS_RETENTION_DAYS } from '@/lib/admin-constants';
 import {
-  adminDangerActionClassName,
   adminJson,
   adminPrimaryActionClassName,
   humanizeAdminFetchError,
@@ -15,165 +13,23 @@ import { CRAWL_SCHEDULE } from '@/lib/crawler/schedule';
 import { formatInquiryDateTime } from '@/lib/inquiry-display';
 import { cn } from '@/lib/utils';
 
-type CrawlSourceResult = {
-  sourceName: string;
+type CrawlStatsSummary = {
+  companyCount: number;
   fetched: number;
-  upserted: number;
+  saved: number;
   closed: number;
-  errors: string[];
-};
-
-type CrawlRun = {
-  id: string;
-  runKind?: 'daily' | 'mid-sized-only';
-  startedAt: string;
-  finishedAt: string;
-  totalUpserted: number;
-  totalClosed: number;
-  sources: CrawlSourceResult[];
+  activeJobs: number;
+  lastRun: {
+    finishedAt: string;
+    runKind: 'daily' | 'mid-sized-only';
+    sourceCount: number;
+    errorSourceCount: number;
+  } | null;
 };
 
 type RunResponse =
   | { ok: true; data: { summary: { totalUpserted: number; totalClosed: number } } }
   | { ok: false; error?: { message?: string } };
-
-type GroupedCrawlError = {
-  message: string;
-  companies: string[];
-};
-
-const COMPANY_SAMPLE_IN_GROUP = 8;
-
-/** 배치 수집 진행 안내(오류가 아님) */
-function isCrawlSourceMemoLine(line: string): boolean {
-  const t = line.trim();
-  if (t.startsWith('DB 배치:')) return true;
-  if (t.startsWith('고용24')) return true;
-  if (t.includes('WORK24_AUTH_KEY')) return true;
-  return false;
-}
-
-function summarizeSourceMemos(memos: string[]): string | null {
-  if (memos.length === 0) return null;
-  if (memos.some((line) => line.includes('WORK24_AUTH_KEY'))) {
-    return '고용24 API 키 없음';
-  }
-  const batch = memos.find((line) => line.startsWith('DB 배치:'));
-  if (batch) {
-    return batch.replace(/^DB 배치:\s*/, 'DB 배치 · ');
-  }
-  const first = memos[0].trim();
-  return first.length > 56 ? `${first.slice(0, 56)}…` : first;
-}
-
-function splitCrawlSourceMessages(errors: string[]): { memos: string[]; issues: string[] } {
-  const memos: string[] = [];
-  const issues: string[] = [];
-  for (const line of errors) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    if (isCrawlSourceMemoLine(trimmed)) memos.push(trimmed);
-    else issues.push(trimmed);
-  }
-  return { memos, issues };
-}
-
-function parseCrawlErrorLine(line: string): { company: string; message: string } {
-  const trimmed = line.trim();
-  if (!trimmed) return { company: '', message: '' };
-
-  const colonParts = trimmed.split(':').map((part) => part.trim());
-  if (colonParts.length >= 3 && colonParts[0] === colonParts[1]) {
-    return { company: colonParts[0], message: colonParts.slice(2).join(':').trim() };
-  }
-  if (colonParts.length >= 2) {
-    return { company: colonParts[0], message: colonParts.slice(1).join(':').trim() };
-  }
-  return { company: '', message: trimmed };
-}
-
-function groupCrawlErrors(errors: string[]): GroupedCrawlError[] {
-  const byMessage = new Map<string, string[]>();
-
-  for (const line of errors) {
-    const { company, message } = parseCrawlErrorLine(line);
-    const key = message || line.trim();
-    if (!key) continue;
-    if (!byMessage.has(key)) byMessage.set(key, []);
-    if (company && !byMessage.get(key)!.includes(company)) {
-      byMessage.get(key)!.push(company);
-    }
-  }
-
-  return [...byMessage.entries()]
-    .map(([message, companies]) => ({
-      message,
-      companies: companies.sort((a, b) => a.localeCompare(b, 'ko')),
-    }))
-    .sort((a, b) => b.companies.length - a.companies.length || b.message.length - a.message.length);
-}
-
-function sortSourcesForDisplay(sources: CrawlSourceResult[]): CrawlSourceResult[] {
-  return [...sources].sort((a, b) => {
-    if (b.upserted !== a.upserted) return b.upserted - a.upserted;
-    if (b.fetched !== a.fetched) return b.fetched - a.fetched;
-    return a.sourceName.localeCompare(b.sourceName, 'ko');
-  });
-}
-
-function CrawlErrorSummary({ errors }: { errors: string[] }) {
-  const [open, setOpen] = useState(false);
-  const groups = useMemo(() => groupCrawlErrors(errors), [errors]);
-
-  if (errors.length === 0) {
-    return <span className="text-xs text-subtle">—</span>;
-  }
-
-  const ungroupedCount = errors.length - groups.reduce((sum, group) => sum + group.companies.length, 0);
-
-  return (
-    <div className="text-left">
-      <button
-        type="button"
-        onClick={() => setOpen((current) => !current)}
-        className="rounded-lg px-2 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-50"
-        aria-expanded={open}
-      >
-        {errors.length.toLocaleString('ko-KR')}건 요약 {open ? '접기' : '보기'}
-      </button>
-      {open ? (
-        <ul className="mt-2 max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border bg-neutral-50/80 p-3 text-xs text-muted">
-          {groups.map((group) => (
-            <li key={group.message}>
-              <p className="font-semibold text-foreground">
-                {group.message}
-                {group.companies.length > 0 ? (
-                  <span className="ml-1 font-normal text-muted">
-                    ({group.companies.length.toLocaleString('ko-KR')}곳)
-                  </span>
-                ) : null}
-              </p>
-              {group.companies.length > 0 ? (
-                <p className="mt-0.5 leading-relaxed">
-                  {group.companies.slice(0, COMPANY_SAMPLE_IN_GROUP).join(', ')}
-                  {group.companies.length > COMPANY_SAMPLE_IN_GROUP
-                    ? ` 외 ${(group.companies.length - COMPANY_SAMPLE_IN_GROUP).toLocaleString('ko-KR')}곳`
-                    : ''}
-                </p>
-              ) : null}
-            </li>
-          ))}
-          {ungroupedCount > 0 ? (
-            <li className="text-subtle">회사명 없는 메시지 {ungroupedCount.toLocaleString('ko-KR')}건</li>
-          ) : null}
-        </ul>
-      ) : null}
-    </div>
-  );
-}
-
-const PAGE_BUTTON =
-  'inline-flex min-w-9 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors';
 
 function formatCrawlEtaLabel(seconds: number): string {
   if (seconds <= 0) return '곧 끝납니다';
@@ -187,122 +43,43 @@ function formatCrawlEtaLabel(seconds: number): string {
   return `약 ${minutes}분`;
 }
 
-function CrawlRunCard({ run, defaultExpanded = false }: { run: CrawlRun; defaultExpanded?: boolean }) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
-  const sources = useMemo(() => sortSourcesForDisplay(run.sources), [run.sources]);
-  const errorSourceCount = sources.filter(
-    (source) => splitCrawlSourceMessages(source.errors).issues.length > 0,
-  ).length;
-  const successSourceCount = sources.filter((source) => source.upserted > 0).length;
-  const runKindLabel =
-    run.runKind === 'mid-sized-only' ? '중견만' : run.runKind === 'daily' ? '전체 수집' : null;
-
-  return (
-    <Card>
-      <button
-        type="button"
-        onClick={() => setExpanded((current) => !current)}
-        className="flex w-full flex-wrap items-center justify-between gap-2 text-left"
-        aria-expanded={expanded}
-      >
-        <div>
-          <p className="text-sm font-semibold text-foreground">
-            {formatInquiryDateTime(run.finishedAt || run.startedAt)}
-            {runKindLabel ? (
-              <span className="ml-2 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-muted">
-                {runKindLabel}
-              </span>
-            ) : null}
-          </p>
-          <p className="mt-0.5 text-xs text-muted">
-            소스 {sources.length}곳
-            {successSourceCount > 0 ? ` · 저장 ${successSourceCount}곳` : ''}
-            {errorSourceCount > 0 ? ` · 오류 ${errorSourceCount}곳` : ''}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <p className="text-sm text-muted">
-            저장 <span className="font-semibold text-foreground">{run.totalUpserted.toLocaleString('ko-KR')}</span>건 ·
-            마감 <span className="font-semibold text-foreground">{run.totalClosed.toLocaleString('ko-KR')}</span>건
-          </p>
-          <span className="text-muted" aria-hidden>{expanded ? '▼' : '▶'}</span>
-        </div>
-      </button>
-
-      {expanded ? (
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[36rem] text-left text-sm">
-            <thead>
-              <tr className="border-b border-border text-xs text-subtle">
-                <th className="py-2 pr-4 font-semibold">수집 소스</th>
-                <th className="whitespace-nowrap py-2 pr-4 font-semibold">가져온 공고</th>
-                <th className="whitespace-nowrap py-2 pr-4 font-semibold">저장</th>
-                <th className="whitespace-nowrap py-2 pr-4 font-semibold">마감</th>
-                <th className="py-2 font-semibold">안내</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sources.map((source, index) => {
-                const { memos, issues } = splitCrawlSourceMessages(source.errors);
-                const hasIssues = issues.length > 0;
-                const memoSummary = summarizeSourceMemos(memos);
-                const rowMuted = source.upserted === 0 && source.fetched === 0 && !hasIssues && !memoSummary;
-                return (
-                  <tr
-                    key={`${source.sourceName}-${index}`}
-                    className={cn('border-b border-border last:border-0', rowMuted && 'opacity-60')}
-                  >
-                    <td className="max-w-[14rem] py-2.5 pr-4 align-top font-medium text-foreground">
-                      {source.sourceName}
-                    </td>
-                    <td className="whitespace-nowrap py-2.5 pr-4 align-top text-muted">
-                      {source.fetched.toLocaleString('ko-KR')}
-                    </td>
-                    <td className="whitespace-nowrap py-2.5 pr-4 align-top">
-                      <span
-                        className={cn(
-                          'font-semibold',
-                          source.upserted > 0 ? 'text-primary' : 'text-muted',
-                        )}
-                      >
-                        {source.upserted.toLocaleString('ko-KR')}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap py-2.5 pr-4 align-top text-muted">
-                      {source.closed.toLocaleString('ko-KR')}
-                    </td>
-                    <td className="min-w-[8rem] max-w-[18rem] py-2.5 align-top">
-                      {memoSummary && !hasIssues ? (
-                        <p className="text-xs text-muted">{memoSummary}</p>
-                      ) : null}
-                      {hasIssues ? <CrawlErrorSummary errors={issues} /> : null}
-                      {!memoSummary && !hasIssues ? (
-                        <span className="text-xs text-subtle">—</span>
-                      ) : null}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-    </Card>
-  );
+function formatCount(value: number): string {
+  return value.toLocaleString('ko-KR');
 }
 
+const STATS_TABLE_CLASS =
+  'w-full min-w-[36rem] text-left text-sm [&_th]:font-semibold [&_th]:text-subtle [&_td]:align-top [&_td]:py-2.5 [&_th]:py-2';
+
 export default function AdminCrawlRunsClient() {
-  const [runs, setRuns] = useState<CrawlRun[]>([]);
+  const [summary, setSummary] = useState<CrawlStatsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [running, setRunning] = useState(false);
   const [runMessage, setRunMessage] = useState('');
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [purging, setPurging] = useState(false);
   const [crawlEtaSeconds, setCrawlEtaSeconds] = useState(0);
   const crawlEtaInitialSeconds = CRAWL_SCHEDULE.localManualRunEstimateMinutes * 60;
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const json = await adminJson<{ ok?: boolean; data?: CrawlStatsSummary }>(
+        '/api/admin/crawl-stats-summary',
+      );
+      if (!json.ok || !json.data) throw new Error('수집 통계를 불러오지 못했습니다.');
+      setSummary(json.data);
+    } catch (err) {
+      setError(
+        humanizeAdminFetchError(err instanceof Error ? err.message : '수집 통계를 불러오지 못했습니다.'),
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   useEffect(() => {
     if (!running) {
@@ -320,128 +97,6 @@ export default function AdminCrawlRunsClient() {
     crawlEtaInitialSeconds > 0
       ? Math.min(100, ((crawlEtaInitialSeconds - crawlEtaSeconds) / crawlEtaInitialSeconds) * 100)
       : 0;
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        pageSize: String(ADMIN_CRAWL_RUNS_PAGE_SIZE),
-      });
-      const json = await adminJson<{
-        ok?: boolean;
-        data?: {
-          runs: CrawlRun[];
-          total: number;
-          page: number;
-          totalPages: number;
-        };
-      }>(`/api/admin/crawl-runs?${params.toString()}`);
-      if (!json.ok || !json.data) throw new Error('수집 실행 내역을 불러오지 못했습니다.');
-      setRuns(json.data.runs);
-      setTotal(json.data.total);
-      setTotalPages(json.data.totalPages);
-    } catch (err) {
-      setError(
-        humanizeAdminFetchError(
-          err instanceof Error ? err.message : '수집 실행 내역을 불러오지 못했습니다.',
-        ),
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [page]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    void (async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const params = new URLSearchParams({
-          page: String(page),
-          pageSize: String(ADMIN_CRAWL_RUNS_PAGE_SIZE),
-        });
-        const res = await fetch(`/api/admin/crawl-runs?${params.toString()}`, {
-          signal: controller.signal,
-          credentials: 'include',
-          cache: 'no-store',
-        });
-        const json = (await res.json()) as {
-          ok?: boolean;
-          data?: {
-            runs: CrawlRun[];
-            total: number;
-            page: number;
-            totalPages: number;
-          };
-        };
-        if (controller.signal.aborted) return;
-        if (!json.ok || !json.data) throw new Error('수집 실행 내역을 불러오지 못했습니다.');
-        setRuns(json.data.runs);
-        setTotal(json.data.total);
-        setTotalPages(json.data.totalPages);
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        setError(
-          humanizeAdminFetchError(
-            err instanceof Error ? err.message : '수집 실행 내역을 불러오지 못했습니다.',
-          ),
-        );
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    })();
-
-    return () => controller.abort();
-  }, [page]);
-
-  async function handlePurgeOldRuns() {
-    if (purging) return;
-    if (
-      !window.confirm(
-        `${ADMIN_CRAWL_RUNS_RETENTION_DAYS}일보다 오래된 수집 실행 내역을 삭제할까요?\n\n채용 공고 데이터는 그대로 두고, 관리자 로그만 지웁니다. 삭제한 내역은 복구할 수 없습니다.`,
-      )
-    ) {
-      return;
-    }
-
-    setPurging(true);
-    setError('');
-    setRunMessage('');
-    try {
-      const json = await adminJson<{
-        ok?: boolean;
-        data?: { deleted: number; olderThanDays: number };
-        error?: { message?: string };
-      }>('/api/admin/crawl-runs/purge', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ olderThanDays: ADMIN_CRAWL_RUNS_RETENTION_DAYS }),
-      });
-      if (!json.ok || !json.data) {
-        throw new Error(json.error?.message ?? '오래된 실행 내역을 삭제하지 못했습니다.');
-      }
-      setRunMessage(
-        `${json.data.olderThanDays}일보다 오래된 실행 내역 ${json.data.deleted.toLocaleString('ko-KR')}건을 삭제했습니다.`,
-      );
-      if (page !== 1) {
-        setPage(1);
-      } else {
-        await load();
-      }
-    } catch (err) {
-      setError(
-        humanizeAdminFetchError(
-          err instanceof Error ? err.message : '오래된 실행 내역을 삭제하지 못했습니다.',
-        ),
-      );
-    } finally {
-      setPurging(false);
-    }
-  }
 
   async function handleRunNow() {
     if (running) return;
@@ -465,11 +120,7 @@ export default function AdminCrawlRunsClient() {
       setRunMessage(
         `수집 완료 — 저장 ${json.data.summary.totalUpserted.toLocaleString('ko-KR')}건 · 마감 ${json.data.summary.totalClosed.toLocaleString('ko-KR')}건`,
       );
-      if (page !== 1) {
-        setPage(1);
-      } else {
-        await load();
-      }
+      await load();
     } catch (err) {
       const base = humanizeAdminFetchError(
         err instanceof Error ? err.message : '수집을 실행하지 못했습니다.',
@@ -484,11 +135,23 @@ export default function AdminCrawlRunsClient() {
     }
   }
 
+  const lastRunLabel = summary?.lastRun
+    ? (() => {
+        const kind = summary.lastRun!.runKind === 'mid-sized-only' ? '중견만' : '전체 수집';
+        const at = formatInquiryDateTime(summary.lastRun!.finishedAt);
+        const errors =
+          summary.lastRun!.errorSourceCount > 0
+            ? ` · 오류 소스 ${formatCount(summary.lastRun!.errorSourceCount)}곳`
+            : '';
+        return `마지막 수집 ${at} (${kind}, 소스 ${formatCount(summary.lastRun!.sourceCount)}곳)${errors}`;
+      })()
+    : '아직 수집 기록이 없습니다.';
+
   return (
     <div className="space-y-5">
       <PageHeader
-        title="수집 실행 내역"
-        description="자동·수동 수집 결과를 날짜별로 확인합니다."
+        title="수집 통계 요약"
+        description="수집 대상 규모와 마지막 수집 결과, 현재 모집 중 공고를 한눈에 봅니다."
         homeHref="/admin"
         homeLabel="대시보드"
       />
@@ -549,61 +212,67 @@ export default function AdminCrawlRunsClient() {
       {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
       {runMessage ? <FormFeedback variant="success">{runMessage}</FormFeedback> : null}
 
-      <Card
-        title="실행 내역"
-        description={
-          total > 0
-            ? `총 ${total.toLocaleString('ko-KR')}회 · ${page}/${totalPages}페이지${loading ? ' · 불러오는 중…' : ''}`
-            : '채용 공고 데이터와 별도로 저장되는 관리 로그입니다.'
-        }
-        action={
-          <button
-            type="button"
-            disabled={purging || loading || running}
-            onClick={() => void handlePurgeOldRuns()}
-            className={adminDangerActionClassName}
-          >
-            {purging ? '삭제 중…' : `${ADMIN_CRAWL_RUNS_RETENTION_DAYS}일 이전 삭제`}
-          </button>
-        }
-      >
-      {loading && runs.length === 0 ? <p className="text-sm text-muted">불러오는 중…</p> : null}
-
-      <div className={cn('space-y-3', loading && runs.length > 0 && 'opacity-60')}>
-        {runs.map((run, index) => (
-          <CrawlRunCard key={run.id} run={run} defaultExpanded={page === 1 && index === 0} />
-        ))}
-        {!loading && runs.length === 0 ? <p className="text-sm text-muted">실행 내역이 없습니다.</p> : null}
-      </div>
+      <Card title="통계 요약" description={loading ? '불러오는 중…' : lastRunLabel}>
+        {loading && !summary ? <p className="text-sm text-muted">불러오는 중…</p> : null}
+        {summary ? (
+          <div className="overflow-x-auto">
+            <table className={STATS_TABLE_CLASS}>
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="w-[5.5rem] pr-3 whitespace-nowrap">구분</th>
+                  <th className="pr-3 whitespace-nowrap">항목</th>
+                  <th className="w-[6.5rem] pr-3 whitespace-nowrap text-right">값</th>
+                  <th className="min-w-[12rem] text-muted">설명</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border text-foreground">
+                <tr>
+                  <td className="pr-3 font-medium text-muted">지금</td>
+                  <td className="pr-3">모집 중 공고</td>
+                  <td className="pr-3 text-right font-semibold tabular-nums">
+                    {formatCount(summary.activeJobs)}건
+                  </td>
+                  <td className="text-xs text-muted">
+                    대시보드와 동일. 누적 전체이며 아래 마지막 수집 숫자의 합·차가 아닙니다.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="pr-3 font-medium text-muted">명단</td>
+                  <td className="pr-3">수집 대상 회사</td>
+                  <td className="pr-3 text-right font-semibold tabular-nums">
+                    {formatCount(summary.companyCount)}곳
+                  </td>
+                  <td className="text-xs text-muted">대기업·계열, 중견, 기타 명단(수집마다 변하지 않음)</td>
+                </tr>
+                <tr>
+                  <td className="pr-3 font-medium text-muted">마지막 수집</td>
+                  <td className="pr-3">가져온 공고</td>
+                  <td className="pr-3 text-right font-semibold tabular-nums">
+                    {summary.lastRun ? `${formatCount(summary.fetched)}건` : '—'}
+                  </td>
+                  <td className="text-xs text-muted">채용 페이지에서 읽어 온 수</td>
+                </tr>
+                <tr>
+                  <td className="pr-3 font-medium text-muted">마지막 수집</td>
+                  <td className="pr-3">저장·갱신</td>
+                  <td className="pr-3 text-right font-semibold tabular-nums text-primary">
+                    {summary.lastRun ? `${formatCount(summary.saved)}건` : '—'}
+                  </td>
+                  <td className="text-xs text-muted">신규 등록 또는 내용이 바뀐 공고</td>
+                </tr>
+                <tr>
+                  <td className="pr-3 font-medium text-muted">마지막 수집</td>
+                  <td className="pr-3">마감 처리</td>
+                  <td className="pr-3 text-right font-semibold tabular-nums">
+                    {summary.lastRun ? `${formatCount(summary.closed)}건` : '—'}
+                  </td>
+                  <td className="text-xs text-muted">그 수집에서 사라졌거나 마감일이 지난 공고</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </Card>
-
-      {totalPages > 1 ? (
-        <nav className="flex flex-wrap items-center justify-center gap-2" aria-label="수집 실행 내역 페이지">
-          <button
-            type="button"
-            disabled={loading || page <= 1}
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
-            className={cn(
-              PAGE_BUTTON,
-              'text-muted hover:bg-neutral-100 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',
-            )}
-          >
-            이전
-          </button>
-          <span className="text-sm text-muted">{page} / {totalPages}</span>
-          <button
-            type="button"
-            disabled={loading || page >= totalPages}
-            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-            className={cn(
-              PAGE_BUTTON,
-              'text-muted hover:bg-neutral-100 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',
-            )}
-          >
-            다음
-          </button>
-        </nav>
-      ) : null}
     </div>
   );
 }

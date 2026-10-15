@@ -342,8 +342,8 @@ type CrawledJobSourceStatsInternal = CrawledJobSourceStats & {
 function statsFromPersisted(persisted: PersistedCrawledJobSourceStats): CrawledJobSourceStatsInternal {
   return {
     jobCountsBySource: persisted.jobCountsBySource,
-    discoveredBySource: persisted.discoveredBySource,
-    recruitingEmployerCountByNorm: persisted.recruitingEmployerCountByNorm,
+    discoveredBySource: {},
+    recruitingEmployerCountByNorm: {},
     recruitingEmployerAggregates: [],
   };
 }
@@ -367,12 +367,10 @@ function ensureRecruitingEmployerAggregates(stats: CrawledJobSourceStatsInternal
 function persistSourceStats(cacheKey: string, stats: CrawledJobSourceStatsInternal): void {
   setImmediate(() => {
     writePersistedCrawledJobSourceStats({
-      version: 1,
+      version: 2,
       cachedAt: Date.now(),
       cacheKey,
       jobCountsBySource: stats.jobCountsBySource,
-      discoveredBySource: stats.discoveredBySource,
-      recruitingEmployerCountByNorm: stats.recruitingEmployerCountByNorm,
     });
   });
 }

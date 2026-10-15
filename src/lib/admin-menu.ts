@@ -13,7 +13,7 @@ export const ADMIN_SECTION_MENU: AdminSectionMenuItem[] = [
     label: '회원',
   },
   {
-    href: '/admin/jobs/crawled',
+    href: '/admin/jobs/sources',
     label: '채용 정보',
   },
   {
@@ -30,7 +30,7 @@ export const ADMIN_SECTION_MENU: AdminSectionMenuItem[] = [
   },
   {
     href: '/admin/extract-list-logic',
-    label: '추출/리스트 로직',
+    label: '수집/노출 로직',
   },
 ];
 

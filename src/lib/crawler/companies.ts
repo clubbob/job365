@@ -15,6 +15,7 @@ export type CrawlerAdapterId =
   | 'mid-sized-registry-batch'
   | 'work24-mid-sized-batch';
 
+/** `extra` = 관리자 「기타기업」 명단·매일 수집 소스 */
 export type CrawlerTier = 'enterprise' | 'mid-sized' | 'extra';
 
 export type CrawlerCompany = {
@@ -121,6 +122,15 @@ function buildAllCrawlerCompanies(): CrawlerCompany[] {
  */
 export function getCrawlerCompanies(): CrawlerCompany[] {
   return buildAllCrawlerCompanies();
+}
+
+/** 기타기업(별도 등록) 수집 소스 — 매일 전체 크롤링 */
+export function getMiscCrawlerCompanies(): CrawlerCompany[] {
+  return getCrawlerCompanies().filter((company) => company.tier === 'extra');
+}
+
+export function countMiscCrawlerCompanies(): number {
+  return getMiscCrawlerCompanies().length;
 }
 
 /** @deprecated getCrawlerCompanies()를 사용하세요. */

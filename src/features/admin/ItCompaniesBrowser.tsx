@@ -20,7 +20,7 @@ import {
 type ItRegistryRow = {
   companyName: string;
   businessNumber: string;
-  segment: '대기업·계열' | '별도 등록' | '중견기업';
+  segment: '대기업·계열' | '기타기업' | '중견기업';
   active: boolean | null;
   careersUrl: string | null;
   linked: boolean;

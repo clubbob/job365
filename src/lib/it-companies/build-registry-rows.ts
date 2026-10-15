@@ -14,7 +14,7 @@ import { resolveRegistryBusinessNumber } from '@/lib/recruiting-employers/career
 export type ItCompanyRegistryRow = {
   companyName: string;
   businessNumber: string;
-  segment: '대기업·계열' | '별도 등록' | '중견기업';
+  segment: '대기업·계열' | '기타기업' | '중견기업';
   active: boolean | null;
   careersUrl: string | null;
   linked: boolean;
@@ -67,7 +67,7 @@ function enterpriseItGroups() {
         crawlSourceId: company.id,
         sourceId: company.sourceId,
       }),
-      segment: '별도 등록',
+      segment: '기타기업',
       active: null,
       careersUrl: company.careersUrl,
       linked: Boolean(company.careersUrl),

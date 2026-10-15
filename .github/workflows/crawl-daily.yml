@@ -2,8 +2,8 @@ name: Daily job crawl
 
 on:
   schedule:
-    # 한국 06:00 ≈ UTC 21:00(전날), 매일
-    - cron: '0 21 * * *'
+    # 한국 02:00 ≈ UTC 17:00(전날), 매일
+    - cron: '0 17 * * *'
   workflow_dispatch:
 
 jobs:
@@ -35,8 +35,8 @@ jobs:
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           CRAWLER_USE_SAMPLES: 'false'
           # src/lib/crawler/schedule.ts CRAWL_MID_SIZED_SITES_PER_RUN 과 동일
-          CRAWL_MID_SIZED_BATCH_SIZE: '1200'
-          CRAWL_MID_SIZED_DB_BATCH_SIZE: '1200'
+          CRAWL_MID_SIZED_BATCH_SIZE: '1000'
+          CRAWL_MID_SIZED_DB_BATCH_SIZE: '1000'
           CRAWL_SOURCE_DELAY_MS: '1200'
           CRAWL_REQUEST_GAP_MS: '300'
           WORK24_AUTH_KEY: ${{ secrets.WORK24_AUTH_KEY }}

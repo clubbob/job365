@@ -1,3 +1,4 @@
+import { countMiscCrawlerCompanies, getMiscCrawlerCompanies } from '@/lib/crawler/companies';
 import {
   activeJobCountForMidSizedCrawlSource,
   type CrawledJobSourceStats,
@@ -131,6 +132,31 @@ function buildEnterpriseRows(stats: CrawledJobSourceStats): AdminRecruitingCompa
     });
 }
 
+function buildMiscRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] {
+  return getMiscCrawlerCompanies()
+    .map((company) => {
+      const careersUrl = company.careersUrl?.trim() || null;
+      const activeJobCount = stats.jobCountsBySource[company.sourceId] ?? 0;
+      return {
+        companyName: company.name,
+        businessNumber: resolveRegistryBusinessNumber({
+          companyName: company.name,
+          careersUrl,
+          crawlSourceId: company.id,
+          sourceId: company.sourceId,
+        }),
+        segmentLabel: '기타기업',
+        active: null,
+        careersUrl,
+        linked: Boolean(careersUrl),
+        careersDiscoveryStatus: 'enterprise' as const,
+        careersUrlCheckedAt: null,
+        activeJobCount,
+      };
+    })
+    .sort((a, b) => b.activeJobCount - a.activeJobCount || a.companyName.localeCompare(b.companyName, 'ko'));
+}
+
 function buildItRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] {
   const registryRows = buildItCompanyRegistryRows(stats.jobCountsBySource);
 
@@ -138,7 +164,11 @@ function buildItRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] 
     const byEmployer = recruitingEmployerCountFromNormMap(stats.recruitingEmployerCountByNorm, row.companyName);
     const activeJobCount = Math.max(row.activeJobCount, byEmployer);
     const segmentLabel =
-      row.segment === '대기업·계열' ? '대기업·계열' : row.segment === '별도 등록' ? '별도 등록' : '중견기업';
+      row.segment === '대기업·계열'
+        ? '대기업·계열'
+        : row.segment === '기타기업'
+          ? '기타기업'
+          : '중견기업';
 
     return {
       companyName: row.companyName,
@@ -164,12 +194,14 @@ function buildItRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] 
 export function recruitingSegmentRegistryCount(segment: RecruitingEmployerAdminSegment): number {
   if (segment === 'enterprise') return loadEnterpriseRegistryDbCompanies().length;
   if (segment === 'mid-sized') return loadMidSizedRegistryDbCompanies().length;
+  if (segment === 'misc') return countMiscCrawlerCompanies();
   return countItCompanyRegistryRows();
 }
 
 export function recruitingSegmentRegistryStatLabel(segment: RecruitingEmployerAdminSegment): string {
   if (segment === 'enterprise') return '대기업·계열';
   if (segment === 'mid-sized') return '중견 명단';
+  if (segment === 'misc') return '기타기업 명단';
   return 'IT 명단';
 }
 
@@ -177,6 +209,7 @@ export function getRecruitingSegmentRegistryCounts(): RecruitingCompanyActiveCou
   return {
     enterprise: recruitingSegmentRegistryCount('enterprise'),
     'mid-sized': recruitingSegmentRegistryCount('mid-sized'),
+    misc: recruitingSegmentRegistryCount('misc'),
     it: recruitingSegmentRegistryCount('it'),
   };
 }
@@ -186,6 +219,7 @@ export function buildAdminRecruitingCompanyRows(
   stats: CrawledJobSourceStats,
 ): AdminRecruitingCompanyRow[] {
   if (segment === 'mid-sized') return buildMidSizedRows(stats);
+  if (segment === 'misc') return buildMiscRows(stats);
   if (segment === 'it') return buildItRows(stats);
   return buildEnterpriseRows(stats);
 }
@@ -193,6 +227,7 @@ export function buildAdminRecruitingCompanyRows(
 export type RecruitingCompanyActiveCounts = {
   enterprise: number;
   'mid-sized': number;
+  misc: number;
   it: number;
 };
 
@@ -208,6 +243,7 @@ export function computeRecruitingCompanyActiveCounts(stats: CrawledJobSourceStat
   return {
     enterprise: countRecruitingCompaniesWithActiveJobs('enterprise', stats),
     'mid-sized': countRecruitingCompaniesWithActiveJobs('mid-sized', stats),
+    misc: countRecruitingCompaniesWithActiveJobs('misc', stats),
     it: countRecruitingCompaniesWithActiveJobs('it', stats),
   };
 }

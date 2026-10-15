@@ -36,7 +36,7 @@ function statForSection(
         value: `${stats.members.total.toLocaleString('ko-KR')}명`,
         hint: '가입 회원 수',
       };
-    case '/admin/jobs/crawled':
+    case '/admin/jobs/sources':
       return {
         value: stats.jobs.active.toLocaleString('ko-KR'),
         hint: '모집 중 공고',
@@ -59,7 +59,7 @@ function statForSection(
     case '/admin/extract-list-logic':
       return {
         value: '규칙',
-        hint: '수집 추출·채용 목록 필터',
+        hint: '공고 수집·노출 기준',
       };
     default:
       return { value: '—', hint: '' };

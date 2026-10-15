@@ -4,4 +4,6 @@
 tmp-*.json
 .tmp-*
 .crawl-after-discover.log
+.cache/
+data/crawled-source-stats-cache.json
 data/mid-sized-*.json

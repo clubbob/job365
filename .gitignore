@@ -42,5 +42,6 @@ Firebase SDK.txt
 .vercel
 .env*
 
-# 로컬 Firestore 집계 캐시(관리자 채용 공고 회사)
+# 로컬 Firestore 집계 캐시(슬림·IDE 인덱싱 제외)
+/.cache/
 /data/crawled-source-stats-cache.json
