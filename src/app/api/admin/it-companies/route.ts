@@ -39,8 +39,6 @@ export async function GET(request: Request) {
 
   const total = rows.length;
   const linkedCount = rows.filter((row) => row.linked).length;
-  const enterpriseCount = rows.filter((row) => row.segment === '대기업·계열').length;
-  const midSizedCount = rows.filter((row) => row.segment === '중견기업').length;
 
   const allRows = buildItCompanyRegistryRows(jobCountsBySource);
   const page = rows.slice(offset, offset + limit);

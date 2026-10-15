@@ -53,8 +53,6 @@ const COLLECTION = 'crawledJobs';
 /** 사용자 목록·검색용 노출 가능 공고 캐시 TTL */
 const LIST_CACHE_TTL_MS = 120_000;
 /** 첫 페이지만 최근 active 문서를 소량 읽어 노출 공고를 채움 */
-const BROWSABLE_WINDOW_BATCH_SIZE = 48;
-const BROWSABLE_WINDOW_MAX_SCAN = 400;
 /** 관리자 목록 조회 시 description 등 대용량 필드 제외 */
 const ADMIN_LIST_SELECT_FIELDS = [
   'companyName',
@@ -97,7 +95,6 @@ export function invalidateCrawledJobsListCache(): void {
   sourceStatsCache = null;
   sourceStatsInflight.clear();
   clearPersistedCrawledJobSourceStats();
-  browsableStatusCreatedAtIndexReady = null;
   void import('@/lib/job-companies-server')
     .then((mod) => mod.invalidateJobCompaniesPayloadCache())
     .catch(() => undefined);
@@ -240,149 +237,6 @@ function isFirestoreIndexError(error: unknown): boolean {
   return message.includes('requires an index') || details.includes('requires an index');
 }
 
-/** status+createdAt 복합 인덱스 없으면 윈도우 쿼리를 건너뜁니다 */
-let browsableStatusCreatedAtIndexReady: boolean | null = null;
-
-function isJobVisibleOnBoard(
-  job: CrawledJob,
-  hiddenSources: Set<string>,
-  hiddenCompanies: Set<string>,
-): boolean {
-  if (!isJobEligibleForBoardList(job)) return false;
-  if (hiddenSources.has(job.sourceId)) return false;
-  const companyKey = `${job.sourceId}::${job.companyName.trim()}`;
-  return !hiddenCompanies.has(companyKey);
-}
-
-/**
- * 전체 active 스캔 없이 최근 순으로 일부만 읽어 페이지를 채웁니다 (메인·첫 페이지용).
- */
-/**
- * 복합 인덱스 없을 때: createdAt만 정렬해 최근 문서를 읽고 active·노출 가능 공고만 채웁니다.
- */
-async function listBrowsableJobsByCreatedAtScan(
-  page: number,
-  pageSize: number,
-): Promise<{ items: CrawledJobListItem[]; total: number }> {
-  const db = getAdminFirestore();
-  if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
-
-  const safePage = Math.max(1, page);
-  const safePageSize = Math.max(1, Math.min(pageSize, 50));
-  const start = (safePage - 1) * safePageSize;
-  const targetEnd = safePage * safePageSize;
-
-  const [hiddenSources, hiddenCompanies, countSnap] = await Promise.all([
-    getDisplayDisabledSourceIds(),
-    getDisplayDisabledCompanyKeys(),
-    db.collection(COLLECTION).where('status', '==', 'active').count().get(),
-  ]);
-
-  const collected: CrawledJob[] = [];
-  let lastDoc: QueryDocumentSnapshot<DocumentData> | null = null;
-  let scanned = 0;
-
-  while (collected.length < targetEnd && scanned < BROWSABLE_WINDOW_MAX_SCAN) {
-    let query = db
-      .collection(COLLECTION)
-      .orderBy('createdAt', 'desc')
-      .limit(BROWSABLE_WINDOW_BATCH_SIZE);
-    if (lastDoc) {
-      query = query.startAfter(lastDoc);
-    }
-
-    const snap = await query.get();
-    if (snap.empty) break;
-
-    scanned += snap.docs.length;
-    for (const doc of snap.docs) {
-      const job = fromDoc(doc.id, doc.data());
-      if (!job || job.status !== 'active') continue;
-      if (!isJobVisibleOnBoard(job, hiddenSources, hiddenCompanies)) continue;
-      collected.push(job);
-    }
-
-    lastDoc = snap.docs[snap.docs.length - 1] ?? null;
-    if (snap.docs.length < BROWSABLE_WINDOW_BATCH_SIZE) break;
-  }
-
-  const activeTotal = countSnap.data().count;
-  return {
-    items: collected.slice(start, start + safePageSize).map(toListItem),
-    total: Math.max(collected.length, activeTotal),
-  };
-}
-
-async function listBrowsableJobsWindow(
-  page: number,
-  pageSize: number,
-): Promise<{ items: CrawledJobListItem[]; total: number }> {
-  const db = getAdminFirestore();
-  if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
-
-  const safePage = Math.max(1, page);
-  const safePageSize = Math.max(1, Math.min(pageSize, 50));
-  const targetEnd = safePage * safePageSize;
-  const start = (safePage - 1) * safePageSize;
-
-  if (browsableStatusCreatedAtIndexReady === false) {
-    return listBrowsableJobsByCreatedAtScan(page, pageSize);
-  }
-
-  try {
-    const [hiddenSources, hiddenCompanies, countSnap] = await Promise.all([
-      getDisplayDisabledSourceIds(),
-      getDisplayDisabledCompanyKeys(),
-      db.collection(COLLECTION).where('status', '==', 'active').count().get(),
-    ]);
-
-    const collected: CrawledJob[] = [];
-    let lastDoc: QueryDocumentSnapshot<DocumentData> | null = null;
-    let scanned = 0;
-
-    while (collected.length < targetEnd && scanned < BROWSABLE_WINDOW_MAX_SCAN) {
-      let query = db
-        .collection(COLLECTION)
-        .where('status', '==', 'active')
-        .orderBy('createdAt', 'desc')
-        .limit(BROWSABLE_WINDOW_BATCH_SIZE);
-      if (lastDoc) {
-        query = query.startAfter(lastDoc);
-      }
-
-      const snap = await query.get();
-      if (snap.empty) break;
-
-      scanned += snap.docs.length;
-      for (const doc of snap.docs) {
-        const job = fromDoc(doc.id, doc.data());
-        if (!job || !isJobVisibleOnBoard(job, hiddenSources, hiddenCompanies)) continue;
-        collected.push(job);
-      }
-
-      lastDoc = snap.docs[snap.docs.length - 1] ?? null;
-      if (snap.docs.length < BROWSABLE_WINDOW_BATCH_SIZE) break;
-    }
-
-    const activeTotal = countSnap.data().count;
-    const items = collected.slice(start, start + safePageSize).map(toListItem);
-    const total =
-      collected.length >= targetEnd || scanned >= BROWSABLE_WINDOW_MAX_SCAN
-        ? Math.max(collected.length, activeTotal)
-        : collected.length;
-
-    browsableStatusCreatedAtIndexReady = true;
-    return { items, total };
-  } catch (error) {
-    if (!isFirestoreIndexError(error)) throw error;
-    browsableStatusCreatedAtIndexReady = false;
-    console.warn(
-      '[crawled-jobs] browsable window needs status+createdAt index; using createdAt scan (deploy firestore.indexes.json to speed up)',
-    );
-    return listBrowsableJobsByCreatedAtScan(page, pageSize);
-  }
-}
-
 async function listFromFirestore(): Promise<CrawledJob[]> {
   const db = getAdminFirestore();
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
@@ -455,10 +309,6 @@ async function listAllCrawledJobsForAdminSearch(): Promise<CrawledJob[]> {
   } finally {
     adminFullListLoadPromise = null;
   }
-}
-
-async function listBrowsableFromFirestore(): Promise<CrawledJob[]> {
-  return getBrowsableCrawledJobs();
 }
 
 function shouldUseSampleFallback(): boolean {

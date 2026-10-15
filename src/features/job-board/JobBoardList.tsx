@@ -263,6 +263,7 @@ export default function JobBoardList({
       }
     }
     setReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restore snapshot once per persistKey/mode
   }, [persistKey, mode]);
 
   useEffect(() => {
@@ -328,6 +329,7 @@ export default function JobBoardList({
 
     void loadToday();
     return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- todayFetchKey bundles query inputs
   }, [todayFetchKey]);
 
   useEffect(() => {
@@ -432,6 +434,7 @@ export default function JobBoardList({
 
     void load();
     return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mainFetchKey bundles list query inputs
   }, [mainFetchKey, canUsePrefetchedOnly, ready]);
 
   const countLabel = useMemo(() => {

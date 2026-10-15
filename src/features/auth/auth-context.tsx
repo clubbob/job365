@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     })();
 
-    return onAuthStateChanged(auth, async (nextUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
       if (!mounted) return;
       setUser(nextUser);
       setLoading(false);
@@ -149,6 +149,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setNeedsConsent(false);
       }
     });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = useCallback(async (returnPath = '/') => {
@@ -268,6 +273,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       changePassword,
       reauthenticate,
     }),
+    // userRefreshKey: refreshUserProfile 후 컨텍스트 구독 컴포넌트 재렌더
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- profileRevision trigger
     [
       user,
       loading,

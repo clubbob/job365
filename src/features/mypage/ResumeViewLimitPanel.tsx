@@ -53,7 +53,6 @@ export default function ResumeViewLimitPanel({
   const [didSave, setDidSave] = useState(false);
 
   const publishedResume = resumes.find(isPublishedTalent);
-  const published = Boolean(publishedResume);
   const dirty = !sameKeys(saved, draft);
 
   useEffect(() => {
@@ -64,7 +63,7 @@ export default function ResumeViewLimitPanel({
     setDidSave(false);
   }, [userId]);
 
-  const proposed = useMemo(() => listProposedCompaniesForJobseeker(userId), [userId, saved]);
+  const proposed = useMemo(() => listProposedCompaniesForJobseeker(userId), [userId]);
   const known = useMemo(() => listKnownCompanies(userId), [userId]);
 
   const draftKeys = new Set(draft.map((item) => item.key));

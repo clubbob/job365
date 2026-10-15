@@ -67,13 +67,41 @@ function buildMidSizedRows(stats: CrawledJobSourceStats): AdminRecruitingCompany
     return b.activeJobCount - a.activeJobCount;
   });
 
-  return rows.map(({ crawlSourceId: _crawlSourceId, ...row }) => row);
+  return rows.map(
+    ({
+      companyName,
+      businessNumber,
+      segmentLabel,
+      active,
+      careersUrl,
+      linked,
+      careersDiscoveryStatus,
+      careersUrlCheckedAt,
+      activeJobCount,
+    }) => ({
+      companyName,
+      businessNumber,
+      segmentLabel,
+      active,
+      careersUrl,
+      linked,
+      careersDiscoveryStatus,
+      careersUrlCheckedAt,
+      activeJobCount,
+    }),
+  );
 }
 
 function buildEnterpriseRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] {
   const registry = loadEnterpriseRegistryDbCompanies();
 
-  return registry
+  return [...registry]
+    .sort(
+      (a, b) =>
+        a.rank - b.rank ||
+        (stats.jobCountsBySource[b.sourceId ?? ''] ?? 0) -
+          (stats.jobCountsBySource[a.sourceId ?? ''] ?? 0),
+    )
     .map((record) => {
       const careersUrl = record.careersUrl?.trim() || null;
       const linked = Boolean(careersUrl);
@@ -99,16 +127,8 @@ function buildEnterpriseRows(stats: CrawledJobSourceStats): AdminRecruitingCompa
         careersDiscoveryStatus: discoveryStatus,
         careersUrlCheckedAt: null,
         activeJobCount,
-        rank: record.rank,
       };
-    })
-    .sort(
-      (a, b) =>
-        (a as AdminRecruitingCompanyRow & { rank: number }).rank -
-          (b as AdminRecruitingCompanyRow & { rank: number }).rank ||
-        b.activeJobCount - a.activeJobCount,
-    )
-    .map(({ rank: _rank, ...row }) => row as AdminRecruitingCompanyRow);
+    });
 }
 
 function buildItRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] {

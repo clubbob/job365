@@ -136,14 +136,14 @@ async function crawlWork24BulkList(
 ): Promise<CrawledJob[]> {
   const jobs: CrawledJob[] = [];
   let page = 1;
-  let total = 0;
+  let reportedTotal = 0;
   while (page <= BULK_MAX_PAGES) {
     await paceCrawlRequest();
-    const { items, total: reportedTotal } = await fetchWork24List(authKey, {
+    const { items, total } = await fetchWork24List(authKey, {
       startPage: String(page),
       display: '100',
     });
-    if (page === 1) total = reportedTotal;
+    if (page === 1) reportedTotal = total;
     if (items.length === 0) break;
 
     const pageJobsBySource = new Map<

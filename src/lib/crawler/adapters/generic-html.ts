@@ -30,7 +30,6 @@ import {
 } from '@/lib/crawler/map-fields';
 import type { CompanySize } from '@/lib/job-board/constants';
 import { paceCrawlRequest } from '@/lib/crawler/crawl-throttle';
-import { fetchText } from '@/lib/crawler/fetch-text';
 import type { CrawledJob } from '@/types/crawled-job';
 import {
   genericDetailFetchConcurrency,

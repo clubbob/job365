@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Logo from '@/components/brand/Logo';
@@ -61,7 +62,7 @@ export default function AdminHeader() {
         )}
 
         <div className="ml-auto flex items-center gap-2">
-          <a
+          <Link
             href="/"
             className="rounded-lg px-3.5 py-2 text-sm font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-foreground"
             onClick={(event) => {
@@ -70,7 +71,7 @@ export default function AdminHeader() {
             }}
           >
             사이트
-          </a>
+          </Link>
           {!authReady ? (
             <span className="text-sm text-muted">확인 중…</span>
           ) : loggedIn ? (

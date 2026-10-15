@@ -60,10 +60,6 @@ const EXTRA_CRAWLER_COMPANIES: CrawlerCompany[] = [
   },
 ];
 
-function normalizeCareersUrl(url: string): string {
-  return url.trim().replace(/\/+$/, '').toLowerCase();
-}
-
 function buildFtcCrawlerCompanies(): CrawlerCompany[] {
   return ENTERPRISE_CAREERS_CONFIGS.map((config) => ({
     id: config.crawlSourceId,

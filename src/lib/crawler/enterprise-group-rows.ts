@@ -1,5 +1,5 @@
 import { getCrawlerCompanies, type CrawlerCompany } from '@/lib/crawler/companies';
-import { getCrawlAdapterStatus, type CrawlAdapterStatus } from '@/lib/crawler/targets';
+import { getCrawlAdapterStatus } from '@/lib/crawler/targets';
 import type { DiscoveredAffiliate } from '@/types/crawled-job';
 import { getFtcEnterpriseGroups } from '@/lib/enterprise-groups';
 

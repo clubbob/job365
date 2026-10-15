@@ -3,17 +3,7 @@ import { htmlToPlainText } from '@/lib/crawler/job-quality';
 
 const MAX_ROW_LENGTH = 90;
 
-const QUALIFICATION_TITLES = new Set([
-  '자격 요건',
-  '지원 자격',
-  '응시 자격',
-  '모집 요건',
-  '자격 및 우대사항',
-  '자격 및 우대',
-  '필요 자격',
-]);
 const PROCESS_TITLES = new Set(['전형 절차', '전형 일정', '전형 절차 및 일정']);
-const PERIOD_SECTION_TITLES = new Set(['접수 기간', '모집 기간', '지원 기간', '서류 접수 기간']);
 const WORK_SECTION_TITLES = new Set(['주요 업무', '업무 내용', '담당 업무', '수행 업무', '업무 개요']);
 const QUALIFICATION_SKIP = /병역|군필|해외여행|입영|면제|불합격|제출\s*서류/;
 
@@ -112,35 +102,6 @@ function collectSectionText(sections: DescriptionSection[], titles: Set<string>)
     .join('\n');
 }
 
-function sectionMatchesQualification(title: string): boolean {
-  const normalized = normalizeSectionTitle(title);
-  return /자격요건|지원자격|응시자격|모집요건|자격및우대|필요자격|지원요건|모집자격/.test(
-    normalized,
-  );
-}
-
-function collectQualificationText(sections: DescriptionSection[], html: string): string {
-  const titled = sections
-    .filter((section) => QUALIFICATION_TITLES.has(section.title) || sectionMatchesQualification(section.title))
-    .map((section) => stripRedundantLines(htmlToSummaryText(section.body)))
-    .filter(Boolean)
-    .join('\n');
-  if (titled) return titled;
-
-  const plain = stripRedundantLines(htmlToSummaryText(html));
-  const labeledLine = plain
-    .split('\n')
-    .map((line) => line.trim())
-    .find((line) => /^(?:지원\s*자격|자격\s*요건|모집\s*요건|응시\s*자격)\s*[:：]/.test(line));
-  if (labeledLine) return labeledLine;
-
-  if (sections.length === 1 && (sections[0].title === '요약' || sections[0].title === '상세 내용')) {
-    return stripRedundantLines(htmlToSummaryText(sections[0].body));
-  }
-
-  return plain;
-}
-
 function normalizeSectionTitle(title: string): string {
   return title.replace(/\s+/g, '');
 }
@@ -199,62 +160,6 @@ function toPlainText(text: string): string {
     .join(' ')
     .replace(/\s+/g, ' ')
     .trim();
-}
-
-function condenseQualifications(text: string): string | null {
-  const plain = toPlainText(text);
-  if (!plain) return null;
-
-  const parts: string[] = [];
-  const yearsMatch = plain.match(/(\d+)\s*년\s*이상/);
-  const hasBachelor = /학사/.test(plain);
-  const hasMasterPhd = /석사|박사|석\s*[/·]\s*박사/.test(plain);
-  const studyCountsAsExp = /수학\s*기간|재학\s*기간/.test(plain) && /경력/.test(plain);
-
-  if (hasBachelor && yearsMatch) {
-    parts.push(`학사 이상, 관련 경력 ${yearsMatch[1]}년+`);
-  } else if (hasBachelor) {
-    parts.push('학사 이상');
-  } else if (yearsMatch) {
-    parts.push(`관련 경력 ${yearsMatch[1]}년+`);
-  }
-
-  if (/신입/.test(plain) && !/경력/.test(plain) && parts.length === 0) {
-    parts.push('신입');
-  } else if (/경력\s*무관/.test(plain) && parts.length === 0) {
-    parts.push('경력 무관');
-  }
-
-  if (hasMasterPhd && studyCountsAsExp) {
-    parts.push('석·박사 수학 기간 경력 인정');
-  } else if (hasMasterPhd && /우대|가산/.test(plain)) {
-    parts.push('석·박사 우대');
-  }
-
-  if (/관련\s*전공|전공자/.test(plain)) parts.push('관련 전공 우대');
-
-  if (/요양보호사/.test(plain)) {
-    if (/자격증|자격\s*보유|면허|취득/.test(plain)) parts.push('요양보호사 자격증');
-    else if (!parts.some((p) => p.includes('요양'))) parts.push('요양보호사 관련');
-  }
-
-  if (/고졸\s*이상|대졸\s*이상|대학교\s*졸업/.test(plain) && parts.length === 0) {
-    parts.push(plain.match(/(?:고졸|대졸|초대졸|대학교)\s*(?:이상|졸업)?/)?.[0] ?? '학력 요건 있음');
-  }
-
-  const certMatch = plain.match(/([가-힣]{2,}기사|[가-힣]{2,}산업기사)/);
-  if (certMatch && /우대|필수|보유/.test(plain)) {
-    parts.push(`${certMatch[1]} ${/필수|보유/.test(plain) ? '필수' : '우대'}`);
-  }
-
-  if (parts.length > 0) return clipOneLine(parts.join(', '));
-
-  const fallback = plain
-    .split(/[,，.]/)
-    .map((part) => part.trim())
-    .find((part) => /학력|경력|학사|전공|자격|우대|필수/.test(part));
-
-  return fallback ? clipOneLine(fallback) : null;
 }
 
 function normalizeYearMonth(yearRaw: string, monthRaw: string): string {
@@ -353,66 +258,6 @@ function condenseProcess(text: string): string | null {
   }
 
   return null;
-}
-
-function extractDeadlineShort(text: string): string | null {
-  const detailed = text.match(
-    /(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일[^.\n]*?(오전|오후)?\s*(\d{1,2})시/,
-  );
-  if (detailed) {
-    const [, year, month, day, , hour] = detailed;
-    return `${year}.${month.padStart(2, '0')}.${day.padStart(2, '0')} ${hour}시 마감`;
-  }
-
-  const range = text.match(
-    /(\d{4})[.\-/년]\s*(\d{1,2})[.\-/월]\s*(\d{1,2})\s*일?\s*[~\-–]\s*(\d{4})[.\-/년]?\s*(\d{1,2})[.\-/월]?\s*(\d{1,2})\s*일?/,
-  );
-  if (range) {
-    return `${range[1]}.${range[2].padStart(2, '0')}.${range[3].padStart(2, '0')} ~ ${range[4]}.${range[5].padStart(2, '0')}.${range[6].padStart(2, '0')}`;
-  }
-
-  const simple = text.match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
-  if (simple) {
-    return `${simple[1]}.${simple[2].padStart(2, '0')}.${simple[3].padStart(2, '0')} 마감`;
-  }
-
-  return null;
-}
-
-function formatDeadlineForSummary(deadline: string | null | undefined): string | null {
-  if (!deadline) return null;
-  const match = deadline.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!match) return null;
-  return `${match[1]}.${match[2]}.${match[3]} 마감`;
-}
-
-function isGenericOpenDeadline(text: string): boolean {
-  return /채용\s*시까지|상시\s*채용|상시\s*모집|수시\s*모집|미정/.test(text) && !/\d{4}/.test(text);
-}
-
-function condenseApplicationDeadline(
-  sections: DescriptionSection[],
-  html: string,
-  deadline: string | null | undefined,
-): string | null {
-  const sectionText = collectSectionText(sections, PERIOD_SECTION_TITLES);
-  const plain = htmlToSummaryText(sectionText || html);
-  const periodLine = plain
-    .split('\n')
-    .map((line) => line.trim())
-    .find(
-      (line) =>
-        /(?:접수|모집|지원|서류)\s*기간|접수\s*마감|지원\s*마감|마감\s*일/.test(line) && /\d/.test(line),
-    );
-  const fromLine = periodLine
-    ? clipOneLine(periodLine.replace(/^[^:：\n]+[:：]\s*/, ''))
-    : null;
-  const fromText = extractDeadlineShort(plain);
-  const fromJob = formatDeadlineForSummary(deadline);
-
-  const candidate = fromLine ?? fromText ?? fromJob;
-  if (!candidate || isGenericOpenDeadline(candidate)) return null;
-  return candidate;
 }
 
 function normalizeWorkSummaryText(text: string): string {
