@@ -177,7 +177,7 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
         todayDate={todayDate}
         actions={
           <>
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <div className="flex w-full max-w-xl flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
               <a
                 href={originalJobUrl}
                 target="_blank"
@@ -209,7 +209,10 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
               />
             </div>
             {bookmarkMessage ? (
-              <FormFeedback variant={bookmarkMessage.type === 'success' ? 'success' : 'error'}>
+              <FormFeedback
+                variant={bookmarkMessage.type === 'success' ? 'success' : 'error'}
+                className="w-full max-w-xl"
+              >
                 {bookmarkMessage.text}
                 {bookmarkMessage.type === 'success' && bookmarked ? (
                   <>

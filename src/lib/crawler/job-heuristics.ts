@@ -1,3 +1,5 @@
+import { getKoreaDateLocalToday } from '@/lib/datetime';
+
 /** 채용 공고가 아닌 안내·메뉴 링크 제목 */
 const NAV_TITLE_PATTERN =
   /^(홈|home|메뉴|menu|더보기|자세히|이전|다음|로그인|login|회원가입|signup|about|careers?|jobs?|people|culture|marketing|faq|qna|문의|공지|공지사항|채용정보|지원하기|지원현황|인재풀|본문\s*바로가기|컨텐츠\s*바로가기|주\s*내용으로\s*건너뛰기|그룹소개|그룹비전|회사소개|사조소개|합류\s*여정|팀\s*문화|자주\s*묻는\s*질문|아티클|소개|비전|이용약관|개인정보|오케이금융그룹|ok\s*소개|채용\s*중인\s*공고|채용프로세스|인재개발시스템)$/i;
@@ -29,18 +31,80 @@ function hasFormalRecruitmentTitle(title: string): boolean {
   return /(?:모집|채용)\s*(?:합니다|공고|안내)|채용\s*공고|모집\s*공고/u.test(title);
 }
 
+function toIsoDateParts(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** 제목 끝에 붙은 날짜(포털·SEO 글 게시일) */
+export function parseTrailingCalendarDateFromTitle(title: string): string | null {
+  const trimmed = title.trim();
+  let match = trimmed.match(/(\d{4})\.(\d{1,2})\.(\d{1,2})\s*$/u);
+  if (match) return toIsoDateParts(+match[1], +match[2], +match[3]);
+  match = trimmed.match(/(\d{4})-(\d{2})-(\d{2})\s*$/u);
+  if (match) return toIsoDateParts(+match[1], +match[2], +match[3]);
+  match = trimmed.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*$/u);
+  if (match) return toIsoDateParts(+match[1], +match[2], +match[3]);
+  return null;
+}
+
+/** 제목 끝 날짜가 오늘(KST)보다 이전이면 지난 글로 간주 */
+export function isJobTitlePastByTrailingDate(
+  title: string,
+  todayDate = getKoreaDateLocalToday(),
+): boolean {
+  const iso = parseTrailingCalendarDateFromTitle(title);
+  if (!iso) return false;
+  if (hasFormalRecruitmentTitle(title)) return false;
+  return iso < todayDate;
+}
+
+/** 연봉·급여 정보만 모은 SEO 제목 (실제 모집 공고가 아님) */
+function looksLikeSalaryInfoTitle(title: string): boolean {
+  if (hasFormalRecruitmentTitle(title)) return false;
+  if (/실수령액/u.test(title)) return true;
+  if (/신입사원\s*연봉/u.test(title) && /(?:초봉|급여|연봉)/u.test(title)) return true;
+  if (/대졸\s*초봉/u.test(title) && /급여|연봉/u.test(title)) return true;
+  if (/연봉\s*,.*초봉|초봉\s*,.*(?:급여|연봉)/u.test(title)) return true;
+  if (/채용정보\s+\d{4}[.\-]/u.test(title) && !/(?:모집|지원)\s*/u.test(title)) return true;
+  return false;
+}
+
+/** 목록에서 빼고 마감 처리할 지난·비공고 제목 */
+export function isJobTitleStaleForListing(title: string, todayDate = getKoreaDateLocalToday()): boolean {
+  if (isNonJobContentTitle(title)) return true;
+  return isJobTitlePastByTrailingDate(title, todayDate);
+}
+
 /** 언론·카드뉴스 헤드라인 (특정 회사 모집 공고 제목이 아님) */
 function looksLikeNewsHeadlineTitle(title: string): boolean {
+  if (hasFormalRecruitmentTitle(title)) return false;
   if (/\[(?:단독|속보|기획|특집|인터뷰|심층|단신|리포트)\]/u.test(title)) return true;
   if (/^\d+\s+\[/u.test(title)) return true;
-  if (/(\.\.\.|…)/u.test(title) && !hasFormalRecruitmentTitle(title)) return true;
+  if (/(\.\.\.|…)/u.test(title)) return true;
+  if (/역대급|창사\s*후\s*최대|뽑는\s*(?:게임사|기업|회사|스타트업)/u.test(title)) return true;
   if (
-    /역대급|창사\s*후\s*최대|뽑는\s*(?:게임사|기업|회사|스타트업)/u.test(title) &&
-    !hasFormalRecruitmentTitle(title)
+    /암호화폐|가상자산|비트코인|이더리움|코인\s*거래|거래\s*금지|규제\s*강화|법안\s*(?:통과|발의)|제재\s*조치/u.test(
+      title,
+    )
   ) {
     return true;
   }
+  if (
+    /^[가-힣A-Za-z·]{2,16},\s/u.test(title) &&
+    /(?:금지|시행|발표|규제|의결|전쟁|침공|제재|폭락|급등|사망|체포|구속|기소)/u.test(title)
+  ) {
+    return true;
+  }
+  if (/\d{4}년\s*\d{1,2}월(?:부터|부터는|경)?\s/u.test(title) && /금지|시행|발효|개정/u.test(title)) {
+    return true;
+  }
   return false;
+}
+
+function hasStrongJobTitleSignal(title: string): boolean {
+  return /(?:채용|모집|공고|채용공고|신입|경력|인턴|정규직|계약직|엔지니어|engineer|developer|designer|manager|director|lead|architect|analyst|scientist|researcher|개발자|디자이너|담당|모집분야|직무)/iu.test(
+    title,
+  );
 }
 
 /** 칼럼·인사이트형 질문 제목 */
@@ -76,6 +140,8 @@ export function isNonJobContentTitle(title: string): boolean {
   if (looksLikeNewsHeadlineTitle(trimmed)) return true;
   if (looksLikeEditorialHeadlineTitle(trimmed)) return true;
   if (NON_JOB_CONTENT_TITLE_PATTERN.test(trimmed)) return true;
+  if (looksLikeSalaryInfoTitle(trimmed)) return true;
+  if (isJobTitlePastByTrailingDate(trimmed)) return true;
   if (
     /\|\s*[^|]{6,}(?:할까|알아볼까|궁금|정리|추천)\s*$/i.test(trimmed) &&
     !/채용|모집|공고/.test(trimmed)
@@ -92,7 +158,16 @@ export function isLikelyJobTitle(title: string): boolean {
   if (NAV_TITLE_CONTAINS_PATTERN.test(trimmed)) return false;
   if (EMPLOYEE_PROFILE_TITLE_PATTERN.test(trimmed)) return false;
   if (isNonJobContentTitle(trimmed)) return false;
-  return JOB_TITLE_SIGNAL_PATTERN.test(trimmed);
+  if (!JOB_TITLE_SIGNAL_PATTERN.test(trimmed)) return false;
+  if (hasStrongJobTitleSignal(trimmed)) return true;
+  if (/\d{4}\s*년/u.test(trimmed) && /(?:상반기|하반기|수시|공채|채용|모집)/u.test(trimmed)) return true;
+  if (
+    /\[[^\]]{2,}\]/u.test(trimmed) &&
+    /(?:신입|경력|인턴|정규|계약|채용|모집|공고|developer|engineer|manager)/iu.test(trimmed)
+  ) {
+    return true;
+  }
+  return false;
 }
 
 export function isLikelyJobUrl(url: string): boolean {

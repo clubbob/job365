@@ -140,8 +140,16 @@ export function loadMidSizedRegistryDbFromDisk(): MidSizedRegistryDbFile | null 
   return null;
 }
 
+let midSizedRegistryCompaniesCache: MidSizedRegistryDbCompany[] | null = null;
+
 export function loadMidSizedRegistryDbCompanies(): MidSizedRegistryDbCompany[] {
+  if (midSizedRegistryCompaniesCache) return midSizedRegistryCompaniesCache;
   const file = loadMidSizedRegistryDbFromDisk();
-  if (file && file.companies.length > 0) return file.companies;
-  return buildMidSizedRegistryDbCompanies();
+  if (file && file.companies.length > 0) {
+    midSizedRegistryCompaniesCache = file.companies;
+    return file.companies;
+  }
+  const built = buildMidSizedRegistryDbCompanies();
+  midSizedRegistryCompaniesCache = built;
+  return built;
 }

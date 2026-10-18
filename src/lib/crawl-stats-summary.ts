@@ -1,4 +1,7 @@
-import { countBrowsableCrawledJobs } from '@/lib/crawled-jobs-server';
+import {
+  countBrowsableCrawledJobs,
+  getAdminActiveJobCountForStats,
+} from '@/lib/crawled-jobs-server';
 import { listCrawlRunsPage, type CrawlRunListItem } from '@/lib/crawl-runs-server';
 import { getRecruitingSegmentRegistryCounts } from '@/lib/recruiting-employers/admin-list';
 
@@ -11,8 +14,10 @@ export type CrawlStatsSummary = {
   saved: number;
   /** 마지막 수집에서 마감 처리한 공고 건수 */
   closed: number;
-  /** 지금 모집 중(노출 기준) 공고 건수 */
+  /** 채용 정보·대시보드와 동일한 노출 기준 모집 중 건수 */
   activeJobs: number;
+  /** DB status=active 수집 모집 중 건수 */
+  storedActiveJobs: number;
   lastRun: {
     finishedAt: string;
     runKind: CrawlRunListItem['runKind'];
@@ -38,9 +43,10 @@ export async function getCrawlStatsSummary(): Promise<CrawlStatsSummary> {
   const registry = getRecruitingSegmentRegistryCounts();
   const companyCount = registry.enterprise + registry['mid-sized'] + registry.misc;
 
-  const [runsPage, activeJobs] = await Promise.all([
+  const [runsPage, activeJobs, storedActiveJobs] = await Promise.all([
     listCrawlRunsPage(1, 1),
     countBrowsableCrawledJobs().catch(() => 0),
+    getAdminActiveJobCountForStats().catch(() => 0),
   ]);
 
   const latest = runsPage.runs[0];
@@ -51,6 +57,7 @@ export async function getCrawlStatsSummary(): Promise<CrawlStatsSummary> {
       saved: 0,
       closed: 0,
       activeJobs,
+      storedActiveJobs,
       lastRun: null,
     };
   }
@@ -63,6 +70,7 @@ export async function getCrawlStatsSummary(): Promise<CrawlStatsSummary> {
     saved: latest.totalUpserted,
     closed: latest.totalClosed,
     activeJobs,
+    storedActiveJobs,
     lastRun: {
       finishedAt: latest.finishedAt || latest.startedAt,
       runKind: latest.runKind,

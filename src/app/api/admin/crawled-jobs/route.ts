@@ -3,6 +3,7 @@ import { requireAdminSession } from '@/lib/admin-auth';
 import { ADMIN_CRAWLED_JOBS_PAGE_SIZE } from '@/lib/admin-constants';
 import {
   listCrawledJobsForAdminPage,
+  type AdminCrawledJobsBoardFilter,
   type AdminCrawledJobsStatusFilter,
 } from '@/lib/crawled-jobs-server';
 import { firebaseAdminListFields, isFirebaseAdminReady } from '@/lib/firebaseAdmin';
@@ -10,6 +11,11 @@ import { firebaseAdminListFields, isFirebaseAdminReady } from '@/lib/firebaseAdm
 function parseStatusFilter(value: string | null): AdminCrawledJobsStatusFilter {
   if (value === 'all' || value === 'closed') return value;
   return 'active';
+}
+
+function parseBoardFilter(value: string | null): AdminCrawledJobsBoardFilter {
+  if (value === 'on_board' || value === 'off_board') return value;
+  return 'all';
 }
 
 export async function GET(request: Request) {
@@ -23,6 +29,7 @@ export async function GET(request: Request) {
     Math.max(1, Number(searchParams.get('pageSize') ?? ADMIN_CRAWLED_JOBS_PAGE_SIZE) || ADMIN_CRAWLED_JOBS_PAGE_SIZE),
   );
   const status = parseStatusFilter(searchParams.get('status'));
+  const board = parseBoardFilter(searchParams.get('board'));
   const q = searchParams.get('q')?.trim() ?? '';
 
   if (!isFirebaseAdminReady()) {
@@ -40,7 +47,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await listCrawledJobsForAdminPage(page, pageSize, status, q);
+    const result = await listCrawledJobsForAdminPage(page, pageSize, status, q, board);
     return NextResponse.json({ ok: true, data: { ...result, ...firebaseAdminListFields() } });
   } catch {
     return NextResponse.json(

@@ -19,6 +19,7 @@ type CrawlStatsSummary = {
   saved: number;
   closed: number;
   activeJobs: number;
+  storedActiveJobs: number;
   lastRun: {
     finishedAt: string;
     runKind: 'daily' | 'mid-sized-only';
@@ -228,12 +229,22 @@ export default function AdminCrawlRunsClient() {
               <tbody className="divide-y divide-border text-foreground">
                 <tr>
                   <td className="pr-3 font-medium text-muted">지금</td>
-                  <td className="pr-3">모집 중 공고</td>
+                  <td className="pr-3">채용 정보 노출</td>
                   <td className="pr-3 text-right font-semibold tabular-nums">
                     {formatCount(summary.activeJobs)}건
                   </td>
                   <td className="text-xs text-muted">
-                    대시보드와 동일. 누적 전체이며 아래 마지막 수집 숫자의 합·차가 아닙니다.
+                    구직자 채용 정보·대시보드와 동일(노출 로직·중복 제거 후). 마지막 수집 합과는 무관합니다.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="pr-3 font-medium text-muted">지금</td>
+                  <td className="pr-3">수집 모집 중</td>
+                  <td className="pr-3 text-right font-semibold tabular-nums">
+                    {formatCount(summary.storedActiveJobs)}건
+                  </td>
+                  <td className="text-xs text-muted">
+                    DB에 모집 중으로 남아 있는 수집 공고 전체. 「수집 채용 공고」 기본 목록 건수와 같습니다.
                   </td>
                 </tr>
                 <tr>

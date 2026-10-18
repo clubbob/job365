@@ -39,7 +39,7 @@ function statForSection(
     case '/admin/jobs/sources':
       return {
         value: stats.jobs.active.toLocaleString('ko-KR'),
-        hint: '모집 중 공고',
+        hint: '채용 정보 노출',
       };
     case '/admin/inquiries':
       return {

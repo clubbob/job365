@@ -9,7 +9,10 @@ import {
   countItCompanyRegistryRows,
 } from '@/lib/it-companies/build-registry-rows';
 import { isMidSizedCertificateActive } from '@/lib/mid-sized-companies/registry-dedupe';
-import { loadMidSizedRegistryDbCompanies } from '@/lib/mid-sized-companies/registry-db';
+import {
+  loadMidSizedRegistryDbCompanies,
+  type MidSizedRegistryDbCompany,
+} from '@/lib/mid-sized-companies/registry-db';
 import { compareMidSizedCompaniesByFame } from '@/lib/mid-sized-companies/fame-rank';
 import { recruitingEmployerCountFromNormMap } from '@/lib/recruiting-employers/aggregate';
 import { resolveRegistryBusinessNumber } from '@/lib/recruiting-employers/careers-url-business-number';
@@ -39,28 +42,35 @@ function midSizedActiveJobCount(
 
 type MidSizedSortRow = AdminRecruitingCompanyRow & { crawlSourceId: string };
 
+function midSizedRowFromRecord(
+  record: MidSizedRegistryDbCompany,
+  stats: CrawledJobSourceStats,
+): AdminRecruitingCompanyRow {
+  const careersUrl = record.careersUrl?.trim() || null;
+  return {
+    companyName: record.companyName,
+    businessNumber: resolveRegistryBusinessNumber({
+      companyName: record.companyName,
+      careersUrl,
+      crawlSourceId: record.crawlSourceId,
+      existing: record.businessNumber,
+    }),
+    segmentLabel: '중견기업',
+    active: isMidSizedCertificateActive(record.validTo),
+    careersUrl,
+    linked: Boolean(careersUrl),
+    careersDiscoveryStatus: record.careersDiscoveryStatus ?? (careersUrl ? 'found' : 'pending'),
+    careersUrlCheckedAt: record.careersUrlCheckedAt ?? null,
+    activeJobCount: midSizedActiveJobCount(record.companyName, record.crawlSourceId, stats),
+  };
+}
+
 function buildMidSizedRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] {
   const registry = loadMidSizedRegistryDbCompanies();
-  const rows: MidSizedSortRow[] = registry.map((record) => {
-    const careersUrl = record.careersUrl?.trim() || null;
-    return {
-      companyName: record.companyName,
-      businessNumber: resolveRegistryBusinessNumber({
-        companyName: record.companyName,
-        careersUrl,
-        crawlSourceId: record.crawlSourceId,
-        existing: record.businessNumber,
-      }),
-      segmentLabel: '중견기업',
-      active: isMidSizedCertificateActive(record.validTo),
-      careersUrl,
-      linked: Boolean(careersUrl),
-      careersDiscoveryStatus: record.careersDiscoveryStatus ?? (careersUrl ? 'found' : 'pending'),
-      careersUrlCheckedAt: record.careersUrlCheckedAt ?? null,
-      activeJobCount: midSizedActiveJobCount(record.companyName, record.crawlSourceId, stats),
-      crawlSourceId: record.crawlSourceId,
-    };
-  });
+  const rows: MidSizedSortRow[] = registry.map((record) => ({
+    ...midSizedRowFromRecord(record, stats),
+    crawlSourceId: record.crawlSourceId,
+  }));
 
   rows.sort((a, b) => {
     const fame = compareMidSizedCompaniesByFame(a, b);
@@ -224,6 +234,178 @@ export function buildAdminRecruitingCompanyRows(
   return buildEnterpriseRows(stats);
 }
 
+export type AdminRecruitingListPageQuery = {
+  offset: number;
+  limit: number;
+  q: string;
+  jobsOnly: boolean;
+};
+
+export type AdminRecruitingListPageResult = {
+  items: AdminRecruitingCompanyRow[];
+  total: number;
+  linkedCount: number;
+  withActiveJobsCount: number;
+};
+
+function paginateAdminRows(
+  rows: AdminRecruitingCompanyRow[],
+  query: AdminRecruitingListPageQuery,
+): AdminRecruitingListPageResult {
+  let filtered = rows;
+  if (query.jobsOnly) filtered = filtered.filter((row) => row.activeJobCount > 0);
+  const q = query.q.trim().toLowerCase();
+  if (q) filtered = filtered.filter((row) => row.companyName.toLowerCase().includes(q));
+
+  const linkedCount = filtered.filter((row) => row.linked).length;
+  const withActiveJobsCount = filtered.filter((row) => row.activeJobCount > 0).length;
+  const total = filtered.length;
+  const items = filtered.slice(query.offset, query.offset + query.limit);
+
+  return { items, total, linkedCount, withActiveJobsCount };
+}
+
+function midSizedSortKey(record: MidSizedRegistryDbCompany, stats: CrawledJobSourceStats): MidSizedSortRow {
+  return {
+    ...midSizedRowFromRecord(record, stats),
+    crawlSourceId: record.crawlSourceId,
+  };
+}
+
+function buildMidSizedListPage(
+  stats: CrawledJobSourceStats,
+  query: AdminRecruitingListPageQuery,
+): AdminRecruitingListPageResult {
+  const registry = loadMidSizedRegistryDbCompanies();
+  const q = query.q.trim().toLowerCase();
+
+  let indices = registry.map((_, index) => index);
+  if (q) {
+    indices = indices.filter((index) => registry[index].companyName.toLowerCase().includes(q));
+  }
+
+  indices.sort((indexA, indexB) => {
+    const rowA = midSizedSortKey(registry[indexA], stats);
+    const rowB = midSizedSortKey(registry[indexB], stats);
+    const fame = compareMidSizedCompaniesByFame(rowA, rowB);
+    if (fame !== 0) return fame;
+    return rowB.activeJobCount - rowA.activeJobCount;
+  });
+
+  if (query.jobsOnly) {
+    indices = indices.filter(
+      (index) => midSizedActiveJobCount(registry[index].companyName, registry[index].crawlSourceId, stats) > 0,
+    );
+  }
+
+  let linkedCount = 0;
+  let withActiveJobsCount = 0;
+  for (const index of indices) {
+    const record = registry[index];
+    if (record.careersUrl?.trim()) linkedCount += 1;
+    if (midSizedActiveJobCount(record.companyName, record.crawlSourceId, stats) > 0) {
+      withActiveJobsCount += 1;
+    }
+  }
+
+  const total = indices.length;
+  const pageIndices = indices.slice(query.offset, query.offset + query.limit);
+  const items = pageIndices.map((index) => midSizedRowFromRecord(registry[index], stats));
+
+  return { items, total, linkedCount, withActiveJobsCount };
+}
+
+function buildEnterpriseListPage(
+  stats: CrawledJobSourceStats,
+  query: AdminRecruitingListPageQuery,
+): AdminRecruitingListPageResult {
+  const registry = [...loadEnterpriseRegistryDbCompanies()].sort(
+    (a, b) =>
+      a.rank - b.rank ||
+      (stats.jobCountsBySource[b.sourceId ?? ''] ?? 0) - (stats.jobCountsBySource[a.sourceId ?? ''] ?? 0),
+  );
+
+  const q = query.q.trim().toLowerCase();
+  let filtered = registry;
+  if (q) filtered = filtered.filter((record) => record.groupName.toLowerCase().includes(q));
+  if (query.jobsOnly) {
+    filtered = filtered.filter((record) => (record.sourceId ? stats.jobCountsBySource[record.sourceId] ?? 0 : 0) > 0);
+  }
+
+  const linkedCount = filtered.filter((record) => Boolean(record.careersUrl?.trim())).length;
+  const withActiveJobsCount = filtered.filter(
+    (record) => (record.sourceId ? stats.jobCountsBySource[record.sourceId] ?? 0 : 0) > 0,
+  ).length;
+  const total = filtered.length;
+  const slice = filtered.slice(query.offset, query.offset + query.limit);
+
+  const items = slice.map((record) => {
+    const careersUrl = record.careersUrl?.trim() || null;
+    const linked = Boolean(careersUrl);
+    const activeJobCount = record.sourceId ? stats.jobCountsBySource[record.sourceId] ?? 0 : 0;
+    const discoveryStatus: AdminRecruitingCompanyRow['careersDiscoveryStatus'] = linked
+      ? 'enterprise'
+      : activeJobCount > 0
+        ? 'found'
+        : 'pending';
+
+    return {
+      companyName: record.groupName,
+      businessNumber: resolveRegistryBusinessNumber({
+        companyName: record.groupName,
+        careersUrl,
+        crawlSourceId: record.crawlSourceId,
+        sourceId: record.sourceId,
+      }),
+      segmentLabel: '대기업·계열',
+      active: null,
+      careersUrl,
+      linked,
+      careersDiscoveryStatus: discoveryStatus,
+      careersUrlCheckedAt: null,
+      activeJobCount,
+    };
+  });
+
+  return { items, total, linkedCount, withActiveJobsCount };
+}
+
+/** 목록 API — 현재 페이지 행만 만들고, 전체 명단 행은 만들지 않습니다. */
+export function buildAdminRecruitingCompanyListPage(
+  segment: RecruitingEmployerAdminSegment,
+  stats: CrawledJobSourceStats,
+  query: AdminRecruitingListPageQuery,
+): AdminRecruitingListPageResult {
+  if (segment === 'enterprise') return buildEnterpriseListPage(stats, query);
+  if (segment === 'mid-sized') return buildMidSizedListPage(stats, query);
+  if (segment === 'misc') {
+    return paginateAdminRows(
+      getMiscCrawlerCompanies().map((company) => {
+        const careersUrl = company.careersUrl?.trim() || null;
+        const activeJobCount = stats.jobCountsBySource[company.sourceId] ?? 0;
+        return {
+          companyName: company.name,
+          businessNumber: resolveRegistryBusinessNumber({
+            companyName: company.name,
+            careersUrl,
+            crawlSourceId: company.id,
+            sourceId: company.sourceId,
+          }),
+          segmentLabel: '기타기업',
+          active: null,
+          careersUrl,
+          linked: Boolean(careersUrl),
+          careersDiscoveryStatus: 'enterprise' as const,
+          careersUrlCheckedAt: null,
+          activeJobCount,
+        };
+      }),
+      query,
+    );
+  }
+  return paginateAdminRows(buildItRows(stats), query);
+}
+
 export type RecruitingCompanyActiveCounts = {
   enterprise: number;
   'mid-sized': number;
@@ -235,8 +417,21 @@ export function countRecruitingCompaniesWithActiveJobs(
   segment: RecruitingEmployerAdminSegment,
   stats: CrawledJobSourceStats,
 ): number {
-  const rows = buildAdminRecruitingCompanyRows(segment, stats);
-  return rows.filter((row) => row.activeJobCount > 0).length;
+  if (segment === 'enterprise') {
+    return loadEnterpriseRegistryDbCompanies().filter(
+      (record) => (record.sourceId ? stats.jobCountsBySource[record.sourceId] ?? 0 : 0) > 0,
+    ).length;
+  }
+  if (segment === 'mid-sized') {
+    return loadMidSizedRegistryDbCompanies().filter(
+      (record) => midSizedActiveJobCount(record.companyName, record.crawlSourceId, stats) > 0,
+    ).length;
+  }
+  if (segment === 'misc') {
+    return getMiscCrawlerCompanies().filter((company) => (stats.jobCountsBySource[company.sourceId] ?? 0) > 0)
+      .length;
+  }
+  return buildItRows(stats).filter((row) => row.activeJobCount > 0).length;
 }
 
 export function computeRecruitingCompanyActiveCounts(stats: CrawledJobSourceStats): RecruitingCompanyActiveCounts {
@@ -248,7 +443,18 @@ export function computeRecruitingCompanyActiveCounts(stats: CrawledJobSourceStat
   };
 }
 
-let cachedStatsRef: CrawledJobSourceStats | null = null;
+function jobCountsFingerprint(jobCountsBySource: Record<string, number>): string {
+  let sourceCount = 0;
+  let jobSum = 0;
+  for (const value of Object.values(jobCountsBySource)) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) continue;
+    sourceCount += 1;
+    jobSum += value;
+  }
+  return `${sourceCount}:${jobSum}`;
+}
+
+let cachedRowsFingerprint = '';
 const cachedRowsBySegment = new Map<RecruitingEmployerAdminSegment, AdminRecruitingCompanyRow[]>();
 const rowsInflightBySegment = new Map<RecruitingEmployerAdminSegment, Promise<AdminRecruitingCompanyRow[]>>();
 
@@ -256,8 +462,9 @@ export async function getAdminRecruitingCompanyRows(
   segment: RecruitingEmployerAdminSegment,
   stats: CrawledJobSourceStats,
 ): Promise<AdminRecruitingCompanyRow[]> {
-  if (cachedStatsRef !== stats) {
-    cachedStatsRef = stats;
+  const fingerprint = jobCountsFingerprint(stats.jobCountsBySource);
+  if (cachedRowsFingerprint !== fingerprint) {
+    cachedRowsFingerprint = fingerprint;
     cachedRowsBySegment.clear();
     rowsInflightBySegment.clear();
   }

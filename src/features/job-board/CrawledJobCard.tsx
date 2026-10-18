@@ -8,6 +8,7 @@ import {
   CRAWLED_JOB_DETAIL_FROM_MY_JOBS,
   crawledJobDetailHref,
 } from '@/lib/job-board/detail-navigation';
+import { effectiveCrawledJobDeadline } from '@/lib/job-board/crawled-deadline';
 import { isJobNewToday } from '@/lib/job-board/match';
 import { cn } from '@/lib/utils';
 import type { CrawledJobListItem } from '@/types/crawled-job';
@@ -98,7 +99,7 @@ export default function CrawledJobCard({
       </dl>
 
       <div className="mt-auto pt-3 text-xs text-muted sm:text-sm">
-        마감 {deadlineLabel(job.deadline)}
+        마감 {deadlineLabel(effectiveCrawledJobDeadline(job.deadline, job.title))}
       </div>
     </Link>
   );

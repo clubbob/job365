@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/admin-auth';
-import { getCrawledJobSourceStats } from '@/lib/crawled-jobs-server';
+import { buildAdminStatsFromJobCounts, getJobCountsForAdminList } from '@/lib/crawled-jobs-server';
 import {
+  buildAdminRecruitingCompanyListPage,
   computeRecruitingCompanyActiveCounts,
   countRecruitingCompaniesWithActiveJobs,
-  getAdminRecruitingCompanyRows,
   getRecruitingSegmentRegistryCounts,
   recruitingSegmentRegistryCount,
 } from '@/lib/recruiting-employers/admin-list';
@@ -52,7 +52,8 @@ export async function GET(request: Request) {
 
   try {
     if (summaryAll) {
-      const stats = await getCrawledJobSourceStats({ skipDisplayFilters: true });
+      const jobCounts = await getJobCountsForAdminList();
+      const stats = buildAdminStatsFromJobCounts(jobCounts);
       return NextResponse.json({
         ok: true,
         data: {
@@ -62,7 +63,8 @@ export async function GET(request: Request) {
       });
     }
 
-    const stats = await getCrawledJobSourceStats({ skipDisplayFilters: true });
+    const jobCounts = await getJobCountsForAdminList();
+    const stats = buildAdminStatsFromJobCounts(jobCounts);
 
     if (summaryOnly && segment) {
       const withActiveJobsCount = countRecruitingCompaniesWithActiveJobs(segment, stats);
@@ -83,31 +85,25 @@ export async function GET(request: Request) {
       });
     }
 
-    const allRows = await getAdminRecruitingCompanyRows(segment!, stats);
-    let rows = allRows;
-
-    if (jobsOnly) rows = rows.filter((row) => row.activeJobCount > 0);
-    if (q) {
-      rows = rows.filter((row) => row.companyName.toLowerCase().includes(q));
-    }
-
-    const total = rows.length;
-    const linkedCount = rows.filter((row) => row.linked).length;
-    const page = rows.slice(offset, offset + limit);
-    const withActiveJobsCount = allRows.filter((row) => row.activeJobCount > 0).length;
+    const pageResult = buildAdminRecruitingCompanyListPage(segment!, stats, {
+      offset,
+      limit,
+      q,
+      jobsOnly,
+    });
     const registryCount = recruitingSegmentRegistryCount(segment!);
 
     return NextResponse.json({
       ok: true,
       data: {
-        items: page,
-        total,
-        linkedCount,
+        items: pageResult.items,
+        total: pageResult.total,
+        linkedCount: pageResult.linkedCount,
         offset,
         limit,
-        hasMore: offset + limit < total,
-        uniqueCompanyCount: allRows.length,
-        withActiveJobsCount,
+        hasMore: offset + limit < pageResult.total,
+        uniqueCompanyCount: registryCount,
+        withActiveJobsCount: pageResult.withActiveJobsCount,
         registryCount,
       },
     });

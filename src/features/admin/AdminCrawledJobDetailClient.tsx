@@ -142,7 +142,7 @@ export default function AdminCrawledJobDetailClient({ jobId }: { jobId: string }
         job={job}
         todayDate={todayDate}
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full max-w-xl flex-wrap justify-center gap-2">
             <a
               href={originalJobUrl}
               target="_blank"

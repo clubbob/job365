@@ -27,6 +27,9 @@ export function stripJobTitleCountdownNoise(title: string): string {
 /** 포털 목록에 붙는 말줄임·마감 문구 */
 function stripPortalListNoise(title: string): string {
   return stripJobTitleCountdownNoise(title)
+    .replace(/^[:：]\s*/u, '')
+    .replace(/\s*마감\s*\(\s*~\s*\d{4}\.\d{1,2}\.\d{1,2}\s*\)\s*$/u, '')
+    .replace(/\s*마감\s*\(\s*\d{4}\.\d{1,2}\.\d{1,2}\s*\)\s*$/u, '')
     .replace(/\s*채용\s*시까지\s*$/u, '')
     .replace(/\s*모집\s*채용\s*시까지\s*$/u, '')
     .trim();

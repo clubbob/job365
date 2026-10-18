@@ -11,6 +11,7 @@ import {
   crawledJobHeadcountDisplay,
   splitCrawledJobHeading,
 } from '@/lib/job-display';
+import { effectiveCrawledJobDeadline } from '@/lib/job-board/crawled-deadline';
 import { isJobNewToday } from '@/lib/job-board/match';
 import type { CrawledJob } from '@/types/crawled-job';
 import type { ReactNode } from 'react';
@@ -38,7 +39,8 @@ export default function CrawledJobDetailView({
   const workField = descriptionFields.find((field) => field.label === '업무');
   const processField = descriptionFields.find((field) => field.label === '전형');
   const headcount = crawledJobHeadcountDisplay(job.headcount, job.description);
-  const deadline = job.deadline ?? '채용 시까지';
+  const effectiveDeadline = effectiveCrawledJobDeadline(job.deadline, job.title);
+  const deadline = effectiveDeadline ?? '채용 시까지';
 
   const outlineItems = [
     { label: '모집 회사', value: heading.employer },
@@ -96,7 +98,7 @@ export default function CrawledJobDetailView({
         </p>
       </DetailSection>
 
-      {actions ? <div className="flex flex-col gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-col items-center gap-2">{actions}</div> : null}
     </article>
   );
 }

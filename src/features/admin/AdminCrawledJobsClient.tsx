@@ -19,6 +19,8 @@ type AdminCrawledJob = CrawledJobListItem & {
   displayHidden: boolean;
 };
 
+type BoardFilter = 'all' | 'on_board' | 'off_board';
+
 type ListResponse =
   | {
       ok: true;
@@ -28,6 +30,10 @@ type ListResponse =
         page: number;
         pageSize: number;
         totalPages: number;
+        counts?: {
+          storedActive: number;
+          boardVisible: number;
+        };
         firebaseReady?: boolean;
         firebaseAdminMessage?: string | null;
       };
@@ -55,9 +61,13 @@ export default function AdminCrawledJobsClient() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
+  const [boardFilter, setBoardFilter] = useState<BoardFilter>('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [jobCounts, setJobCounts] = useState<{ storedActive: number; boardVisible: number } | null>(
+    null,
+  );
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,7 +77,7 @@ export default function AdminCrawledJobsClient() {
 
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, debouncedQuery]);
+  }, [statusFilter, boardFilter, debouncedQuery]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -80,6 +90,7 @@ export default function AdminCrawledJobsClient() {
           page: String(page),
           pageSize: String(ADMIN_CRAWLED_JOBS_PAGE_SIZE),
           status: statusFilter,
+          board: boardFilter,
         });
         if (debouncedQuery.trim()) {
           params.set('q', debouncedQuery.trim());
@@ -103,6 +114,7 @@ export default function AdminCrawledJobsClient() {
         setJobs(json.data.jobs);
         setTotal(json.data.total);
         setTotalPages(json.data.totalPages);
+        setJobCounts(json.data.counts ?? null);
         setFirebaseAdminMessage(json.data.firebaseReady === false ? json.data.firebaseAdminMessage ?? '' : '');
       } catch (err) {
         if (controller.signal.aborted) return;
@@ -113,7 +125,7 @@ export default function AdminCrawledJobsClient() {
     })();
 
     return () => controller.abort();
-  }, [page, statusFilter, debouncedQuery]);
+  }, [page, statusFilter, boardFilter, debouncedQuery]);
 
   async function handleClose(job: AdminCrawledJob) {
     if (job.status === 'closed') return;
@@ -149,9 +161,13 @@ export default function AdminCrawledJobsClient() {
 
   const emptyMessage =
     total === 0 && !debouncedQuery.trim()
-      ? statusFilter === 'active'
-        ? '모집 중인 수집 채용 공고가 없습니다.'
-        : '수집된 채용 공고가 없습니다.'
+      ? boardFilter === 'on_board'
+        ? '채용 정보에 노출되는 수집 공고가 없습니다.'
+        : boardFilter === 'off_board'
+          ? '노출 제외된 수집 공고가 없습니다.'
+          : statusFilter === 'active'
+            ? '모집 중인 수집 채용 공고가 없습니다.'
+            : '수집된 채용 공고가 없습니다.'
       : '검색 결과가 없습니다.';
 
   const isInitialLoad = loading && jobs.length === 0;
@@ -161,7 +177,7 @@ export default function AdminCrawledJobsClient() {
     <div className="space-y-5">
       <PageHeader
         title="수집 채용 공고"
-        description="외부 채용 사이트에서 자동 수집한 채용 공고입니다."
+        description="수집 원본(DB 모집 중)과 구직자 채용 정보 노출 건수를 구분해 볼 수 있습니다."
         homeHref="/admin"
         homeLabel="대시보드"
       />
@@ -192,11 +208,33 @@ export default function AdminCrawledJobsClient() {
               <option value="all">전체 상태</option>
             </select>
           </div>
+          <div>
+            <label className="sr-only" htmlFor="crawled-job-board">노출</label>
+            <select
+              id="crawled-job-board"
+              value={boardFilter}
+              onChange={(event) => setBoardFilter(event.target.value as BoardFilter)}
+              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
+            >
+              <option value="all">전체 수집</option>
+              <option value="on_board">채용 정보 노출</option>
+              <option value="off_board">노출 제외</option>
+            </select>
+          </div>
         </div>
 
-        {total > 0 ? (
+        {statusFilter === 'active' && jobCounts ? (
+          <p className="mb-2 text-xs text-muted">
+            수집 모집 중 {jobCounts.storedActive.toLocaleString('ko-KR')}건 · 채용 정보 노출{' '}
+            {jobCounts.boardVisible.toLocaleString('ko-KR')}건
+          </p>
+        ) : null}
+
+        {total > 0 || debouncedQuery.trim() || boardFilter !== 'all' ? (
           <p className="mb-3 text-xs text-subtle">
             {total.toLocaleString('ko-KR')}건 · {page}/{totalPages}페이지
+            {boardFilter === 'on_board' ? ' · 채용 정보 노출' : ''}
+            {boardFilter === 'off_board' ? ' · 노출 제외' : ''}
             {debouncedQuery.trim() ? ' · 검색 결과' : ''}
             {isRefreshing ? ' · 불러오는 중…' : ''}
           </p>
