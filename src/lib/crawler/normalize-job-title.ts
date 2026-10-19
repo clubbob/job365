@@ -30,6 +30,11 @@ function stripPortalListNoise(title: string): string {
     .replace(/^[:：]\s*/u, '')
     .replace(/\s*마감\s*\(\s*~\s*\d{4}\.\d{1,2}\.\d{1,2}\s*\)\s*$/u, '')
     .replace(/\s*마감\s*\(\s*\d{4}\.\d{1,2}\.\d{1,2}\s*\)\s*$/u, '')
+    .replace(/\s*지원\s*마감(?:된|됨|완료)?\s*$/u, '')
+    .replace(
+      /^[^|]{0,40}\|\s*\d{2}년\s*\d{1,2}월\s*\d{1,2}일[^|]{0,40}까지\s*/u,
+      '',
+    )
     .replace(/\s*채용\s*시까지\s*$/u, '')
     .replace(/\s*모집\s*채용\s*시까지\s*$/u, '')
     .trim();

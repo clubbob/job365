@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import PageActions from '@/components/navigation/PageActions';
 
 /** 제목이 있는 페이지는 이 헤더를 쓰면 새로 고침·홈으로가 같이 붙습니다. */
@@ -9,6 +10,7 @@ export default function PageHeader({
   homeLabel,
   homeOpenInNewWindow,
   onHomeClick,
+  trailing,
 }: {
   title: string;
   description?: string;
@@ -18,6 +20,8 @@ export default function PageHeader({
   homeOpenInNewWindow?: boolean;
   /** 링크 대신 버튼(오버레이 닫기 등) */
   onHomeClick?: () => void;
+  /** 상단 새로 고침·홈 링크 오른쪽 */
+  trailing?: ReactNode;
 }) {
   return (
     <header className="flex min-w-0 items-start justify-between gap-3">
@@ -31,6 +35,7 @@ export default function PageHeader({
         homeLabel={homeLabel}
         homeOpenInNewWindow={homeOpenInNewWindow}
         onHomeClick={onHomeClick}
+        trailing={trailing}
       />
     </header>
   );

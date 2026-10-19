@@ -22,7 +22,18 @@ export async function adminJson<T>(path: string, init?: RequestInit): Promise<T>
       ...init?.headers,
     },
   });
-  const data = (await res.json()) as T;
+  const raw = await res.text();
+  let data: T;
+  try {
+    data = JSON.parse(raw) as T;
+  } catch {
+    const snippet = raw.trim().slice(0, 80);
+    throw new Error(
+      res.ok
+        ? '서버 응답 형식이 올바르지 않습니다.'
+        : humanizeAdminFetchError(snippet || `요청에 실패했습니다. (${res.status})`),
+    );
+  }
   if (!res.ok) {
     const payload = data as { error?: { message?: string; code?: string } };
     const message =

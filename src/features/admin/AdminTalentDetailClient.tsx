@@ -2,16 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import AdminOpenUserSiteButton from '@/components/admin/AdminOpenUserSiteButton';
 import { useRouter } from 'next/navigation';
 import PageHeader from '@/components/navigation/PageHeader';
 import { DetailBadge } from '@/components/ui/PostingDetail';
 import { Card } from '@/components/ui/Card';
-import {
-  adminDangerActionClassName,
-  adminJson,
-  adminPrimaryActionClassName,
-  adminSecondaryActionClassName,
-} from '@/lib/admin-ui';
+import { adminDangerActionClassName, adminJson, adminPrimaryActionClassName } from '@/lib/admin-ui';
 import { deleteMyTalentProfileById, findMyTalentProfile, saveMyTalentProfile } from '@/lib/my-talent-profile';
 import { talentResumeTitle } from '@/lib/talent-display';
 import { isPublishedTalent, type TalentProfile } from '@/types/talent';
@@ -88,9 +84,7 @@ export default function AdminTalentDetailClient({ talentId }: { talentId: string
       <div className="flex flex-wrap items-center gap-2">
         <AdminPublishBadge published={isPublishedTalent(talent)} />
         {isPublishedTalent(talent) ? (
-          <Link href={`/talents/${talent.id}`} className={adminSecondaryActionClassName}>
-            사이트에서 보기
-          </Link>
+          <AdminOpenUserSiteButton path={`/talents/${talent.id}`}>사이트에서 보기</AdminOpenUserSiteButton>
         ) : null}
         <Link href={`/admin/talents/${encodeURIComponent(item.profile.id)}/edit`} className={adminPrimaryActionClassName}>
           수정

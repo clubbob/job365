@@ -19,6 +19,8 @@ import type {
   CrawlSourceResultSink,
   CrawlerSourceResult,
 } from '@/lib/crawler/types';
+import { emptyCompanySegmentCounts, type JobBoardCompanySegment } from '@/lib/job-board/company-segment';
+import { addJobsToPrimaryCompanySegmentCounts } from '@/lib/job-board/stored-active-segment-stats';
 import type { CrawledJob } from '@/types/crawled-job';
 import { saveCrawlRun } from '@/lib/crawl-runs-server';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
@@ -28,6 +30,7 @@ async function syncSourceForId(
   sourceName: string,
   jobs: CrawlerSourceResult['jobs'],
   errors: string[],
+  closedBySegment: Record<JobBoardCompanySegment, number>,
 ) {
   const seenIds = new Set(jobs.map((job) => job.id));
   let upserted = 0;
@@ -43,12 +46,15 @@ async function syncSourceForId(
 
   const activeIds = await listActiveJobIdsBySource(sourceId);
   const staleIds = activeIds.filter((id) => !seenIds.has(id));
-  const closed = await markCrawledJobsClosed(staleIds, new Date().toISOString());
+  const closed = await markCrawledJobsClosed(staleIds, new Date().toISOString(), closedBySegment);
 
   return { sourceId, sourceName, fetched: jobs.length, upserted, closed, errors };
 }
 
-async function syncSource(result: CrawlerSourceResult) {
+async function syncSource(
+  result: CrawlerSourceResult,
+  closedBySegment: Record<JobBoardCompanySegment, number>,
+) {
   const bySource = new Map<string, CrawlerSourceResult['jobs']>();
   for (const job of result.jobs) {
     const list = bySource.get(job.sourceId) ?? [];
@@ -57,7 +63,13 @@ async function syncSource(result: CrawlerSourceResult) {
   }
 
   if (bySource.size <= 1) {
-    const summary = await syncSourceForId(result.sourceId, result.sourceName, result.jobs, result.errors);
+    const summary = await syncSourceForId(
+      result.sourceId,
+      result.sourceName,
+      result.jobs,
+      result.errors,
+      closedBySegment,
+    );
     return {
       fetched: summary.fetched,
       upserted: summary.upserted,
@@ -72,7 +84,7 @@ async function syncSource(result: CrawlerSourceResult) {
   const errors = [...result.errors];
   for (const [sourceId, jobs] of bySource) {
     const name = jobs[0]?.companyName ? `${jobs[0].companyName} 채용` : result.sourceName;
-    const summary = await syncSourceForId(sourceId, name, jobs, []);
+    const summary = await syncSourceForId(sourceId, name, jobs, [], closedBySegment);
     fetched += summary.fetched;
     upserted += summary.upserted;
     closed += summary.closed;
@@ -81,7 +93,7 @@ async function syncSource(result: CrawlerSourceResult) {
   return { fetched, upserted, closed, errors };
 }
 
-function createIncrementalSyncAccumulator() {
+function createIncrementalSyncAccumulator(closedBySegment: Record<JobBoardCompanySegment, number>) {
   const jobsBySource = new Map<string, { sourceName: string; jobs: Map<string, CrawledJob> }>();
   let fetched = 0;
   let upserted = 0;
@@ -109,7 +121,13 @@ function createIncrementalSyncAccumulator() {
     if (!shouldSyncCrawlSourceResult(payload)) return;
 
     fetched += result.jobs.length;
-    const summary = await syncSourceForId(result.sourceId, bucket.sourceName, mergedJobs, result.errors);
+    const summary = await syncSourceForId(
+      result.sourceId,
+      bucket.sourceName,
+      mergedJobs,
+      result.errors,
+      closedBySegment,
+    );
     upserted += summary.upserted;
     closed += summary.closed;
     if (summary.upserted > 0 || summary.closed > 0) {
@@ -126,8 +144,14 @@ function createIncrementalSyncAccumulator() {
 export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
   const startedAt = new Date().toISOString();
   const sourceSummaries = [];
+  const fetchedBySegment = emptyCompanySegmentCounts();
+  const closedBySegment = emptyCompanySegmentCounts();
   let totalUpserted = 0;
   let totalClosed = 0;
+
+  const countFetchedJobs = (jobs: CrawlerSourceResult['jobs']) => {
+    addJobsToPrimaryCompanySegmentCounts(fetchedBySegment, jobs);
+  };
 
   try {
     let isFirstSource = true;
@@ -168,8 +192,9 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
 
         let result: CrawlerSourceResult;
         if (company.adapter === 'mid-sized-registry-batch') {
-          const incremental = createIncrementalSyncAccumulator();
+          const incremental = createIncrementalSyncAccumulator(closedBySegment);
           result = await crawlMidSizedRegistryBatch({ onSourceResult: incremental.sink });
+          countFetchedJobs(result.jobs);
           const totals = incremental.getTotals();
           sourceSummaries.push({
             sourceId: result.sourceId,
@@ -185,8 +210,9 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
         }
 
         if (company.adapter === 'work24-mid-sized-batch') {
-          const incremental = createIncrementalSyncAccumulator();
+          const incremental = createIncrementalSyncAccumulator(closedBySegment);
           result = await crawlWork24MidSizedBatch({ onSourceResult: incremental.sink });
+          countFetchedJobs(result.jobs);
           const totals = incremental.getTotals();
           sourceSummaries.push({
             sourceId: result.sourceId,
@@ -204,7 +230,8 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
         result = await crawl();
 
         if (shouldSyncCrawlSourceResult(result)) {
-          const summary = await syncSource(result);
+          countFetchedJobs(result.jobs);
+          const summary = await syncSource(result, closedBySegment);
           sourceSummaries.push({
             sourceId: result.sourceId,
             sourceName: result.sourceName,
@@ -238,7 +265,7 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
       }
     }
 
-    const expiredClosed = await closeExpiredCrawledJobs(getKoreaDateLocalToday());
+    const expiredClosed = await closeExpiredCrawledJobs(getKoreaDateLocalToday(), closedBySegment);
     totalClosed += expiredClosed;
 
     if (totalUpserted > 0 || totalClosed > 0) {
@@ -253,6 +280,8 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
       sources: sourceSummaries,
       totalUpserted,
       totalClosed,
+      fetchedBySegment,
+      closedBySegment,
     };
 
     await saveCrawlRun(run);

@@ -1,4 +1,5 @@
 import { isLikelyJobTitle, isNonJobContentTitle } from '@/lib/crawler/job-heuristics';
+import { isTitleMarkedRecruitmentClosed } from '@/lib/job-board/crawled-deadline';
 import type { CrawledJob } from '@/types/crawled-job';
 
 export function htmlToPlainText(html: string): string {
@@ -46,6 +47,7 @@ export function lacksJobPostingContext(description: string): boolean {
 export function isInvalidJobTitle(title: string | null | undefined): boolean {
   const trimmed = title?.trim() ?? '';
   if (!trimmed) return true;
+  if (isTitleMarkedRecruitmentClosed(trimmed)) return true;
   if (isNonJobContentTitle(trimmed)) return true;
   return !isLikelyJobTitle(trimmed);
 }

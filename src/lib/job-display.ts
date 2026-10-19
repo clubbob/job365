@@ -392,7 +392,7 @@ export function crawledJobRecruitingCompanyName(
   return heading.employer.trim();
 }
 
-/** 모집 회사와 다를 때만 「수집 출처」 명단 회사를 보여 줍니다. */
+/** 채용 회사와 다를 때만 「수집 출처」 명단 회사를 보여 줍니다. */
 export function shouldShowCrawledCollectSource(employer: string, sourceCompany: string): boolean {
   if (!sourceCompany.trim()) return false;
   if (!employer.trim()) return true;

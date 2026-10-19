@@ -1,10 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Logo from '@/components/brand/Logo';
-import { openInDesktopBrowserWindow } from '@/components/navigation/HomeBackLink';
+import {
+  openUserFacingSiteInNewTab,
+  openUserFacingSiteInNewTabTitle,
+} from '@/lib/open-user-site-tab';
 import AdminInstantLink from '@/features/admin/AdminInstantLink';
 import { useAdminAuth } from '@/features/admin/admin-auth-context';
 import { ADMIN_HEADER_NAV } from '@/lib/admin-menu';
@@ -62,16 +64,14 @@ export default function AdminHeader() {
         )}
 
         <div className="ml-auto flex items-center gap-2">
-          <Link
-            href="/"
+          <button
+            type="button"
+            title={openUserFacingSiteInNewTabTitle}
             className="rounded-lg px-3.5 py-2 text-sm font-semibold text-muted transition-colors hover:bg-neutral-100 hover:text-foreground"
-            onClick={(event) => {
-              event.preventDefault();
-              openInDesktopBrowserWindow('/');
-            }}
+            onClick={() => openUserFacingSiteInNewTab('/')}
           >
             사이트
-          </Link>
+          </button>
           {!authReady ? (
             <span className="text-sm text-muted">확인 중…</span>
           ) : loggedIn ? (

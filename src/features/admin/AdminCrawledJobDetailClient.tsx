@@ -2,13 +2,11 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import AdminOpenUserSiteButton from '@/components/admin/AdminOpenUserSiteButton';
 import PageHeader from '@/components/navigation/PageHeader';
 import { FormFeedback } from '@/components/ui/FormFeedback';
 import CrawledJobDetailView from '@/features/job-board/CrawledJobDetailView';
-import {
-  adminDangerActionClassName,
-  adminSecondaryActionClassName,
-} from '@/lib/admin-ui';
+import { adminDangerActionClassName } from '@/lib/admin-ui';
 import { getCrawledJobOriginalUrl } from '@/lib/crawler/source-url';
 import { cn } from '@/lib/utils';
 import type { CrawledJob } from '@/types/crawled-job';
@@ -116,9 +114,7 @@ export default function AdminCrawledJobDetailClient({ jobId }: { jobId: string }
           <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">노출 중단</span>
         ) : null}
         {canViewOnSite ? (
-          <Link href={`/jobs/${encodeURIComponent(job.id)}`} className={adminSecondaryActionClassName}>
-            사용자 화면
-          </Link>
+          <AdminOpenUserSiteButton path={`/jobs/${encodeURIComponent(job.id)}`}>사용자 화면</AdminOpenUserSiteButton>
         ) : null}
         {job.status === 'active' ? (
           <button

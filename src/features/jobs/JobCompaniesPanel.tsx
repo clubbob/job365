@@ -10,9 +10,9 @@ type CompaniesSegment = 'enterprise' | 'mid-sized' | 'misc' | 'it';
 
 const SEGMENT_TABS: Array<{ id: CompaniesSegment; label: string }> = [
   { id: 'enterprise', label: '대기업·계열사' },
-  { id: 'mid-sized', label: '중견기업' },
+  { id: 'mid-sized', label: '중견 기업' },
+  { id: 'it', label: 'IT 회사' },
   { id: 'misc', label: '기타기업' },
-  { id: 'it', label: 'IT 기업' },
 ];
 
 export default function JobCompaniesPanel({

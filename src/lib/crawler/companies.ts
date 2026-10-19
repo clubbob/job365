@@ -4,6 +4,7 @@ import {
   getMidSizedCareersConfigs,
 } from '@/lib/crawler/mid-sized-careers-urls';
 import { getUniqueMidSizedRegistryForCrawl } from '@/lib/mid-sized-companies/registry-for-crawl';
+import { isItComputingCompanyName } from '@/lib/it-companies/catalog';
 import type { CompanySize } from '@/lib/job-board/constants';
 
 export type CrawlerAdapterId =
@@ -129,8 +130,13 @@ export function getMiscCrawlerCompanies(): CrawlerCompany[] {
   return getCrawlerCompanies().filter((company) => company.tier === 'extra');
 }
 
+/** 관리자 「기타기업」 명단 — IT 명단에 두는 별도 등록 소스는 제외 */
+export function getRegistryMiscCrawlerCompanies(): CrawlerCompany[] {
+  return getMiscCrawlerCompanies().filter((company) => !isItComputingCompanyName(company.name));
+}
+
 export function countMiscCrawlerCompanies(): number {
-  return getMiscCrawlerCompanies().length;
+  return getRegistryMiscCrawlerCompanies().length;
 }
 
 /** @deprecated getCrawlerCompanies()를 사용하세요. */

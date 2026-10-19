@@ -47,4 +47,7 @@ export type CrawledJobListItem = Pick<
   | 'status'
   | 'crawledAt'
   | 'createdAt'
->;
+> & {
+  /** 목록·분류용(있으면 IT 수집 출처 판별에 사용) */
+  sourceId?: string;
+};

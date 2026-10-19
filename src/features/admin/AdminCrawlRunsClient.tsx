@@ -11,15 +11,25 @@ import {
 import { FormFeedback } from '@/components/ui/FormFeedback';
 import { CRAWL_SCHEDULE } from '@/lib/crawler/schedule';
 import { formatInquiryDateTime } from '@/lib/inquiry-display';
+import {
+  emptyCompanySegmentCounts,
+  JOB_BOARD_COMPANY_SEGMENTS,
+  type JobBoardCompanySegment,
+} from '@/lib/job-board/company-segment';
+import type { RecruitingRegistrySegmentCounts } from '@/lib/recruiting-employers/registry-count-format';
 import { cn } from '@/lib/utils';
 
 type CrawlStatsSummary = {
   companyCount: number;
+  companyRegistryBySegment?: RecruitingRegistrySegmentCounts;
   fetched: number;
-  saved: number;
+  fetchedBySegment?: Record<JobBoardCompanySegment, number>;
   closed: number;
+  closedBySegment?: Record<JobBoardCompanySegment, number>;
   activeJobs: number;
+  activeJobsBySegment?: Record<JobBoardCompanySegment, number>;
   storedActiveJobs: number;
+  storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
   lastRun: {
     finishedAt: string;
     runKind: 'daily' | 'mid-sized-only';
@@ -49,7 +59,133 @@ function formatCount(value: number): string {
 }
 
 const STATS_TABLE_CLASS =
-  'w-full min-w-[36rem] text-left text-sm [&_th]:font-semibold [&_th]:text-subtle [&_td]:align-top [&_td]:py-2.5 [&_th]:py-2';
+  'w-full table-fixed border-collapse text-sm [&_th]:font-semibold [&_th]:text-subtle [&_td]:px-3 [&_td]:py-2.5 [&_th]:px-3 [&_th]:py-2.5 [&_th]:align-middle [&_td]:align-middle';
+
+const STATS_NUM_CELL = 'text-right tabular-nums whitespace-nowrap';
+const STATS_TOTAL_CELL = `${STATS_NUM_CELL} border-l border-border bg-neutral-50/80 font-semibold text-foreground`;
+
+type StatsRowView = StatsRow & {
+  groupRowSpan: number;
+  showGroupCell: boolean;
+};
+
+function withGroupRowSpans(rows: StatsRow[]): StatsRowView[] {
+  return rows.map((row, index) => {
+    const prev = rows[index - 1];
+    const showGroupCell = index === 0 || prev.group !== row.group;
+    let groupRowSpan = 1;
+    if (showGroupCell) {
+      while (index + groupRowSpan < rows.length && rows[index + groupRowSpan].group === row.group) {
+        groupRowSpan += 1;
+      }
+    }
+    return { ...row, groupRowSpan, showGroupCell };
+  });
+}
+
+function registrySegmentCounts(
+  counts: RecruitingRegistrySegmentCounts,
+): Record<JobBoardCompanySegment, number> {
+  return {
+    '대기업·계열사': counts.enterprise,
+    '중견 기업': counts['mid-sized'] + counts.misc,
+    'IT 회사': counts.it,
+  };
+}
+
+function segmentNetDelta(
+  fetched: Record<JobBoardCompanySegment, number>,
+  closed: Record<JobBoardCompanySegment, number>,
+): Record<JobBoardCompanySegment, number> {
+  const out = emptyCompanySegmentCounts();
+  for (const segment of JOB_BOARD_COMPANY_SEGMENTS) {
+    out[segment] = (fetched[segment] ?? 0) - (closed[segment] ?? 0);
+  }
+  return out;
+}
+
+function formatSignedCount(value: number, unit: '건' | '곳'): string {
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${formatCount(value)}${unit}`;
+}
+
+function formatAmount(value: number, unit: '건' | '곳', signed = false): string {
+  return signed ? formatSignedCount(value, unit) : `${formatCount(value)}${unit}`;
+}
+
+type StatsRow = {
+  group: string;
+  label: string;
+  values: Record<JobBoardCompanySegment, number> | null;
+  total: number | null;
+  unit: '건' | '곳';
+  signed?: boolean;
+};
+
+function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
+  const registry = summary.companyRegistryBySegment ?? {
+    enterprise: 0,
+    'mid-sized': 0,
+    misc: 0,
+    it: 0,
+  };
+
+  const rows: StatsRow[] = [
+    {
+      group: '명단',
+      label: '채용 회사',
+      total: summary.companyCount,
+      values: registrySegmentCounts(registry),
+      unit: '곳',
+    },
+    {
+      group: '지금',
+      label: '수집 채용 공고',
+      total: summary.storedActiveJobs,
+      values: summary.storedActiveJobsBySegment ?? emptyCompanySegmentCounts(),
+      unit: '건',
+    },
+    {
+      group: '지금',
+      label: '노출 채용 공고',
+      total: summary.activeJobs,
+      values: summary.activeJobsBySegment ?? emptyCompanySegmentCounts(),
+      unit: '건',
+    },
+  ];
+
+  if (!summary.lastRun) return rows;
+
+  const fetched = summary.fetchedBySegment ?? emptyCompanySegmentCounts();
+  const closed = summary.closedBySegment ?? emptyCompanySegmentCounts();
+
+  rows.push(
+    {
+      group: '마지막 수집',
+      label: '추가된 공고',
+      total: summary.fetched,
+      values: fetched,
+      unit: '건',
+    },
+    {
+      group: '마지막 수집',
+      label: '마감 처리',
+      total: summary.closed,
+      values: closed,
+      unit: '건',
+    },
+    {
+      group: '마지막 수집',
+      label: '순 증감',
+      total: summary.fetched - summary.closed,
+      values: segmentNetDelta(fetched, closed),
+      unit: '건',
+      signed: true,
+    },
+  );
+
+  return rows;
+}
 
 export default function AdminCrawlRunsClient() {
   const [summary, setSummary] = useState<CrawlStatsSummary | null>(null);
@@ -137,44 +273,19 @@ export default function AdminCrawlRunsClient() {
   }
 
   const lastRunLabel = summary?.lastRun
-    ? (() => {
-        const kind = summary.lastRun!.runKind === 'mid-sized-only' ? '중견만' : '전체 수집';
-        const at = formatInquiryDateTime(summary.lastRun!.finishedAt);
-        const errors =
-          summary.lastRun!.errorSourceCount > 0
-            ? ` · 오류 소스 ${formatCount(summary.lastRun!.errorSourceCount)}곳`
-            : '';
-        return `마지막 수집 ${at} (${kind}, 소스 ${formatCount(summary.lastRun!.sourceCount)}곳)${errors}`;
-      })()
-    : '아직 수집 기록이 없습니다.';
+    ? `마지막 수집 ${formatInquiryDateTime(summary.lastRun.finishedAt)}`
+    : summary
+      ? '아직 수집 기록이 없습니다.'
+      : undefined;
 
   return (
     <div className="space-y-5">
       <PageHeader
-        title="수집 통계 요약"
-        description="수집 대상 규모와 마지막 수집 결과, 현재 모집 중 공고를 한눈에 봅니다."
+        title="통계 요약"
+        description="명단·현재 공고·마지막 수집 결과를 분류별 합계로 봅니다."
         homeHref="/admin"
         homeLabel="대시보드"
-      />
-
-      <Card>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">수집 일정</p>
-            <p className="mt-1 text-sm text-muted">{CRAWL_SCHEDULE.label}</p>
-            <details className="mt-2 text-xs text-muted">
-              <summary className="cursor-pointer font-semibold text-subtle hover:text-foreground">
-                자동·로컬 수집 안내
-              </summary>
-              <ul className="mt-2 list-disc space-y-1 pl-4 leading-relaxed">
-                <li>{CRAWL_SCHEDULE.detail}</li>
-                <li>
-                  자동 수집은 {CRAWL_SCHEDULE.runner}에서 {CRAWL_SCHEDULE.label}에 실행됩니다(한 번 최대{' '}
-                  {CRAWL_SCHEDULE.maxRunnerMinutes}분). 개발 PC에서는 예약 실행이 없습니다.
-                </li>
-              </ul>
-            </details>
-          </div>
+        trailing={
           <button
             type="button"
             onClick={() => void handleRunNow()}
@@ -183,9 +294,12 @@ export default function AdminCrawlRunsClient() {
           >
             {running ? '수집 중…' : '지금 수집 실행'}
           </button>
-        </div>
-        {running ? (
-          <div className="mt-4 rounded-lg border border-primary/25 bg-primary/5 px-4 py-3">
+        }
+      />
+
+      {running ? (
+        <Card>
+          <div className="rounded-lg border border-primary/25 bg-primary/5 px-4 py-3">
             <p className="text-sm font-semibold text-foreground">
               예상 남은 시간 {formatCrawlEtaLabel(crawlEtaSeconds)}
             </p>
@@ -207,78 +321,65 @@ export default function AdminCrawlRunsClient() {
               있어요. 이 탭을 닫지 마세요.
             </p>
           </div>
-        ) : null}
-      </Card>
+        </Card>
+      ) : null}
 
       {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
       {runMessage ? <FormFeedback variant="success">{runMessage}</FormFeedback> : null}
 
-      <Card title="통계 요약" description={loading ? '불러오는 중…' : lastRunLabel}>
+      <Card description={loading ? '불러오는 중…' : lastRunLabel}>
         {loading && !summary ? <p className="text-sm text-muted">불러오는 중…</p> : null}
         {summary ? (
           <div className="overflow-x-auto">
             <table className={STATS_TABLE_CLASS}>
+              <colgroup>
+                <col className="w-[11%]" />
+                <col className="w-[19%]" />
+                <col className="w-[17.5%]" />
+                <col className="w-[17.5%]" />
+                <col className="w-[17.5%]" />
+                <col className="w-[17.5%]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-border">
-                  <th className="w-[5.5rem] pr-3 whitespace-nowrap">구분</th>
-                  <th className="pr-3 whitespace-nowrap">항목</th>
-                  <th className="w-[6.5rem] pr-3 whitespace-nowrap text-right">값</th>
-                  <th className="min-w-[12rem] text-muted">설명</th>
+                  <th className="whitespace-nowrap text-left">구분</th>
+                  <th className="whitespace-nowrap text-left">항목</th>
+                  {JOB_BOARD_COMPANY_SEGMENTS.map((segment) => (
+                    <th key={segment} className={`${STATS_NUM_CELL} text-subtle`}>
+                      {segment}
+                    </th>
+                  ))}
+                  <th className={STATS_TOTAL_CELL}>합계</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border text-foreground">
-                <tr>
-                  <td className="pr-3 font-medium text-muted">지금</td>
-                  <td className="pr-3">채용 정보 노출</td>
-                  <td className="pr-3 text-right font-semibold tabular-nums">
-                    {formatCount(summary.activeJobs)}건
-                  </td>
-                  <td className="text-xs text-muted">
-                    구직자 채용 정보·대시보드와 동일(노출 로직·중복 제거 후). 마지막 수집 합과는 무관합니다.
-                  </td>
-                </tr>
-                <tr>
-                  <td className="pr-3 font-medium text-muted">지금</td>
-                  <td className="pr-3">수집 모집 중</td>
-                  <td className="pr-3 text-right font-semibold tabular-nums">
-                    {formatCount(summary.storedActiveJobs)}건
-                  </td>
-                  <td className="text-xs text-muted">
-                    DB에 모집 중으로 남아 있는 수집 공고 전체. 「수집 채용 공고」 기본 목록 건수와 같습니다.
-                  </td>
-                </tr>
-                <tr>
-                  <td className="pr-3 font-medium text-muted">명단</td>
-                  <td className="pr-3">수집 대상 회사</td>
-                  <td className="pr-3 text-right font-semibold tabular-nums">
-                    {formatCount(summary.companyCount)}곳
-                  </td>
-                  <td className="text-xs text-muted">대기업·계열, 중견, 기타 명단(수집마다 변하지 않음)</td>
-                </tr>
-                <tr>
-                  <td className="pr-3 font-medium text-muted">마지막 수집</td>
-                  <td className="pr-3">가져온 공고</td>
-                  <td className="pr-3 text-right font-semibold tabular-nums">
-                    {summary.lastRun ? `${formatCount(summary.fetched)}건` : '—'}
-                  </td>
-                  <td className="text-xs text-muted">채용 페이지에서 읽어 온 수</td>
-                </tr>
-                <tr>
-                  <td className="pr-3 font-medium text-muted">마지막 수집</td>
-                  <td className="pr-3">저장·갱신</td>
-                  <td className="pr-3 text-right font-semibold tabular-nums text-primary">
-                    {summary.lastRun ? `${formatCount(summary.saved)}건` : '—'}
-                  </td>
-                  <td className="text-xs text-muted">신규 등록 또는 내용이 바뀐 공고</td>
-                </tr>
-                <tr>
-                  <td className="pr-3 font-medium text-muted">마지막 수집</td>
-                  <td className="pr-3">마감 처리</td>
-                  <td className="pr-3 text-right font-semibold tabular-nums">
-                    {summary.lastRun ? `${formatCount(summary.closed)}건` : '—'}
-                  </td>
-                  <td className="text-xs text-muted">그 수집에서 사라졌거나 마감일이 지난 공고</td>
-                </tr>
+                {withGroupRowSpans(buildStatsRows(summary)).map((row) => {
+                  const total =
+                    row.total === null || row.values === null ? null : row.total;
+                  return (
+                    <tr key={`${row.group}-${row.label}`}>
+                      {row.showGroupCell ? (
+                        <td
+                          rowSpan={row.groupRowSpan}
+                          className="border-r border-border/60 bg-neutral-50/40 font-medium text-muted align-middle"
+                        >
+                          {row.group}
+                        </td>
+                      ) : null}
+                      <td className="whitespace-nowrap">{row.label}</td>
+                      {JOB_BOARD_COMPANY_SEGMENTS.map((segment) => (
+                        <td key={segment} className={STATS_NUM_CELL}>
+                          {row.values === null
+                            ? '—'
+                            : formatAmount(row.values[segment], row.unit, row.signed)}
+                        </td>
+                      ))}
+                      <td className={STATS_TOTAL_CELL}>
+                        {total === null ? '—' : formatAmount(total, row.unit, row.signed)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

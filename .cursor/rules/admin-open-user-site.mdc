@@ -1,0 +1,16 @@
+---
+description: 관리자 화면에서 구직자 사이트로 나갈 때 새 탭으로 열기
+globs: src/features/admin/**/*,src/app/admin/**/*,src/components/layout/AdminHeader.tsx
+alwaysApply: false
+---
+
+# 관리자 → 구직자 사이트
+
+관리자(`/admin`)에서 공개 사이트 경로(`/`, `/jobs/...`, `/talents/...` 등)로 이동할 때는 **현재 탭을 바꾸지 않는다**.
+
+- `openUserFacingSiteInNewTab(path)` (`@/lib/open-user-site-tab`) 또는 `AdminOpenUserSiteButton`을 쓴다.
+- 같은 목적의 `<a href="/...">`, Next `Link`로 공개 경로를 열지 않는다.
+- `openInDesktopBrowserWindow`·팝업 feature 문자열은 쓰지 않는다.
+- 외부 원문 URL(채용 사이트 지원 링크 등)은 기존처럼 `target="_blank"` `<a>`로 둔다.
+
+목록에서 공고 제목은 관리자 상세(`/admin/...`)로만 연결하고, 구직자 화면은 **사용자 화면** 등 전용 버튼으로 새 탭에서 연다.

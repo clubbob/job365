@@ -10,7 +10,29 @@ function normalizeStoredDeadline(deadline: string | null | undefined): string | 
   return match ? match[1]! : null;
 }
 
-/** 제목·포털 목록에 붙은 마감일 (예: 마감 (~2026.03.25)) */
+function normalizeTitleYear(yearRaw: number): number {
+  if (yearRaw < 100) return 2000 + yearRaw;
+  return yearRaw;
+}
+
+function parseKoreanCalendarDateInTitle(title: string): string | null {
+  const until = title.match(
+    /(\d{2}|\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일(?:\s*(?:오전|오후)\s*\d{1,2}시(?:\s*\d{1,2}분)?)?\s*까지/u,
+  );
+  if (until) {
+    return toIsoDate(normalizeTitleYear(+until[1]), +until[2], +until[3]);
+  }
+  return null;
+}
+
+/** 제목에 마감·종료가 명시된 공고 (포털 목록 오탐) */
+export function isTitleMarkedRecruitmentClosed(title: string): boolean {
+  return /지원\s*마감(?:된|됨|완료)?|모집\s*마감(?:된|됨|완료)?|접수\s*마감(?:된|됨)?|채용\s*종료|공고\s*마감|마감\s*된\s*공고/u.test(
+    title,
+  );
+}
+
+/** 제목·포털 목록에 붙은 마감일 (예: 마감 (~2026.03.25), 26년 09월 21일 … 까지) */
 export function parseDeadlineFromJobTitle(title: string): string | null {
   const trimmed = title.trim();
   const patterns = [
@@ -24,7 +46,8 @@ export function parseDeadlineFromJobTitle(title: string): string | null {
     const match = trimmed.match(pattern);
     if (match) return toIsoDate(+match[1], +match[2], +match[3]);
   }
-  return null;
+
+  return parseKoreanCalendarDateInTitle(trimmed);
 }
 
 /** DB 마감일과 제목에 적힌 마감일 중 더 이른 날짜를 씁니다. */
@@ -54,6 +77,7 @@ export function isCrawledJobPostingOpen(
   title: string,
   todayDate = getKoreaDateLocalToday(),
 ): boolean {
+  if (isTitleMarkedRecruitmentClosed(title)) return false;
   const effective = effectiveCrawledJobDeadline(deadline, title);
   return isCrawledJobDeadlineOpen(effective, todayDate);
 }

@@ -46,8 +46,8 @@ export default function AdminExtractListLogicClient() {
             공고는 삭제하지 않고 상태만 「마감」으로 바꿉니다.
           </li>
           <li>
-            <span className="font-medium">수집 통계 요약</span> — 명단 회사 수, 마지막 수집의 가져온·저장·마감 건수,
-            현재 모집 중 공고를 「수집 통계 요약」에서 한눈에 봅니다.
+            <span className="font-medium">통계 요약</span> — 명단 회사 수, 마지막 수집의 추가된·마감 건수,
+            현재 모집 중 공고를 「통계 요약」에서 한눈에 봅니다.
           </li>
         </ul>
       </Card>

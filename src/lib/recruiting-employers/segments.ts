@@ -156,7 +156,10 @@ function createSegmentClassifier(): SegmentClassifier {
 
       if (segment === 'misc') {
         if (midSized) return false;
-        return matchesMiscCrawlerCompany(name) || hasMiscTierSource(row.sourceIds);
+        const misc =
+          matchesMiscCrawlerCompany(name) || hasMiscTierSource(row.sourceIds);
+        if (!misc) return false;
+        return !isItComputingCompanyName(name);
       }
 
       if (segment === 'it') {

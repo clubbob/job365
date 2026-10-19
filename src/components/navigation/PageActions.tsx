@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import HomeBackLink from '@/components/navigation/HomeBackLink';
 import RefreshButton from '@/components/navigation/RefreshButton';
 
@@ -9,6 +10,7 @@ export default function PageActions({
   homeLabel,
   homeOpenInNewWindow,
   onHomeClick,
+  trailing,
 }: {
   showHome?: boolean;
   showRefresh?: boolean;
@@ -16,9 +18,11 @@ export default function PageActions({
   homeLabel?: string;
   homeOpenInNewWindow?: boolean;
   onHomeClick?: () => void;
+  /** 홈·새로 고침 오른쪽에 붙는 버튼 등 */
+  trailing?: ReactNode;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-2">
+    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
       {showRefresh ? <RefreshButton /> : null}
       {showHome ? (
         <HomeBackLink
@@ -28,6 +32,7 @@ export default function PageActions({
           onClick={onHomeClick}
         />
       ) : null}
+      {trailing}
     </div>
   );
 }

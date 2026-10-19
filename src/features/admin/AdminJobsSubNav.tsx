@@ -5,9 +5,9 @@ import AdminInstantLink from '@/features/admin/AdminInstantLink';
 import { cn } from '@/lib/utils';
 
 const ITEMS = [
+  { href: '/admin/jobs/crawl-runs', label: '통계 요약', description: '명단·현재 공고·마지막 수집' },
   { href: '/admin/jobs/sources', label: '수집 채용 회사', description: '수집 채용 회사별 활성 공고 건수' },
   { href: '/admin/jobs/crawled', label: '수집 채용 공고', description: '외부 채용 사이트에서 가져온 채용 공고' },
-  { href: '/admin/jobs/crawl-runs', label: '수집 통계 요약', description: '수집 대상·마지막 수집·현재 공고' },
 ];
 
 function isActive(pathname: string, href: string): boolean {

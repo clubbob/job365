@@ -43,7 +43,27 @@ function mapCrawlRunDoc(id: string, data: DocumentData): CrawlRunListItem {
     sources: Array.isArray(data.sources) ? data.sources : [],
     totalUpserted: Number(data.totalUpserted ?? 0),
     totalClosed: Number(data.totalClosed ?? 0),
+    fetchedBySegment: parseSegmentCountField(data.fetchedBySegment),
+    closedBySegment: parseSegmentCountField(data.closedBySegment),
     createdAt,
+  };
+}
+
+function parseSegmentCountField(
+  raw: unknown,
+): CrawlRunListItem['fetchedBySegment'] | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const record = raw as Record<string, unknown>;
+  const enterprise = Number(record['대기업·계열사'] ?? 0);
+  const mid = Number(record['중견 기업'] ?? 0);
+  const it = Number(record['IT 회사'] ?? 0);
+  if (!Number.isFinite(enterprise) || !Number.isFinite(mid) || !Number.isFinite(it)) {
+    return undefined;
+  }
+  return {
+    '대기업·계열사': enterprise,
+    '중견 기업': mid,
+    'IT 회사': it,
   };
 }
 

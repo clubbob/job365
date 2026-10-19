@@ -8,6 +8,7 @@ import {
   CRAWLED_JOB_DETAIL_FROM_MY_JOBS,
   crawledJobDetailHref,
 } from '@/lib/job-board/detail-navigation';
+import { jobBoardCompanySegmentLabel } from '@/lib/job-board/company-segment';
 import { effectiveCrawledJobDeadline } from '@/lib/job-board/crawled-deadline';
 import { isJobNewToday } from '@/lib/job-board/match';
 import { cn } from '@/lib/utils';
@@ -47,6 +48,7 @@ export default function CrawledJobCard({
   const heading = splitCrawledJobHeading(job.companyName, job.title);
   const displayTitle = crawledJobDetailTitle(job.title, heading.title, heading.employer);
   const showCollectSource = shouldShowCrawledCollectSource(heading.employer, heading.sourceCompany);
+  const companySegment = jobBoardCompanySegmentLabel(job);
 
   return (
     <Link
@@ -80,14 +82,19 @@ export default function CrawledJobCard({
       >
         {displayTitle}
       </h3>
-      {showCollectSource ? (
-        <p className="mt-1.5 line-clamp-1 text-xs text-subtle">
-          {heading.sourceCompany}
-        </p>
-      ) : null}
-      <dl
-        className={cn('space-y-1', showCollectSource ? 'mt-1' : 'mt-1.5')}
-      >
+      <dl className="mt-1.5 space-y-1">
+        {showCollectSource ? (
+          <div className="flex min-w-0 gap-2 text-xs sm:text-sm">
+            <dt className="shrink-0 font-medium text-subtle">수집 출처</dt>
+            <dd className="min-w-0 truncate font-medium text-foreground/85" title={heading.sourceCompany}>
+              {heading.sourceCompany}
+            </dd>
+          </div>
+        ) : null}
+        <div className="flex min-w-0 gap-2 text-xs sm:text-sm">
+          <dt className="shrink-0 font-medium text-subtle">회사 분류</dt>
+          <dd className="min-w-0 truncate font-medium text-foreground/85">{companySegment}</dd>
+        </div>
         <div className="flex min-w-0 gap-2 text-xs sm:text-sm">
           <dt className="shrink-0 font-medium text-subtle">직무</dt>
           <dd className="min-w-0 truncate font-medium text-foreground/85">{roleLabel(job.roles)}</dd>

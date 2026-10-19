@@ -11,6 +11,7 @@ import {
   crawledJobHeadcountDisplay,
   splitCrawledJobHeading,
 } from '@/lib/job-display';
+import { jobBoardCompanySegmentLabel } from '@/lib/job-board/company-segment';
 import { effectiveCrawledJobDeadline } from '@/lib/job-board/crawled-deadline';
 import { isJobNewToday } from '@/lib/job-board/match';
 import type { CrawledJob } from '@/types/crawled-job';
@@ -42,29 +43,23 @@ export default function CrawledJobDetailView({
   const effectiveDeadline = effectiveCrawledJobDeadline(job.deadline, job.title);
   const deadline = effectiveDeadline ?? '채용 시까지';
 
+  const companySegment = jobBoardCompanySegmentLabel(job);
+
   const outlineItems = [
-    { label: '모집 회사', value: heading.employer },
+    { label: '채용 회사', value: heading.employer },
+    { label: '회사 분류', value: companySegment },
     { label: '직무', value: job.roles.join(', ') },
     { label: '지역', value: job.regions.join(', ') },
     { label: '채용 형태', value: job.employmentTypes.join(', ') },
-    ...(processField
-      ? [
-          { label: '채용 인원', value: headcount },
-          { label: '마감일', value: deadline },
-          { label: '전형', value: processField.value, colSpan: 2 as const },
-        ]
-      : [
-          { label: '채용 인원', value: headcount, colSpan: 2 as const },
-          { label: '마감일', value: deadline, colSpan: 2 as const },
-        ]),
-    ...(workField ? [{ label: '업무', value: workField.value, colSpan: 4 as const }] : []),
+    { label: '채용 인원', value: headcount },
+    { label: '마감일', value: deadline },
     {
       label: '수집 출처',
       value: heading.sourceCompany,
       href: originalJobUrl,
-      colSpan: 4 as const,
-      hrefWrap: true,
     },
+    ...(processField ? [{ label: '전형', value: processField.value, colSpan: 4 as const }] : []),
+    ...(workField ? [{ label: '업무', value: workField.value, colSpan: 4 as const }] : []),
   ];
 
   return (

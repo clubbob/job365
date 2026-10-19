@@ -1,3 +1,4 @@
+import type { JobBoardCompanySegment } from '@/lib/job-board/company-segment';
 import type { CrawledJob } from '@/types/crawled-job';
 
 export type CrawlerSourceResult = {
@@ -32,4 +33,8 @@ export type CrawlRunSummary = {
   }>;
   totalUpserted: number;
   totalClosed: number;
+  /** 마지막 수집에서 페이지에서 읽어 온 공고 — 회사 분류별(공고 1건당 1분류) */
+  fetchedBySegment?: Record<JobBoardCompanySegment, number>;
+  /** 마지막 수집에서 마감 처리한 공고 — 회사 분류별 */
+  closedBySegment?: Record<JobBoardCompanySegment, number>;
 };

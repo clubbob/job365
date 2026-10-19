@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import AdminOpenUserSiteButton from '@/components/admin/AdminOpenUserSiteButton';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { ADMIN_CRAWLED_JOBS_PAGE_SIZE } from '@/lib/admin-constants';
-import {
-  adminDangerActionClassName,
-  adminSecondaryActionClassName,
-  firebaseAdminUnavailableText,
-} from '@/lib/admin-ui';
+import { adminDangerActionClassName, firebaseAdminUnavailableText } from '@/lib/admin-ui';
 import { formatKoreaDateTime } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
 import type { CrawledJobListItem, CrawledJobStatus } from '@/types/crawled-job';
@@ -225,7 +222,7 @@ export default function AdminCrawledJobsClient() {
 
         {statusFilter === 'active' && jobCounts ? (
           <p className="mb-2 text-xs text-muted">
-            수집 모집 중 {jobCounts.storedActive.toLocaleString('ko-KR')}건 · 채용 정보 노출{' '}
+            수집 채용 공고 {jobCounts.storedActive.toLocaleString('ko-KR')}건 · 노출 채용 공고{' '}
             {jobCounts.boardVisible.toLocaleString('ko-KR')}건
           </p>
         ) : null}
@@ -293,21 +290,12 @@ export default function AdminCrawledJobsClient() {
                         </div>
                       </td>
                       <td className="min-w-0 truncate py-2.5 pr-4 align-middle font-medium text-foreground" title={job.title}>
-                        {canViewOnSite ? (
-                          <Link
-                            href={`/jobs/${encodeURIComponent(job.id)}`}
-                            className="text-foreground hover:text-primary hover:underline"
-                          >
-                            {job.title}
-                          </Link>
-                        ) : (
-                          <Link
-                            href={`/admin/jobs/crawled/${encodeURIComponent(job.id)}`}
-                            className="text-foreground hover:text-primary hover:underline"
-                          >
-                            {job.title}
-                          </Link>
-                        )}
+                        <Link
+                          href={`/admin/jobs/crawled/${encodeURIComponent(job.id)}`}
+                          className="text-foreground hover:text-primary hover:underline"
+                        >
+                          {job.title}
+                        </Link>
                       </td>
                       <td
                         className="min-w-0 truncate py-2.5 pr-4 align-middle text-muted"
@@ -327,9 +315,9 @@ export default function AdminCrawledJobsClient() {
                       <td className="whitespace-nowrap py-2.5 align-middle">
                         <div className="flex flex-nowrap items-center gap-1.5">
                           {canViewOnSite ? (
-                            <Link href={`/jobs/${encodeURIComponent(job.id)}`} className={adminSecondaryActionClassName}>
+                            <AdminOpenUserSiteButton path={`/jobs/${encodeURIComponent(job.id)}`}>
                               사용자 화면
-                            </Link>
+                            </AdminOpenUserSiteButton>
                           ) : job.status === 'closed' ? (
                             <span className="text-xs text-muted">마감됨</span>
                           ) : (

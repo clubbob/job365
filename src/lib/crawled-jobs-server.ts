@@ -27,6 +27,11 @@ import {
   isCrawledJobPostingOpen,
   parseDeadlineFromJobTitle,
 } from '@/lib/job-board/crawled-deadline';
+import type { JobBoardCompanySegment } from '@/lib/job-board/company-segment';
+import {
+  addJobsToPrimaryCompanySegmentCounts,
+  countStoredActiveJobsByPrimaryCompanySegmentFromList,
+} from '@/lib/job-board/stored-active-segment-stats';
 import { dedupeCrawledJobListItems } from '@/lib/job-board/dedupe-list-jobs';
 import { jobMatchesBoardFilters, matchesCrawledJobKeyword, type JobBoardFilters } from '@/lib/job-board/match';
 import {
@@ -199,6 +204,7 @@ function toListItem(job: CrawledJob): CrawledJobListItem {
   // 저장된 roles는 예전 분류 규칙일 수 있어 제목 기준으로 다시 맞춥니다.
   const {
     id,
+    sourceId,
     sourceName,
     companyName,
     title,
@@ -213,6 +219,7 @@ function toListItem(job: CrawledJob): CrawledJobListItem {
   } = job;
   return {
     id,
+    sourceId,
     sourceName,
     companyName,
     title,
@@ -1070,6 +1077,32 @@ export async function countActiveCrawledJobs(): Promise<number> {
   }
 }
 
+/** 관리자 통계 — 모집 중 공고를 회사 분류(1건=1분류)별 건수 */
+export async function countStoredActiveJobsByPrimaryCompanySegment(): Promise<
+  Record<JobBoardCompanySegment, number>
+> {
+  try {
+    const jobs = await listActiveFromFirestore();
+    return countStoredActiveJobsByPrimaryCompanySegmentFromList(jobs);
+  } catch (error) {
+    console.warn('[crawled-jobs] active segment counts failed', error);
+    return countStoredActiveJobsByPrimaryCompanySegmentFromList([]);
+  }
+}
+
+/** 관리자 통계 — 노출 채용 공고(`/jobs`) 회사 분류별 건수 */
+export async function countBrowsableJobsByPrimaryCompanySegment(): Promise<
+  Record<JobBoardCompanySegment, number>
+> {
+  try {
+    const jobs = await getBrowsableCrawledJobs();
+    return countStoredActiveJobsByPrimaryCompanySegmentFromList(jobs);
+  } catch (error) {
+    console.warn('[crawled-jobs] browsable segment counts failed', error);
+    return countStoredActiveJobsByPrimaryCompanySegmentFromList([]);
+  }
+}
+
 /** 구직자 채용 공고 목록(`/jobs`)과 동일한 모집 중 건수 */
 export async function countBrowsableCrawledJobs(): Promise<number> {
   try {
@@ -1258,10 +1291,38 @@ export async function listActiveJobIdsBySourceAndCompany(
     .map((doc) => doc.id);
 }
 
-export async function markCrawledJobsClosed(ids: string[], closedAt: string): Promise<number> {
+export async function getCrawledJobsForAdminByIds(ids: string[]): Promise<CrawledJob[]> {
+  const db = getAdminFirestore();
+  if (!db || ids.length === 0) return [];
+
+  const uniqueIds = [...new Set(ids.map((id) => id.trim()).filter(Boolean))];
+  const jobs: CrawledJob[] = [];
+  for (let i = 0; i < uniqueIds.length; i += 100) {
+    const chunk = uniqueIds.slice(i, i + 100);
+    const refs = chunk.map((id) => db.collection(COLLECTION).doc(id));
+    const snaps = await db.getAll(...refs);
+    for (const snap of snaps) {
+      if (!snap.exists) continue;
+      const parsed = fromDoc(snap.id, snap.data() ?? {});
+      if (parsed) jobs.push(parsed);
+    }
+  }
+  return jobs;
+}
+
+export async function markCrawledJobsClosed(
+  ids: string[],
+  closedAt: string,
+  closedBySegment?: Record<JobBoardCompanySegment, number>,
+): Promise<number> {
   const db = getAdminFirestore();
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
   if (ids.length === 0) return 0;
+
+  if (closedBySegment) {
+    const jobs = await getCrawledJobsForAdminByIds(ids);
+    addJobsToPrimaryCompanySegmentCounts(closedBySegment, jobs);
+  }
 
   let closed = 0;
   for (let i = 0; i < ids.length; i += 400) {
@@ -1279,20 +1340,31 @@ export async function markCrawledJobsClosed(ids: string[], closedAt: string): Pr
   return closed;
 }
 
-export async function closeExpiredCrawledJobs(todayDate: string): Promise<number> {
+export async function closeExpiredCrawledJobs(
+  todayDate: string,
+  closedBySegment?: Record<JobBoardCompanySegment, number>,
+): Promise<number> {
   const db = getAdminFirestore();
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
 
   const snap = await db.collection(COLLECTION).where('status', '==', 'active').get();
-  const toClose = snap.docs
-    .filter((doc) => {
-      const data = doc.data();
-      const deadline = data.deadline;
-      const title = typeof data.title === 'string' ? data.title : '';
-      if (!isCrawledJobPostingOpen(deadline, title, todayDate)) return true;
-      return isJobTitleStaleForListing(title, todayDate);
-    })
-    .map((doc) => doc.id);
+  const toCloseDocs = snap.docs.filter((doc) => {
+    const data = doc.data();
+    const deadline = data.deadline;
+    const title = typeof data.title === 'string' ? data.title : '';
+    if (!isCrawledJobPostingOpen(deadline, title, todayDate)) return true;
+    return isJobTitleStaleForListing(title, todayDate);
+  });
+  const toClose = toCloseDocs.map((doc) => doc.id);
+
+  if (closedBySegment) {
+    const jobs: CrawledJob[] = [];
+    for (const doc of toCloseDocs) {
+      const parsed = fromDoc(doc.id, doc.data() ?? {});
+      if (parsed) jobs.push(parsed);
+    }
+    addJobsToPrimaryCompanySegmentCounts(closedBySegment, jobs);
+  }
 
   const closed = await markCrawledJobsClosed(toClose, new Date().toISOString());
   if (closed > 0) invalidateCrawledJobsListCache();
