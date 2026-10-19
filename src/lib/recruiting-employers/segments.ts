@@ -150,16 +150,10 @@ function createSegmentClassifier(): SegmentClassifier {
       const name = row.companyName;
       const midSized = midSizedRecord(name);
 
-      if (segment === 'mid-sized') {
-        return Boolean(midSized);
-      }
-
-      if (segment === 'misc') {
-        if (midSized) return false;
-        const misc =
-          matchesMiscCrawlerCompany(name) || hasMiscTierSource(row.sourceIds);
-        if (!misc) return false;
-        return !isItComputingCompanyName(name);
+      if (segment === 'mid-sized' || segment === 'misc') {
+        if (midSized) return true;
+        if (isItComputingCompanyName(name)) return false;
+        return matchesMiscCrawlerCompany(name) || hasMiscTierSource(row.sourceIds);
       }
 
       if (segment === 'it') {
@@ -168,7 +162,12 @@ function createSegmentClassifier(): SegmentClassifier {
       }
 
       if (midSized) return false;
-      if (matchesMiscCrawlerCompany(name) || hasMiscTierSource(row.sourceIds)) return false;
+      if (
+        !isItComputingCompanyName(name) &&
+        (matchesMiscCrawlerCompany(name) || hasMiscTierSource(row.sourceIds))
+      ) {
+        return false;
+      }
 
       return (
         matchesFtcEnterpriseGroup(name) ||

@@ -88,7 +88,7 @@ function registrySegmentCounts(
 ): Record<JobBoardCompanySegment, number> {
   return {
     '대기업·계열사': counts.enterprise,
-    '중견 기업': counts['mid-sized'] + counts.misc,
+    '중견 기업': counts['mid-sized'],
     'IT 회사': counts.it,
   };
 }
@@ -126,7 +126,6 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
   const registry = summary.companyRegistryBySegment ?? {
     enterprise: 0,
     'mid-sized': 0,
-    misc: 0,
     it: 0,
   };
 

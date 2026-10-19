@@ -26,12 +26,12 @@ export default function AdminExtractListLogicClient() {
             실행할 수 있습니다.
           </li>
           <li>
-            <span className="font-medium">수집 대상</span> — 「수집 채용 회사」의 대기업·계열사, 중견기업, 기타기업
+            <span className="font-medium">수집 대상</span> — 「수집 채용 회사」의 대기업·계열사, 중견 기업, IT 회사
             명단에 등록된 채용 페이지 주소를 기준으로 합니다. {CRAWL_SCHEDULE.detail}
           </li>
           <li>
             <span className="font-medium">IT 기업</span> — 관리자 「IT 기업」 탭은 위 명단에서 IT만 모아 보여 줍니다.
-            수집 주기는 대기업·계열·중견·기타 구분을 따릅니다.
+            수집 주기는 대기업·계열·중견·IT 구분을 따릅니다.
           </li>
           <li>
             <span className="font-medium">수집하는 내용</span> — 공고 제목, 지원 링크, 마감일, 지역, 채용 형태,

@@ -12,7 +12,7 @@ export async function GET() {
       ok: true,
       data: {
         companyCount: 0,
-        companyRegistryBySegment: { enterprise: 0, 'mid-sized': 0, misc: 0, it: 0 },
+        companyRegistryBySegment: { enterprise: 0, 'mid-sized': 0, it: 0 },
         fetched: 0,
         fetchedBySegment: {
           '대기업·계열사': 0,

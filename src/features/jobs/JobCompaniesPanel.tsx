@@ -6,13 +6,12 @@ import { FormFeedback } from '@/components/ui/FormFeedback';
 import RecruitingEmployerBrowser from '@/features/admin/RecruitingEmployerBrowser';
 import { cn } from '@/lib/utils';
 
-type CompaniesSegment = 'enterprise' | 'mid-sized' | 'misc' | 'it';
+type CompaniesSegment = 'enterprise' | 'mid-sized' | 'it';
 
 const SEGMENT_TABS: Array<{ id: CompaniesSegment; label: string }> = [
   { id: 'enterprise', label: '대기업·계열사' },
   { id: 'mid-sized', label: '중견 기업' },
   { id: 'it', label: 'IT 회사' },
-  { id: 'misc', label: '기타기업' },
 ];
 
 export default function JobCompaniesPanel({
@@ -23,12 +22,9 @@ export default function JobCompaniesPanel({
   loading?: boolean;
 } = {}) {
   const [segment, setSegment] = useState<CompaniesSegment>('enterprise');
-  const [segmentCounts, setSegmentCounts] = useState<
-    Record<CompaniesSegment, number | null>
-  >({
+  const [segmentCounts, setSegmentCounts] = useState<Record<CompaniesSegment, number | null>>({
     enterprise: null,
     'mid-sized': null,
-    misc: null,
     it: null,
   });
 
@@ -44,7 +40,6 @@ export default function JobCompaniesPanel({
         setSegmentCounts({
           enterprise: json.data.registryCounts.enterprise ?? null,
           'mid-sized': json.data.registryCounts['mid-sized'] ?? null,
-          misc: json.data.registryCounts.misc ?? null,
           it: json.data.registryCounts.it ?? null,
         });
       } catch {
@@ -117,12 +112,6 @@ export default function JobCompaniesPanel({
       {segment === 'mid-sized' ? (
         <div className="space-y-4" role="tabpanel">
           <RecruitingEmployerBrowser segment="mid-sized" onListMeta={handleListMeta} />
-        </div>
-      ) : null}
-
-      {segment === 'misc' ? (
-        <div className="space-y-4" role="tabpanel">
-          <RecruitingEmployerBrowser segment="misc" onListMeta={handleListMeta} />
         </div>
       ) : null}
 

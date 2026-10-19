@@ -17,7 +17,8 @@ const MAX_LIMIT = 100;
 export const maxDuration = 120;
 
 function parseSegment(value: string | null): RecruitingEmployerAdminSegment | null {
-  if (value === 'enterprise' || value === 'mid-sized' || value === 'misc' || value === 'it') return value;
+  if (value === 'misc') return 'mid-sized';
+  if (value === 'enterprise' || value === 'mid-sized' || value === 'it') return value;
   return null;
 }
 

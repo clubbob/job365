@@ -72,7 +72,7 @@ function loadCompanyRegistryBySegment(): RecruitingCompanyActiveCounts {
     return getRecruitingSegmentRegistryCounts();
   } catch (error) {
     console.warn('[crawl-stats-summary] registry counts failed', error);
-    return { enterprise: 0, 'mid-sized': 0, misc: 0, it: 0 };
+    return { enterprise: 0, 'mid-sized': 0, it: 0 };
   }
 }
 
@@ -81,7 +81,6 @@ export async function getCrawlStatsSummary(): Promise<CrawlStatsSummary> {
   const companyCount =
     companyRegistryBySegment.enterprise +
     companyRegistryBySegment['mid-sized'] +
-    companyRegistryBySegment.misc +
     companyRegistryBySegment.it;
 
   const [runsPage, activeJobs, activeJobsBySegment, storedActiveJobs, storedActiveJobsBySegment] =
