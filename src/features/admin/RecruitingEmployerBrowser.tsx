@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/Card';
+import { ADMIN_RECRUITING_COMPANIES_PAGE_SIZE } from '@/lib/admin-constants';
 import {
   AdminCompanyRegistrySearchAndFilters,
   AdminCompanyRegistryStatGrid,
@@ -44,7 +45,7 @@ type RegistryResponse = {
   registryCount: number;
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = ADMIN_RECRUITING_COMPANIES_PAGE_SIZE;
 
 const SEGMENT_REGISTRY_LABEL: Record<Segment, string> = {
   enterprise: '대기업·계열',
@@ -208,13 +209,13 @@ export default function RecruitingEmployerBrowser({
           </div>
 
           <AdminListPagination
-            rangeStart={data.offset + 1}
-            rangeEnd={Math.min(data.offset + data.limit, data.total)}
+            page={Math.floor(data.offset / data.limit) + 1}
+            totalPages={Math.max(1, Math.ceil(data.total / data.limit))}
             total={data.total}
-            prevDisabled={data.offset === 0}
-            nextDisabled={!data.hasMore}
-            onPrev={() => setOffset((value) => Math.max(0, value - PAGE_SIZE))}
-            onNext={() => setOffset((value) => value + PAGE_SIZE)}
+            pageSize={data.limit}
+            loading={refreshing}
+            ariaLabel="수집 채용 회사 페이지"
+            onPageChange={(nextPage) => setOffset((nextPage - 1) * PAGE_SIZE)}
           />
         </>
       ) : null}

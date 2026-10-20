@@ -13,7 +13,6 @@ export default function NoticeDetailClient({ notice }: { notice: Notice }) {
       <PageHeader
         title="공지 사항"
         description={notice.title}
-        showRefresh={false}
         homeHref="/notices"
         homeLabel="목록으로"
       />

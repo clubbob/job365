@@ -1,4 +1,7 @@
+'use client';
+
 import type { ReactNode } from 'react';
+import GroupedPagination from '@/components/navigation/GroupedPagination';
 import { cn } from '@/lib/utils';
 
 export type AdminListStatItem = { label: string; value: ReactNode };
@@ -82,51 +85,39 @@ export function AdminListResultMeta({ children }: { children: ReactNode }) {
 }
 
 export function AdminListPagination({
-  rangeStart,
-  rangeEnd,
+  page,
+  totalPages,
   total,
-  onPrev,
-  onNext,
-  prevDisabled,
-  nextDisabled,
+  pageSize,
+  loading = false,
+  onPageChange,
+  ariaLabel = '목록 페이지',
 }: {
-  rangeStart: number;
-  rangeEnd: number;
+  page: number;
+  totalPages: number;
   total: number;
-  onPrev: () => void;
-  onNext: () => void;
-  prevDisabled: boolean;
-  nextDisabled: boolean;
+  pageSize: number;
+  loading?: boolean;
+  onPageChange: (page: number) => void;
+  ariaLabel?: string;
 }) {
+  const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeEnd = Math.min(page * pageSize, total);
+
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
-      <span>
+    <div className="mt-3 space-y-3">
+      <p className="text-xs text-subtle">
         {rangeStart}–{rangeEnd} / {total.toLocaleString('ko-KR')}
-      </span>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          disabled={prevDisabled}
-          onClick={onPrev}
-          className={cn(
-            'rounded-lg border border-border-strong bg-surface px-3 py-1.5 text-xs font-semibold',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-          )}
-        >
-          이전
-        </button>
-        <button
-          type="button"
-          disabled={nextDisabled}
-          onClick={onNext}
-          className={cn(
-            'rounded-lg border border-border-strong bg-surface px-3 py-1.5 text-xs font-semibold',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-          )}
-        >
-          다음
-        </button>
-      </div>
+        {totalPages > 1 ? ` · ${page}/${totalPages}페이지` : ''}
+        {loading ? ' · 불러오는 중…' : ''}
+      </p>
+      <GroupedPagination
+        page={page}
+        totalPages={totalPages}
+        loading={loading}
+        onPageChange={onPageChange}
+        ariaLabel={ariaLabel}
+      />
     </div>
   );
 }

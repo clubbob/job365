@@ -12,7 +12,6 @@ export default function NoticesPageClient({ notices }: { notices: Notice[] }) {
       <PageHeader
         title="공지 사항"
         description="서비스 이용 안내와 업데이트 소식입니다. 제목을 눌러 전체 내용을 확인할 수 있습니다."
-        showRefresh={false}
       />
 
       <Card>

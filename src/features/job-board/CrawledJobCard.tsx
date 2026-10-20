@@ -36,12 +36,14 @@ export default function CrawledJobCard({
   todayDate,
   onNavigate,
   detailFrom,
+  listReturnQuery,
   className,
 }: {
   job: CrawledJobListItem;
   todayDate?: string;
   onNavigate?: () => void;
   detailFrom?: typeof CRAWLED_JOB_DETAIL_FROM_MY_JOBS;
+  listReturnQuery?: string;
   className?: string;
 }) {
   const isNew = todayDate ? isJobNewToday(job, todayDate) : false;
@@ -52,7 +54,7 @@ export default function CrawledJobCard({
 
   return (
     <Link
-      href={crawledJobDetailHref(job.id, detailFrom)}
+      href={crawledJobDetailHref(job.id, detailFrom, listReturnQuery)}
       onClick={onNavigate}
       className={cn(
         'flex h-full flex-col rounded-xl border border-border bg-surface p-3 shadow-card transition hover:border-primary/40 hover:shadow-card-hover sm:p-4',

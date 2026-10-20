@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import GroupedPagination from '@/components/navigation/GroupedPagination';
 import AdSlot from '@/components/ads/AdSlot';
 import { FormFeedback } from '@/components/ui/FormFeedback';
 import CrawledJobCard from '@/features/job-board/CrawledJobCard';
@@ -9,10 +11,15 @@ import JobBoardFilters, { type JobBoardFilterState } from '@/features/job-board/
 import { useAuth } from '@/features/auth/auth-context';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import { MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site-menu-copy';
+import { JOB_BOARD_REFRESH_EVENT } from '@/lib/job-board/refresh';
 import { JOB_BOARD_RESET_EVENT } from '@/lib/job-board/reset';
 import { cn } from '@/lib/utils';
 import { dedupeCrawledJobListItems } from '@/lib/job-board/dedupe-list-jobs';
 import { CRAWLED_JOB_DETAIL_FROM_MY_JOBS } from '@/lib/job-board/detail-navigation';
+import {
+  hasJobBoardListUrlParams,
+  parseJobBoardListSearchParams,
+} from '@/lib/job-board/list-url';
 import {
   clearJobBoardListRestore,
   loadJobBoardListRestore,
@@ -98,15 +105,27 @@ export default function JobBoardList({
   persistKey,
 }: JobBoardListProps) {
   const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const listBasePath = mode === 'matched' ? '/my-jobs' : '/jobs';
+  const urlListState =
+    persistKey && hasJobBoardListUrlParams(searchParams)
+      ? parseJobBoardListSearchParams(searchParams)
+      : null;
   const [ready, setReady] = useState(() => !persistKey);
   const skipFetchOnceRef = useRef(false);
   const didRestoreScrollRef = useRef(false);
-  const [filters, setFilters] = useState<JobBoardFilterState>(INITIAL_FILTERS);
-  const [debouncedQ, setDebouncedQ] = useState('');
+  const skipDebouncedUrlRef = useRef(false);
+  const searchQueryReadyRef = useRef(false);
+  const [filters, setFilters] = useState<JobBoardFilterState>(
+    urlListState?.filters ?? INITIAL_FILTERS,
+  );
+  const [debouncedQ, setDebouncedQ] = useState(urlListState?.filters.q ?? '');
   const [items, setItems] = useState<CrawledJobListItem[]>(prefetchedItems ?? EMPTY);
   const [todayItems, setTodayItems] = useState<CrawledJobListItem[]>(EMPTY);
   const [todayDate, setTodayDate] = useState('');
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(urlListState?.page ?? 1);
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(() => (prefetchedItems?.length ?? 0) === 0);
@@ -116,17 +135,57 @@ export default function JobBoardList({
   const [todayPage, setTodayPage] = useState(1);
   const [todayHasMore, setTodayHasMore] = useState(false);
   const [noMatches, setNoMatches] = useState(false);
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   const todayOnly = mode === 'today';
+  const matchedSearchOnly = mode === 'matched';
   /** 맞춤·전체 채용 목록: 페이지당 pageSize건, 이전/다음 (누적 더보기 없음) */
   const pagedMainList = mode === 'matched' || mode === 'all';
   const matchedDetailFrom =
     mode === 'matched' ? CRAWLED_JOB_DETAIL_FROM_MY_JOBS : undefined;
 
+  const syncListToUrl = useCallback(
+    (nextPage: number, nextFilters: JobBoardFilterState) => {
+      if (!persistKey || pathname !== listBasePath) return;
+      const qs = buildQuery(
+        { ...nextFilters, q: nextFilters.q },
+        nextPage,
+        todayOnly,
+        pageSize,
+        matchedSearchOnly,
+      );
+      if (searchParams.toString() === qs) return;
+      const next = qs ? `${listBasePath}?${qs}` : listBasePath;
+      router.replace(next, { scroll: false });
+    },
+    [
+      persistKey,
+      pathname,
+      listBasePath,
+      todayOnly,
+      pageSize,
+      matchedSearchOnly,
+      router,
+      searchParams,
+    ],
+  );
+
   useEffect(() => {
-    const handle = window.setTimeout(() => setDebouncedQ(filters.q), 300);
+    const handle = window.setTimeout(() => {
+      setDebouncedQ(filters.q);
+      if (skipDebouncedUrlRef.current) {
+        skipDebouncedUrlRef.current = false;
+        return;
+      }
+      if (!searchQueryReadyRef.current) {
+        searchQueryReadyRef.current = true;
+        return;
+      }
+      setPage(1);
+      syncListToUrl(1, filters);
+    }, 300);
     return () => window.clearTimeout(handle);
-  }, [filters.q]);
+  }, [filters, syncListToUrl]);
 
   const filtersForFetch = useMemo(
     () => ({ ...filters, q: debouncedQ }),
@@ -138,21 +197,19 @@ export default function JobBoardList({
     [filtersForFetch, todayPage, pageSize],
   );
 
-  const matchedSearchOnly = mode === 'matched';
-
   const mainListQuery = useMemo(
     () => buildQuery(filtersForFetch, page, todayOnly, pageSize, matchedSearchOnly),
     [filtersForFetch, page, todayOnly, pageSize, matchedSearchOnly],
   );
 
   const todayFetchKey = useMemo(
-    () => `${showNewSection}\0${mode}\0${todayListQuery}`,
-    [showNewSection, mode, todayListQuery],
+    () => `${showNewSection}\0${mode}\0${refreshNonce}\0${todayListQuery}`,
+    [showNewSection, mode, refreshNonce, todayListQuery],
   );
 
   const mainFetchKey = useMemo(
-    () => `${mode}\0${user?.uid ?? ''}\0${page}\0${pageSize}\0${mainListQuery}`,
-    [mode, user?.uid, page, pageSize, mainListQuery],
+    () => `${mode}\0${user?.uid ?? ''}\0${page}\0${pageSize}\0${refreshNonce}\0${mainListQuery}`,
+    [mode, user?.uid, page, pageSize, refreshNonce, mainListQuery],
   );
 
   const canUsePrefetchedOnly = useMemo(() => {
@@ -215,20 +272,50 @@ export default function JobBoardList({
     persistListSnapshot();
   }, [persistKey, persistListSnapshot]);
 
-  const handleFiltersChange = useCallback((next: JobBoardFilterState) => {
-    setFilters(next);
-    setPage(1);
-    setTodayPage(1);
-    setError(null);
-  }, []);
+  const goToPage = useCallback(
+    (nextPage: number) => {
+      setPage(nextPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      syncListToUrl(nextPage, { ...filters, q: debouncedQ });
+    },
+    [syncListToUrl, filters, debouncedQ],
+  );
+
+  const listReturnQuery = useMemo(
+    () => buildQuery(filtersForFetch, page, todayOnly, pageSize, matchedSearchOnly),
+    [filtersForFetch, page, todayOnly, pageSize, matchedSearchOnly],
+  );
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(total / pageSize)),
+    [total, pageSize],
+  );
+
+  const handleFiltersChange = useCallback(
+    (next: JobBoardFilterState) => {
+      setFilters(next);
+      setPage(1);
+      setTodayPage(1);
+      setError(null);
+      syncListToUrl(1, next);
+    },
+    [syncListToUrl],
+  );
 
   useEffect(() => {
     function onReset() {
       resetList();
     }
+    function onRefresh() {
+      setRefreshNonce((current) => current + 1);
+    }
 
     window.addEventListener(JOB_BOARD_RESET_EVENT, onReset);
-    return () => window.removeEventListener(JOB_BOARD_RESET_EVENT, onReset);
+    window.addEventListener(JOB_BOARD_REFRESH_EVENT, onRefresh);
+    return () => {
+      window.removeEventListener(JOB_BOARD_RESET_EVENT, onReset);
+      window.removeEventListener(JOB_BOARD_REFRESH_EVENT, onRefresh);
+    };
   }, [resetList]);
 
   useEffect(() => {
@@ -236,6 +323,13 @@ export default function JobBoardList({
       setReady(true);
       return;
     }
+    if (hasJobBoardListUrlParams(searchParams)) {
+      const parsed = parseJobBoardListSearchParams(searchParams);
+      skipDebouncedUrlRef.current = true;
+      setFilters(parsed.filters);
+      setDebouncedQ(parsed.filters.q);
+      setPage(parsed.page);
+    } else {
     const restored = loadJobBoardListRestore(persistKey);
     if (restored && restored.mode === mode) {
       setFilters(restored.filters as JobBoardFilterState);
@@ -262,9 +356,10 @@ export default function JobBoardList({
         }
       }
     }
+    }
     setReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore snapshot once per persistKey/mode
-  }, [persistKey, mode]);
+  }, [persistKey, mode, searchParams]);
 
   useEffect(() => {
     if (!persistKey || !ready) return;
@@ -498,6 +593,7 @@ export default function JobBoardList({
                   todayDate={todayDate}
                   onNavigate={persistKey ? rememberListPosition : undefined}
                   detailFrom={matchedDetailFrom}
+                  listReturnQuery={persistKey ? listReturnQuery : undefined}
                 />
               ))}
             </div>
@@ -539,7 +635,12 @@ export default function JobBoardList({
           <h2 className="text-lg font-bold text-foreground">전체 채용 공고</h2>
         ) : null}
 
-        {showCount ? <p className="text-sm text-muted">{countLabel}</p> : null}
+        {showCount ? (
+          <p className="text-sm text-muted">
+            {countLabel}
+            {pagedMainList && totalPages > 1 ? ` · ${page}/${totalPages}페이지` : ''}
+          </p>
+        ) : null}
         {!showCount && loading && items.length === 0 ? (
           <p className="text-sm text-muted">불러오는 중…</p>
         ) : null}
@@ -569,6 +670,7 @@ export default function JobBoardList({
                 todayDate={todayDate}
                 onNavigate={persistKey ? rememberListPosition : undefined}
                 detailFrom={matchedDetailFrom}
+                listReturnQuery={persistKey ? listReturnQuery : undefined}
               />
             ))}
           </div>
@@ -580,29 +682,14 @@ export default function JobBoardList({
           </p>
         ) : null}
 
-        {pagedMainList && (page > 1 || hasMore) && showLoadMore ? (
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {page > 1 ? (
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="rounded-lg border border-border-strong bg-surface px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-neutral-50 disabled:opacity-60"
-              >
-                이전
-              </button>
-            ) : null}
-            {hasMore ? (
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => setPage((p) => p + 1)}
-                className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-60"
-              >
-                {loading ? '불러오는 중…' : '다음'}
-              </button>
-            ) : null}
-          </div>
+        {pagedMainList && showLoadMore ? (
+          <GroupedPagination
+            page={page}
+            totalPages={totalPages}
+            loading={loading}
+            onPageChange={goToPage}
+            ariaLabel="채용 공고 페이지"
+          />
         ) : null}
         {!pagedMainList && hasMore && showLoadMore ? (
           <button

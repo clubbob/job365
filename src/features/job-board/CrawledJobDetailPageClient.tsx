@@ -12,9 +12,11 @@ import { getCrawledJobOriginalUrl } from '@/lib/crawler/source-url';
 import JobInquiryButton from '@/features/inquiry/JobInquiryButton';
 import {
   crawledJobDetailHref,
-  crawledJobDetailListHref,
+  crawledJobDetailListBasePath,
   isCrawledJobDetailFromMyJobs,
 } from '@/lib/job-board/detail-navigation';
+import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
+import { jobBoardListReturnHref } from '@/lib/job-board/list-url';
 import { buildJobInquiryHref } from '@/lib/job-inquiry';
 import { MATCHED_JOBS_PAGE_TITLE } from '@/lib/site-menu-copy';
 import type { CrawledJob } from '@/types/crawled-job';
@@ -22,7 +24,12 @@ import type { CrawledJob } from '@/types/crawled-job';
 export default function CrawledJobDetailPageClient({ jobId }: { jobId: string }) {
   const searchParams = useSearchParams();
   const fromMyJobs = isCrawledJobDetailFromMyJobs(searchParams);
-  const listHref = crawledJobDetailListHref(searchParams);
+  const listHref = jobBoardListReturnHref(
+    crawledJobDetailListBasePath(searchParams),
+    fromMyJobs ? 'jobs-matched' : 'jobs',
+    searchParams,
+    JOB_LIST_PAGE_SIZE,
+  );
   const loginNext = useMemo(
     () => crawledJobDetailHref(jobId, fromMyJobs ? 'my-jobs' : undefined),
     [fromMyJobs, jobId],
