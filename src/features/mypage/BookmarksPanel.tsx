@@ -1,15 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import CrawledJobCard from '@/features/job-board/CrawledJobCard';
 import { useAuth } from '@/features/auth/auth-context';
-import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
+import { JOB_LIST_PAGE_SIZE, resolveJobBoardListPageSize } from '@/lib/job-board/constants';
+import { useIsBelowSm } from '@/lib/use-is-below-sm';
 import type { CrawledJobListItem } from '@/types/crawled-job';
 
 export default function BookmarksPanel() {
   const { user } = useAuth();
+  const isNarrowViewport = useIsBelowSm();
+  const listPageSize = resolveJobBoardListPageSize(JOB_LIST_PAGE_SIZE, isNarrowViewport);
   const [items, setItems] = useState<CrawledJobListItem[]>([]);
   const [page, setPage] = useState(1);
+  const prevListPageSizeRef = useRef(listPageSize);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -22,7 +26,7 @@ export default function BookmarksPanel() {
 
     try {
       const token = await user.getIdToken();
-      const res = await fetch(`/api/users/me/bookmarks?page=${page}&pageSize=${JOB_LIST_PAGE_SIZE}`, {
+      const res = await fetch(`/api/users/me/bookmarks?page=${page}&pageSize=${listPageSize}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = (await res.json()) as {
@@ -39,7 +43,13 @@ export default function BookmarksPanel() {
     } finally {
       setLoading(false);
     }
-  }, [user, page]);
+  }, [user, page, listPageSize]);
+
+  useEffect(() => {
+    if (prevListPageSizeRef.current === listPageSize) return;
+    prevListPageSizeRef.current = listPageSize;
+    setPage(1);
+  }, [listPageSize]);
 
   useEffect(() => {
     void load();

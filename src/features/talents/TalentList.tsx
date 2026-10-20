@@ -7,6 +7,8 @@ import TalentCard from '@/features/talents/TalentCard';
 import { useAuth } from '@/features/auth/auth-context';
 import { useUserMode } from '@/features/mode/mode-context';
 import { loadListRestore, saveListRestore, saveListScroll } from '@/lib/list-restore';
+import { LIST_PAGE_SIZE_MOBILE } from '@/lib/list-page';
+import { useIsBelowSm } from '@/lib/use-is-below-sm';
 import { listTalents } from '@/lib/talent-catalog';
 import { cn } from '@/lib/utils';
 import {
@@ -81,6 +83,9 @@ export default function TalentList({
   const [page, setPage] = useState(1);
   const [ready, setReady] = useState(!persistKey);
   const skipPageReset = useRef(Boolean(persistKey));
+  const isNarrowViewport = useIsBelowSm();
+  const listPageSize = isNarrowViewport ? LIST_PAGE_SIZE_MOBILE : pageSize;
+  const prevListPageSizeRef = useRef(listPageSize);
   const { user } = useAuth();
   const { mode } = useUserMode();
   const viewerId = mode === 'recruiter' ? user?.uid : undefined;
@@ -103,7 +108,13 @@ export default function TalentList({
     });
   }, [allTalents, filter, occupations, regions, showSearch, workType, workTypes]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / listPageSize));
+
+  useEffect(() => {
+    if (prevListPageSizeRef.current === listPageSize) return;
+    prevListPageSizeRef.current = listPageSize;
+    setPage(1);
+  }, [listPageSize]);
 
   useEffect(() => {
     setAllTalents(listTalents(viewerId));
@@ -166,9 +177,9 @@ export default function TalentList({
 
   const talents = useMemo(() => {
     if (limit) return filtered.slice(0, limit);
-    const start = (page - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, limit, page, pageSize]);
+    const start = (page - 1) * listPageSize;
+    return filtered.slice(start, start + listPageSize);
+  }, [filtered, limit, page, listPageSize]);
 
   const hasExtraFilters = workTypes.length > 0 || occupations.length > 0 || regions.length > 0;
 
@@ -277,7 +288,7 @@ export default function TalentList({
         </div>
       ) : null}
 
-      {filtered.length > pageSize && !limit ? (
+      {filtered.length > listPageSize && !limit ? (
         <nav className="flex flex-wrap items-center justify-center gap-1 pt-1" aria-label="인재 정보 페이지">
           <button
             type="button"

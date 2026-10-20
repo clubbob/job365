@@ -70,8 +70,23 @@ export type CompanySize = (typeof COMPANY_SIZES)[number];
 /** 3열 × 3행 */
 export const JOB_LIST_PAGE_SIZE = 9;
 
+/** 모바일(1열) 채용·맞춤 목록 */
+export const JOB_LIST_PAGE_SIZE_MOBILE = 6;
+
 /** 메인 페이지 초기 노출 (3열 × 2행) */
 export const JOB_HOME_PAGE_SIZE = 6;
+
+/** 모바일(1열) 메인 최근 공고 */
+export const JOB_HOME_PAGE_SIZE_MOBILE = 4;
+
+export function resolveJobBoardListPageSize(
+  configuredPageSize: number,
+  narrowViewport: boolean,
+): number {
+  if (!narrowViewport) return configuredPageSize;
+  if (configuredPageSize === JOB_HOME_PAGE_SIZE) return JOB_HOME_PAGE_SIZE_MOBILE;
+  return JOB_LIST_PAGE_SIZE_MOBILE;
+}
 
 export function isEmploymentType(value: string): value is EmploymentType {
   return (EMPLOYMENT_TYPES as readonly string[]).includes(value);

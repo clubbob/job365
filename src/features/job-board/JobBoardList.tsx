@@ -14,7 +14,11 @@ import {
   EMPTY_JOB_BOARD_FILTERS,
   type JobBoardFilterState,
 } from '@/lib/job-board/filter-state';
-import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
+import {
+  JOB_LIST_PAGE_SIZE,
+  resolveJobBoardListPageSize,
+} from '@/lib/job-board/constants';
+import { useIsBelowSm } from '@/lib/use-is-below-sm';
 import { MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site-menu-copy';
 import { JOB_BOARD_REFRESH_EVENT } from '@/lib/job-board/refresh';
 import { JOB_BOARD_RESET_EVENT } from '@/lib/job-board/reset';
@@ -125,6 +129,11 @@ function JobBoardList({
   matchedUser = null,
 }: JobBoardListProps) {
   const user = mode === 'matched' ? matchedUser : null;
+  const isNarrowViewport = useIsBelowSm();
+  const listPageSize = useMemo(
+    () => resolveJobBoardListPageSize(pageSize, isNarrowViewport),
+    [pageSize, isNarrowViewport],
+  );
   const listBasePath = mode === 'matched' ? '/my-jobs' : '/jobs';
   const [ready, setReady] = useState(() => !persistKey);
   const skipFetchOnceRef = useRef(false);
@@ -151,6 +160,14 @@ function JobBoardList({
   const [todayHasMore, setTodayHasMore] = useState(false);
   const [noMatches, setNoMatches] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
+  const prevListPageSizeRef = useRef(listPageSize);
+
+  useEffect(() => {
+    if (prevListPageSizeRef.current === listPageSize) return;
+    prevListPageSizeRef.current = listPageSize;
+    setPage(1);
+    setTodayPage(1);
+  }, [listPageSize]);
 
   const todayOnly = mode === 'today';
   const matchedSearchOnly = mode === 'matched';
@@ -166,14 +183,14 @@ function JobBoardList({
         { ...nextFilters, q: nextFilters.q },
         nextPage,
         todayOnly,
-        pageSize,
+        listPageSize,
         matchedSearchOnly,
       );
       if (urlSync.searchParams.toString() === qs) return;
       const next = qs ? `${listBasePath}?${qs}` : listBasePath;
       urlSync.router.replace(next, { scroll: false });
     },
-    [persistKey, urlSync, listBasePath, todayOnly, pageSize, matchedSearchOnly],
+    [persistKey, urlSync, listBasePath, todayOnly, listPageSize, matchedSearchOnly],
   );
 
   useEffect(() => {
@@ -199,13 +216,13 @@ function JobBoardList({
   );
 
   const todayListQuery = useMemo(
-    () => buildQuery(filtersForFetch, todayPage, true, pageSize),
-    [filtersForFetch, todayPage, pageSize],
+    () => buildQuery(filtersForFetch, todayPage, true, listPageSize),
+    [filtersForFetch, todayPage, listPageSize],
   );
 
   const mainListQuery = useMemo(
-    () => buildQuery(filtersForFetch, page, todayOnly, pageSize, matchedSearchOnly),
-    [filtersForFetch, page, todayOnly, pageSize, matchedSearchOnly],
+    () => buildQuery(filtersForFetch, page, todayOnly, listPageSize, matchedSearchOnly),
+    [filtersForFetch, page, todayOnly, listPageSize, matchedSearchOnly],
   );
 
   const todayFetchKey = useMemo(
@@ -214,8 +231,8 @@ function JobBoardList({
   );
 
   const mainFetchKey = useMemo(
-    () => `${mode}\0${user?.uid ?? ''}\0${page}\0${pageSize}\0${refreshNonce}\0${mainListQuery}`,
-    [mode, user?.uid, page, pageSize, refreshNonce, mainListQuery],
+    () => `${mode}\0${user?.uid ?? ''}\0${page}\0${listPageSize}\0${refreshNonce}\0${mainListQuery}`,
+    [mode, user?.uid, page, listPageSize, refreshNonce, mainListQuery],
   );
 
   const canUsePrefetchedOnly = useMemo(() => {
@@ -288,13 +305,13 @@ function JobBoardList({
   );
 
   const listReturnQuery = useMemo(
-    () => buildQuery(filtersForFetch, page, todayOnly, pageSize, matchedSearchOnly),
-    [filtersForFetch, page, todayOnly, pageSize, matchedSearchOnly],
+    () => buildQuery(filtersForFetch, page, todayOnly, listPageSize, matchedSearchOnly),
+    [filtersForFetch, page, todayOnly, listPageSize, matchedSearchOnly],
   );
 
   const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(total / pageSize)),
-    [total, pageSize],
+    () => Math.max(1, Math.ceil(total / listPageSize)),
+    [total, listPageSize],
   );
 
   const handleFiltersChange = useCallback(
@@ -659,7 +676,7 @@ function JobBoardList({
 
         {loading && items.length === 0 ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: pageSize }, (_, index) => (
+            {Array.from({ length: listPageSize }, (_, index) => (
               <JobCardSkeleton key={index} />
             ))}
           </div>
