@@ -1,4 +1,4 @@
-import { normalizeCompanyLabel } from '@/lib/crawler/company-name-match';
+import { normalizeCompanyLabel, stripEmployerFromCrawledTitle } from '@/lib/crawler/company-name-match';
 import { isLikelyJobUrl } from '@/lib/crawler/job-heuristics';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 import { crawledJobRecruitingCompanyName } from '@/lib/job-display';
@@ -33,20 +33,35 @@ export function normalizeApplyUrlForDedupe(applyUrl: string): string | null {
   }
 }
 
+function dedupeTitleCore(
+  job: Pick<CrawledJobListItem, 'title' | 'companyName'>,
+  employerRaw: string,
+): string {
+  const normalized = normalizeJobTitle(job.title);
+  const stripped = stripEmployerFromCrawledTitle(normalized, employerRaw) || normalized;
+  return normalizeCompanyLabel(stripped);
+}
+
 /** 목록에서 같은 공고(다른 수집 문서 id)를 한 건으로 묶을 때 쓰는 키 */
 export function crawledJobListDedupeKey(
   job: Pick<CrawledJobListItem, 'id' | 'title' | 'companyName' | 'applyUrl'>,
 ): string {
+  const employerRaw = crawledJobRecruitingCompanyName(job) || job.companyName;
+  const employer = normalizeCompanyLabel(employerRaw);
+  const titleCore = dedupeTitleCore(job, employerRaw);
+
+  // 같은 회사·같은 제목이면 지원 URL이 달라도 한 건(고용24·사이트 중복 수집).
+  if (employer && titleCore) {
+    return `${employer}\u0001${titleCore}`;
+  }
+
   const title = normalizeCompanyLabel(normalizeJobTitle(job.title));
   const applyUrl = job.applyUrl?.trim() ?? '';
   const urlKey = applyUrl ? normalizeApplyUrlForDedupe(applyUrl) : null;
-
-  // 동일 지원(원문) URL + 제목이면 모집 회사 표기가 달라도 한 건으로 봅니다.
   if (urlKey && title && isLikelyJobUrl(applyUrl)) {
     return `url:${urlKey}\u0001${title}`;
   }
 
-  const employer = normalizeCompanyLabel(crawledJobRecruitingCompanyName(job) || job.companyName);
   if (!employer || !title) return `id:${job.id}`;
   return `${employer}\u0001${title}`;
 }

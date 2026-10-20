@@ -1,13 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import AdminOpenUserSiteButton from '@/components/admin/AdminOpenUserSiteButton';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { ADMIN_CRAWLED_JOBS_PAGE_SIZE } from '@/lib/admin-constants';
 import { adminDangerActionClassName, firebaseAdminUnavailableText } from '@/lib/admin-ui';
 import { formatKoreaDateTime } from '@/lib/datetime';
+import {
+  buildAdminCrawledJobsListSearchParams,
+  parseAdminCrawledJobsListSearchParams,
+  persistAdminCrawledJobsListReturnState,
+  type AdminCrawledJobsListUrlState,
+} from '@/lib/admin-crawled-jobs-list-url';
 import { cn } from '@/lib/utils';
 import type { CrawledJobListItem, CrawledJobStatus } from '@/types/crawled-job';
 
@@ -50,31 +57,125 @@ function getPageGroupRange(currentPage: number, totalPages: number): { groupStar
   return { groupStart, groupEnd };
 }
 
-export default function AdminCrawledJobsClient() {
+export type AdminCrawledJobsListMode = 'stored' | 'browsable';
+
+export default function AdminCrawledJobsClient({
+  listMode = 'stored',
+}: {
+  listMode?: AdminCrawledJobsListMode;
+} = {}) {
+  const browsableOnly = listMode === 'browsable';
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  const initialList = parseAdminCrawledJobsListSearchParams(searchParams, browsableOnly);
   const [jobs, setJobs] = useState<AdminCrawledJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [firebaseAdminMessage, setFirebaseAdminMessage] = useState('');
-  const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
-  const [boardFilter, setBoardFilter] = useState<BoardFilter>('all');
-  const [page, setPage] = useState(1);
+  const [query, setQuery] = useState(initialList.q);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialList.q);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialList.status);
+  const [boardFilter, setBoardFilter] = useState<BoardFilter>(initialList.board);
+  const [page, setPage] = useState(initialList.page);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [jobCounts, setJobCounts] = useState<{ storedActive: number; boardVisible: number } | null>(
     null,
   );
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const searchQueryReadyRef = useRef(false);
+  const skipDebouncedPageResetRef = useRef(false);
+
+  const pushListUrl = useCallback(
+    (state: AdminCrawledJobsListUrlState) => {
+      persistAdminCrawledJobsListReturnState(browsableOnly, state);
+      const desired = buildAdminCrawledJobsListSearchParams(state);
+      const current = searchParams.toString();
+      if (desired === current) return;
+      const next = desired ? `${pathname}?${desired}` : pathname;
+      router.replace(next, { scroll: false });
+    },
+    [browsableOnly, pathname, router, searchParams],
+  );
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedQuery(query), 300);
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(query);
+      if (skipDebouncedPageResetRef.current) {
+        skipDebouncedPageResetRef.current = false;
+        return;
+      }
+      if (!searchQueryReadyRef.current) {
+        searchQueryReadyRef.current = true;
+        return;
+      }
+      setPage(1);
+      pushListUrl({
+        page: 1,
+        q: query,
+        status: statusFilter,
+        board: boardFilter,
+      });
+    }, 300);
     return () => window.clearTimeout(timer);
-  }, [query]);
+  }, [query, statusFilter, boardFilter, pushListUrl]);
 
   useEffect(() => {
+    const parsed = parseAdminCrawledJobsListSearchParams(searchParams, browsableOnly);
+    skipDebouncedPageResetRef.current = true;
+    setPage(parsed.page);
+    setQuery(parsed.q);
+    setDebouncedQuery(parsed.q);
+    setStatusFilter(parsed.status);
+    setBoardFilter(parsed.board);
+  }, [searchParams, browsableOnly]);
+
+  const listUrlState = useMemo(
+    () => ({
+      page,
+      q: debouncedQuery,
+      status: statusFilter,
+      board: boardFilter,
+    }),
+    [page, debouncedQuery, statusFilter, boardFilter],
+  );
+
+  useEffect(() => {
+    persistAdminCrawledJobsListReturnState(browsableOnly, listUrlState);
+  }, [browsableOnly, listUrlState]);
+
+  function goToPage(nextPage: number) {
+    setPage(nextPage);
+    pushListUrl({
+      page: nextPage,
+      q: debouncedQuery,
+      status: statusFilter,
+      board: boardFilter,
+    });
+  }
+
+  function changeStatusFilter(next: StatusFilter) {
+    setStatusFilter(next);
     setPage(1);
-  }, [statusFilter, boardFilter, debouncedQuery]);
+    pushListUrl({
+      page: 1,
+      q: debouncedQuery,
+      status: next,
+      board: boardFilter,
+    });
+  }
+
+  function changeBoardFilter(next: BoardFilter) {
+    setBoardFilter(next);
+    setPage(1);
+    pushListUrl({
+      page: 1,
+      q: debouncedQuery,
+      status: statusFilter,
+      board: next,
+    });
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -158,13 +259,15 @@ export default function AdminCrawledJobsClient() {
 
   const emptyMessage =
     total === 0 && !debouncedQuery.trim()
-      ? boardFilter === 'on_board'
-        ? '채용 정보에 노출되는 수집 공고가 없습니다.'
-        : boardFilter === 'off_board'
-          ? '노출 제외된 수집 공고가 없습니다.'
-          : statusFilter === 'active'
-            ? '모집 중인 수집 채용 공고가 없습니다.'
-            : '수집된 채용 공고가 없습니다.'
+      ? browsableOnly
+        ? '노출 채용 공고가 없습니다.'
+        : boardFilter === 'on_board'
+          ? '채용 정보에 노출되는 수집 공고가 없습니다.'
+          : boardFilter === 'off_board'
+            ? '노출 제외된 수집 공고가 없습니다.'
+            : statusFilter === 'active'
+              ? '모집 중인 수집 채용 공고가 없습니다.'
+              : '수집된 채용 공고가 없습니다.'
       : '검색 결과가 없습니다.';
 
   const isInitialLoad = loading && jobs.length === 0;
@@ -173,8 +276,12 @@ export default function AdminCrawledJobsClient() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="수집 채용 공고"
-        description="수집 원본(DB 모집 중)과 구직자 채용 정보 노출 건수를 구분해 볼 수 있습니다."
+        title={browsableOnly ? '노출 채용 공고' : '수집 채용 공고'}
+        description={
+          browsableOnly
+            ? '구직자 채용 정보(/jobs)와 같은 노출·마감·중복 제거 기준 목록입니다.'
+            : 'DB 모집 중 수집 공고입니다. 노출 여부는 필터로 구분할 수 있습니다.'
+        }
         homeHref="/admin"
         homeLabel="대시보드"
       />
@@ -192,35 +299,47 @@ export default function AdminCrawledJobsClient() {
               className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
             />
           </div>
-          <div>
-            <label className="sr-only" htmlFor="crawled-job-status">상태</label>
-            <select
-              id="crawled-job-status"
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
-            >
-              <option value="active">모집 중</option>
-              <option value="closed">마감</option>
-              <option value="all">전체 상태</option>
-            </select>
-          </div>
-          <div>
-            <label className="sr-only" htmlFor="crawled-job-board">노출</label>
-            <select
-              id="crawled-job-board"
-              value={boardFilter}
-              onChange={(event) => setBoardFilter(event.target.value as BoardFilter)}
-              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
-            >
-              <option value="all">전체 수집</option>
-              <option value="on_board">채용 정보 노출</option>
-              <option value="off_board">노출 제외</option>
-            </select>
-          </div>
+          {!browsableOnly ? (
+            <div>
+              <label className="sr-only" htmlFor="crawled-job-status">상태</label>
+              <select
+                id="crawled-job-status"
+                value={statusFilter}
+                onChange={(event) => changeStatusFilter(event.target.value as StatusFilter)}
+                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
+              >
+                <option value="active">모집 중</option>
+                <option value="closed">마감</option>
+                <option value="all">전체 상태</option>
+              </select>
+            </div>
+          ) : null}
+          {!browsableOnly ? (
+            <div>
+              <label className="sr-only" htmlFor="crawled-job-board">노출</label>
+              <select
+                id="crawled-job-board"
+                value={boardFilter}
+                onChange={(event) => changeBoardFilter(event.target.value as BoardFilter)}
+                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
+              >
+                <option value="all">전체 수집</option>
+                <option value="on_board">채용 정보 노출</option>
+                <option value="off_board">노출 제외</option>
+              </select>
+            </div>
+          ) : null}
         </div>
 
-        {statusFilter === 'active' && jobCounts ? (
+        {browsableOnly && jobCounts ? (
+          <p className="mb-2 text-xs text-muted">
+            노출 채용 공고 {jobCounts.boardVisible.toLocaleString('ko-KR')}건
+            {jobCounts.storedActive > jobCounts.boardVisible
+              ? ` · 수집 채용 공고 ${jobCounts.storedActive.toLocaleString('ko-KR')}건 중 노출`
+              : ''}
+          </p>
+        ) : null}
+        {!browsableOnly && statusFilter === 'active' && jobCounts ? (
           <p className="mb-2 text-xs text-muted">
             수집 채용 공고 {jobCounts.storedActive.toLocaleString('ko-KR')}건 · 노출 채용 공고{' '}
             {jobCounts.boardVisible.toLocaleString('ko-KR')}건
@@ -291,7 +410,12 @@ export default function AdminCrawledJobsClient() {
                       </td>
                       <td className="min-w-0 truncate py-2.5 pr-4 align-middle font-medium text-foreground" title={job.title}>
                         <Link
-                          href={`/admin/jobs/crawled/${encodeURIComponent(job.id)}`}
+                          href={(() => {
+                            const base = browsableOnly ? '/admin/jobs/browsable' : '/admin/jobs/crawled';
+                            const qs = buildAdminCrawledJobsListSearchParams(listUrlState);
+                            return `${base}/${encodeURIComponent(job.id)}${qs ? `?${qs}` : ''}`;
+                          })()}
+                          onClick={() => persistAdminCrawledJobsListReturnState(browsableOnly, listUrlState)}
                           className="text-foreground hover:text-primary hover:underline"
                         >
                           {job.title}
@@ -354,7 +478,7 @@ export default function AdminCrawledJobsClient() {
               <button
                 type="button"
                 disabled={loading || page <= 1}
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                onClick={() => goToPage(Math.max(1, page - 1))}
                 className={cn(
                   PAGE_BUTTON,
                   'text-muted hover:bg-neutral-100 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',
@@ -365,7 +489,7 @@ export default function AdminCrawledJobsClient() {
               <button
                 type="button"
                 disabled={loading || !hasPrevGroup}
-                onClick={() => setPage(groupStart - PAGES_PER_GROUP)}
+                onClick={() => goToPage(groupStart - PAGES_PER_GROUP)}
                 className={cn(
                   PAGE_BUTTON,
                   'text-muted hover:bg-neutral-100 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',
@@ -380,7 +504,7 @@ export default function AdminCrawledJobsClient() {
                   type="button"
                   disabled={loading}
                   aria-current={page === number ? 'page' : undefined}
-                  onClick={() => setPage(number)}
+                  onClick={() => goToPage(number)}
                   className={cn(
                     PAGE_BUTTON,
                     page === number
@@ -394,7 +518,7 @@ export default function AdminCrawledJobsClient() {
               <button
                 type="button"
                 disabled={loading || !hasNextGroup}
-                onClick={() => setPage(groupEnd + 1)}
+                onClick={() => goToPage(groupEnd + 1)}
                 className={cn(
                   PAGE_BUTTON,
                   'text-muted hover:bg-neutral-100 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',
@@ -406,7 +530,7 @@ export default function AdminCrawledJobsClient() {
               <button
                 type="button"
                 disabled={loading || page >= totalPages}
-                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                onClick={() => goToPage(Math.min(totalPages, page + 1))}
                 className={cn(
                   PAGE_BUTTON,
                   'text-muted hover:bg-neutral-100 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',

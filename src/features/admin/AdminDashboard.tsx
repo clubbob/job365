@@ -36,7 +36,7 @@ function statForSection(
         value: `${stats.members.total.toLocaleString('ko-KR')}명`,
         hint: '가입 회원 수',
       };
-    case '/admin/jobs/sources':
+    case '/admin/jobs/crawl-runs':
       return {
         value: stats.jobs.active.toLocaleString('ko-KR'),
         hint: '노출 채용 공고',

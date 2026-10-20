@@ -132,7 +132,7 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
   const rows: StatsRow[] = [
     {
       group: '명단',
-      label: '채용 회사',
+      label: '수집 채용 회사',
       total: summary.companyCount,
       values: registrySegmentCounts(registry),
       unit: '곳',

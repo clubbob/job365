@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function DevCrawlTargetsRedirectPage() {
-  redirect('/admin/jobs/sources');
+  redirect('/admin/jobs/crawl-runs');
 }

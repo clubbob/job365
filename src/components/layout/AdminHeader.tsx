@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 function isActive(pathname: string, href: string, exact: boolean): boolean {
   if (exact) return pathname === href;
-  if (href === '/admin/jobs/sources') {
+  if (href === '/admin/jobs/crawl-runs') {
     return pathname === '/admin/jobs' || pathname.startsWith('/admin/jobs/');
   }
   return pathname === href || pathname.startsWith(`${href}/`);

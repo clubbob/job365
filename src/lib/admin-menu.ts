@@ -13,7 +13,7 @@ export const ADMIN_SECTION_MENU: AdminSectionMenuItem[] = [
     label: '회원',
   },
   {
-    href: '/admin/jobs/sources',
+    href: '/admin/jobs/crawl-runs',
     label: '채용 정보',
   },
   {

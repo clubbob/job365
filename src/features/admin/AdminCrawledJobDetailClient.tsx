@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import AdminOpenUserSiteButton from '@/components/admin/AdminOpenUserSiteButton';
 import PageHeader from '@/components/navigation/PageHeader';
 import { FormFeedback } from '@/components/ui/FormFeedback';
@@ -9,9 +10,24 @@ import CrawledJobDetailView from '@/features/job-board/CrawledJobDetailView';
 import { adminDangerActionClassName } from '@/lib/admin-ui';
 import { getCrawledJobOriginalUrl } from '@/lib/crawler/source-url';
 import { cn } from '@/lib/utils';
+import type { AdminCrawledJobsListMode } from '@/features/admin/AdminCrawledJobsClient';
+import { adminCrawledJobsListReturnHref } from '@/lib/admin-crawled-jobs-list-url';
 import type { CrawledJob } from '@/types/crawled-job';
 
-export default function AdminCrawledJobDetailClient({ jobId }: { jobId: string }) {
+export default function AdminCrawledJobDetailClient({
+  jobId,
+  listMode = 'stored',
+}: {
+  jobId: string;
+  listMode?: AdminCrawledJobsListMode;
+}) {
+  const browsableOnly = listMode === 'browsable';
+  const searchParams = useSearchParams();
+  const listHomeHref = adminCrawledJobsListReturnHref(
+    browsableOnly ? '/admin/jobs/browsable' : '/admin/jobs/crawled',
+    browsableOnly,
+    searchParams,
+  );
   const [job, setJob] = useState<CrawledJob | null>(null);
   const [displayHidden, setDisplayHidden] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -92,9 +108,9 @@ export default function AdminCrawledJobDetailClient({ jobId }: { jobId: string }
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="수집 채용 공고"
+        title={browsableOnly ? '노출 채용 공고' : '수집 채용 공고'}
         description="사용자에게 보이는 화면과 동일한 미리보기입니다."
-        homeHref="/admin/jobs/crawled"
+        homeHref={listHomeHref}
         homeLabel="목록으로"
         showRefresh={false}
       />
