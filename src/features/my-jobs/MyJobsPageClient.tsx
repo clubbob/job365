@@ -43,6 +43,7 @@ export default function MyJobsPageClient() {
       />
       <JobBoardList
         mode="matched"
+        matchedUser={user}
         persistKey="jobs-matched"
         pageSize={JOB_LIST_PAGE_SIZE}
         showNewSection={false}

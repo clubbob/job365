@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import type { User } from 'firebase/auth';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import GroupedPagination from '@/components/navigation/GroupedPagination';
 import AdSlot from '@/components/ads/AdSlot';
@@ -13,7 +14,6 @@ import {
   EMPTY_JOB_BOARD_FILTERS,
   type JobBoardFilterState,
 } from '@/lib/job-board/filter-state';
-import { useAuth } from '@/features/auth/auth-context';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import { MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site-menu-copy';
 import { JOB_BOARD_REFRESH_EVENT } from '@/lib/job-board/refresh';
@@ -55,6 +55,8 @@ type JobBoardListProps = {
   hideNewSectionHeader?: boolean;
   /** 서버에서 미리 불러온 첫 페이지(메인 최근 공고 등) */
   prefetchedItems?: CrawledJobListItem[];
+  /** mode가 matched일 때만 사용 (부모에서 로그인 사용자 전달) */
+  matchedUser?: User | null;
 };
 
 const EMPTY: CrawledJobListItem[] = [];
@@ -120,8 +122,9 @@ function JobBoardList({
   prefetchedItems,
   persistKey,
   urlSync,
+  matchedUser = null,
 }: JobBoardListProps) {
-  const { user } = useAuth();
+  const user = mode === 'matched' ? matchedUser : null;
   const listBasePath = mode === 'matched' ? '/my-jobs' : '/jobs';
   const [ready, setReady] = useState(() => !persistKey);
   const skipFetchOnceRef = useRef(false);
