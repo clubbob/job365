@@ -1,5 +1,18 @@
+import type { JobBoardFilterState } from '@/lib/job-board/filter-state';
+import { parseJobBoardCompanySegments } from '@/lib/job-board/company-segment';
+import { isEmploymentType, isJobRegion, parseJobRoles } from '@/lib/job-board/constants';
 import type { JobBoardListRestoreFilters } from '@/lib/job-board/list-restore';
 import { loadJobBoardListRestore } from '@/lib/job-board/list-restore';
+
+export function coerceJobBoardFilterState(filters: JobBoardListRestoreFilters): JobBoardFilterState {
+  return {
+    q: filters.q,
+    employmentTypes: filters.employmentTypes.filter(isEmploymentType),
+    companySegments: parseJobBoardCompanySegments(filters.companySegments),
+    roles: parseJobRoles(filters.roles),
+    regions: filters.regions.filter(isJobRegion),
+  };
+}
 
 const LIST_RETURN_PARAM_KEYS = [
   'page',
@@ -19,17 +32,17 @@ function parsePage(value: string | null): number {
 
 export function parseJobBoardListSearchParams(searchParams: URLSearchParams): {
   page: number;
-  filters: JobBoardListRestoreFilters;
+  filters: JobBoardFilterState;
 } {
   return {
     page: parsePage(searchParams.get('page')),
-    filters: {
+    filters: coerceJobBoardFilterState({
       q: searchParams.get('q')?.trim() ?? '',
       employmentTypes: searchParams.getAll('employmentType'),
       companySegments: searchParams.getAll('companySegment'),
       roles: searchParams.getAll('role'),
       regions: searchParams.getAll('region'),
-    },
+    }),
   };
 }
 

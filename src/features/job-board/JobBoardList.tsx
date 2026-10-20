@@ -1,13 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation';
+import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import GroupedPagination from '@/components/navigation/GroupedPagination';
 import AdSlot from '@/components/ads/AdSlot';
 import { FormFeedback } from '@/components/ui/FormFeedback';
 import CrawledJobCard from '@/features/job-board/CrawledJobCard';
-import JobBoardFilters, { type JobBoardFilterState } from '@/features/job-board/JobBoardFilters';
+import JobBoardFilters from '@/features/job-board/JobBoardFilters';
+import {
+  EMPTY_JOB_BOARD_FILTERS,
+  type JobBoardFilterState,
+} from '@/lib/job-board/filter-state';
 import { useAuth } from '@/features/auth/auth-context';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import { MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site-menu-copy';
@@ -17,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { dedupeCrawledJobListItems } from '@/lib/job-board/dedupe-list-jobs';
 import { CRAWLED_JOB_DETAIL_FROM_MY_JOBS } from '@/lib/job-board/detail-navigation';
 import {
+  coerceJobBoardFilterState,
   hasJobBoardListUrlParams,
   parseJobBoardListSearchParams,
 } from '@/lib/job-board/list-url';
@@ -35,6 +41,12 @@ type JobBoardListProps = {
   showNewSection?: boolean;
   showFilters?: boolean;
   persistKey?: string;
+  /** persistKey 목록만 URL·session 복원 (useSearchParams 분리) */
+  urlSync?: {
+    router: AppRouterInstance;
+    pathname: string;
+    searchParams: ReadonlyURLSearchParams;
+  };
   pageSize?: number;
   listTitle?: string;
   showCount?: boolean;
@@ -47,13 +59,17 @@ type JobBoardListProps = {
 
 const EMPTY: CrawledJobListItem[] = [];
 
-const INITIAL_FILTERS: JobBoardFilterState = {
-  q: '',
-  employmentTypes: [],
-  companySegments: [],
-  roles: [],
-  regions: [],
-};
+const INITIAL_FILTERS = EMPTY_JOB_BOARD_FILTERS;
+
+function resolveUrlListState(
+  persistKey: string | undefined,
+  urlSync: JobBoardListProps['urlSync'],
+): { page: number; filters: JobBoardFilterState } | null {
+  if (!persistKey || !urlSync) return null;
+  const params = new URLSearchParams(urlSync.searchParams.toString());
+  if (!hasJobBoardListUrlParams(params)) return null;
+  return parseJobBoardListSearchParams(params);
+}
 
 function JobCardSkeleton() {
   return (
@@ -89,7 +105,7 @@ function buildQuery(
   return params.toString();
 }
 
-export default function JobBoardList({
+function JobBoardList({
   mode = 'all',
   title,
   description,
@@ -103,29 +119,25 @@ export default function JobBoardList({
   hideNewSectionHeader = false,
   prefetchedItems,
   persistKey,
+  urlSync,
 }: JobBoardListProps) {
   const { user } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const listBasePath = mode === 'matched' ? '/my-jobs' : '/jobs';
-  const urlListState =
-    persistKey && hasJobBoardListUrlParams(searchParams)
-      ? parseJobBoardListSearchParams(searchParams)
-      : null;
   const [ready, setReady] = useState(() => !persistKey);
   const skipFetchOnceRef = useRef(false);
   const didRestoreScrollRef = useRef(false);
   const skipDebouncedUrlRef = useRef(false);
   const searchQueryReadyRef = useRef(false);
   const [filters, setFilters] = useState<JobBoardFilterState>(
-    urlListState?.filters ?? INITIAL_FILTERS,
+    () => resolveUrlListState(persistKey, urlSync)?.filters ?? INITIAL_FILTERS,
   );
-  const [debouncedQ, setDebouncedQ] = useState(urlListState?.filters.q ?? '');
+  const [debouncedQ, setDebouncedQ] = useState(
+    () => resolveUrlListState(persistKey, urlSync)?.filters.q ?? '',
+  );
   const [items, setItems] = useState<CrawledJobListItem[]>(prefetchedItems ?? EMPTY);
   const [todayItems, setTodayItems] = useState<CrawledJobListItem[]>(EMPTY);
   const [todayDate, setTodayDate] = useState('');
-  const [page, setPage] = useState(urlListState?.page ?? 1);
+  const [page, setPage] = useState(() => resolveUrlListState(persistKey, urlSync)?.page ?? 1);
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(() => (prefetchedItems?.length ?? 0) === 0);
@@ -146,7 +158,7 @@ export default function JobBoardList({
 
   const syncListToUrl = useCallback(
     (nextPage: number, nextFilters: JobBoardFilterState) => {
-      if (!persistKey || pathname !== listBasePath) return;
+      if (!persistKey || !urlSync || urlSync.pathname !== listBasePath) return;
       const qs = buildQuery(
         { ...nextFilters, q: nextFilters.q },
         nextPage,
@@ -154,20 +166,11 @@ export default function JobBoardList({
         pageSize,
         matchedSearchOnly,
       );
-      if (searchParams.toString() === qs) return;
+      if (urlSync.searchParams.toString() === qs) return;
       const next = qs ? `${listBasePath}?${qs}` : listBasePath;
-      router.replace(next, { scroll: false });
+      urlSync.router.replace(next, { scroll: false });
     },
-    [
-      persistKey,
-      pathname,
-      listBasePath,
-      todayOnly,
-      pageSize,
-      matchedSearchOnly,
-      router,
-      searchParams,
-    ],
+    [persistKey, urlSync, listBasePath, todayOnly, pageSize, matchedSearchOnly],
   );
 
   useEffect(() => {
@@ -323,8 +326,10 @@ export default function JobBoardList({
       setReady(true);
       return;
     }
-    if (hasJobBoardListUrlParams(searchParams)) {
-      const parsed = parseJobBoardListSearchParams(searchParams);
+    if (urlSync && hasJobBoardListUrlParams(urlSync.searchParams)) {
+      const parsed = parseJobBoardListSearchParams(
+        new URLSearchParams(urlSync.searchParams.toString()),
+      );
       skipDebouncedUrlRef.current = true;
       setFilters(parsed.filters);
       setDebouncedQ(parsed.filters.q);
@@ -332,7 +337,7 @@ export default function JobBoardList({
     } else {
     const restored = loadJobBoardListRestore(persistKey);
     if (restored && restored.mode === mode) {
-      setFilters(restored.filters as JobBoardFilterState);
+      setFilters(coerceJobBoardFilterState(restored.filters));
       setDebouncedQ(restored.filters.q);
       setPage(restored.page);
       if (pagedMainList) {
@@ -359,7 +364,7 @@ export default function JobBoardList({
     }
     setReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore snapshot once per persistKey/mode
-  }, [persistKey, mode, searchParams]);
+  }, [persistKey, mode, urlSync]);
 
   useEffect(() => {
     if (!persistKey || !ready) return;
@@ -704,4 +709,23 @@ export default function JobBoardList({
       </section>
     </div>
   );
+}
+
+function JobBoardListWithUrlSync(props: JobBoardListProps & { persistKey: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  return (
+    <JobBoardList
+      {...props}
+      urlSync={{ router, pathname, searchParams }}
+    />
+  );
+}
+
+export default function JobBoardListEntry(props: JobBoardListProps) {
+  if (props.persistKey) {
+    return <JobBoardListWithUrlSync {...props} persistKey={props.persistKey} />;
+  }
+  return <JobBoardList {...props} />;
 }

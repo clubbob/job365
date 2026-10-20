@@ -1,26 +1,11 @@
 'use client';
 
 import MultiSelect from '@/components/ui/MultiSelect';
-import {
-  EMPLOYMENT_TYPES,
-  JOB_REGIONS,
-  JOB_ROLES,
-  type EmploymentType,
-  type JobRegion,
-  type JobRole,
-} from '@/lib/job-board/constants';
-import {
-  JOB_BOARD_COMPANY_SEGMENTS,
-  type JobBoardCompanySegment,
-} from '@/lib/job-board/company-segment';
+import { EMPLOYMENT_TYPES, JOB_REGIONS, JOB_ROLES } from '@/lib/job-board/constants';
+import { JOB_BOARD_COMPANY_SEGMENTS } from '@/lib/job-board/company-segment';
+import type { JobBoardFilterState } from '@/lib/job-board/filter-state';
 
-export type JobBoardFilterState = {
-  q: string;
-  employmentTypes: EmploymentType[];
-  companySegments: JobBoardCompanySegment[];
-  roles: JobRole[];
-  regions: JobRegion[];
-};
+export type { JobBoardFilterState };
 
 type JobBoardFiltersProps = {
   value: JobBoardFilterState;
