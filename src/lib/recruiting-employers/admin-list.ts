@@ -8,6 +8,7 @@ import { isItComputingCompany } from '@/lib/it-companies/catalog';
 import {
   buildItCompanyRegistryRows,
   countItCompanyRegistryRows,
+  registryRowDedupeKey,
 } from '@/lib/it-companies/build-registry-rows';
 import { isMidSizedCertificateActive } from '@/lib/mid-sized-companies/registry-dedupe';
 import {
@@ -202,7 +203,7 @@ function buildItRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] 
 }
 
 function registryCompanyKey(name: string): string {
-  return name.replace(/\s+/g, '').toLowerCase();
+  return registryRowDedupeKey(name);
 }
 
 function itRegistryCompanyKeys(): Set<string> {

@@ -3,6 +3,8 @@
  * 일반 제조·바이오·건설 등의 「기술」 업체는 이름 키워드만으로 넣지 않습니다.
  */
 
+import { isMasterSeedItCompany } from '@/lib/it-companies/master-seed';
+
 export function normalizeItCompanyLabel(name: string): string {
   return name
     .replace(/\(주\)|주식회사|㈜|\s+/g, '')
@@ -95,6 +97,7 @@ export function isItComputingIndustry(industry: string | null | undefined): bool
 export function isItComputingCompanyName(name: string): boolean {
   const trimmed = name.trim();
   if (!trimmed) return false;
+  if (isMasterSeedItCompany(trimmed)) return true;
   const norm = normalizeItCompanyLabel(trimmed);
   if (IT_COMPUTING_BRAND_SUBSTRINGS.some((token) => norm.includes(normalizeItCompanyLabel(token)))) {
     return true;

@@ -9,6 +9,7 @@ import { isMidSizedCertificateActive } from '@/lib/mid-sized-companies/registry-
 import { loadMidSizedRegistryDbCompanies } from '@/lib/mid-sized-companies/registry-db';
 import { activeJobCountForMidSizedCrawlSource } from '@/lib/crawled-jobs-server';
 import { compareItCompaniesByFame } from '@/lib/it-companies/fame-rank';
+import { MASTER_IT_COMPANY_SEED_NAMES, masterSeedNormalizeKey } from '@/lib/it-companies/master-seed';
 import { resolveRegistryBusinessNumber } from '@/lib/recruiting-employers/careers-url-business-number';
 
 export type ItCompanyRegistryRow = {
@@ -107,14 +108,34 @@ function midSizedItRows(): ItCompanyRegistryRow[] {
     });
 }
 
+function masterSeedItRows(): ItCompanyRegistryRow[] {
+  return MASTER_IT_COMPANY_SEED_NAMES.map((companyName) => ({
+    companyName,
+    businessNumber: resolveRegistryBusinessNumber({
+      companyName,
+      careersUrl: null,
+      crawlSourceId: null,
+      sourceId: null,
+    }),
+    segment: 'IT 기업' as const,
+    active: null,
+    careersUrl: null,
+    linked: false,
+    careersDiscoveryStatus: 'pending' as const,
+    careersUrlCheckedAt: null,
+    activeJobCount: 0,
+    crawlSourceId: null,
+  }));
+}
+
 export function buildItCompanyRegistryRows(
   jobCountsBySource: Record<string, number>,
 ): ItCompanyRegistryRow[] {
   const seen = new Set<string>();
   const merged: ItCompanyRegistryRow[] = [];
 
-  for (const row of [...enterpriseItGroups(), ...midSizedItRows()]) {
-    const key = normalizeKey(row.companyName);
+  for (const row of [...enterpriseItGroups(), ...midSizedItRows(), ...masterSeedItRows()]) {
+    const key = registryRowDedupeKey(row.companyName);
     if (seen.has(key)) continue;
     seen.add(key);
     const activeJobCount =
@@ -129,8 +150,9 @@ export function buildItCompanyRegistryRows(
   return merged.sort(compareItCompaniesByFame);
 }
 
-function normalizeKey(name: string): string {
-  return name.replace(/\s+/g, '').toLowerCase();
+/** 기존 대기업·중견 명단과 시드 dedupe (시드·catalog와 동일 규칙) */
+export function registryRowDedupeKey(name: string): string {
+  return masterSeedNormalizeKey(name);
 }
 
 export function countItCompanyRegistryRows(): number {

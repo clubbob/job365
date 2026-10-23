@@ -82,6 +82,10 @@ export function emptyCompanySegmentCounts(): Record<JobBoardCompanySegment, numb
   };
 }
 
+export function sumCompanySegmentCounts(counts: Record<JobBoardCompanySegment, number>): number {
+  return JOB_BOARD_COMPANY_SEGMENTS.reduce((sum, segment) => sum + (counts[segment] ?? 0), 0);
+}
+
 export function countJobsByPrimaryCompanySegment<T extends CompanySegmentJobFields>(
   jobs: T[],
 ): Record<JobBoardCompanySegment, number> {

@@ -1103,6 +1103,38 @@ export async function countBrowsableJobsByPrimaryCompanySegment(): Promise<
   }
 }
 
+/** 통계 요약 — 분류별 합과 합계 열이 같은 목록에서 계산되도록 한 번에 조회 */
+export async function getAdminCrawlStatsJobCounts(): Promise<{
+  storedActiveJobs: number;
+  storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
+  activeJobs: number;
+  activeJobsBySegment: Record<JobBoardCompanySegment, number>;
+}> {
+  try {
+    const [storedList, browsableList] = await Promise.all([
+      listActiveFromFirestore(),
+      getBrowsableCrawledJobs(),
+    ]);
+    const storedActiveJobsBySegment = countStoredActiveJobsByPrimaryCompanySegmentFromList(storedList);
+    const activeJobsBySegment = countStoredActiveJobsByPrimaryCompanySegmentFromList(browsableList);
+    return {
+      storedActiveJobs: storedList.length,
+      storedActiveJobsBySegment,
+      activeJobs: browsableList.length,
+      activeJobsBySegment,
+    };
+  } catch (error) {
+    console.warn('[crawled-jobs] admin crawl stats job counts failed', error);
+    const empty = countStoredActiveJobsByPrimaryCompanySegmentFromList([]);
+    return {
+      storedActiveJobs: 0,
+      storedActiveJobsBySegment: empty,
+      activeJobs: 0,
+      activeJobsBySegment: empty,
+    };
+  }
+}
+
 /** 구직자 채용 공고 목록(`/jobs`)과 동일한 모집 중 건수 */
 export async function countBrowsableCrawledJobs(): Promise<number> {
   try {

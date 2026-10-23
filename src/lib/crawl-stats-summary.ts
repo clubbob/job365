@@ -1,11 +1,8 @@
-import {
-  countBrowsableCrawledJobs,
-  countBrowsableJobsByPrimaryCompanySegment,
-  countStoredActiveJobsByPrimaryCompanySegment,
-  getAdminActiveJobCountForStats,
-} from '@/lib/crawled-jobs-server';
+import { getAdminCrawlStatsJobCounts } from '@/lib/crawled-jobs-server';
 import {
   emptyCompanySegmentCounts,
+  JOB_BOARD_COMPANY_SEGMENTS,
+  sumCompanySegmentCounts,
   type JobBoardCompanySegment,
 } from '@/lib/job-board/company-segment';
 import {
@@ -19,7 +16,7 @@ import {
 } from '@/lib/recruiting-employers/admin-list';
 
 export type CrawlStatsSummary = {
-  /** 「수집 채용 회사」명단 규모(IT는 대·중에서 제외 후 네 분류 합) */
+  /** 「수집 채용 회사」명단 규모(IT는 대·중에서 제외 후 세 분류 합) */
   companyCount: number;
   companyRegistryBySegment: RecruitingCompanyActiveCounts;
   /** 마지막 수집에서 추가된(페이지에서 읽어 온) 공고 건수 합계 */
@@ -76,6 +73,56 @@ function loadCompanyRegistryBySegment(): RecruitingCompanyActiveCounts {
   }
 }
 
+/** 구 수집 이력: totalClosed에만 잡히는 만료 마감 등을 분류별 fetched 비중으로 배분 */
+function allocateClosedRemainder(
+  closedBySegment: Record<JobBoardCompanySegment, number>,
+  remainder: number,
+  weightBySegment: Record<JobBoardCompanySegment, number>,
+): void {
+  if (remainder <= 0) return;
+  const totalWeight = sumCompanySegmentCounts(weightBySegment);
+  if (totalWeight <= 0) {
+    closedBySegment['중견 기업'] += remainder;
+    return;
+  }
+  let assigned = 0;
+  for (const segment of JOB_BOARD_COMPANY_SEGMENTS) {
+    const share = Math.round((remainder * weightBySegment[segment]) / totalWeight);
+    closedBySegment[segment] += share;
+    assigned += share;
+  }
+  const dust = remainder - assigned;
+  if (dust !== 0) {
+    closedBySegment['중견 기업'] += dust;
+  }
+}
+
+function resolveLastRunFetchCloseStats(latest: CrawlRunListItem): {
+  fetched: number;
+  fetchedBySegment: Record<JobBoardCompanySegment, number>;
+  closed: number;
+  closedBySegment: Record<JobBoardCompanySegment, number>;
+} {
+  const fetchedBySegment =
+    latest.fetchedBySegment ?? countFetchedBySegmentFromRunSources(latest.sources);
+  const fetched = sumCompanySegmentCounts(fetchedBySegment);
+
+  let closedBySegment: Record<JobBoardCompanySegment, number>;
+  if (latest.closedBySegment) {
+    closedBySegment = { ...latest.closedBySegment };
+  } else {
+    closedBySegment = countClosedBySegmentFromRunSources(latest.sources);
+  }
+  const closedAssigned = sumCompanySegmentCounts(closedBySegment);
+  const closedRemainder = latest.totalClosed - closedAssigned;
+  if (closedRemainder > 0) {
+    allocateClosedRemainder(closedBySegment, closedRemainder, fetchedBySegment);
+  }
+
+  const closed = sumCompanySegmentCounts(closedBySegment);
+  return { fetched, fetchedBySegment, closed, closedBySegment };
+}
+
 export async function getCrawlStatsSummary(): Promise<CrawlStatsSummary> {
   const companyRegistryBySegment = loadCompanyRegistryBySegment();
   const companyCount =
@@ -83,17 +130,20 @@ export async function getCrawlStatsSummary(): Promise<CrawlStatsSummary> {
     companyRegistryBySegment['mid-sized'] +
     companyRegistryBySegment.it;
 
-  const [runsPage, activeJobs, activeJobsBySegment, storedActiveJobs, storedActiveJobsBySegment] =
-    await Promise.all([
-      listCrawlRunsPage(1, 1).catch((error) => {
-        console.warn('[crawl-stats-summary] crawl runs list failed', error);
-        return emptyRunsPage;
-      }),
-      countBrowsableCrawledJobs().catch(() => 0),
-      countBrowsableJobsByPrimaryCompanySegment().catch(() => emptyCompanySegmentCounts()),
-      getAdminActiveJobCountForStats().catch(() => 0),
-      countStoredActiveJobsByPrimaryCompanySegment().catch(() => emptyCompanySegmentCounts()),
-    ]);
+  const [runsPage, jobCounts] = await Promise.all([
+    listCrawlRunsPage(1, 1).catch((error) => {
+      console.warn('[crawl-stats-summary] crawl runs list failed', error);
+      return emptyRunsPage;
+    }),
+    getAdminCrawlStatsJobCounts(),
+  ]);
+
+  const {
+    storedActiveJobs,
+    storedActiveJobsBySegment,
+    activeJobs,
+    activeJobsBySegment,
+  } = jobCounts;
 
   const latest = runsPage.runs[0];
   if (!latest) {
@@ -112,18 +162,15 @@ export async function getCrawlStatsSummary(): Promise<CrawlStatsSummary> {
     };
   }
 
-  const fetched = latest.sources.reduce((sum, source) => sum + (source.fetched ?? 0), 0);
-  const fetchedBySegment =
-    latest.fetchedBySegment ?? countFetchedBySegmentFromRunSources(latest.sources);
-  const closedBySegment =
-    latest.closedBySegment ?? countClosedBySegmentFromRunSources(latest.sources);
+  const { fetched, fetchedBySegment, closed, closedBySegment } =
+    resolveLastRunFetchCloseStats(latest);
 
   return {
     companyCount,
     companyRegistryBySegment,
     fetched,
     fetchedBySegment,
-    closed: latest.totalClosed,
+    closed,
     closedBySegment,
     activeJobs,
     activeJobsBySegment,

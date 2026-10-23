@@ -14,6 +14,7 @@ import { formatInquiryDateTime } from '@/lib/inquiry-display';
 import {
   emptyCompanySegmentCounts,
   JOB_BOARD_COMPANY_SEGMENTS,
+  sumCompanySegmentCounts,
   type JobBoardCompanySegment,
 } from '@/lib/job-board/company-segment';
 import type { RecruitingRegistrySegmentCounts } from '@/lib/recruiting-employers/registry-count-format';
@@ -61,8 +62,16 @@ function formatCount(value: number): string {
 const STATS_TABLE_CLASS =
   'w-full table-fixed border-collapse text-sm [&_th]:font-semibold [&_th]:text-subtle [&_td]:px-3 [&_td]:py-2.5 [&_th]:px-3 [&_th]:py-2.5 [&_th]:align-middle [&_td]:align-middle';
 
+const STATS_LABEL_CELL = 'whitespace-nowrap border-r border-border text-left';
 const STATS_NUM_CELL = 'text-right tabular-nums whitespace-nowrap';
-const STATS_TOTAL_CELL = `${STATS_NUM_CELL} border-l border-border bg-neutral-50/80 font-semibold text-foreground`;
+/** IT·합계 열 경계 — 양쪽 동일 여백(1.5rem)으로 구분선이 숫자 사이 중앙에 오도록 */
+const LAST_STATS_SEGMENT = JOB_BOARD_COMPANY_SEGMENTS[JOB_BOARD_COMPANY_SEGMENTS.length - 1];
+const STATS_IT_SEGMENT_CELL = `${STATS_NUM_CELL} !pr-6`;
+const STATS_TOTAL_CELL = `${STATS_NUM_CELL} border-l border-border bg-neutral-50/80 !pl-6 font-semibold text-foreground`;
+
+function statsSegmentCellClass(segment: JobBoardCompanySegment): string {
+  return segment === LAST_STATS_SEGMENT ? STATS_IT_SEGMENT_CELL : STATS_NUM_CELL;
+}
 
 type StatsRowView = StatsRow & {
   groupRowSpan: number;
@@ -109,7 +118,14 @@ function formatSignedCount(value: number, unit: '건' | '곳'): string {
   return `${sign}${formatCount(value)}${unit}`;
 }
 
-function formatAmount(value: number, unit: '건' | '곳', signed = false): string {
+function formatAmount(
+  value: number,
+  unit: '건' | '곳',
+  options?: { signed?: boolean; negative?: boolean },
+): string {
+  const signed = options?.signed ?? false;
+  const negative = options?.negative ?? false;
+  if (negative && value > 0) return `-${formatCount(value)}${unit}`;
   return signed ? formatSignedCount(value, unit) : `${formatCount(value)}${unit}`;
 }
 
@@ -120,6 +136,8 @@ type StatsRow = {
   total: number | null;
   unit: '건' | '곳';
   signed?: boolean;
+  /** 마감 등 차감 의미 — 양수를 −504건 형태로 표시 */
+  negative?: boolean;
 };
 
 function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
@@ -128,27 +146,31 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
     'mid-sized': 0,
     it: 0,
   };
+  const registryValues = registrySegmentCounts(registry);
+
+  const storedValues = summary.storedActiveJobsBySegment ?? emptyCompanySegmentCounts();
+  const activeValues = summary.activeJobsBySegment ?? emptyCompanySegmentCounts();
 
   const rows: StatsRow[] = [
     {
       group: '명단',
       label: '수집 채용 회사',
-      total: summary.companyCount,
-      values: registrySegmentCounts(registry),
+      total: sumCompanySegmentCounts(registryValues),
+      values: registryValues,
       unit: '곳',
     },
     {
       group: '지금',
       label: '수집 채용 공고',
-      total: summary.storedActiveJobs,
-      values: summary.storedActiveJobsBySegment ?? emptyCompanySegmentCounts(),
+      total: sumCompanySegmentCounts(storedValues),
+      values: storedValues,
       unit: '건',
     },
     {
       group: '지금',
       label: '노출 채용 공고',
-      total: summary.activeJobs,
-      values: summary.activeJobsBySegment ?? emptyCompanySegmentCounts(),
+      total: sumCompanySegmentCounts(activeValues),
+      values: activeValues,
       unit: '건',
     },
   ];
@@ -157,27 +179,29 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
 
   const fetched = summary.fetchedBySegment ?? emptyCompanySegmentCounts();
   const closed = summary.closedBySegment ?? emptyCompanySegmentCounts();
+  const netValues = segmentNetDelta(fetched, closed);
 
   rows.push(
     {
       group: '마지막 수집',
       label: '추가된 공고',
-      total: summary.fetched,
+      total: sumCompanySegmentCounts(fetched),
       values: fetched,
       unit: '건',
     },
     {
       group: '마지막 수집',
       label: '마감 처리',
-      total: summary.closed,
+      total: sumCompanySegmentCounts(closed),
       values: closed,
       unit: '건',
+      negative: true,
     },
     {
       group: '마지막 수집',
       label: '순 증감',
-      total: summary.fetched - summary.closed,
-      values: segmentNetDelta(fetched, closed),
+      total: sumCompanySegmentCounts(netValues),
+      values: netValues,
       unit: '건',
       signed: true,
     },
@@ -333,18 +357,18 @@ export default function AdminCrawlRunsClient() {
             <table className={STATS_TABLE_CLASS}>
               <colgroup>
                 <col className="w-[11%]" />
-                <col className="w-[19%]" />
-                <col className="w-[17.5%]" />
-                <col className="w-[17.5%]" />
+                <col className="w-[24%]" />
+                <col className="w-[15%]" />
+                <col className="w-[15%]" />
                 <col className="w-[17.5%]" />
                 <col className="w-[17.5%]" />
               </colgroup>
               <thead>
                 <tr className="border-b border-border">
                   <th className="whitespace-nowrap text-left">구분</th>
-                  <th className="whitespace-nowrap text-left">항목</th>
+                  <th className={STATS_LABEL_CELL}>항목</th>
                   {JOB_BOARD_COMPANY_SEGMENTS.map((segment) => (
-                    <th key={segment} className={`${STATS_NUM_CELL} text-subtle`}>
+                    <th key={segment} className={`${statsSegmentCellClass(segment)} text-subtle`}>
                       {segment}
                     </th>
                   ))}
@@ -365,16 +389,24 @@ export default function AdminCrawlRunsClient() {
                           {row.group}
                         </td>
                       ) : null}
-                      <td className="whitespace-nowrap">{row.label}</td>
+                      <td className={STATS_LABEL_CELL}>{row.label}</td>
                       {JOB_BOARD_COMPANY_SEGMENTS.map((segment) => (
-                        <td key={segment} className={STATS_NUM_CELL}>
+                        <td key={segment} className={statsSegmentCellClass(segment)}>
                           {row.values === null
                             ? '—'
-                            : formatAmount(row.values[segment], row.unit, row.signed)}
+                            : formatAmount(row.values[segment], row.unit, {
+                                signed: row.signed,
+                                negative: row.negative,
+                              })}
                         </td>
                       ))}
                       <td className={STATS_TOTAL_CELL}>
-                        {total === null ? '—' : formatAmount(total, row.unit, row.signed)}
+                        {total === null
+                          ? '—'
+                          : formatAmount(total, row.unit, {
+                              signed: row.signed,
+                              negative: row.negative,
+                            })}
                       </td>
                     </tr>
                   );

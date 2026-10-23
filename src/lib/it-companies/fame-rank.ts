@@ -1,5 +1,6 @@
 import { normalizeItCompanyLabel } from '@/lib/it-companies/catalog';
 import { enterpriseFameRankByCrawlSourceId } from '@/lib/enterprise-groups/fame-order';
+import { masterSeedFameRank } from '@/lib/it-companies/master-seed';
 
 const FAME_UNKNOWN_BASE = 20_000;
 
@@ -126,6 +127,9 @@ export function itCompanyFameRank(
     const fromCrawl = crawlSourceFameRank(id);
     if (fromCrawl !== null) return 50 + fromCrawl;
   }
+
+  const fromSeed = masterSeedFameRank(companyName);
+  if (fromSeed !== null) return fromSeed;
 
   const fromName = fameRankFromCompanyName(companyName);
   if (fromName < FAME_UNKNOWN_BASE) {

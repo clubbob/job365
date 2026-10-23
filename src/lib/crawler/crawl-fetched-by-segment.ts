@@ -1,15 +1,10 @@
 import { getCrawlerCompanies } from '@/lib/crawler/companies';
 import type { CrawlRunSummary } from '@/lib/crawler/types';
-import {
-  IT_ENTERPRISE_CRAWL_SOURCE_IDS,
-  isItComputingCompany,
-  isItComputingCompanyName,
-} from '@/lib/it-companies/catalog';
+import { IT_ENTERPRISE_CRAWL_SOURCE_IDS, isItComputingCompanyName } from '@/lib/it-companies/catalog';
 import {
   emptyCompanySegmentCounts,
   type JobBoardCompanySegment,
 } from '@/lib/job-board/company-segment';
-import { loadMidSizedRegistryDbCompanies } from '@/lib/mid-sized-companies/registry-db';
 
 function crawlSourceKey(sourceId: string): string {
   return sourceId.trim().replace(/-careers$/i, '');
@@ -32,14 +27,6 @@ function getCrawlSourcePrimarySegmentMap(): Map<string, JobBoardCompanySegment> 
     }
     map.set(company.sourceId, segment);
     map.set(crawlSourceKey(company.sourceId), segment);
-  }
-
-  for (const record of loadMidSizedRegistryDbCompanies()) {
-    if (!isItComputingCompany(record.companyName, record.industry)) continue;
-    const id = record.crawlSourceId.trim();
-    if (!id) continue;
-    map.set(`${id}-careers`, 'IT 회사');
-    map.set(id, 'IT 회사');
   }
 
   crawlSourcePrimarySegment = map;
