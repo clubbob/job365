@@ -85,8 +85,26 @@ const ADMIN_LIST_SELECT_FIELDS = [
 const BOARD_LIST_SELECT_FIELDS = [...ADMIN_LIST_SELECT_FIELDS, 'showInJobBoard'] as const;
 
 let listCache: { expiresAt: number; items: CrawledJobListItem[] } | null = null;
+let activeCrawledJobsCache: { expiresAt: number; jobs: CrawledJob[] } | null = null;
+let activeCrawledJobsLoadPromise: Promise<CrawledJob[]> | null = null;
 let browsableJobsCache: { expiresAt: number; jobs: CrawledJob[] } | null = null;
 let browsableLoadPromise: Promise<CrawledJob[]> | null = null;
+let adminCrawlStatsJobCountsCache: {
+  expiresAt: number;
+  data: {
+    storedActiveJobs: number;
+    storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
+    activeJobs: number;
+    activeJobsBySegment: Record<JobBoardCompanySegment, number>;
+  };
+} | null = null;
+let adminCrawlStatsJobCountsInflight: Promise<{
+  storedActiveJobs: number;
+  storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
+  activeJobs: number;
+  activeJobsBySegment: Record<JobBoardCompanySegment, number>;
+}> | null = null;
+const ADMIN_CRAWL_STATS_JOB_COUNTS_TTL_MS = 120_000;
 let adminFullListCache: { expiresAt: number; jobs: CrawledJob[] } | null = null;
 let adminFullListLoadPromise: Promise<CrawledJob[]> | null = null;
 let adminJobsByStatusCache: Partial<
@@ -96,8 +114,12 @@ let adminJobsByStatusLoadPromise: Partial<Record<CrawledJobStatus, Promise<Crawl
 
 export function invalidateCrawledJobsListCache(): void {
   listCache = null;
+  activeCrawledJobsCache = null;
+  activeCrawledJobsLoadPromise = null;
   browsableJobsCache = null;
   browsableLoadPromise = null;
+  adminCrawlStatsJobCountsCache = null;
+  adminCrawlStatsJobCountsInflight = null;
   adminFullListCache = null;
   adminFullListLoadPromise = null;
   adminJobsByStatusCache = {};
@@ -276,6 +298,29 @@ async function listActiveFromFirestore(): Promise<CrawledJob[]> {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+/** 모집 중 공고 — Firestore 1회 조회·캐시 (노출 필터 전) */
+async function getActiveCrawledJobsCached(): Promise<CrawledJob[]> {
+  if (activeCrawledJobsCache && activeCrawledJobsCache.expiresAt > Date.now()) {
+    return activeCrawledJobsCache.jobs;
+  }
+  if (activeCrawledJobsLoadPromise) {
+    return activeCrawledJobsLoadPromise;
+  }
+
+  activeCrawledJobsLoadPromise = (async () => {
+    const jobs = await listActiveFromFirestore();
+    const expiresAt = Date.now() + LIST_CACHE_TTL_MS;
+    activeCrawledJobsCache = { expiresAt, jobs };
+    return jobs;
+  })();
+
+  try {
+    return await activeCrawledJobsLoadPromise;
+  } finally {
+    activeCrawledJobsLoadPromise = null;
+  }
+}
+
 /** 사용자 채용 목록·필터 검색용 (캐시·동시 요청 합침) */
 async function getBrowsableCrawledJobs(): Promise<CrawledJob[]> {
   if (browsableJobsCache && browsableJobsCache.expiresAt > Date.now()) {
@@ -286,7 +331,7 @@ async function getBrowsableCrawledJobs(): Promise<CrawledJob[]> {
   }
 
   browsableLoadPromise = (async () => {
-    const browsable = await filterBrowsableJobs(await listActiveFromFirestore());
+    const browsable = await filterBrowsableJobs(await getActiveCrawledJobsCached());
     const jobs = dedupeCrawledJobListItems(browsable);
     const expiresAt = Date.now() + LIST_CACHE_TTL_MS;
     browsableJobsCache = { expiresAt, jobs };
@@ -1103,6 +1148,31 @@ export async function countBrowsableJobsByPrimaryCompanySegment(): Promise<
   }
 }
 
+async function loadAdminCrawlStatsJobCounts(): Promise<{
+  storedActiveJobs: number;
+  storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
+  activeJobs: number;
+  activeJobsBySegment: Record<JobBoardCompanySegment, number>;
+}> {
+  const activeList = await getActiveCrawledJobsCached();
+  const storedActiveJobsBySegment = countStoredActiveJobsByPrimaryCompanySegmentFromList(activeList);
+
+  let browsableList: CrawledJob[];
+  if (browsableJobsCache && browsableJobsCache.expiresAt > Date.now()) {
+    browsableList = browsableJobsCache.jobs;
+  } else {
+    browsableList = dedupeCrawledJobListItems(await filterBrowsableJobs(activeList));
+  }
+
+  const activeJobsBySegment = countStoredActiveJobsByPrimaryCompanySegmentFromList(browsableList);
+  return {
+    storedActiveJobs: activeList.length,
+    storedActiveJobsBySegment,
+    activeJobs: browsableList.length,
+    activeJobsBySegment,
+  };
+}
+
 /** 통계 요약 — 분류별 합과 합계 열이 같은 목록에서 계산되도록 한 번에 조회 */
 export async function getAdminCrawlStatsJobCounts(): Promise<{
   storedActiveJobs: number;
@@ -1110,29 +1180,39 @@ export async function getAdminCrawlStatsJobCounts(): Promise<{
   activeJobs: number;
   activeJobsBySegment: Record<JobBoardCompanySegment, number>;
 }> {
-  try {
-    const [storedList, browsableList] = await Promise.all([
-      listActiveFromFirestore(),
-      getBrowsableCrawledJobs(),
-    ]);
-    const storedActiveJobsBySegment = countStoredActiveJobsByPrimaryCompanySegmentFromList(storedList);
-    const activeJobsBySegment = countStoredActiveJobsByPrimaryCompanySegmentFromList(browsableList);
-    return {
-      storedActiveJobs: storedList.length,
-      storedActiveJobsBySegment,
-      activeJobs: browsableList.length,
-      activeJobsBySegment,
-    };
-  } catch (error) {
-    console.warn('[crawled-jobs] admin crawl stats job counts failed', error);
-    const empty = countStoredActiveJobsByPrimaryCompanySegmentFromList([]);
-    return {
-      storedActiveJobs: 0,
-      storedActiveJobsBySegment: empty,
-      activeJobs: 0,
-      activeJobsBySegment: empty,
-    };
+  if (
+    adminCrawlStatsJobCountsCache &&
+    adminCrawlStatsJobCountsCache.expiresAt > Date.now()
+  ) {
+    return adminCrawlStatsJobCountsCache.data;
   }
+  if (adminCrawlStatsJobCountsInflight) {
+    return adminCrawlStatsJobCountsInflight;
+  }
+
+  adminCrawlStatsJobCountsInflight = loadAdminCrawlStatsJobCounts()
+    .then((data) => {
+      adminCrawlStatsJobCountsCache = {
+        expiresAt: Date.now() + ADMIN_CRAWL_STATS_JOB_COUNTS_TTL_MS,
+        data,
+      };
+      return data;
+    })
+    .catch((error) => {
+      console.warn('[crawled-jobs] admin crawl stats job counts failed', error);
+      const empty = countStoredActiveJobsByPrimaryCompanySegmentFromList([]);
+      return {
+        storedActiveJobs: 0,
+        storedActiveJobsBySegment: empty,
+        activeJobs: 0,
+        activeJobsBySegment: empty,
+      };
+    })
+    .finally(() => {
+      adminCrawlStatsJobCountsInflight = null;
+    });
+
+  return adminCrawlStatsJobCountsInflight;
 }
 
 /** 구직자 채용 공고 목록(`/jobs`)과 동일한 모집 중 건수 */

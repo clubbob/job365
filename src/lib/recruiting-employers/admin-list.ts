@@ -5,11 +5,7 @@ import {
 } from '@/lib/crawled-jobs-server';
 import { loadEnterpriseRegistryDbCompanies } from '@/lib/enterprise-companies/registry-db';
 import { isItComputingCompany } from '@/lib/it-companies/catalog';
-import {
-  buildItCompanyRegistryRows,
-  countItCompanyRegistryRows,
-  registryRowDedupeKey,
-} from '@/lib/it-companies/build-registry-rows';
+import { buildItCompanyRegistryRows, registryRowDedupeKey } from '@/lib/it-companies/build-registry-rows';
 import { isMidSizedCertificateActive } from '@/lib/mid-sized-companies/registry-dedupe';
 import {
   loadMidSizedRegistryDbCompanies,
@@ -206,26 +202,33 @@ function registryCompanyKey(name: string): string {
   return registryRowDedupeKey(name);
 }
 
-function itRegistryCompanyKeys(): Set<string> {
-  return new Set(buildItCompanyRegistryRows({}).map((row) => registryCompanyKey(row.companyName)));
+const REGISTRY_SEGMENT_COUNTS_TTL_MS = 300_000;
+let registrySegmentCountsCache: {
+  expiresAt: number;
+  counts: RecruitingCompanyActiveCounts;
+} | null = null;
+
+function computeRecruitingSegmentRegistryCounts(): RecruitingCompanyActiveCounts {
+  const itRows = buildItCompanyRegistryRows({});
+  const itKeys = new Set(itRows.map((row) => registryCompanyKey(row.companyName)));
+  const enterprise = loadEnterpriseRegistryDbCompanies().filter(
+    (record) => !itKeys.has(registryCompanyKey(record.groupName)),
+  ).length;
+  const mid =
+    loadMidSizedRegistryDbCompanies().filter(
+      (record) => !isItComputingCompany(record.companyName, record.industry),
+    ).length + miscRegistryCount();
+  return {
+    enterprise,
+    'mid-sized': mid,
+    it: itRows.length,
+  };
 }
 
 /** 탭·통계용 명단 규모. IT 명단에 있는 회사는 대기업·계열·중견 건수에서 뺍니다. */
 export function recruitingSegmentRegistryCount(segment: RecruitingEmployerAdminSegment): number {
-  if (segment === 'enterprise') {
-    const itKeys = itRegistryCompanyKeys();
-    return loadEnterpriseRegistryDbCompanies().filter(
-      (record) => !itKeys.has(registryCompanyKey(record.groupName)),
-    ).length;
-  }
-  if (segment === 'mid-sized') {
-    const mid = loadMidSizedRegistryDbCompanies().filter(
-      (record) => !isItComputingCompany(record.companyName, record.industry),
-    ).length;
-    return mid + miscRegistryCount();
-  }
   if (segment === 'misc') return miscRegistryCount();
-  return countItCompanyRegistryRows();
+  return getRecruitingSegmentRegistryCounts()[segment];
 }
 
 function miscRegistryCount(): number {
@@ -239,11 +242,22 @@ export function recruitingSegmentRegistryStatLabel(segment: RecruitingEmployerAd
 }
 
 export function getRecruitingSegmentRegistryCounts(): RecruitingCompanyActiveCounts {
-  return {
-    enterprise: recruitingSegmentRegistryCount('enterprise'),
-    'mid-sized': recruitingSegmentRegistryCount('mid-sized'),
-    it: recruitingSegmentRegistryCount('it'),
+  if (
+    registrySegmentCountsCache &&
+    registrySegmentCountsCache.expiresAt > Date.now()
+  ) {
+    return registrySegmentCountsCache.counts;
+  }
+  const counts = computeRecruitingSegmentRegistryCounts();
+  registrySegmentCountsCache = {
+    expiresAt: Date.now() + REGISTRY_SEGMENT_COUNTS_TTL_MS,
+    counts,
   };
+  return counts;
+}
+
+export function invalidateRecruitingSegmentRegistryCountsCache(): void {
+  registrySegmentCountsCache = null;
 }
 
 export { formatRecruitingRegistryCountBreakdown } from '@/lib/recruiting-employers/registry-count-format';
