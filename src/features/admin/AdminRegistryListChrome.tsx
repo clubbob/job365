@@ -135,7 +135,7 @@ export const COMPANY_REGISTRY_TABLE_COLUMNS = [
 ] as const;
 
 export const COMPANY_REGISTRY_LIST_CARD_DESCRIPTION =
-  '명단에 있는 회사만 표시합니다. 모집 공고 건수는 수집 출처별 활성 공고입니다(대기업·계열은 공시 집단 명단). 없는 값은 −로 표시합니다.';
+  '등록 명단에 있는 회사만 표시합니다. 모집 공고는 활성 수집 건수이고, 없으면 −입니다.';
 
 export const COMPANY_REGISTRY_SEARCH_PLACEHOLDER = '기업명 검색';
 
@@ -212,16 +212,25 @@ export function AdminCompanyRegistryTableHead() {
   );
 }
 
-export function RegistryCareersUrlLink({ url }: { url: string | null | undefined }) {
+export function RegistryCareersUrlLink({
+  url,
+  note,
+}: {
+  url: string | null | undefined;
+  note?: string | null;
+}) {
   if (!url) return <RegistryTableEmptyCell />;
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-primary underline decoration-primary/30 underline-offset-[3px]"
-    >
-      열기
-    </a>
+    <div className="flex flex-col gap-0.5">
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary underline decoration-primary/30 underline-offset-[3px]"
+      >
+        열기
+      </a>
+      {note ? <span className="text-xs text-muted">{note}</span> : null}
+    </div>
   );
 }

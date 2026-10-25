@@ -8,7 +8,12 @@ import {
 } from '@/lib/mid-sized-companies/registry-db';
 import type { RecruitingEmployerAggregate } from '@/lib/recruiting-employers/aggregate';
 
-export type RecruitingEmployerAdminSegment = 'enterprise' | 'mid-sized' | 'misc' | 'it';
+export type RecruitingEmployerAdminSegment =
+  | 'enterprise'
+  | 'mid-sized'
+  | 'misc'
+  | 'it'
+  | 'semi-equipment';
 
 export type MidSizedRegistryRecordView = {
   companyName: string;

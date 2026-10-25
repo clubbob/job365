@@ -5,13 +5,11 @@ import { Card } from '@/components/ui/Card';
 import { ADMIN_RECRUITING_COMPANIES_PAGE_SIZE } from '@/lib/admin-constants';
 import {
   AdminCompanyRegistrySearchAndFilters,
-  AdminCompanyRegistryStatGrid,
   AdminCompanyRegistryTableHead,
   AdminListPagination,
   AdminListResultMeta,
   COMPANY_REGISTRY_EMPTY_LIST_MESSAGE,
   COMPANY_REGISTRY_LIST_CARD_DESCRIPTION,
-  COMPANY_REGISTRY_STAT_EMPTY,
   RegistryCareersUrlLink,
   adminRegistryTableClassName,
   adminRegistryTableWrapClassName,
@@ -19,7 +17,7 @@ import {
   formatRegistryActiveJobCount,
 } from '@/features/admin/AdminRegistryListChrome';
 
-type Segment = 'enterprise' | 'mid-sized' | 'it';
+type Segment = 'enterprise' | 'mid-sized' | 'it' | 'semi-equipment';
 
 type RegistryRow = {
   companyName: string;
@@ -31,6 +29,7 @@ type RegistryRow = {
   careersDiscoveryStatus: 'pending' | 'found' | 'not_found' | 'enterprise';
   careersUrlCheckedAt: string | null;
   activeJobCount: number;
+  careersUrlNote?: string | null;
 };
 
 type RegistryResponse = {
@@ -47,25 +46,11 @@ type RegistryResponse = {
 
 const PAGE_SIZE = ADMIN_RECRUITING_COMPANIES_PAGE_SIZE;
 
-const SEGMENT_REGISTRY_LABEL: Record<Segment, string> = {
-  enterprise: '대기업·계열',
-  'mid-sized': '중견 명단',
-  it: 'IT 명단',
-};
-
-const SEGMENT_COPY: Record<Segment, { statHint: string; sortHint: string }> = {
-  enterprise: {
-    statHint: '공시 집단 고정 명단(채용 URL·수집 출처별 공고 건수)',
-    sortHint: '공시 순위',
-  },
-  'mid-sized': {
-    statHint: '중견 명단·별도 수집 소스(수집 채용 회사명 매칭)',
-    sortHint: '유명도 순',
-  },
-  it: {
-    statHint: '대기업·계열·중견 명단에서 IT만 모아 보기',
-    sortHint: '유명도·공고 건수 순',
-  },
+const SEGMENT_LIST_DESCRIPTION: Record<Segment, string> = {
+  enterprise: `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 공정거래위원회 공시 집단 명단을 공시 순위로 보여 줍니다.`,
+  'mid-sized': `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 중견 기업 명단을 유명도 순으로 보여 줍니다.`,
+  it: `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} IT 회사 명단을 유명도·모집 공고 순으로 보여 줍니다.`,
+  'semi-equipment': `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 반도체·디스플레이 장비사 명단을 유명도·모집 공고 순으로 보여 줍니다.`,
 };
 
 function isAbortError(error: unknown): boolean {
@@ -86,12 +71,12 @@ export default function RecruitingEmployerBrowser({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const onListMetaRef = useRef(onListMeta);
+  const listFilterEpochRef = useRef(0);
+  const offsetSyncedEpochRef = useRef(0);
 
   useEffect(() => {
     onListMetaRef.current = onListMeta;
   }, [onListMeta]);
-
-  const copy = SEGMENT_COPY[segment];
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query), 300);
@@ -99,10 +84,16 @@ export default function RecruitingEmployerBrowser({
   }, [query]);
 
   useEffect(() => {
+    listFilterEpochRef.current += 1;
     setOffset(0);
   }, [debouncedQuery, segment]);
 
   useEffect(() => {
+    if (offsetSyncedEpochRef.current !== listFilterEpochRef.current && offset !== 0) {
+      return;
+    }
+    offsetSyncedEpochRef.current = listFilterEpochRef.current;
+
     const controller = new AbortController();
     setLoading(true);
     setError(null);
@@ -152,22 +143,8 @@ export default function RecruitingEmployerBrowser({
   return (
     <Card
       title="수집 채용 회사 목록"
-      description={`${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} ${copy.statHint}. 목록은 ${copy.sortHint}입니다.`}
+      description={SEGMENT_LIST_DESCRIPTION[segment]}
     >
-      <AdminCompanyRegistryStatGrid
-        uniqueCompaniesLabel={SEGMENT_REGISTRY_LABEL[segment]}
-        uniqueCompanies={
-          data && typeof data.registryCount === 'number'
-            ? `${data.registryCount.toLocaleString('ko-KR')}곳`
-            : COMPANY_REGISTRY_STAT_EMPTY
-        }
-        linkedUrl={
-          data && typeof data.linkedCount === 'number'
-            ? `${data.linkedCount.toLocaleString('ko-KR')}곳`
-            : COMPANY_REGISTRY_STAT_EMPTY
-        }
-      />
-
       <AdminCompanyRegistrySearchAndFilters
         searchId={`recruiting-employer-search-${segment}`}
         query={query}
@@ -200,7 +177,7 @@ export default function RecruitingEmployerBrowser({
                       {formatRegistryActiveJobCount(row.activeJobCount)}
                     </td>
                     <td className="px-3 py-2">
-                      <RegistryCareersUrlLink url={row.careersUrl} />
+                      <RegistryCareersUrlLink url={row.careersUrl} note={row.careersUrlNote} />
                     </td>
                   </tr>
                 ))}

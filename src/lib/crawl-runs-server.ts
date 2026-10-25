@@ -57,13 +57,22 @@ function parseSegmentCountField(
   const enterprise = Number(record['대기업·계열사'] ?? 0);
   const mid = Number(record['중견 기업'] ?? 0);
   const it = Number(record['IT 회사'] ?? 0);
-  if (!Number.isFinite(enterprise) || !Number.isFinite(mid) || !Number.isFinite(it)) {
+  const semi = Number(
+    record['반도체·디스플레이 장비사'] ?? record['반도체·디스플레이 장비'] ?? 0,
+  );
+  if (
+    !Number.isFinite(enterprise) ||
+    !Number.isFinite(mid) ||
+    !Number.isFinite(it) ||
+    !Number.isFinite(semi)
+  ) {
     return undefined;
   }
   return {
     '대기업·계열사': enterprise,
     '중견 기업': mid,
     'IT 회사': it,
+    '반도체·디스플레이 장비사': semi,
   };
 }
 

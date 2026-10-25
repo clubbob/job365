@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/admin-auth';
-import { buildAdminStatsFromJobCounts, getJobCountsForAdminList } from '@/lib/crawled-jobs-server';
+import { getCrawledJobSourceStats } from '@/lib/crawled-jobs-server';
 import {
   buildAdminRecruitingCompanyListPage,
   computeRecruitingCompanyActiveCounts,
@@ -18,7 +18,14 @@ export const maxDuration = 120;
 
 function parseSegment(value: string | null): RecruitingEmployerAdminSegment | null {
   if (value === 'misc') return 'mid-sized';
-  if (value === 'enterprise' || value === 'mid-sized' || value === 'it') return value;
+  if (
+    value === 'enterprise' ||
+    value === 'mid-sized' ||
+    value === 'it' ||
+    value === 'semi-equipment'
+  ) {
+    return value;
+  }
   return null;
 }
 
@@ -53,8 +60,7 @@ export async function GET(request: Request) {
 
   try {
     if (summaryAll) {
-      const jobCounts = await getJobCountsForAdminList();
-      const stats = buildAdminStatsFromJobCounts(jobCounts);
+      const stats = await getCrawledJobSourceStats({ skipDisplayFilters: true });
       return NextResponse.json({
         ok: true,
         data: {
@@ -64,8 +70,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const jobCounts = await getJobCountsForAdminList();
-    const stats = buildAdminStatsFromJobCounts(jobCounts);
+    const stats = await getCrawledJobSourceStats({ skipDisplayFilters: true });
 
     if (summaryOnly && segment) {
       const withActiveJobsCount = countRecruitingCompaniesWithActiveJobs(segment, stats);

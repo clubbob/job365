@@ -2,7 +2,10 @@ import { hasJobAlertFilterPrefs } from '@/lib/job-board/match';
 import type { JobAlertPrefs } from '@/types/job-alert-prefs';
 
 export function formatJobAlertPrefsSummary(
-  prefs: Pick<JobAlertPrefs, 'emailEnabled' | 'employmentTypes' | 'roles' | 'regions'>,
+  prefs: Pick<
+    JobAlertPrefs,
+    'emailEnabled' | 'employmentTypes' | 'companySegments' | 'roles' | 'regions'
+  >,
   saved: boolean,
 ): string {
   const emailLabel = prefs.emailEnabled ? '이메일 받음' : '이메일 안 받음';
@@ -12,7 +15,7 @@ export function formatJobAlertPrefsSummary(
   }
 
   const filterLabel = hasJobAlertFilterPrefs(prefs)
-    ? [...prefs.employmentTypes, ...prefs.roles, ...prefs.regions].join(', ')
+    ? [...prefs.employmentTypes, ...prefs.companySegments, ...prefs.roles, ...prefs.regions].join(', ')
     : '조건 전체';
 
   return `${emailLabel} · ${filterLabel}`;

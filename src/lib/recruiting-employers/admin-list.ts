@@ -1,20 +1,39 @@
+import { normalizeCompanyLabel } from '@/lib/crawler/company-name-match';
 import { countMiscCrawlerCompanies, getRegistryMiscCrawlerCompanies } from '@/lib/crawler/companies';
-import {
-  activeJobCountForMidSizedCrawlSource,
-  type CrawledJobSourceStats,
-} from '@/lib/crawled-jobs-server';
+import type { CrawledJobSourceStats } from '@/lib/crawled-jobs-server';
 import { loadEnterpriseRegistryDbCompanies } from '@/lib/enterprise-companies/registry-db';
 import { isItComputingCompany } from '@/lib/it-companies/catalog';
 import { buildItCompanyRegistryRows, registryRowDedupeKey } from '@/lib/it-companies/build-registry-rows';
+import { isSemiDisplayEquipmentCompany } from '@/lib/semi-display-equipment/catalog';
+import { buildSemiDisplayEquipmentRegistryRows } from '@/lib/semi-display-equipment/build-registry-rows';
 import { isMidSizedCertificateActive } from '@/lib/mid-sized-companies/registry-dedupe';
 import {
   loadMidSizedRegistryDbCompanies,
   type MidSizedRegistryDbCompany,
 } from '@/lib/mid-sized-companies/registry-db';
 import { compareMidSizedCompaniesByFame } from '@/lib/mid-sized-companies/fame-rank';
-import { recruitingEmployerCountFromNormMap } from '@/lib/recruiting-employers/aggregate';
+import { activeJobCountForRegistryCompany } from '@/lib/recruiting-employers/registry-active-job-count';
 import { resolveRegistryBusinessNumber } from '@/lib/recruiting-employers/careers-url-business-number';
 import type { RecruitingEmployerAdminSegment } from '@/lib/recruiting-employers/segments';
+
+function matchesAdminCompanyNameSearch(companyName: string, q: string): boolean {
+  const needle = normalizeCompanyLabel(q);
+  if (!needle) return true;
+  const hay = normalizeCompanyLabel(companyName);
+  return hay.includes(needle);
+}
+
+function loadEnterpriseRegistryForAdminSegment() {
+  const itKeys = new Set(buildItCompanyRegistryRows({}).map((row) => registryRowDedupeKey(row.companyName)));
+  const semiKeys = new Set(
+    buildSemiDisplayEquipmentRegistryRows({}).map((row) => registryRowDedupeKey(row.companyName)),
+  );
+  return loadEnterpriseRegistryDbCompanies().filter(
+    (record) =>
+      !itKeys.has(registryRowDedupeKey(record.groupName)) &&
+      !semiKeys.has(registryRowDedupeKey(record.groupName)),
+  );
+}
 
 export type AdminRecruitingCompanyRow = {
   companyName: string;
@@ -26,6 +45,7 @@ export type AdminRecruitingCompanyRow = {
   careersDiscoveryStatus: 'pending' | 'found' | 'not_found' | 'enterprise';
   careersUrlCheckedAt: string | null;
   activeJobCount: number;
+  careersUrlNote: string | null;
 };
 
 function midSizedActiveJobCount(
@@ -33,9 +53,7 @@ function midSizedActiveJobCount(
   crawlSourceId: string,
   stats: CrawledJobSourceStats,
 ): number {
-  const byEmployer = recruitingEmployerCountFromNormMap(stats.recruitingEmployerCountByNorm, companyName);
-  const byCrawlSource = activeJobCountForMidSizedCrawlSource(crawlSourceId, stats.jobCountsBySource);
-  return Math.max(byEmployer, byCrawlSource);
+  return activeJobCountForRegistryCompany(companyName, stats, crawlSourceId);
 }
 
 type MidSizedSortRow = AdminRecruitingCompanyRow & { crawlSourceId: string };
@@ -60,6 +78,7 @@ function midSizedRowFromRecord(
     careersDiscoveryStatus: record.careersDiscoveryStatus ?? (careersUrl ? 'found' : 'pending'),
     careersUrlCheckedAt: record.careersUrlCheckedAt ?? null,
     activeJobCount: midSizedActiveJobCount(record.companyName, record.crawlSourceId, stats),
+    careersUrlNote: null,
   };
 }
 
@@ -97,12 +116,13 @@ function buildMidSizedRows(stats: CrawledJobSourceStats): AdminRecruitingCompany
       careersDiscoveryStatus,
       careersUrlCheckedAt,
       activeJobCount,
+      careersUrlNote: null,
     }),
   );
 }
 
 function buildEnterpriseRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] {
-  const registry = loadEnterpriseRegistryDbCompanies();
+  const registry = loadEnterpriseRegistryForAdminSegment();
 
   return [...registry]
     .sort(
@@ -136,6 +156,7 @@ function buildEnterpriseRows(stats: CrawledJobSourceStats): AdminRecruitingCompa
         careersDiscoveryStatus: discoveryStatus,
         careersUrlCheckedAt: null,
         activeJobCount,
+        careersUrlNote: null,
       };
     });
 }
@@ -160,17 +181,48 @@ function buildMiscRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[
         careersDiscoveryStatus: 'enterprise' as const,
         careersUrlCheckedAt: null,
         activeJobCount,
+        careersUrlNote: null,
       };
     })
     .sort((a, b) => b.activeJobCount - a.activeJobCount || a.companyName.localeCompare(b.companyName, 'ko'));
+}
+
+function buildSemiEquipmentRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] {
+  const registryRows = buildSemiDisplayEquipmentRegistryRows(stats);
+
+  return registryRows.map((row) => {
+    const segmentLabel = row.segment === '중견기업' ? '중견 기업' : '장비·부품';
+
+    return {
+      companyName: row.companyName,
+      businessNumber: resolveRegistryBusinessNumber({
+        companyName: row.companyName,
+        careersUrl: row.careersUrl,
+        crawlSourceId: row.crawlSourceId?.startsWith('mid-') ? row.crawlSourceId : null,
+        sourceId: row.crawlSourceId,
+        existing: row.businessNumber,
+      }),
+      segmentLabel,
+      active: row.active,
+      careersUrl: row.careersUrl,
+      linked: row.linked,
+      careersDiscoveryStatus: row.careersDiscoveryStatus,
+      careersUrlCheckedAt: row.careersUrlCheckedAt,
+      activeJobCount: row.activeJobCount,
+      careersUrlNote: row.careersUrlNote,
+    };
+  });
 }
 
 function buildItRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] {
   const registryRows = buildItCompanyRegistryRows(stats.jobCountsBySource);
 
   return registryRows.map((row) => {
-    const byEmployer = recruitingEmployerCountFromNormMap(stats.recruitingEmployerCountByNorm, row.companyName);
-    const activeJobCount = Math.max(row.activeJobCount, byEmployer);
+    const activeJobCount = activeJobCountForRegistryCompany(
+      row.companyName,
+      stats,
+      row.crawlSourceId,
+    );
     const segmentLabel =
       row.segment === '대기업·계열'
         ? '대기업·계열'
@@ -194,6 +246,7 @@ function buildItRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] 
       careersDiscoveryStatus: row.careersDiscoveryStatus,
       careersUrlCheckedAt: row.careersUrlCheckedAt,
       activeJobCount,
+      careersUrlNote: null,
     };
   });
 }
@@ -211,17 +264,24 @@ let registrySegmentCountsCache: {
 function computeRecruitingSegmentRegistryCounts(): RecruitingCompanyActiveCounts {
   const itRows = buildItCompanyRegistryRows({});
   const itKeys = new Set(itRows.map((row) => registryCompanyKey(row.companyName)));
+  const semiRows = buildSemiDisplayEquipmentRegistryRows({});
+  const semiKeys = new Set(semiRows.map((row) => registryCompanyKey(row.companyName)));
   const enterprise = loadEnterpriseRegistryDbCompanies().filter(
-    (record) => !itKeys.has(registryCompanyKey(record.groupName)),
+    (record) =>
+      !itKeys.has(registryCompanyKey(record.groupName)) &&
+      !semiKeys.has(registryCompanyKey(record.groupName)),
   ).length;
   const mid =
     loadMidSizedRegistryDbCompanies().filter(
-      (record) => !isItComputingCompany(record.companyName, record.industry),
+      (record) =>
+        !isItComputingCompany(record.companyName, record.industry) &&
+        !isSemiDisplayEquipmentCompany(record.companyName, record.industry),
     ).length + miscRegistryCount();
   return {
     enterprise,
     'mid-sized': mid,
     it: itRows.length,
+    'semi-equipment': semiRows.length,
   };
 }
 
@@ -238,6 +298,7 @@ function miscRegistryCount(): number {
 export function recruitingSegmentRegistryStatLabel(segment: RecruitingEmployerAdminSegment): string {
   if (segment === 'enterprise') return '대기업·계열';
   if (segment === 'mid-sized' || segment === 'misc') return '중견 명단';
+  if (segment === 'semi-equipment') return '반도체·디스플레이 장비 명단';
   return 'IT 명단';
 }
 
@@ -270,6 +331,7 @@ export function buildAdminRecruitingCompanyRows(
     return [...buildMidSizedRows(stats), ...buildMiscRows(stats)];
   }
   if (segment === 'it') return buildItRows(stats);
+  if (segment === 'semi-equipment') return buildSemiEquipmentRows(stats);
   return buildEnterpriseRows(stats);
 }
 
@@ -293,8 +355,8 @@ function paginateAdminRows(
 ): AdminRecruitingListPageResult {
   let filtered = rows;
   if (query.jobsOnly) filtered = filtered.filter((row) => row.activeJobCount > 0);
-  const q = query.q.trim().toLowerCase();
-  if (q) filtered = filtered.filter((row) => row.companyName.toLowerCase().includes(q));
+  const q = query.q.trim();
+  if (q) filtered = filtered.filter((row) => matchesAdminCompanyNameSearch(row.companyName, q));
 
   const linkedCount = filtered.filter((row) => row.linked).length;
   const withActiveJobsCount = filtered.filter((row) => row.activeJobCount > 0).length;
@@ -316,11 +378,11 @@ function buildMidSizedListPage(
   query: AdminRecruitingListPageQuery,
 ): AdminRecruitingListPageResult {
   const registry = loadMidSizedRegistryDbCompanies();
-  const q = query.q.trim().toLowerCase();
+  const q = query.q.trim();
 
   let indices = registry.map((_, index) => index);
   if (q) {
-    indices = indices.filter((index) => registry[index].companyName.toLowerCase().includes(q));
+    indices = indices.filter((index) => matchesAdminCompanyNameSearch(registry[index].companyName, q));
   }
 
   indices.sort((indexA, indexB) => {
@@ -358,15 +420,15 @@ function buildEnterpriseListPage(
   stats: CrawledJobSourceStats,
   query: AdminRecruitingListPageQuery,
 ): AdminRecruitingListPageResult {
-  const registry = [...loadEnterpriseRegistryDbCompanies()].sort(
+  const registry = [...loadEnterpriseRegistryForAdminSegment()].sort(
     (a, b) =>
       a.rank - b.rank ||
       (stats.jobCountsBySource[b.sourceId ?? ''] ?? 0) - (stats.jobCountsBySource[a.sourceId ?? ''] ?? 0),
   );
 
-  const q = query.q.trim().toLowerCase();
+  const q = query.q.trim();
   let filtered = registry;
-  if (q) filtered = filtered.filter((record) => record.groupName.toLowerCase().includes(q));
+  if (q) filtered = filtered.filter((record) => matchesAdminCompanyNameSearch(record.groupName, q));
   if (query.jobsOnly) {
     filtered = filtered.filter((record) => (record.sourceId ? stats.jobCountsBySource[record.sourceId] ?? 0 : 0) > 0);
   }
@@ -403,6 +465,7 @@ function buildEnterpriseListPage(
       careersDiscoveryStatus: discoveryStatus,
       careersUrlCheckedAt: null,
       activeJobCount,
+      careersUrlNote: null,
     };
   });
 
@@ -421,6 +484,9 @@ export function buildAdminRecruitingCompanyListPage(
     if (miscRows.length === 0) return buildMidSizedListPage(stats, query);
     return paginateAdminRows([...buildMidSizedRows(stats), ...miscRows], query);
   }
+  if (segment === 'semi-equipment') {
+    return paginateAdminRows(buildSemiEquipmentRows(stats), query);
+  }
   return paginateAdminRows(buildItRows(stats), query);
 }
 
@@ -428,6 +494,7 @@ export type RecruitingCompanyActiveCounts = {
   enterprise: number;
   'mid-sized': number;
   it: number;
+  'semi-equipment': number;
 };
 
 export function countRecruitingCompaniesWithActiveJobs(
@@ -449,6 +516,9 @@ export function countRecruitingCompaniesWithActiveJobs(
     ).length;
     return mid + misc;
   }
+  if (segment === 'semi-equipment') {
+    return buildSemiEquipmentRows(stats).filter((row) => row.activeJobCount > 0).length;
+  }
   return buildItRows(stats).filter((row) => row.activeJobCount > 0).length;
 }
 
@@ -457,6 +527,7 @@ export function computeRecruitingCompanyActiveCounts(stats: CrawledJobSourceStat
     enterprise: countRecruitingCompaniesWithActiveJobs('enterprise', stats),
     'mid-sized': countRecruitingCompaniesWithActiveJobs('mid-sized', stats),
     it: countRecruitingCompaniesWithActiveJobs('it', stats),
+    'semi-equipment': countRecruitingCompaniesWithActiveJobs('semi-equipment', stats),
   };
 }
 

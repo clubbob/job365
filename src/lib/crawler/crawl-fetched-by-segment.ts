@@ -1,6 +1,7 @@
 import { getCrawlerCompanies } from '@/lib/crawler/companies';
 import type { CrawlRunSummary } from '@/lib/crawler/types';
 import { IT_ENTERPRISE_CRAWL_SOURCE_IDS, isItComputingCompanyName } from '@/lib/it-companies/catalog';
+import { isSemiDisplayEquipmentCompanyName } from '@/lib/semi-display-equipment/catalog';
 import {
   emptyCompanySegmentCounts,
   type JobBoardCompanySegment,
@@ -21,7 +22,11 @@ function getCrawlSourcePrimarySegmentMap(): Map<string, JobBoardCompanySegment> 
     if (company.tier === 'enterprise') {
       segment = IT_ENTERPRISE_CRAWL_SOURCE_IDS.has(company.id) ? 'IT 회사' : '대기업·계열사';
     } else if (company.tier === 'extra') {
-      segment = isItComputingCompanyName(company.name) ? 'IT 회사' : '중견 기업';
+      if (isSemiDisplayEquipmentCompanyName(company.name)) {
+        segment = '반도체·디스플레이 장비사';
+      } else {
+        segment = isItComputingCompanyName(company.name) ? 'IT 회사' : '중견 기업';
+      }
     } else {
       segment = '중견 기업';
     }
@@ -40,6 +45,7 @@ function primaryCompanySegmentForCrawlSource(sourceId: string, sourceName: strin
   if (fromMap) return fromMap;
 
   const label = sourceName.replace(/\s*채용\s*$/, '').trim();
+  if (label && isSemiDisplayEquipmentCompanyName(label)) return '반도체·디스플레이 장비사';
   if (label && isItComputingCompanyName(label)) return 'IT 회사';
   if (IT_ENTERPRISE_CRAWL_SOURCE_IDS.has(crawlSourceKey(key))) return 'IT 회사';
 

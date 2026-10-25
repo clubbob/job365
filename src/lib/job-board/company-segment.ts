@@ -2,17 +2,24 @@ import {
   IT_ENTERPRISE_CRAWL_SOURCE_IDS,
   isItComputingCompanyName,
 } from '@/lib/it-companies/catalog';
+import { isSemiDisplayEquipmentCompanyName } from '@/lib/semi-display-equipment/catalog';
 import { crawledJobRecruitingCompanyName } from '@/lib/job-display';
 import type { CrawledJobListItem } from '@/types/crawled-job';
 
 /** 채용 정보 회사 분류 — 공고·명단 통계 모두 1건당 하나만 해당 */
-export const JOB_BOARD_COMPANY_SEGMENTS = ['대기업·계열사', '중견 기업', 'IT 회사'] as const;
+export const JOB_BOARD_COMPANY_SEGMENTS = [
+  '대기업·계열사',
+  '중견 기업',
+  'IT 회사',
+  '반도체·디스플레이 장비사',
+] as const;
 export type JobBoardCompanySegment = (typeof JOB_BOARD_COMPANY_SEGMENTS)[number];
 
 const LEGACY_COMPANY_SEGMENT: Record<string, JobBoardCompanySegment> = {
   'IT 기업': 'IT 회사',
   중견기업: '중견 기업',
   '기타 기업': '중견 기업',
+  '반도체·디스플레이 장비': '반도체·디스플레이 장비사',
 };
 
 export type CompanySegmentJobFields = Pick<CrawledJobListItem, 'companyName' | 'companySize' | 'title'> & {
@@ -32,6 +39,14 @@ export function isItCompanyJob(
   const sourceId = job.sourceId?.trim();
   if (!sourceId) return false;
   return IT_ENTERPRISE_CRAWL_SOURCE_IDS.has(crawlSourceKey(sourceId));
+}
+
+/** 브라우저·API 공통 — 장비 시드·회사명 매칭 */
+export function isSemiDisplayEquipmentJob(
+  job: Pick<CompanySegmentJobFields, 'companyName' | 'title'> & { sourceId?: string },
+): boolean {
+  const recruitingCompany = crawledJobRecruitingCompanyName(job) || job.companyName.trim();
+  return isSemiDisplayEquipmentCompanyName(recruitingCompany);
 }
 
 export function isJobBoardCompanySegment(value: string): value is JobBoardCompanySegment {
@@ -58,8 +73,9 @@ export function parseJobBoardCompanySegments(value: unknown): JobBoardCompanySeg
   return out;
 }
 
-/** IT → 대기업·계열사 → 그 외(중견 기업) */
+/** 장비사 → IT → 대기업·계열사 → 그 외(중견 기업) */
 export function primaryCompanySegmentForJob(job: CompanySegmentJobFields): JobBoardCompanySegment {
+  if (isSemiDisplayEquipmentJob(job)) return '반도체·디스플레이 장비사';
   if (isItCompanyJob(job)) return 'IT 회사';
   if (job.companySize === '대기업') return '대기업·계열사';
   return '중견 기업';
@@ -79,6 +95,7 @@ export function emptyCompanySegmentCounts(): Record<JobBoardCompanySegment, numb
     '대기업·계열사': 0,
     '중견 기업': 0,
     'IT 회사': 0,
+    '반도체·디스플레이 장비사': 0,
   };
 }
 

@@ -6,6 +6,7 @@ import {
   type AdminCrawledJobsBoardFilter,
   type AdminCrawledJobsStatusFilter,
 } from '@/lib/crawled-jobs-server';
+import { isJobBoardCompanySegment } from '@/lib/job-board/company-segment';
 import { firebaseAdminListFields, isFirebaseAdminReady } from '@/lib/firebaseAdmin';
 
 function parseStatusFilter(value: string | null): AdminCrawledJobsStatusFilter {
@@ -31,6 +32,8 @@ export async function GET(request: Request) {
   const status = parseStatusFilter(searchParams.get('status'));
   const board = parseBoardFilter(searchParams.get('board'));
   const q = searchParams.get('q')?.trim() ?? '';
+  const companySegmentRaw = searchParams.get('companySegment')?.trim() ?? '';
+  const companySegment = isJobBoardCompanySegment(companySegmentRaw) ? companySegmentRaw : undefined;
 
   if (!isFirebaseAdminReady()) {
     return NextResponse.json({
@@ -47,7 +50,14 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await listCrawledJobsForAdminPage(page, pageSize, status, q, board);
+    const result = await listCrawledJobsForAdminPage(
+      page,
+      pageSize,
+      status,
+      q,
+      board,
+      companySegment,
+    );
     return NextResponse.json({ ok: true, data: { ...result, ...firebaseAdminListFields() } });
   } catch {
     return NextResponse.json(

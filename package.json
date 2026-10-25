@@ -35,6 +35,8 @@
     "extract:mid-sized": "node scripts/extract-mid-sized-all.mjs",
     "sync:mid-sized": "tsx scripts/sync-mid-sized-registry.ts",
     "reconcile:mid-sized": "tsx scripts/reconcile-mid-sized-registry.ts",
+    "discover:seed-careers": "tsx scripts/discover-seed-careers.ts",
+    "reconcile:seed-careers": "tsx scripts/reconcile-seed-careers.ts",
     "preprocess:mid-sized": "node scripts/preprocess-mid-sized.mjs",
     "maximize:mid-sized": "node scripts/preprocess-mid-sized.mjs && pnpm crawl:mid-sized",
     "sync:mid-sized:full": "node scripts/sync-mid-sized-full.mjs",

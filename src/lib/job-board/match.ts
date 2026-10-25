@@ -76,10 +76,11 @@ export function jobMatchesBoardFilters(job: CrawledJobListItem, filters: JobBoar
 }
 
 export function hasJobAlertFilterPrefs(
-  prefs: Pick<JobAlertPrefs, 'employmentTypes' | 'roles' | 'regions'>,
+  prefs: Pick<JobAlertPrefs, 'employmentTypes' | 'companySegments' | 'roles' | 'regions'>,
 ): boolean {
   return (
     prefs.employmentTypes.length > 0 ||
+    prefs.companySegments.length > 0 ||
     prefs.roles.length > 0 ||
     prefs.regions.length > 0
   );
@@ -97,6 +98,7 @@ export function jobMatchesSavedPrefs(
 
   return jobMatchesBoardFilters(job, {
     employmentTypes: prefs.employmentTypes,
+    companySegments: prefs.companySegments,
     roles: prefs.roles,
     regions: prefs.regions,
   });

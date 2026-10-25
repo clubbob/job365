@@ -9,7 +9,8 @@ import { isMidSizedCertificateActive } from '@/lib/mid-sized-companies/registry-
 import { loadMidSizedRegistryDbCompanies } from '@/lib/mid-sized-companies/registry-db';
 import { activeJobCountForMidSizedCrawlSource } from '@/lib/crawled-jobs-server';
 import { compareItCompaniesByFame } from '@/lib/it-companies/fame-rank';
-import { MASTER_IT_COMPANY_SEED_NAMES, masterSeedNormalizeKey } from '@/lib/it-companies/master-seed';
+import { masterSeedNormalizeKey } from '@/lib/it-companies/master-seed';
+import { loadSeedCareersRegistryDbCompanies } from '@/lib/seed-careers/registry-db';
 import { resolveRegistryBusinessNumber } from '@/lib/recruiting-employers/careers-url-business-number';
 
 export type ItCompanyRegistryRow = {
@@ -108,23 +109,23 @@ function midSizedItRows(): ItCompanyRegistryRow[] {
     });
 }
 
-function masterSeedItRows(): ItCompanyRegistryRow[] {
-  return MASTER_IT_COMPANY_SEED_NAMES.map((companyName) => ({
-    companyName,
+function seedRegistryItRows(): ItCompanyRegistryRow[] {
+  return loadSeedCareersRegistryDbCompanies('it').map((record) => ({
+    companyName: record.companyName,
     businessNumber: resolveRegistryBusinessNumber({
-      companyName,
-      careersUrl: null,
-      crawlSourceId: null,
-      sourceId: null,
+      companyName: record.companyName,
+      careersUrl: record.careersUrl,
+      crawlSourceId: record.crawlSourceId,
+      sourceId: record.crawlSourceId,
     }),
     segment: 'IT 기업' as const,
     active: null,
-    careersUrl: null,
-    linked: false,
-    careersDiscoveryStatus: 'pending' as const,
-    careersUrlCheckedAt: null,
+    careersUrl: record.careersUrl,
+    linked: Boolean(record.careersUrl),
+    careersDiscoveryStatus: record.careersDiscoveryStatus,
+    careersUrlCheckedAt: record.careersUrlCheckedAt,
     activeJobCount: 0,
-    crawlSourceId: null,
+    crawlSourceId: record.careersUrl ? record.crawlSourceId : null,
   }));
 }
 
@@ -134,7 +135,7 @@ export function buildItCompanyRegistryRows(
   const seen = new Set<string>();
   const merged: ItCompanyRegistryRow[] = [];
 
-  for (const row of [...enterpriseItGroups(), ...midSizedItRows(), ...masterSeedItRows()]) {
+  for (const row of [...enterpriseItGroups(), ...midSizedItRows(), ...seedRegistryItRows()]) {
     const key = registryRowDedupeKey(row.companyName);
     if (seen.has(key)) continue;
     seen.add(key);

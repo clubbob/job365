@@ -4,15 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import PageHeader from '@/components/navigation/PageHeader';
 import { FormFeedback } from '@/components/ui/FormFeedback';
 import RecruitingEmployerBrowser from '@/features/admin/RecruitingEmployerBrowser';
+import RecruitingCompanySegmentTabBar from '@/features/admin/RecruitingCompanySegmentTabBar';
+import {
+  emptyRecruitingCompanySegmentTabCounts,
+  type RecruitingCompanySegmentId,
+} from '@/lib/recruiting-employers/company-segment-tabs';
 import { cn } from '@/lib/utils';
-
-type CompaniesSegment = 'enterprise' | 'mid-sized' | 'it';
-
-const SEGMENT_TABS: Array<{ id: CompaniesSegment; label: string }> = [
-  { id: 'enterprise', label: '대기업·계열사' },
-  { id: 'mid-sized', label: '중견 기업' },
-  { id: 'it', label: 'IT 회사' },
-];
 
 export default function JobCompaniesPanel({
   error,
@@ -21,12 +18,8 @@ export default function JobCompaniesPanel({
   error?: string | null;
   loading?: boolean;
 } = {}) {
-  const [segment, setSegment] = useState<CompaniesSegment>('enterprise');
-  const [segmentCounts, setSegmentCounts] = useState<Record<CompaniesSegment, number | null>>({
-    enterprise: null,
-    'mid-sized': null,
-    it: null,
-  });
+  const [segment, setSegment] = useState<RecruitingCompanySegmentId>('enterprise');
+  const [segmentCounts, setSegmentCounts] = useState(emptyRecruitingCompanySegmentTabCounts());
 
   useEffect(() => {
     void (async () => {
@@ -34,13 +27,14 @@ export default function JobCompaniesPanel({
         const res = await fetch('/api/admin/recruiting-companies?registryCounts=1', { cache: 'no-store' });
         const json = (await res.json()) as {
           ok?: boolean;
-          data?: { registryCounts?: Record<CompaniesSegment, number> };
+          data?: { registryCounts?: Record<RecruitingCompanySegmentId, number> };
         };
         if (!res.ok || !json.ok || !json.data?.registryCounts) return;
         setSegmentCounts({
           enterprise: json.data.registryCounts.enterprise ?? null,
           'mid-sized': json.data.registryCounts['mid-sized'] ?? null,
           it: json.data.registryCounts.it ?? null,
+          'semi-equipment': json.data.registryCounts['semi-equipment'] ?? null,
         });
       } catch {
         // 탭 숫자는 목록 로드 후에도 갱신됩니다.
@@ -49,7 +43,7 @@ export default function JobCompaniesPanel({
   }, []);
 
   const handleListMeta = useCallback(
-    (meta: { segment: CompaniesSegment; registryCount: number }) => {
+    (meta: { segment: RecruitingCompanySegmentId; registryCount: number }) => {
       if (typeof meta.registryCount !== 'number' || !Number.isFinite(meta.registryCount)) return;
       setSegmentCounts((prev) => ({ ...prev, [meta.segment]: meta.registryCount }));
     },
@@ -67,41 +61,13 @@ export default function JobCompaniesPanel({
 
       {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
 
-      <div
-        className="flex gap-1 rounded-xl border border-border bg-surface p-1"
-        role="tablist"
-        aria-label="수집 채용 회사 구분"
-      >
-        {SEGMENT_TABS.map((item) => {
-          const active = segment === item.id;
-          const count = segmentCounts[item.id];
-          const countLabel =
-            typeof count === 'number' ? `${count.toLocaleString('ko-KR')}곳` : '—';
-          return (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setSegment(item.id)}
-              className={cn(
-                'flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors sm:flex-row sm:justify-center sm:gap-2',
-                active ? 'bg-primary text-white shadow-sm' : 'text-muted hover:bg-neutral-100 hover:text-foreground',
-              )}
-            >
-              <span>{item.label}</span>
-              <span
-                className={cn(
-                  'text-[11px] font-semibold',
-                  active ? 'text-white/90' : 'text-subtle',
-                )}
-              >
-                {countLabel}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <RecruitingCompanySegmentTabBar
+        active={segment}
+        onChange={setSegment}
+        counts={segmentCounts}
+        countUnit="곳"
+        ariaLabel="수집 채용 회사 구분"
+      />
 
       {segment === 'enterprise' ? (
         <div className="space-y-4" role="tabpanel">
@@ -118,6 +84,12 @@ export default function JobCompaniesPanel({
       {segment === 'it' ? (
         <div className="space-y-4" role="tabpanel">
           <RecruitingEmployerBrowser segment="it" onListMeta={handleListMeta} />
+        </div>
+      ) : null}
+
+      {segment === 'semi-equipment' ? (
+        <div className="space-y-4" role="tabpanel">
+          <RecruitingEmployerBrowser segment="semi-equipment" onListMeta={handleListMeta} />
         </div>
       ) : null}
     </div>

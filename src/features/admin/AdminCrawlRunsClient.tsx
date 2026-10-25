@@ -11,12 +11,16 @@ import {
 import { FormFeedback } from '@/components/ui/FormFeedback';
 import { CRAWL_SCHEDULE } from '@/lib/crawler/schedule';
 import { formatInquiryDateTime } from '@/lib/inquiry-display';
+import { emptyCompanySegmentCounts } from '@/lib/job-board/company-segment';
 import {
-  emptyCompanySegmentCounts,
-  JOB_BOARD_COMPANY_SEGMENTS,
-  sumCompanySegmentCounts,
-  type JobBoardCompanySegment,
-} from '@/lib/job-board/company-segment';
+  ADMIN_CRAWL_STATS_SEGMENTS,
+  jobBoardToAdminCrawlStatsCounts,
+  LAST_ADMIN_CRAWL_STATS_SEGMENT,
+  netAdminCrawlStatsCounts,
+  registryToAdminCrawlStatsCounts,
+  sumAdminCrawlStatsSegmentCounts,
+  type AdminCrawlStatsSegment,
+} from '@/lib/recruiting-employers/admin-crawl-stats-columns';
 import type { RecruitingRegistrySegmentCounts } from '@/lib/recruiting-employers/registry-count-format';
 import { cn } from '@/lib/utils';
 
@@ -24,13 +28,13 @@ type CrawlStatsSummary = {
   companyCount: number;
   companyRegistryBySegment?: RecruitingRegistrySegmentCounts;
   fetched: number;
-  fetchedBySegment?: Record<JobBoardCompanySegment, number>;
+  fetchedBySegment?: Record<string, number>;
   closed: number;
-  closedBySegment?: Record<JobBoardCompanySegment, number>;
+  closedBySegment?: Record<string, number>;
   activeJobs: number;
-  activeJobsBySegment?: Record<JobBoardCompanySegment, number>;
+  activeJobsBySegment?: Record<string, number>;
   storedActiveJobs: number;
-  storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
+  storedActiveJobsBySegment: Record<string, number>;
   lastRun: {
     finishedAt: string;
     runKind: 'daily' | 'mid-sized-only';
@@ -65,12 +69,11 @@ const STATS_TABLE_CLASS =
 const STATS_LABEL_CELL = 'whitespace-nowrap border-r border-border text-left';
 const STATS_NUM_CELL = 'text-right tabular-nums whitespace-nowrap';
 /** IT·합계 열 경계 — 양쪽 동일 여백(1.5rem)으로 구분선이 숫자 사이 중앙에 오도록 */
-const LAST_STATS_SEGMENT = JOB_BOARD_COMPANY_SEGMENTS[JOB_BOARD_COMPANY_SEGMENTS.length - 1];
-const STATS_IT_SEGMENT_CELL = `${STATS_NUM_CELL} !pr-6`;
+const STATS_LAST_SEGMENT_CELL = `${STATS_NUM_CELL} !pr-6`;
 const STATS_TOTAL_CELL = `${STATS_NUM_CELL} border-l border-border bg-neutral-50/80 !pl-6 font-semibold text-foreground`;
 
-function statsSegmentCellClass(segment: JobBoardCompanySegment): string {
-  return segment === LAST_STATS_SEGMENT ? STATS_IT_SEGMENT_CELL : STATS_NUM_CELL;
+function statsSegmentCellClass(segment: AdminCrawlStatsSegment): string {
+  return segment === LAST_ADMIN_CRAWL_STATS_SEGMENT ? STATS_LAST_SEGMENT_CELL : STATS_NUM_CELL;
 }
 
 type StatsRowView = StatsRow & {
@@ -92,27 +95,6 @@ function withGroupRowSpans(rows: StatsRow[]): StatsRowView[] {
   });
 }
 
-function registrySegmentCounts(
-  counts: RecruitingRegistrySegmentCounts,
-): Record<JobBoardCompanySegment, number> {
-  return {
-    '대기업·계열사': counts.enterprise,
-    '중견 기업': counts['mid-sized'],
-    'IT 회사': counts.it,
-  };
-}
-
-function segmentNetDelta(
-  fetched: Record<JobBoardCompanySegment, number>,
-  closed: Record<JobBoardCompanySegment, number>,
-): Record<JobBoardCompanySegment, number> {
-  const out = emptyCompanySegmentCounts();
-  for (const segment of JOB_BOARD_COMPANY_SEGMENTS) {
-    out[segment] = (fetched[segment] ?? 0) - (closed[segment] ?? 0);
-  }
-  return out;
-}
-
 function formatSignedCount(value: number, unit: '건' | '곳'): string {
   const sign = value > 0 ? '+' : '';
   return `${sign}${formatCount(value)}${unit}`;
@@ -132,7 +114,7 @@ function formatAmount(
 type StatsRow = {
   group: string;
   label: string;
-  values: Record<JobBoardCompanySegment, number> | null;
+  values: Record<AdminCrawlStatsSegment, number> | null;
   total: number | null;
   unit: '건' | '곳';
   signed?: boolean;
@@ -145,31 +127,36 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
     enterprise: 0,
     'mid-sized': 0,
     it: 0,
+    'semi-equipment': 0,
   };
-  const registryValues = registrySegmentCounts(registry);
+  const registryValues = registryToAdminCrawlStatsCounts(registry);
 
-  const storedValues = summary.storedActiveJobsBySegment ?? emptyCompanySegmentCounts();
-  const activeValues = summary.activeJobsBySegment ?? emptyCompanySegmentCounts();
+  const storedValues = jobBoardToAdminCrawlStatsCounts(
+    summary.storedActiveJobsBySegment ?? emptyCompanySegmentCounts(),
+  );
+  const activeValues = jobBoardToAdminCrawlStatsCounts(
+    summary.activeJobsBySegment ?? emptyCompanySegmentCounts(),
+  );
 
   const rows: StatsRow[] = [
     {
       group: '명단',
       label: '수집 채용 회사',
-      total: sumCompanySegmentCounts(registryValues),
+      total: sumAdminCrawlStatsSegmentCounts(registryValues),
       values: registryValues,
       unit: '곳',
     },
     {
       group: '지금',
       label: '수집 채용 공고',
-      total: sumCompanySegmentCounts(storedValues),
+      total: sumAdminCrawlStatsSegmentCounts(storedValues),
       values: storedValues,
       unit: '건',
     },
     {
       group: '지금',
       label: '노출 채용 공고',
-      total: sumCompanySegmentCounts(activeValues),
+      total: sumAdminCrawlStatsSegmentCounts(activeValues),
       values: activeValues,
       unit: '건',
     },
@@ -177,30 +164,32 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
 
   if (!summary.lastRun) return rows;
 
-  const fetched = summary.fetchedBySegment ?? emptyCompanySegmentCounts();
-  const closed = summary.closedBySegment ?? emptyCompanySegmentCounts();
-  const netValues = segmentNetDelta(fetched, closed);
+  const fetchedRaw = summary.fetchedBySegment ?? emptyCompanySegmentCounts();
+  const closedRaw = summary.closedBySegment ?? emptyCompanySegmentCounts();
+  const fetched = jobBoardToAdminCrawlStatsCounts(fetchedRaw);
+  const closed = jobBoardToAdminCrawlStatsCounts(closedRaw);
+  const netValues = netAdminCrawlStatsCounts(fetchedRaw, closedRaw);
 
   rows.push(
     {
       group: '마지막 수집',
       label: '추가된 공고',
-      total: sumCompanySegmentCounts(fetched),
+      total: sumAdminCrawlStatsSegmentCounts(fetched),
       values: fetched,
       unit: '건',
     },
     {
       group: '마지막 수집',
-      label: '마감 처리',
-      total: sumCompanySegmentCounts(closed),
+      label: '마감 처리 공고',
+      total: sumAdminCrawlStatsSegmentCounts(closed),
       values: closed,
       unit: '건',
       negative: true,
     },
     {
       group: '마지막 수집',
-      label: '순 증감',
-      total: sumCompanySegmentCounts(netValues),
+      label: '순 증감 공고',
+      total: sumAdminCrawlStatsSegmentCounts(netValues),
       values: netValues,
       unit: '건',
       signed: true,
@@ -305,7 +294,7 @@ export default function AdminCrawlRunsClient() {
     <div className="space-y-5">
       <PageHeader
         title="통계 요약"
-        description="명단·현재 공고·마지막 수집 결과를 분류별 합계로 봅니다."
+        description="기업 카테고리별 통계 요약한 페이지입니다."
         homeHref="/admin"
         homeLabel="대시보드"
         trailing={
@@ -356,18 +345,19 @@ export default function AdminCrawlRunsClient() {
           <div className="overflow-x-auto">
             <table className={STATS_TABLE_CLASS}>
               <colgroup>
-                <col className="w-[11%]" />
-                <col className="w-[24%]" />
-                <col className="w-[15%]" />
-                <col className="w-[15%]" />
-                <col className="w-[17.5%]" />
-                <col className="w-[17.5%]" />
+                <col className="w-[10%]" />
+                <col className="w-[18%]" />
+                <col className="w-[12%]" />
+                <col className="w-[12%]" />
+                <col className="w-[12%]" />
+                <col className="w-[16%]" />
+                <col className="w-[12%]" />
               </colgroup>
               <thead>
                 <tr className="border-b border-border">
                   <th className="whitespace-nowrap text-left">구분</th>
                   <th className={STATS_LABEL_CELL}>항목</th>
-                  {JOB_BOARD_COMPANY_SEGMENTS.map((segment) => (
+                  {ADMIN_CRAWL_STATS_SEGMENTS.map((segment) => (
                     <th key={segment} className={`${statsSegmentCellClass(segment)} text-subtle`}>
                       {segment}
                     </th>
@@ -390,7 +380,7 @@ export default function AdminCrawlRunsClient() {
                         </td>
                       ) : null}
                       <td className={STATS_LABEL_CELL}>{row.label}</td>
-                      {JOB_BOARD_COMPANY_SEGMENTS.map((segment) => (
+                      {ADMIN_CRAWL_STATS_SEGMENTS.map((segment) => (
                         <td key={segment} className={statsSegmentCellClass(segment)}>
                           {row.values === null
                             ? '—'

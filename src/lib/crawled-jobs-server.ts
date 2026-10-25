@@ -27,7 +27,10 @@ import {
   isCrawledJobPostingOpen,
   parseDeadlineFromJobTitle,
 } from '@/lib/job-board/crawled-deadline';
-import type { JobBoardCompanySegment } from '@/lib/job-board/company-segment';
+import {
+  primaryCompanySegmentForJob,
+  type JobBoardCompanySegment,
+} from '@/lib/job-board/company-segment';
 import {
   addJobsToPrimaryCompanySegmentCounts,
   countStoredActiveJobsByPrimaryCompanySegmentFromList,
@@ -48,6 +51,7 @@ import {
   type PersistedCrawledJobSourceStats,
   writePersistedCrawledJobSourceStats,
 } from '@/lib/crawled-job-source-stats-persist';
+import { canonicalizeCrawledJobCompanyNameForPersist } from '@/lib/enterprise-groups/group-affiliate-registry';
 import { crawledJobRecruitingCompanyName } from '@/lib/job-display';
 import { normalizeCompanyLabel } from '@/lib/crawler/company-name-match';
 import type {
@@ -844,6 +848,14 @@ function filterAdminCrawledJobs(
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+function filterAdminCrawledJobsByCompanySegment(
+  jobs: CrawledJob[],
+  companySegment: JobBoardCompanySegment | undefined,
+): CrawledJob[] {
+  if (!companySegment) return jobs;
+  return jobs.filter((job) => primaryCompanySegmentForJob(job) === companySegment);
+}
+
 async function getOnBoardCrawledJobIds(): Promise<Set<string>> {
   const browsable = await getBrowsableCrawledJobs();
   return new Set(browsable.map((job) => job.id));
@@ -963,12 +975,13 @@ export async function listCrawledJobsForAdminPage(
   status: AdminCrawledJobsStatusFilter = 'active',
   q = '',
   board: AdminCrawledJobsBoardFilter = 'all',
+  companySegment?: JobBoardCompanySegment,
 ): Promise<AdminCrawledJobsPageResult> {
   const hidden = await getDisplayDisabledSourceIds();
   const trimmedQ = q.trim();
   const safePage = Math.max(1, page);
   const safePageSize = Math.max(1, Math.min(pageSize, ADMIN_CRAWLED_JOBS_PAGE_SIZE));
-  const needsMemoryList = Boolean(trimmedQ) || board !== 'all';
+  const needsMemoryList = Boolean(trimmedQ) || board !== 'all' || companySegment !== undefined;
 
   if (needsMemoryList) {
     try {
@@ -978,6 +991,7 @@ export async function listCrawledJobsForAdminPage(
           : await listAllCrawledJobsForAdminSearch();
       let jobs = filterAdminCrawledJobs(source, status, trimmedQ);
       jobs = await filterAdminCrawledJobsByBoard(jobs, board);
+      jobs = filterAdminCrawledJobsByCompanySegment(jobs, companySegment);
       if (jobs.length > 0 || !shouldUseSampleFallback()) {
         const result = paginateAdminCrawledJobs(jobs, hidden, safePage, safePageSize);
         return attachAdminCrawledJobCounts(result, safePage, status);
@@ -989,6 +1003,7 @@ export async function listCrawledJobsForAdminPage(
 
     let sampleJobs = filterAdminCrawledJobs(SAMPLE_CRAWLED_JOBS, status, trimmedQ);
     sampleJobs = await filterAdminCrawledJobsByBoard(sampleJobs, board);
+    sampleJobs = filterAdminCrawledJobsByCompanySegment(sampleJobs, companySegment);
     const result = paginateAdminCrawledJobs(sampleJobs, hidden, safePage, safePageSize);
     return attachAdminCrawledJobCounts(result, safePage, status);
   }
@@ -1350,9 +1365,16 @@ export async function upsertCrawledJob(job: CrawledJob): Promise<UpsertCrawledJo
     }
   }
 
+  const decodedCompanyName = decodeHtmlEntities(job.companyName).trim();
+  const canonicalCompanyName = canonicalizeCrawledJobCompanyNameForPersist({
+    sourceId: job.sourceId,
+    companyName: decodedCompanyName,
+    title: normalizedTitle,
+  });
+
   const normalizedJob: CrawledJob = {
     ...job,
-    companyName: decodeHtmlEntities(job.companyName).trim(),
+    companyName: canonicalCompanyName,
     title: normalizedTitle,
     description: decodeHtmlEntities(job.description),
     deadline: resolvedDeadline,

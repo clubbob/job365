@@ -128,3 +128,21 @@ export function recruitingEmployerCountForLabel(
 ): number {
   return buildRecruitingEmployerCountLookup(aggregates).countFor(registryCompanyName);
 }
+
+export function recruitingEmployerAggregatesFromStats(
+  stats: Pick<CrawledJobSourceStats, 'recruitingEmployerAggregates' | 'recruitingEmployerCountByNorm'>,
+): RecruitingEmployerAggregate[] {
+  if (stats.recruitingEmployerAggregates.length > 0) return stats.recruitingEmployerAggregates;
+  return Object.entries(stats.recruitingEmployerCountByNorm)
+    .map(([norm, activeJobCount]) => ({
+      companyName: norm,
+      activeJobCount,
+      sourceIds: [] as string[],
+    }))
+    .sort((a, b) => b.activeJobCount - a.activeJobCount || a.companyName.localeCompare(b.companyName, 'ko'));
+}
+
+type CrawledJobSourceStats = {
+  recruitingEmployerAggregates: RecruitingEmployerAggregate[];
+  recruitingEmployerCountByNorm: Record<string, number>;
+};

@@ -56,11 +56,6 @@ function statForSection(
         value: `${stats.notices.published.toLocaleString('ko-KR')}건`,
         hint: `게시 중 · 전체 ${stats.notices.total.toLocaleString('ko-KR')}건`,
       };
-    case '/admin/extract-list-logic':
-      return {
-        value: '규칙',
-        hint: '공고 수집·노출 기준',
-      };
     default:
       return { value: '—', hint: '' };
   }

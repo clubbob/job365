@@ -1,5 +1,5 @@
-import AdminExtractListLogicClient from '@/features/admin/AdminExtractListLogicClient';
+import { redirect } from 'next/navigation';
 
-export default function AdminExtractListLogicPage() {
-  return <AdminExtractListLogicClient />;
+export default function AdminExtractListLogicLegacyPage() {
+  redirect('/admin/jobs/extract-list-logic');
 }

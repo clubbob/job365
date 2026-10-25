@@ -5,6 +5,7 @@ import {
   updateJobAlertPrefs,
   type UpdateJobAlertPrefsInput,
 } from '@/lib/job-alert-prefs-server';
+import { parseJobBoardCompanySegments } from '@/lib/job-board/company-segment';
 import {
   isEmploymentType,
   isJobRegion,
@@ -36,6 +37,11 @@ function parsePatch(body: Record<string, unknown>): UpdateJobAlertPrefsInput | n
   if (body.employmentTypes !== undefined) {
     if (!Array.isArray(body.employmentTypes)) return null;
     patch.employmentTypes = body.employmentTypes.filter(isEmploymentType);
+  }
+
+  if (body.companySegments !== undefined) {
+    if (!Array.isArray(body.companySegments)) return null;
+    patch.companySegments = parseJobBoardCompanySegments(body.companySegments);
   }
 
   if (body.roles !== undefined) {

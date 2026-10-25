@@ -15,6 +15,7 @@ import {
   persistAdminCrawledJobsListReturnState,
   type AdminCrawledJobsListUrlState,
 } from '@/lib/admin-crawled-jobs-list-url';
+import type { JobBoardCompanySegment } from '@/lib/job-board/company-segment';
 import { cn } from '@/lib/utils';
 import type { CrawledJobListItem, CrawledJobStatus } from '@/types/crawled-job';
 
@@ -61,8 +62,13 @@ export type AdminCrawledJobsListMode = 'stored' | 'browsable';
 
 export default function AdminCrawledJobsClient({
   listMode = 'stored',
+  companySegment,
+  embeddedInSegmentPanel = false,
 }: {
   listMode?: AdminCrawledJobsListMode;
+  companySegment?: JobBoardCompanySegment;
+  /** 회사 분류 탭 패널 안 — 페이지 헤더·전체 합계 문구 숨김 */
+  embeddedInSegmentPanel?: boolean;
 } = {}) {
   const browsableOnly = listMode === 'browsable';
   const searchParams = useSearchParams();
@@ -193,6 +199,9 @@ export default function AdminCrawledJobsClient({
         if (debouncedQuery.trim()) {
           params.set('q', debouncedQuery.trim());
         }
+        if (companySegment) {
+          params.set('companySegment', companySegment);
+        }
 
         const res = await fetch(`/api/admin/crawled-jobs?${params.toString()}`, {
           signal: controller.signal,
@@ -223,7 +232,7 @@ export default function AdminCrawledJobsClient({
     })();
 
     return () => controller.abort();
-  }, [page, statusFilter, boardFilter, debouncedQuery]);
+  }, [page, statusFilter, boardFilter, debouncedQuery, companySegment]);
 
   async function handleClose(job: AdminCrawledJob) {
     if (job.status === 'closed') return;
@@ -273,19 +282,7 @@ export default function AdminCrawledJobsClient({
   const isInitialLoad = loading && jobs.length === 0;
   const isRefreshing = loading && jobs.length > 0;
 
-  return (
-    <div className="space-y-5">
-      <PageHeader
-        title={browsableOnly ? '노출 채용 공고' : '수집 채용 공고'}
-        description={
-          browsableOnly
-            ? '구직자 채용 정보(/jobs)와 같은 노출·마감·중복 제거 기준 목록입니다.'
-            : 'DB 모집 중 수집 공고입니다. 노출 여부는 필터로 구분할 수 있습니다.'
-        }
-        homeHref="/admin"
-        homeLabel="대시보드"
-      />
-
+  const listCard = (
       <Card>
         <div className="mb-4 flex flex-wrap gap-3">
           <div className="min-w-[12rem] flex-1">
@@ -331,7 +328,7 @@ export default function AdminCrawledJobsClient({
           ) : null}
         </div>
 
-        {browsableOnly && jobCounts ? (
+        {!embeddedInSegmentPanel && browsableOnly && jobCounts ? (
           <p className="mb-2 text-xs text-muted">
             노출 채용 공고 {jobCounts.boardVisible.toLocaleString('ko-KR')}건
             {jobCounts.storedActive > jobCounts.boardVisible
@@ -339,7 +336,7 @@ export default function AdminCrawledJobsClient({
               : ''}
           </p>
         ) : null}
-        {!browsableOnly && statusFilter === 'active' && jobCounts ? (
+        {!embeddedInSegmentPanel && !browsableOnly && statusFilter === 'active' && jobCounts ? (
           <p className="mb-2 text-xs text-muted">
             수집 채용 공고 {jobCounts.storedActive.toLocaleString('ko-KR')}건 · 노출 채용 공고{' '}
             {jobCounts.boardVisible.toLocaleString('ko-KR')}건
@@ -542,6 +539,25 @@ export default function AdminCrawledJobsClient({
           );
         })() : null}
       </Card>
+  );
+
+  if (embeddedInSegmentPanel) {
+    return listCard;
+  }
+
+  return (
+    <div className="space-y-5">
+      <PageHeader
+        title={browsableOnly ? '노출 채용 공고' : '수집 채용 공고'}
+        description={
+          browsableOnly
+            ? '구직자 채용 정보(/jobs)와 같은 노출·마감·중복 제거 기준 목록입니다.'
+            : 'DB 모집 중 수집 공고입니다. 노출 여부는 필터로 구분할 수 있습니다.'
+        }
+        homeHref="/admin"
+        homeLabel="대시보드"
+      />
+      {listCard}
     </div>
   );
 }

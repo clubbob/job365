@@ -1,5 +1,6 @@
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 import { listCrawledJobs } from '@/lib/crawled-jobs-server';
+import { parseJobAlertPrefs } from '@/lib/job-alert-prefs-server';
 import { hasJobAlertFilterPrefs, jobMatchesAlertPrefs } from '@/lib/job-board/match';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
@@ -92,14 +93,7 @@ async function listDigestRecipients(): Promise<DigestRecipient[]> {
       userId,
       email,
       nickname,
-      prefs: {
-        userId,
-        emailEnabled: true,
-        employmentTypes: Array.isArray(prefsData.employmentTypes) ? prefsData.employmentTypes : [],
-        roles: Array.isArray(prefsData.roles) ? prefsData.roles : [],
-        regions: Array.isArray(prefsData.regions) ? prefsData.regions : [],
-        updatedAt: null,
-      },
+      prefs: { ...parseJobAlertPrefs(userId, prefsData as Record<string, unknown>), emailEnabled: true },
     });
   }
 

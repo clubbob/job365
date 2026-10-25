@@ -28,10 +28,6 @@ export const ADMIN_SECTION_MENU: AdminSectionMenuItem[] = [
     href: '/admin/notices',
     label: '공지사항',
   },
-  {
-    href: '/admin/extract-list-logic',
-    label: '수집/노출 로직',
-  },
 ];
 
 export const ADMIN_DASHBOARD_TITLE = '대시보드';
