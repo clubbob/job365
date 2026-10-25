@@ -1,3 +1,4 @@
+import { CRAWL_SCHEDULE } from '@/lib/crawler/schedule';
 import { ENTERPRISE_CAREERS_CONFIGS } from '@/lib/crawler/enterprise-careers-urls';
 import { loadEnterpriseRegistryDbCompanies } from '@/lib/enterprise-companies/registry-db';
 import { isCompleteRegistryCompanyIdentity } from '@/lib/registry-company-identity';
@@ -30,7 +31,7 @@ export type CrawlerAdapterId =
   | 'it-seed-registry-batch'
   | 'semi-seed-registry-batch';
 
-/** `extra` = 관리자 「기타기업」 명단·매일 수집 소스 */
+/** `extra` = 관리자 「기타기업」 명단·자동 수집 회차마다 도는 소스 */
 export type CrawlerTier = 'enterprise' | 'mid-sized' | 'it' | 'semi-equipment' | 'extra';
 
 export type CrawlerCompany = {
@@ -133,7 +134,7 @@ function buildSeedCareersCrawlerCompanies(
       name: `${label} DB (${registry.length.toLocaleString('ko-KR')}곳 명단)`,
       careersUrl: sampleUrl,
       sourceId,
-      sourceName: `${label} DB 수집 (URL ${linked.toLocaleString('ko-KR')}곳 · 매일 전체)`,
+      sourceName: `${label} DB 수집 (URL ${linked.toLocaleString('ko-KR')}곳 · ${CRAWL_SCHEDULE.perRunFullCrawlLabel})`,
       tier: segment === 'it' ? 'it' : 'semi-equipment',
       adapter,
       companySize: '중견기업',
@@ -203,7 +204,7 @@ export function getCrawlerCompanies(): CrawlerCompany[] {
   return buildAllCrawlerCompanies();
 }
 
-/** 기타기업(별도 등록) 수집 소스 — 매일 전체 크롤링 */
+/** 기타기업(별도 등록) 수집 소스 — 수집 회차마다 전체 크롤링 */
 export function getMiscCrawlerCompanies(): CrawlerCompany[] {
   return getCrawlerCompanies().filter((company) => company.tier === 'extra');
 }

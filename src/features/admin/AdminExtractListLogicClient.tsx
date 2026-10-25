@@ -11,7 +11,7 @@ const logicListClassName =
 const companySegmentList = JOB_BOARD_COMPANY_SEGMENTS.join(', ');
 
 export default function AdminExtractListLogicClient() {
-  const autoRunLabel = `매일 ${CRAWL_SCHEDULE.localTime} (한국 시간, ${CRAWL_SCHEDULE.runner})`;
+  const autoRunLabel = CRAWL_SCHEDULE.label;
 
   return (
     <div className="space-y-5">
@@ -62,8 +62,8 @@ export default function AdminExtractListLogicClient() {
           </li>
           <li>
             <span className="font-medium">수집 대상</span> — 명단에 연결된 채용 URL·집단 통합 채용 사이트·(중견)
-            고용24 배치입니다. {CRAWL_SCHEDULE.detail} IT·장비는 시드 DB에 URL이 연결된 곳만 매일 전부
-            돌립니다. 대기업 집단 수집에는 IT 전용 대기업 출처(네이버·카카오 등)는 넣지 않고, 해당 회사는 IT
+            고용24 배치입니다. {CRAWL_SCHEDULE.detail} IT·장비는 시드 DB에 URL이 연결된 곳만{' '}
+            {CRAWL_SCHEDULE.perRunFullCrawlLabel} 돌립니다. 대기업 집단 수집에는 IT 전용 대기업 출처(네이버·카카오 등)는 넣지 않고, 해당 회사는 IT
             시드 명단 경로로만 다룹니다.
           </li>
           <li>

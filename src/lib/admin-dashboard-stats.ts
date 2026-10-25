@@ -1,4 +1,4 @@
-import { countBrowsableCrawledJobs } from '@/lib/crawled-jobs-server';
+import { getAdminActiveJobCountForStats } from '@/lib/crawled-jobs-server';
 import { listCrawlRunsPage } from '@/lib/crawl-runs-server';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
@@ -53,7 +53,7 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     db ? listStoredInquiries() : Promise.resolve([]),
     db ? listWithdrawalLogs(500) : Promise.resolve([]),
     db ? listAllNotices() : Promise.resolve([]),
-    countBrowsableCrawledJobs().catch(() => 0),
+    getAdminActiveJobCountForStats().catch(() => 0),
     db ? listCrawlRunsPage(1, 1) : Promise.resolve({ runs: [], total: 0, page: 1, pageSize: 1, totalPages: 1 }),
   ]);
 

@@ -5,6 +5,8 @@ import {
   invalidateCrawledJobsListCache,
   listActiveJobIdsBySource,
   markCrawledJobsClosed,
+  purgeClosedCrawledJobsPastRetention,
+  refreshFirestoreStatsAfterCrawl,
   upsertCrawledJob,
 } from '@/lib/crawled-jobs-server';
 import { closeBrowserCrawlSession } from '@/lib/crawler/browser-page-crawl';
@@ -297,8 +299,20 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
     const expiredClosed = await closeExpiredCrawledJobs(getKoreaDateLocalToday(), closedBySegment);
     totalClosed += expiredClosed;
 
+    try {
+      await purgeClosedCrawledJobsPastRetention();
+    } catch (error) {
+      console.warn('[crawl] closed job purge failed', error);
+    }
+
     if (totalUpserted > 0 || totalClosed > 0) {
       invalidateCrawledJobsListCache();
+    }
+
+    try {
+      await refreshFirestoreStatsAfterCrawl();
+    } catch (error) {
+      console.warn('[crawl] post-crawl stats refresh failed', error);
     }
 
     const finishedAt = new Date().toISOString();

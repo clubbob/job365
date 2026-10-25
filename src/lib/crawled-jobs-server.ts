@@ -67,8 +67,15 @@ import type {
 const COLLECTION = 'crawledJobs';
 const ADMIN_META_COLLECTION = 'adminMeta';
 const ADMIN_JOB_COUNTS_DOC_ID = 'crawledActiveJobCountsBySource';
-/** 사용자 목록·검색용 노출 가능 공고 캐시 TTL */
-const LIST_CACHE_TTL_MS = 120_000;
+/** 사용자 목록·검색용 노출 가능 공고 캐시 TTL (서버리스 인스턴스별 — 길게 두어 Firestore 읽기 절감) */
+const LIST_CACHE_TTL_MS = 300_000;
+/** adminMeta에 분류 통계가 이 시간 안에 갱신됐으면 백그라운드 전체 스캔 생략 */
+const CRAWL_STATS_META_FRESH_MS = 6 * 60 * 60 * 1000;
+/** 디스크·메모리에 source 통계가 있으면 이 간격 안에 백그라운드 재스캔 생략 */
+const SOURCE_STATS_BACKGROUND_MIN_INTERVAL_MS = 60 * 60 * 1000;
+/** 마감 공고 보관 일수 — 수집 마지막에 초과분 삭제(배치당 최대 400건) */
+const CLOSED_JOB_RETENTION_DAYS = 180;
+const CLOSED_JOB_PURGE_MAX_BATCHES_PER_RUN = 5;
 /** 첫 페이지만 최근 active 문서를 소량 읽어 노출 공고를 채움 */
 /** 관리자 목록 조회 시 description 등 대용량 필드 제외 */
 const ADMIN_LIST_SELECT_FIELDS = [
@@ -522,7 +529,15 @@ type AdminMetaCrawlStatsSnapshot = {
   storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
   activeJobs: number;
   activeJobsBySegment: Record<JobBoardCompanySegment, number>;
+  crawlStatsComputedAt: string | null;
 };
+
+function isCrawlStatsMetaFresh(computedAt: string | null): boolean {
+  if (!computedAt) return false;
+  const t = new Date(computedAt).getTime();
+  if (Number.isNaN(t)) return false;
+  return Date.now() - t < CRAWL_STATS_META_FRESH_MS;
+}
 
 async function readAdminMetaCrawlStats(): Promise<AdminMetaCrawlStatsSnapshot | null> {
   const db = getAdminFirestore();
@@ -547,12 +562,15 @@ async function readAdminMetaCrawlStats(): Promise<AdminMetaCrawlStatsSnapshot | 
       parseSegmentCountsFromMeta(data?.storedActiveJobsBySegment) ?? emptyCompanySegmentCounts();
     const activeJobsBySegment =
       parseSegmentCountsFromMeta(data?.activeJobsBySegment) ?? emptyCompanySegmentCounts();
+    const crawlStatsComputedAt =
+      typeof data?.crawlStatsComputedAt === 'string' ? data.crawlStatsComputedAt : null;
 
     return {
       storedActiveJobs,
       storedActiveJobsBySegment,
       activeJobs,
       activeJobsBySegment,
+      crawlStatsComputedAt,
     };
   } catch (error) {
     console.warn('[crawled-jobs] admin crawl stats meta read failed', error);
@@ -583,11 +601,13 @@ function writeAdminMetaCrawlStats(snapshot: AdminMetaCrawlStatsSnapshot): void {
     });
 }
 
-function scheduleAdminCrawlStatsJobCountsRefresh(): void {
+function scheduleAdminCrawlStatsJobCountsRefresh(options?: { force?: boolean }): void {
   if (adminCrawlStatsJobCountsInflight) return;
-  const cached = adminCrawlStatsJobCountsCache;
-  if (cached && cached.expiresAt > Date.now() && !cached.provisional) {
-    return;
+  if (!options?.force) {
+    const cached = adminCrawlStatsJobCountsCache;
+    if (cached && cached.expiresAt > Date.now() && !cached.provisional) {
+      return;
+    }
   }
 
   adminCrawlStatsJobCountsInflight = loadAdminCrawlStatsJobCountsAndCache()
@@ -897,6 +917,15 @@ export function buildAdminStatsFromJobCounts(
 function scheduleAdminSourceStatsRefresh(): void {
   const cacheKey = 'all';
   if (sourceStatsInflight.has(cacheKey)) return;
+  if (sourceStatsCache && sourceStatsCache.expiresAt > Date.now() && sourceStatsCache.key === cacheKey) {
+    return;
+  }
+  const persisted =
+    readPersistedCrawledJobSourceStats(cacheKey) ??
+    readPersistedCrawledJobSourceStatsStale(cacheKey);
+  if (persisted && Date.now() - persisted.cachedAt < SOURCE_STATS_BACKGROUND_MIN_INTERVAL_MS) {
+    return;
+  }
 
   const promise = fetchCrawledJobSourceStatsFromStore(cacheKey, true)
     .then((data) => {
@@ -1394,11 +1423,12 @@ async function computeAdminCrawlStatsJobCounts(): Promise<{
   const browsableList = dedupeCrawledJobListItems(browsableCandidates);
   const activeJobsBySegment = countStoredActiveJobsByPrimaryCompanySegmentFromList(browsableList);
 
-  const snapshot = {
+  const snapshot: AdminMetaCrawlStatsSnapshot = {
     storedActiveJobs: activeList.length,
     storedActiveJobsBySegment,
     activeJobs: browsableList.length,
     activeJobsBySegment,
+    crawlStatsComputedAt: new Date().toISOString(),
   };
   writeAdminMetaCrawlStats(snapshot);
   return snapshot;
@@ -1459,7 +1489,9 @@ export async function getAdminCrawlStatsJobCounts(options?: {
       sumCompanySegmentCounts(meta.activeJobsBySegment) > 0;
     const provisional = !hasSegmentBreakdown && meta.storedActiveJobs > 0;
     cacheAdminCrawlStatsJobCounts(meta, provisional);
-    scheduleAdminCrawlStatsJobCountsRefresh();
+    if (provisional || !isCrawlStatsMetaFresh(meta.crawlStatsComputedAt)) {
+      scheduleAdminCrawlStatsJobCountsRefresh();
+    }
     return meta;
   }
 
@@ -1670,8 +1702,20 @@ export async function listActiveJobIdsBySource(sourceId: string): Promise<string
   const db = getAdminFirestore();
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
 
-  const snap = await db.collection(COLLECTION).where('sourceId', '==', sourceId).get();
-  return snap.docs.filter((doc) => doc.data().status === 'active').map((doc) => doc.id);
+  try {
+    const snap = await db
+      .collection(COLLECTION)
+      .where('sourceId', '==', sourceId)
+      .where('status', '==', 'active')
+      .select()
+      .get();
+    return snap.docs.map((doc) => doc.id);
+  } catch (error) {
+    if (!isFirestoreIndexError(error)) throw error;
+    console.warn('[crawled-jobs] sourceId+status index missing, falling back', error);
+    const snap = await db.collection(COLLECTION).where('sourceId', '==', sourceId).select('status').get();
+    return snap.docs.filter((doc) => doc.data().status === 'active').map((doc) => doc.id);
+  }
 }
 
 export async function listActiveJobIdsBySourceAndCompany(
@@ -1682,13 +1726,29 @@ export async function listActiveJobIdsBySourceAndCompany(
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
 
   const trimmed = companyName.trim();
-  const snap = await db.collection(COLLECTION).where('sourceId', '==', sourceId).get();
-  return snap.docs
-    .filter((doc) => {
-      const data = doc.data();
-      return data.status === 'active' && typeof data.companyName === 'string' && data.companyName.trim() === trimmed;
-    })
-    .map((doc) => doc.id);
+  try {
+    const snap = await db
+      .collection(COLLECTION)
+      .where('sourceId', '==', sourceId)
+      .where('status', '==', 'active')
+      .where('companyName', '==', trimmed)
+      .select()
+      .get();
+    return snap.docs.map((doc) => doc.id);
+  } catch (error) {
+    if (!isFirestoreIndexError(error)) throw error;
+    const snap = await db
+      .collection(COLLECTION)
+      .where('sourceId', '==', sourceId)
+      .select('status', 'companyName')
+      .get();
+    return snap.docs
+      .filter((doc) => {
+        const data = doc.data();
+        return data.status === 'active' && typeof data.companyName === 'string' && data.companyName.trim() === trimmed;
+      })
+      .map((doc) => doc.id);
+  }
 }
 
 export async function getCrawledJobsForAdminByIds(ids: string[]): Promise<CrawledJob[]> {
@@ -1747,7 +1807,11 @@ export async function closeExpiredCrawledJobs(
   const db = getAdminFirestore();
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
 
-  const snap = await db.collection(COLLECTION).where('status', '==', 'active').get();
+  const snap = await db
+    .collection(COLLECTION)
+    .where('status', '==', 'active')
+    .select('deadline', 'title', 'companyName', 'companySize', 'sourceId', 'status')
+    .get();
   const toCloseDocs = snap.docs.filter((doc) => {
     const data = doc.data();
     const deadline = data.deadline;
@@ -1769,6 +1833,47 @@ export async function closeExpiredCrawledJobs(
   const closed = await markCrawledJobsClosed(toClose, new Date().toISOString());
   if (closed > 0) invalidateCrawledJobsListCache();
   return closed;
+}
+
+/** 오래된 마감 공고 삭제 — 저장·조회 비용 절감 (수집 run 말미에 호출) */
+export async function purgeClosedCrawledJobsPastRetention(): Promise<number> {
+  const db = getAdminFirestore();
+  if (!db) return 0;
+
+  const cutoff = new Date();
+  cutoff.setUTCDate(cutoff.getUTCDate() - CLOSED_JOB_RETENTION_DAYS);
+  const cutoffIso = cutoff.toISOString();
+
+  let deleted = 0;
+  for (let batch = 0; batch < CLOSED_JOB_PURGE_MAX_BATCHES_PER_RUN; batch += 1) {
+    const snap = await db
+      .collection(COLLECTION)
+      .where('status', '==', 'closed')
+      .where('closedAt', '<', cutoffIso)
+      .limit(400)
+      .get();
+    if (snap.empty) break;
+
+    const writeBatch = db.batch();
+    for (const doc of snap.docs) {
+      writeBatch.delete(doc.ref);
+    }
+    await writeBatch.commit();
+    deleted += snap.size;
+    if (snap.size < 400) break;
+  }
+
+  if (deleted > 0) {
+    invalidateCrawledJobsListCache();
+    console.info('[crawled-jobs] purged closed jobs', deleted);
+  }
+  return deleted;
+}
+
+/** 자동·수동 수집 run 종료 후 통계·출처 집계를 한 번만 갱신 (Vercel 방문마다 전체 스캔 방지) */
+export async function refreshFirestoreStatsAfterCrawl(): Promise<void> {
+  await loadAdminCrawlStatsJobCountsAndCache();
+  await fetchCrawledJobSourceStatsFromStore('all', true);
 }
 
 export function validateCrawledJobInput(data: Record<string, unknown>): CrawledJob | null {

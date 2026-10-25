@@ -5,8 +5,8 @@ permissions:
 
 on:
   schedule:
-    # 매일 한국 02:00 = 전날 UTC 17:00 (수집 전 URL 탐색 배치)
-    - cron: '0 17 * * *'
+    # 수집과 동일 — 약 3일마다 한국 02:00 = 전날 UTC 17:00
+    - cron: '0 17 */3 * *'
   workflow_dispatch:
     inputs:
       offset:
@@ -39,10 +39,10 @@ jobs:
       - name: Validate mid-sized registry JSON
         run: pnpm validate:mid-sized-registry
 
-      - name: Discover careers URLs (daily batch)
+      - name: Discover careers URLs (scheduled batch)
         env:
           DISCOVER_CONCURRENCY: '16'
-          DISCOVER_LIMIT: ${{ github.event.inputs.limit || '4000' }}
+          DISCOVER_LIMIT: ${{ github.event.inputs.limit || '12000' }}
           DISCOVER_OFFSET_INPUT: ${{ github.event.inputs.offset }}
           DISCOVER_AUTO_RECONCILE: '0'
         run: |
