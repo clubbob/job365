@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import PageHeader from '@/components/navigation/PageHeader';
 import AdminCrawledJobsClient, {
   type AdminCrawledJobsListMode,
@@ -79,12 +79,14 @@ export default function AdminCrawledJobsBySegmentPanel({
       />
 
       <div role="tabpanel">
-        <AdminCrawledJobsClient
-          key={`${listMode}-${segment}`}
-          listMode={listMode}
-          companySegment={companySegment}
-          embeddedInSegmentPanel
-        />
+        <Suspense fallback={<p className="text-sm text-muted">목록을 불러오는 중…</p>}>
+          <AdminCrawledJobsClient
+            key={`${listMode}-${segment}`}
+            listMode={listMode}
+            companySegment={companySegment}
+            embeddedInSegmentPanel
+          />
+        </Suspense>
       </div>
     </div>
   );

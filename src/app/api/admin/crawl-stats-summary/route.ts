@@ -8,9 +8,11 @@ export const runtime = 'nodejs';
 /** 운영 DB 전체 active 스캔·분류 집계 */
 export const maxDuration = 120;
 
-export async function GET() {
+export async function GET(request: Request) {
   const unauthorized = await requireAdminSession();
   if (unauthorized) return unauthorized;
+
+  const waitForFullScan = new URL(request.url).searchParams.get('recompute') === '1';
 
   if (!isFirebaseAdminReady()) {
     return NextResponse.json({
@@ -33,7 +35,7 @@ export async function GET() {
   }
 
   try {
-    const summary = await getCrawlStatsSummary();
+    const summary = await getCrawlStatsSummary({ waitForFullScan });
     return NextResponse.json({ ok: true, data: { ...summary, ...firebaseAdminListFields() } });
   } catch (error) {
     console.error('[crawl-stats-summary] GET failed', error);

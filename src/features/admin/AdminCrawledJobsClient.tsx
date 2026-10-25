@@ -207,6 +207,7 @@ export default function AdminCrawledJobsClient({
         const res = await fetch(`/api/admin/crawled-jobs?${params.toString()}`, {
           signal: controller.signal,
           cache: 'no-store',
+          credentials: 'include',
         });
         const json = (await res.json()) as ListResponse;
         if (controller.signal.aborted) return;

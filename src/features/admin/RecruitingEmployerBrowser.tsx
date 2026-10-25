@@ -107,6 +107,7 @@ export default function RecruitingEmployerBrowser({
         const res = await fetch(`/api/admin/recruiting-companies?${params}`, {
           signal: controller.signal,
           cache: 'no-store',
+          credentials: 'include',
         });
         const json = (await res.json()) as { ok?: boolean; data?: RegistryResponse };
         if (controller.signal.aborted) return;

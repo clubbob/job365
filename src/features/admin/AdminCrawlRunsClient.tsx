@@ -11,7 +11,11 @@ import {
 import { FormFeedback } from '@/components/ui/FormFeedback';
 import { CRAWL_SCHEDULE } from '@/lib/crawler/schedule';
 import { formatInquiryDateTime } from '@/lib/inquiry-display';
-import { emptyCompanySegmentCounts } from '@/lib/job-board/company-segment';
+import { ADMIN_JOBS_REFRESH_EVENT } from '@/lib/admin-jobs-refresh';
+import {
+  emptyCompanySegmentCounts,
+  sumCompanySegmentCounts,
+} from '@/lib/job-board/company-segment';
 import {
   ADMIN_CRAWL_STATS_SEGMENTS,
   jobBoardToAdminCrawlStatsCounts,
@@ -208,13 +212,14 @@ export default function AdminCrawlRunsClient() {
   const [crawlEtaSeconds, setCrawlEtaSeconds] = useState(0);
   const crawlEtaInitialSeconds = CRAWL_SCHEDULE.localManualRunEstimateMinutes * 60;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { recompute?: boolean }) => {
     setLoading(true);
     setError('');
     try {
-      const json = await adminJson<{ ok?: boolean; data?: CrawlStatsSummary }>(
-        '/api/admin/crawl-stats-summary',
-      );
+      const path = options?.recompute
+        ? '/api/admin/crawl-stats-summary?recompute=1'
+        : '/api/admin/crawl-stats-summary';
+      const json = await adminJson<{ ok?: boolean; data?: CrawlStatsSummary }>(path);
       if (!json.ok || !json.data) throw new Error('수집 통계를 불러오지 못했습니다.');
       setSummary(json.data);
     } catch (err) {
@@ -229,6 +234,23 @@ export default function AdminCrawlRunsClient() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const onRefresh = () => void load();
+    window.addEventListener(ADMIN_JOBS_REFRESH_EVENT, onRefresh);
+    return () => window.removeEventListener(ADMIN_JOBS_REFRESH_EVENT, onRefresh);
+  }, [load]);
+
+  useEffect(() => {
+    if (!summary) return;
+    const stored = summary.storedActiveJobs ?? 0;
+    const segmentTotal = sumCompanySegmentCounts(
+      summary.storedActiveJobsBySegment ?? emptyCompanySegmentCounts(),
+    );
+    if (stored <= 0 || segmentTotal > 0) return;
+    const timer = window.setTimeout(() => void load(), 20_000);
+    return () => window.clearTimeout(timer);
+  }, [summary, load]);
 
   useEffect(() => {
     if (!running) {
@@ -341,6 +363,15 @@ export default function AdminCrawlRunsClient() {
 
       <Card description={loading ? '불러오는 중…' : lastRunLabel}>
         {loading && !summary ? <p className="text-sm text-muted">불러오는 중…</p> : null}
+        {!loading &&
+        summary &&
+        summary.storedActiveJobs > 0 &&
+        sumCompanySegmentCounts(summary.storedActiveJobsBySegment ?? emptyCompanySegmentCounts()) ===
+          0 ? (
+          <p className="mb-3 text-sm text-muted">
+            분류별 건수를 맞추는 중입니다. 잠시 후 자동으로 다시 불러오거나 「새로 고침」을 눌러 주세요.
+          </p>
+        ) : null}
         {summary ? (
           <div className="overflow-x-auto">
             <table className={STATS_TABLE_CLASS}>
@@ -404,6 +435,9 @@ export default function AdminCrawlRunsClient() {
               </tbody>
             </table>
           </div>
+        ) : null}
+        {!loading && !summary && !error ? (
+          <p className="text-sm text-muted">통계를 불러오지 못했습니다. 새로 고침을 눌러 주세요.</p>
         ) : null}
       </Card>
     </div>

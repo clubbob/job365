@@ -28,7 +28,10 @@ import {
   parseDeadlineFromJobTitle,
 } from '@/lib/job-board/crawled-deadline';
 import {
+  emptyCompanySegmentCounts,
+  JOB_BOARD_COMPANY_SEGMENTS,
   primaryCompanySegmentForJob,
+  sumCompanySegmentCounts,
   type JobBoardCompanySegment,
 } from '@/lib/job-board/company-segment';
 import {
@@ -95,6 +98,8 @@ let browsableJobsCache: { expiresAt: number; jobs: CrawledJob[] } | null = null;
 let browsableLoadPromise: Promise<CrawledJob[]> | null = null;
 let adminCrawlStatsJobCountsCache: {
   expiresAt: number;
+  /** true면 분류별 건수가 아직 없거나 옛 값일 수 있음 — 백그라운드 재집계 필요 */
+  provisional?: boolean;
   data: {
     storedActiveJobs: number;
     storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
@@ -485,13 +490,113 @@ function writeAdminJobCountsBySource(jobCountsBySource: Record<string, number>, 
   void db
     .collection(ADMIN_META_COLLECTION)
     .doc(ADMIN_JOB_COUNTS_DOC_ID)
-    .set({
-      updatedAt: new Date().toISOString(),
-      jobCountsBySource,
-      activeJobCount,
-    })
+    .set(
+      {
+        updatedAt: new Date().toISOString(),
+        jobCountsBySource,
+        activeJobCount,
+      },
+      { merge: true },
+    )
     .catch((error) => {
       console.warn('[crawled-jobs] admin job counts doc write failed', error);
+    });
+}
+
+function parseSegmentCountsFromMeta(raw: unknown): Record<JobBoardCompanySegment, number> | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const counts = emptyCompanySegmentCounts();
+  let found = false;
+  for (const key of JOB_BOARD_COMPANY_SEGMENTS) {
+    const value = (raw as Record<string, unknown>)[key];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      counts[key] = value;
+      found = true;
+    }
+  }
+  return found ? counts : null;
+}
+
+type AdminMetaCrawlStatsSnapshot = {
+  storedActiveJobs: number;
+  storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
+  activeJobs: number;
+  activeJobsBySegment: Record<JobBoardCompanySegment, number>;
+};
+
+async function readAdminMetaCrawlStats(): Promise<AdminMetaCrawlStatsSnapshot | null> {
+  const db = getAdminFirestore();
+  if (!db) return null;
+  try {
+    const snap = await db.collection(ADMIN_META_COLLECTION).doc(ADMIN_JOB_COUNTS_DOC_ID).get();
+    if (!snap.exists) return null;
+    const data = snap.data();
+    const storedActiveJobs =
+      typeof data?.storedActiveJobs === 'number' && Number.isFinite(data.storedActiveJobs)
+        ? data.storedActiveJobs
+        : typeof data?.activeJobCount === 'number' && Number.isFinite(data.activeJobCount)
+          ? data.activeJobCount
+          : null;
+    const activeJobs =
+      typeof data?.activeJobs === 'number' && Number.isFinite(data.activeJobs)
+        ? data.activeJobs
+        : storedActiveJobs;
+    if (storedActiveJobs === null || activeJobs === null) return null;
+
+    const storedActiveJobsBySegment =
+      parseSegmentCountsFromMeta(data?.storedActiveJobsBySegment) ?? emptyCompanySegmentCounts();
+    const activeJobsBySegment =
+      parseSegmentCountsFromMeta(data?.activeJobsBySegment) ?? emptyCompanySegmentCounts();
+
+    return {
+      storedActiveJobs,
+      storedActiveJobsBySegment,
+      activeJobs,
+      activeJobsBySegment,
+    };
+  } catch (error) {
+    console.warn('[crawled-jobs] admin crawl stats meta read failed', error);
+    return null;
+  }
+}
+
+function writeAdminMetaCrawlStats(snapshot: AdminMetaCrawlStatsSnapshot): void {
+  const db = getAdminFirestore();
+  if (!db) return;
+  void db
+    .collection(ADMIN_META_COLLECTION)
+    .doc(ADMIN_JOB_COUNTS_DOC_ID)
+    .set(
+      {
+        updatedAt: new Date().toISOString(),
+        activeJobCount: snapshot.storedActiveJobs,
+        storedActiveJobs: snapshot.storedActiveJobs,
+        activeJobs: snapshot.activeJobs,
+        storedActiveJobsBySegment: snapshot.storedActiveJobsBySegment,
+        activeJobsBySegment: snapshot.activeJobsBySegment,
+        crawlStatsComputedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    )
+    .catch((error) => {
+      console.warn('[crawled-jobs] admin crawl stats meta write failed', error);
+    });
+}
+
+function scheduleAdminCrawlStatsJobCountsRefresh(): void {
+  if (adminCrawlStatsJobCountsInflight) return;
+  const cached = adminCrawlStatsJobCountsCache;
+  if (cached && cached.expiresAt > Date.now() && !cached.provisional) {
+    return;
+  }
+
+  adminCrawlStatsJobCountsInflight = loadAdminCrawlStatsJobCountsAndCache()
+    .catch((error) => {
+      console.warn('[crawled-jobs] background crawl stats job counts failed', error);
+      throw error;
+    })
+    .finally(() => {
+      adminCrawlStatsJobCountsInflight = null;
     });
 }
 
@@ -922,6 +1027,34 @@ async function filterAdminCrawledJobsByBoard(
   return jobs.filter((job) => !onBoardIds.has(job.id));
 }
 
+function sortCrawledJobsByCreatedAtDesc(jobs: CrawledJob[]): CrawledJob[] {
+  return jobs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+/** 분류·노출 필터만 있을 때 전체 active를 두 번 읽지 않습니다. */
+async function listAdminMemoryFilteredJobs(
+  status: AdminCrawledJobsStatusFilter,
+  board: AdminCrawledJobsBoardFilter,
+  companySegment: JobBoardCompanySegment | undefined,
+  q: string,
+): Promise<CrawledJob[] | null> {
+  const trimmedQ = q.trim();
+  if (trimmedQ || status !== 'active') return null;
+
+  if (board === 'on_board') {
+    let jobs = await getBrowsableCrawledJobs();
+    jobs = filterAdminCrawledJobsByCompanySegment(jobs, companySegment);
+    return sortCrawledJobsByCreatedAtDesc(jobs);
+  }
+
+  if (board === 'all' && companySegment) {
+    let jobs = filterAdminCrawledJobsByCompanySegment(await listActiveJobsForCrawlStats(), companySegment);
+    return sortCrawledJobsByCreatedAtDesc(jobs);
+  }
+
+  return null;
+}
+
 async function attachAdminCrawledJobCounts(
   result: AdminCrawledJobsPageResult,
   page: number,
@@ -929,17 +1062,28 @@ async function attachAdminCrawledJobCounts(
 ): Promise<AdminCrawledJobsPageResult> {
   if (page !== 1 || status !== 'active') return result;
   try {
-    const [storedActive, browsable] = await Promise.all([
-      countActiveCrawledJobs(),
-      getBrowsableCrawledJobs(),
-    ]);
-    return {
-      ...result,
-      counts: { storedActive, boardVisible: browsable.length },
-    };
+    if (
+      adminCrawlStatsJobCountsCache &&
+      adminCrawlStatsJobCountsCache.expiresAt > Date.now()
+    ) {
+      const cached = adminCrawlStatsJobCountsCache.data;
+      return {
+        ...result,
+        counts: { storedActive: cached.storedActiveJobs, boardVisible: cached.activeJobs },
+      };
+    }
+    const meta = await readAdminMetaCrawlStats();
+    scheduleAdminCrawlStatsJobCountsRefresh();
+    if (meta) {
+      return {
+        ...result,
+        counts: { storedActive: meta.storedActiveJobs, boardVisible: meta.activeJobs },
+      };
+    }
   } catch {
-    return result;
+    // ignore
   }
+  return result;
 }
 
 function jobsFromQueryDocs(docs: QueryDocumentSnapshot[]): CrawledJob[] {
@@ -1036,10 +1180,18 @@ export async function listCrawledJobsForAdminPage(
 
   if (needsMemoryList) {
     try {
+      const fastJobs = await listAdminMemoryFilteredJobs(status, board, companySegment, trimmedQ);
+      if (fastJobs) {
+        const result = paginateAdminCrawledJobs(fastJobs, hidden, safePage, safePageSize);
+        return attachAdminCrawledJobCounts(result, safePage, status);
+      }
+
       const source =
-        status === 'active' || status === 'closed'
-          ? await listCrawledJobsByStatusForAdminCache(status)
-          : await listAllCrawledJobsForAdminSearch();
+        status === 'active'
+          ? await listActiveJobsForCrawlStats()
+          : status === 'closed'
+            ? await listCrawledJobsByStatusForAdminCache(status)
+            : await listAllCrawledJobsForAdminSearch();
       let jobs = filterAdminCrawledJobs(source, status, trimmedQ);
       jobs = await filterAdminCrawledJobsByBoard(jobs, board);
       jobs = filterAdminCrawledJobsByCompanySegment(jobs, companySegment);
@@ -1214,7 +1366,7 @@ export async function countBrowsableJobsByPrimaryCompanySegment(): Promise<
   }
 }
 
-async function loadAdminCrawlStatsJobCounts(): Promise<{
+async function computeAdminCrawlStatsJobCounts(): Promise<{
   storedActiveJobs: number;
   storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
   activeJobs: number;
@@ -1242,16 +1394,49 @@ async function loadAdminCrawlStatsJobCounts(): Promise<{
   const browsableList = dedupeCrawledJobListItems(browsableCandidates);
   const activeJobsBySegment = countStoredActiveJobsByPrimaryCompanySegmentFromList(browsableList);
 
-  return {
+  const snapshot = {
     storedActiveJobs: activeList.length,
     storedActiveJobsBySegment,
     activeJobs: browsableList.length,
     activeJobsBySegment,
   };
+  writeAdminMetaCrawlStats(snapshot);
+  return snapshot;
+}
+
+function cacheAdminCrawlStatsJobCounts(
+  data: {
+    storedActiveJobs: number;
+    storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
+    activeJobs: number;
+    activeJobsBySegment: Record<JobBoardCompanySegment, number>;
+  },
+  provisional = false,
+): void {
+  const ttl = provisional ? 15_000 : ADMIN_CRAWL_STATS_JOB_COUNTS_TTL_MS;
+  adminCrawlStatsJobCountsCache = {
+    expiresAt: Date.now() + ttl,
+    provisional,
+    data,
+  };
+}
+
+async function loadAdminCrawlStatsJobCountsAndCache(): Promise<{
+  storedActiveJobs: number;
+  storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
+  activeJobs: number;
+  activeJobsBySegment: Record<JobBoardCompanySegment, number>;
+}> {
+  const data = await computeAdminCrawlStatsJobCounts();
+  cacheAdminCrawlStatsJobCounts(data, false);
+  return data;
 }
 
 /** 통계 요약 — 분류별 합과 합계 열이 같은 목록에서 계산되도록 한 번에 조회 */
-export async function getAdminCrawlStatsJobCounts(): Promise<{
+export async function getAdminCrawlStatsJobCounts(options?: {
+  /** true면 전체 active 스캔을 기다립니다(수 분 소요 가능). 기본은 메타·집계 count만 즉시 반환합니다. */
+  waitForFullScan?: boolean;
+}): Promise<{
   storedActiveJobs: number;
   storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
   activeJobs: number;
@@ -1263,33 +1448,52 @@ export async function getAdminCrawlStatsJobCounts(): Promise<{
   ) {
     return adminCrawlStatsJobCountsCache.data;
   }
-  if (adminCrawlStatsJobCountsInflight) {
+  if (adminCrawlStatsJobCountsInflight && options?.waitForFullScan) {
     return adminCrawlStatsJobCountsInflight;
   }
 
-  adminCrawlStatsJobCountsInflight = loadAdminCrawlStatsJobCounts()
-    .then((data) => {
-      adminCrawlStatsJobCountsCache = {
-        expiresAt: Date.now() + ADMIN_CRAWL_STATS_JOB_COUNTS_TTL_MS,
-        data,
-      };
-      return data;
-    })
-    .catch((error) => {
-      console.warn('[crawled-jobs] admin crawl stats job counts failed', error);
-      const empty = countStoredActiveJobsByPrimaryCompanySegmentFromList([]);
-      return {
-        storedActiveJobs: 0,
-        storedActiveJobsBySegment: empty,
-        activeJobs: 0,
-        activeJobsBySegment: empty,
-      };
-    })
-    .finally(() => {
-      adminCrawlStatsJobCountsInflight = null;
-    });
+  const meta = await readAdminMetaCrawlStats();
+  if (meta && !options?.waitForFullScan) {
+    const hasSegmentBreakdown =
+      sumCompanySegmentCounts(meta.storedActiveJobsBySegment) > 0 ||
+      sumCompanySegmentCounts(meta.activeJobsBySegment) > 0;
+    const provisional = !hasSegmentBreakdown && meta.storedActiveJobs > 0;
+    cacheAdminCrawlStatsJobCounts(meta, provisional);
+    scheduleAdminCrawlStatsJobCountsRefresh();
+    return meta;
+  }
 
-  return adminCrawlStatsJobCountsInflight;
+  if (options?.waitForFullScan) {
+    if (!adminCrawlStatsJobCountsInflight) {
+      adminCrawlStatsJobCountsInflight = loadAdminCrawlStatsJobCountsAndCache()
+        .catch((error) => {
+          console.warn('[crawled-jobs] admin crawl stats job counts failed', error);
+          const empty = countStoredActiveJobsByPrimaryCompanySegmentFromList([]);
+          return {
+            storedActiveJobs: 0,
+            storedActiveJobsBySegment: empty,
+            activeJobs: 0,
+            activeJobsBySegment: empty,
+          };
+        })
+        .finally(() => {
+          adminCrawlStatsJobCountsInflight = null;
+        });
+    }
+    return adminCrawlStatsJobCountsInflight;
+  }
+
+  const storedActiveJobs = await countActiveCrawledJobs().catch(() => 0);
+  const emptySegments = emptyCompanySegmentCounts();
+  const provisional = {
+    storedActiveJobs,
+    storedActiveJobsBySegment: meta?.storedActiveJobsBySegment ?? emptySegments,
+    activeJobs: meta?.activeJobs ?? storedActiveJobs,
+    activeJobsBySegment: meta?.activeJobsBySegment ?? emptySegments,
+  };
+  cacheAdminCrawlStatsJobCounts(provisional, true);
+  scheduleAdminCrawlStatsJobCountsRefresh();
+  return provisional;
 }
 
 /** 구직자 채용 공고 목록(`/jobs`)과 동일한 모집 중 건수 */

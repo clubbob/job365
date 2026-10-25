@@ -24,7 +24,10 @@ export default function JobCompaniesPanel({
   useEffect(() => {
     void (async () => {
       try {
-        const res = await fetch('/api/admin/recruiting-companies?registryCounts=1', { cache: 'no-store' });
+        const res = await fetch('/api/admin/recruiting-companies?registryCounts=1', {
+          cache: 'no-store',
+          credentials: 'include',
+        });
         const json = (await res.json()) as {
           ok?: boolean;
           data?: { registryCounts?: Record<RecruitingCompanySegmentId, number> };

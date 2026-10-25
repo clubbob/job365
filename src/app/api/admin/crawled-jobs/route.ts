@@ -9,6 +9,9 @@ import {
 import { isJobBoardCompanySegment } from '@/lib/job-board/company-segment';
 import { firebaseAdminListFields, isFirebaseAdminReady } from '@/lib/firebaseAdmin';
 
+export const runtime = 'nodejs';
+export const maxDuration = 120;
+
 function parseStatusFilter(value: string | null): AdminCrawledJobsStatusFilter {
   if (value === 'all' || value === 'closed') return value;
   return 'active';

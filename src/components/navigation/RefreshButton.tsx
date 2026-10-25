@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { requestAdminJobsRefresh } from '@/lib/admin-jobs-refresh';
 import { requestJobBoardRefresh } from '@/lib/job-board/refresh';
 
 export default function RefreshButton() {
@@ -14,6 +15,10 @@ export default function RefreshButton() {
     }
     if (pathname === '/notices' || pathname.startsWith('/notices/')) {
       router.refresh();
+      return;
+    }
+    if (pathname.startsWith('/admin/jobs')) {
+      requestAdminJobsRefresh();
       return;
     }
     const url = `${window.location.pathname}${window.location.search}${window.location.hash}`;

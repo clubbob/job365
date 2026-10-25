@@ -123,7 +123,9 @@ function resolveLastRunFetchCloseStats(latest: CrawlRunListItem): {
   return { fetched, fetchedBySegment, closed, closedBySegment };
 }
 
-export async function getCrawlStatsSummary(): Promise<CrawlStatsSummary> {
+export async function getCrawlStatsSummary(options?: {
+  waitForFullScan?: boolean;
+}): Promise<CrawlStatsSummary> {
   const companyRegistryBySegment = loadCompanyRegistryBySegment();
   const companyCount =
     companyRegistryBySegment.enterprise +
@@ -136,7 +138,7 @@ export async function getCrawlStatsSummary(): Promise<CrawlStatsSummary> {
       console.warn('[crawl-stats-summary] crawl runs list failed', error);
       return emptyRunsPage;
     }),
-    getAdminCrawlStatsJobCounts(),
+    getAdminCrawlStatsJobCounts({ waitForFullScan: options?.waitForFullScan }),
   ]);
 
   const {
