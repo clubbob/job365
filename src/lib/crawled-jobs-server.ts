@@ -286,6 +286,15 @@ async function listFromFirestore(): Promise<CrawledJob[]> {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+function mapActiveFirestoreDocs(docs: QueryDocumentSnapshot[]): CrawledJob[] {
+  const jobs: CrawledJob[] = [];
+  for (const doc of docs) {
+    const item = fromDoc(doc.id, doc.data());
+    if (item) jobs.push(item);
+  }
+  return jobs;
+}
+
 /** 모집 중 공고만 조회 (마감·전체 스캔보다 작음) */
 async function listActiveFromFirestore(): Promise<CrawledJob[]> {
   const db = getAdminFirestore();
@@ -296,10 +305,20 @@ async function listActiveFromFirestore(): Promise<CrawledJob[]> {
     .where('status', '==', 'active')
     .select(...BOARD_LIST_SELECT_FIELDS)
     .get();
-  return snap.docs
-    .map((doc) => fromDoc(doc.id, doc.data()))
-    .filter((item): item is CrawledJob => Boolean(item))
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return mapActiveFirestoreDocs(snap.docs).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+/** 관리자 통계 요약 — 정렬 없이 1회 조회(수만 건 정렬·이중 조회 방지) */
+async function listActiveJobsForCrawlStats(): Promise<CrawledJob[]> {
+  const db = getAdminFirestore();
+  if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
+
+  const snap = await db
+    .collection(COLLECTION)
+    .where('status', '==', 'active')
+    .select(...BOARD_LIST_SELECT_FIELDS)
+    .get();
+  return mapActiveFirestoreDocs(snap.docs);
 }
 
 /** 모집 중 공고 — Firestore 1회 조회·캐시 (노출 필터 전) */
@@ -1201,17 +1220,28 @@ async function loadAdminCrawlStatsJobCounts(): Promise<{
   activeJobs: number;
   activeJobsBySegment: Record<JobBoardCompanySegment, number>;
 }> {
-  const activeList = await getActiveCrawledJobsCached();
+  const [activeList, hiddenSources, hiddenCompanies] = await Promise.all([
+    listActiveJobsForCrawlStats(),
+    getDisplayDisabledSourceIds(),
+    getDisplayDisabledCompanyKeys(),
+  ]);
+
   const storedActiveJobsBySegment = countStoredActiveJobsByPrimaryCompanySegmentFromList(activeList);
 
-  let browsableList: CrawledJob[];
-  if (browsableJobsCache && browsableJobsCache.expiresAt > Date.now()) {
-    browsableList = browsableJobsCache.jobs;
-  } else {
-    browsableList = dedupeCrawledJobListItems(await filterBrowsableJobs(activeList));
+  const hasDisplayBlocks = hiddenSources.size > 0 || hiddenCompanies.size > 0;
+  const browsableCandidates: CrawledJob[] = [];
+  for (const job of activeList) {
+    if (!isJobEligibleForBoardList(job)) continue;
+    if (hasDisplayBlocks) {
+      if (hiddenSources.has(job.sourceId)) continue;
+      const companyKey = `${job.sourceId}::${job.companyName.trim()}`;
+      if (hiddenCompanies.has(companyKey)) continue;
+    }
+    browsableCandidates.push(job);
   }
-
+  const browsableList = dedupeCrawledJobListItems(browsableCandidates);
   const activeJobsBySegment = countStoredActiveJobsByPrimaryCompanySegmentFromList(browsableList);
+
   return {
     storedActiveJobs: activeList.length,
     storedActiveJobsBySegment,

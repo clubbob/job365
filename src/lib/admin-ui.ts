@@ -13,15 +13,39 @@ export function firebaseAdminUnavailableText(message?: string | null) {
   );
 }
 
+const ADMIN_FETCH_TIMEOUT_MS = 115_000;
+
 export async function adminJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    credentials: 'include',
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...init?.headers,
-    },
-  });
+  const timeoutMs =
+    typeof init?.signal === 'object' && init.signal !== null ? null : ADMIN_FETCH_TIMEOUT_MS;
+  const controller = timeoutMs ? new AbortController() : null;
+  const timeoutId =
+    controller && timeoutMs
+      ? setTimeout(() => controller.abort(), timeoutMs)
+      : null;
+
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      credentials: 'include',
+      ...init,
+      signal: init?.signal ?? controller?.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...init?.headers,
+      },
+    });
+  } catch (error) {
+    if (timeoutId) clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(
+        '요청 시간이 초과되었습니다. 통계 집계가 길어질 수 있습니다. 잠시 후 새로 고침해 주세요.',
+      );
+    }
+    throw error;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
   const raw = await res.text();
   let data: T;
   try {

@@ -4,6 +4,10 @@ import { getCrawlStatsSummary } from '@/lib/crawl-stats-summary';
 import { emptyCompanySegmentCounts } from '@/lib/job-board/company-segment';
 import { firebaseAdminListFields, isFirebaseAdminReady } from '@/lib/firebaseAdmin';
 
+export const runtime = 'nodejs';
+/** 운영 DB 전체 active 스캔·분류 집계 */
+export const maxDuration = 120;
+
 export async function GET() {
   const unauthorized = await requireAdminSession();
   if (unauthorized) return unauthorized;
