@@ -1,11 +1,29 @@
 import { companyLabelsMatch } from '@/lib/crawler/company-name-match';
 import { activeJobCountForMidSizedCrawlSource, type CrawledJobSourceStats } from '@/lib/crawled-jobs-server';
 import { employerLabelsForRegistryCompany, findGroupAffiliateByRegistryName } from '@/lib/enterprise-groups/group-affiliate-registry';
+import type { DiscoveredAffiliate } from '@/types/crawled-job';
 import {
   buildRecruitingEmployerCountLookup,
   recruitingEmployerAggregatesFromStats,
   type RecruitingEmployerAggregate,
 } from '@/lib/recruiting-employers/aggregate';
+
+function countFromDiscoveredBySource(
+  discoveredBySource: Record<string, DiscoveredAffiliate[]>,
+  sourceId: string,
+  labels: string[],
+): number {
+  const rows = discoveredBySource[sourceId];
+  if (!rows?.length) return 0;
+
+  let count = 0;
+  for (const row of rows) {
+    if (labels.some((label) => companyLabelsMatch(label, row.companyName))) {
+      count = Math.max(count, row.activeJobCount);
+    }
+  }
+  return count;
+}
 
 function countFromAggregates(aggregates: RecruitingEmployerAggregate[], labels: string[]): number {
   const lookup = buildRecruitingEmployerCountLookup(aggregates);
@@ -33,6 +51,10 @@ export function activeJobCountForRegistryCompany(
 
   const link = findGroupAffiliateByRegistryName(companyName);
   if (link) {
+    count = Math.max(
+      count,
+      countFromDiscoveredBySource(stats.discoveredBySource, link.groupSourceId, labels),
+    );
     for (const row of aggregates) {
       if (!row.sourceIds.includes(link.groupSourceId)) continue;
       if (labels.some((label) => companyLabelsMatch(label, row.companyName))) {

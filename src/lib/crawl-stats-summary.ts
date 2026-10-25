@@ -82,7 +82,7 @@ function allocateClosedRemainder(
   if (remainder <= 0) return;
   const totalWeight = sumCompanySegmentCounts(weightBySegment);
   if (totalWeight <= 0) {
-    closedBySegment['중견 기업'] += remainder;
+    closedBySegment['중견기업'] += remainder;
     return;
   }
   let assigned = 0;
@@ -93,7 +93,7 @@ function allocateClosedRemainder(
   }
   const dust = remainder - assigned;
   if (dust !== 0) {
-    closedBySegment['중견 기업'] += dust;
+    closedBySegment['중견기업'] += dust;
   }
 }
 

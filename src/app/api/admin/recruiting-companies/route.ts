@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/admin-auth';
-import { getCrawledJobSourceStats } from '@/lib/crawled-jobs-server';
+import { getAdminRecruitingListSourceStats } from '@/lib/crawled-jobs-server';
 import {
   buildAdminRecruitingCompanyListPage,
   computeRecruitingCompanyActiveCounts,
@@ -60,7 +60,7 @@ export async function GET(request: Request) {
 
   try {
     if (summaryAll) {
-      const stats = await getCrawledJobSourceStats({ skipDisplayFilters: true });
+      const stats = await getAdminRecruitingListSourceStats();
       return NextResponse.json({
         ok: true,
         data: {
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const stats = await getCrawledJobSourceStats({ skipDisplayFilters: true });
+    const stats = await getAdminRecruitingListSourceStats();
 
     if (summaryOnly && segment) {
       const withActiveJobsCount = countRecruitingCompaniesWithActiveJobs(segment, stats);

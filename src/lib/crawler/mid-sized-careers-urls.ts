@@ -1,5 +1,9 @@
-import { isStorableCareersUrl } from '@/lib/mid-sized-companies/careers-url-policy';
-import { loadMidSizedRegistryDbCompanies, loadMidSizedRegistryDbFromDisk } from '@/lib/mid-sized-companies/registry-db';
+import {
+  dedupeRegistryRowsByBusinessNumberAndUrl,
+  isCompleteRegistryCompanyIdentity,
+} from '@/lib/registry-company-identity';
+import { getUniqueMidSizedRegistryForCrawl } from '@/lib/mid-sized-companies/registry-for-crawl';
+import { loadMidSizedRegistryDbFromDisk } from '@/lib/mid-sized-companies/registry-db';
 
 /**
  * 중견기업 채용 URL 목록 (대기업 `enterprise-careers-urls.ts`와 동일 역할).
@@ -18,8 +22,8 @@ export type MidSizedCareersUrlConfig = {
 
 /** DB에 쌓인 채용 URL만 반환합니다 (수집 가능 목록). */
 export function getMidSizedCareersConfigs(): MidSizedCareersUrlConfig[] {
-  return loadMidSizedRegistryDbCompanies()
-    .filter((record) => record.careersUrl && isStorableCareersUrl(record.careersUrl))
+  const mapped = getUniqueMidSizedRegistryForCrawl()
+    .filter((record) => isCompleteRegistryCompanyIdentity(record))
     .map((record) => ({
       name: record.companyName,
       crawlSourceId: record.crawlSourceId,
@@ -28,6 +32,7 @@ export function getMidSizedCareersConfigs(): MidSizedCareersUrlConfig[] {
       adapter: record.careersAdapter ?? 'generic',
       greenhouseBoard: record.greenhouseBoard ?? null,
     }));
+  return dedupeRegistryRowsByBusinessNumberAndUrl(mapped).rows;
 }
 
 export function countMidSizedCareersConfigs(): number {

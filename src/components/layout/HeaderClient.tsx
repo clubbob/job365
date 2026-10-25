@@ -7,6 +7,7 @@ import AdminHeader from '@/components/layout/AdminHeader';
 import Logo from '@/components/brand/Logo';
 import { useAuth } from '@/features/auth/auth-context';
 import { getUserNicknameFallback } from '@/lib/user-display';
+import { clearJobBoardListRestore } from '@/lib/job-board/list-restore';
 import { requestJobBoardReset } from '@/lib/job-board/reset';
 import { isCrawledJobDetailFromMyJobs } from '@/lib/job-board/detail-navigation';
 import { MATCHED_JOBS_PAGE_TITLE } from '@/lib/site-menu-copy';
@@ -102,11 +103,14 @@ export default function HeaderClient() {
   const mobileLinkClassName = 'block rounded-lg px-3 py-3 text-base font-semibold transition-colors';
 
   function handleNavClick(event: React.MouseEvent<HTMLAnchorElement>, href: string) {
-    if (href === '/jobs' && pathname === '/jobs') {
+    if (href !== '/jobs') return;
+    if (pathname === '/jobs') {
       event.preventDefault();
       requestJobBoardReset();
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
     }
+    clearJobBoardListRestore('jobs');
   }
 
   async function handleLogout() {

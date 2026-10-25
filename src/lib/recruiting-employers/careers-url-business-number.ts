@@ -52,14 +52,31 @@ type UrlRegistryEntry = { companyName: string; businessNumber: string };
 
 type CareersBusinessNumberIndex = {
   byNormalizedUrl: Map<string, UrlRegistryEntry[]>;
+  byHostname: Map<string, UrlRegistryEntry[]>;
+  byNormalizedCompanyName: Map<string, UrlRegistryEntry[]>;
   byCrawlSourceId: Map<string, string>;
   bySourceId: Map<string, string>;
 };
 
 let index: CareersBusinessNumberIndex | null = null;
 
+function pushUrlRegistryEntry(
+  map: Map<string, UrlRegistryEntry[]>,
+  key: string,
+  companyName: string,
+  businessNumber: string,
+): void {
+  const bucket = map.get(key) ?? [];
+  if (!bucket.some((item) => item.companyName === companyName && item.businessNumber === businessNumber)) {
+    bucket.push({ companyName, businessNumber });
+    map.set(key, bucket);
+  }
+}
+
 function buildIndex(): CareersBusinessNumberIndex {
   const byNormalizedUrl = new Map<string, UrlRegistryEntry[]>();
+  const byHostname = new Map<string, UrlRegistryEntry[]>();
+  const byNormalizedCompanyName = new Map<string, UrlRegistryEntry[]>();
   const byCrawlSourceId = new Map<string, string>();
   const bySourceId = new Map<string, string>();
 
@@ -67,16 +84,16 @@ function buildIndex(): CareersBusinessNumberIndex {
     const formatted = formattedBusinessNumber(businessNumber);
     if (!formatted) return;
     const key = normalizeRegistryCareersUrl(url);
-    const bucket = byNormalizedUrl.get(key) ?? [];
-    if (!bucket.some((item) => item.companyName === companyName && item.businessNumber === formatted)) {
-      bucket.push({ companyName, businessNumber: formatted });
-      byNormalizedUrl.set(key, bucket);
-    }
+    pushUrlRegistryEntry(byNormalizedUrl, key, companyName, formatted);
+    const host = careersUrlHostname(url);
+    if (host) pushUrlRegistryEntry(byHostname, host, companyName, formatted);
   };
 
   for (const record of loadMidSizedRegistryDbCompanies()) {
     const formatted = formattedBusinessNumber(record.businessNumber);
     if (!formatted) continue;
+    const nameKey = normalizeCompanyLabel(record.companyName);
+    if (nameKey) pushUrlRegistryEntry(byNormalizedCompanyName, nameKey, record.companyName, formatted);
     if (record.crawlSourceId) {
       byCrawlSourceId.set(record.crawlSourceId, formatted);
     }
@@ -92,18 +109,24 @@ function buildIndex(): CareersBusinessNumberIndex {
     addUrlEntry(config.careersUrl, config.name, formatted);
   }
 
+  const partialIndex: CareersBusinessNumberIndex = {
+    byNormalizedUrl,
+    byHostname,
+    byNormalizedCompanyName,
+    byCrawlSourceId,
+    bySourceId,
+  };
+
+  index = partialIndex;
+
   for (const company of getCrawlerCompanies()) {
-    const resolved = resolveFromCareersUrlIndex(
-      { byNormalizedUrl, byCrawlSourceId, bySourceId },
-      company.careersUrl,
-      company.name,
-    );
+    const resolved = resolveFromCareersUrlIndex(partialIndex, company.careersUrl, company.name);
     if (!resolved) continue;
     bySourceId.set(company.sourceId, resolved);
     byCrawlSourceId.set(company.id, resolved);
   }
 
-  return { byNormalizedUrl, byCrawlSourceId, bySourceId };
+  return partialIndex;
 }
 
 function getIndex(): CareersBusinessNumberIndex {
@@ -141,22 +164,13 @@ function resolveFromCareersUrlIndex(
   if (fromExact) return fromExact;
 
   const host = careersUrlHostname(careersUrl);
-  if (!host) return null;
-
-  const hostMatches: UrlRegistryEntry[] = [];
-  for (const record of loadMidSizedRegistryDbCompanies()) {
-    if (!record.careersUrl?.trim()) continue;
-    if (careersUrlHostname(record.careersUrl) !== host) continue;
-    const formatted = formattedBusinessNumber(record.businessNumber);
-    if (!formatted) continue;
-    hostMatches.push({ companyName: record.companyName, businessNumber: formatted });
+  if (host) {
+    const fromHost = pickFromUrlBucket(idx.byHostname.get(host) ?? [], companyName);
+    if (fromHost) return fromHost;
   }
 
-  const fromHost = pickFromUrlBucket(hostMatches, companyName);
-  if (fromHost) return fromHost;
-
   return (
-    businessNumberFromExactCompanyLabel(companyName, careersUrl) ??
+    businessNumberFromExactCompanyLabel(companyName, careersUrl, idx) ??
     businessNumberFromRegistryNameMatch(companyName, careersUrl) ??
     businessNumberFromDomesticGroupPrefix(companyName)
   );
@@ -165,23 +179,23 @@ function resolveFromCareersUrlIndex(
 function businessNumberFromExactCompanyLabel(
   companyName: string,
   careersUrl?: string | null,
+  idx?: CareersBusinessNumberIndex,
 ): string | null {
   const target = normalizeCompanyLabel(companyName);
   if (!target) return null;
 
-  const matches = loadMidSizedRegistryDbCompanies().filter(
-    (record) => normalizeCompanyLabel(record.companyName) === target,
-  );
-  if (matches.length === 1) return formattedBusinessNumber(matches[0].businessNumber);
+  const bucket = (idx ?? getIndex()).byNormalizedCompanyName.get(target) ?? [];
+  if (bucket.length === 1) return bucket[0].businessNumber;
 
-  if (matches.length > 1 && careersUrl?.trim()) {
+  if (bucket.length > 1 && careersUrl?.trim()) {
     const root = careersUrlRootDomain(careersUrl);
     if (root) {
-      const scoped = matches.filter((record) => {
-        if (!record.careersUrl?.trim()) return false;
+      const scoped = bucket.filter((entry) => {
+        const record = findMidSizedRegistryRecord(entry.companyName);
+        if (!record?.careersUrl?.trim()) return false;
         return careersUrlRootDomain(record.careersUrl) === root;
       });
-      if (scoped.length === 1) return formattedBusinessNumber(scoped[0].businessNumber);
+      if (scoped.length === 1) return scoped[0].businessNumber;
     }
   }
 

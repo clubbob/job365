@@ -2,6 +2,11 @@ import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { ADMIN_CRAWL_RUNS_PAGE_SIZE, ADMIN_CRAWL_RUNS_RETENTION_DAYS } from '@/lib/admin-constants';
 import type { CrawlRunSummary } from '@/lib/crawler/types';
+import {
+  emptyCompanySegmentCounts,
+  readLegacyCompanySegmentCount,
+  type JobBoardCompanySegment,
+} from '@/lib/job-board/company-segment';
 
 const COLLECTION = 'crawlRuns';
 
@@ -54,26 +59,11 @@ function parseSegmentCountField(
 ): CrawlRunListItem['fetchedBySegment'] | undefined {
   if (!raw || typeof raw !== 'object') return undefined;
   const record = raw as Record<string, unknown>;
-  const enterprise = Number(record['대기업·계열사'] ?? 0);
-  const mid = Number(record['중견 기업'] ?? 0);
-  const it = Number(record['IT 회사'] ?? 0);
-  const semi = Number(
-    record['반도체·디스플레이 장비사'] ?? record['반도체·디스플레이 장비'] ?? 0,
-  );
-  if (
-    !Number.isFinite(enterprise) ||
-    !Number.isFinite(mid) ||
-    !Number.isFinite(it) ||
-    !Number.isFinite(semi)
-  ) {
-    return undefined;
+  const out = emptyCompanySegmentCounts();
+  for (const segment of Object.keys(out) as JobBoardCompanySegment[]) {
+    out[segment] = readLegacyCompanySegmentCount(record, segment);
   }
-  return {
-    '대기업·계열사': enterprise,
-    '중견 기업': mid,
-    'IT 회사': it,
-    '반도체·디스플레이 장비사': semi,
-  };
+  return out;
 }
 
 export type CrawlRunsPageResult = {

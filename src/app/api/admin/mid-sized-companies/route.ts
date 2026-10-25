@@ -11,6 +11,7 @@ import {
   getCrawledJobSourceStats,
 } from '@/lib/crawled-jobs-server';
 import { compareMidSizedCompaniesByFame } from '@/lib/mid-sized-companies/fame-rank';
+import { isRegistryRowLinked } from '@/lib/registry-company-identity';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
       validTo: record.validTo,
       active: isMidSizedCertificateActive(record.validTo),
       careersUrl,
-      linked: Boolean(careersUrl),
+      linked: isRegistryRowLinked(record),
       careersDiscoveryStatus: record.careersDiscoveryStatus ?? (careersUrl ? 'found' : 'pending'),
       careersUrlCheckedAt: record.careersUrlCheckedAt ?? null,
       crawlSourceId: record.crawlSourceId,

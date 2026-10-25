@@ -13,6 +13,8 @@ import {
   COMPANY_REGISTRY_LIST_CARD_DESCRIPTION,
   COMPANY_REGISTRY_STAT_EMPTY,
   RegistryCareersUrlLink,
+  adminListRowNumberCellClassName,
+  adminRegistryRowNumber,
   adminRegistryTableClassName,
   formatRegistryActiveJobCount,
   adminRegistryTableWrapClassName,
@@ -133,8 +135,11 @@ export default function MidSizedRegistryBrowser() {
             <table className={adminRegistryTableClassName}>
               <AdminCompanyRegistryTableHead />
               <tbody className="divide-y divide-border">
-                {data.items.map((row) => (
+                {data.items.map((row, index) => (
                   <tr key={row.businessNumber} className="text-foreground">
+                    <td className={adminListRowNumberCellClassName}>
+                      {adminRegistryRowNumber(data.offset, index).toLocaleString('ko-KR')}
+                    </td>
                     <td className="px-3 py-2 font-medium">{row.companyName}</td>
                     <td className="px-3 py-2 text-muted">{row.businessNumber}</td>
                     <td className="px-3 py-2 text-muted">

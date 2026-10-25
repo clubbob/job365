@@ -128,11 +128,23 @@ export const adminRegistryTableWrapClassName = 'overflow-x-auto rounded-lg borde
 
 /** 대기업·중견 탭 공통 목록 열 */
 export const COMPANY_REGISTRY_TABLE_COLUMNS = [
+  '번호',
   '기업명',
   '사업자번호',
   '모집 공고',
   '채용 URL',
 ] as const;
+
+export function adminRegistryRowNumber(offset: number, index: number): number {
+  return offset + index + 1;
+}
+
+export function adminPagedRowNumber(page: number, pageSize: number, index: number): number {
+  return (page - 1) * pageSize + index + 1;
+}
+
+export const adminListRowNumberCellClassName =
+  'w-14 whitespace-nowrap px-3 py-2 tabular-nums text-muted';
 
 export const COMPANY_REGISTRY_LIST_CARD_DESCRIPTION =
   '등록 명단에 있는 회사만 표시합니다. 모집 공고는 활성 수집 건수이고, 없으면 −입니다.';
@@ -203,7 +215,13 @@ export function AdminCompanyRegistryTableHead() {
     <thead className={adminRegistryTableHeadClassName}>
       <tr>
         {COMPANY_REGISTRY_TABLE_COLUMNS.map((label) => (
-          <th key={label} className="px-3 py-2 font-semibold">
+          <th
+            key={label}
+            className={cn(
+              'px-3 py-2 font-semibold',
+              label === '번호' && 'w-14',
+            )}
+          >
             {label}
           </th>
         ))}

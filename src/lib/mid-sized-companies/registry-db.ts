@@ -12,7 +12,16 @@ import {
   isAcceptableCareersUrl,
   isStorableCareersUrl,
 } from '@/lib/mid-sized-companies/careers-url-policy';
+import { isReservedForItOrSemiSeedRegistry } from '@/lib/registry-segment-membership';
 import type { MidSizedCareersConfig, MidSizedCompanyRecord } from '@/lib/mid-sized-companies/types';
+
+function filterMidSizedRegistryForSegmentDb(
+  companies: MidSizedRegistryDbCompany[],
+): MidSizedRegistryDbCompany[] {
+  return companies.filter(
+    (record) => !isReservedForItOrSemiSeedRegistry(record.companyName, record.industry),
+  );
+}
 
 export const MID_SIZED_REGISTRY_DB_PATH = resolve(process.cwd(), 'data/mid-sized-registry-db.json');
 
@@ -75,7 +84,7 @@ export function buildMidSizedRegistryDbCompanies(): MidSizedRegistryDbCompany[] 
   const discovery = loadDiscoveryState();
   const now = new Date().toISOString();
 
-  return unique.map((record) => {
+  const rows = unique.map((record) => {
     const bn = normalizeBusinessNumber(record.businessNumber);
     const target = (bn && byBn.get(bn)) || byName.get(normalizeNameKey(record.companyName));
     const discovered = bn ? discovery.entries[bn] : undefined;
@@ -108,6 +117,7 @@ export function buildMidSizedRegistryDbCompanies(): MidSizedRegistryDbCompany[] 
       careersUrlCheckedAt,
     };
   });
+  return filterMidSizedRegistryForSegmentDb(rows as MidSizedRegistryDbCompany[]);
 }
 
 export function buildMidSizedRegistryDbFile(): MidSizedRegistryDbFile {
@@ -118,7 +128,7 @@ export function buildMidSizedRegistryDbFile(): MidSizedRegistryDbFile {
     version: 1,
     updatedAt: new Date().toISOString(),
     sourceNote:
-      '마당=회사명·사업자번호 명단만 · 채용 URL=preprocess 탐색 결과(DB, 대기업 enterprise-careers-urls와 동일 역할)',
+      '중견기업 명단 DB. 회사마다 고유 사업자번호·전용 채용 URL이 있어야 수집·연결 완료입니다.',
     uniqueCompanyCount: companies.length,
     careersUrlLinkedCount: linked,
     careersUrlOfficialCount: official,
@@ -146,8 +156,8 @@ export function loadMidSizedRegistryDbCompanies(): MidSizedRegistryDbCompany[] {
   if (midSizedRegistryCompaniesCache) return midSizedRegistryCompaniesCache;
   const file = loadMidSizedRegistryDbFromDisk();
   if (file && file.companies.length > 0) {
-    midSizedRegistryCompaniesCache = file.companies;
-    return file.companies;
+    midSizedRegistryCompaniesCache = filterMidSizedRegistryForSegmentDb(file.companies);
+    return midSizedRegistryCompaniesCache;
   }
   const built = buildMidSizedRegistryDbCompanies();
   midSizedRegistryCompaniesCache = built;

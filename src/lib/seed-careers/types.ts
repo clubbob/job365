@@ -2,6 +2,7 @@ export type SeedCareersTarget = {
   name: string;
   crawlSourceId: string;
   careersUrl: string;
+  businessNumber?: string | null;
   adapter?: 'generic' | 'greenhouse';
   greenhouseBoard?: string | null;
 };
@@ -14,6 +15,7 @@ export type SeedCareersDiscoveryEntry = {
 
 export type SeedCareersDbCompany = {
   companyName: string;
+  businessNumber: string | null;
   crawlSourceId: string;
   careersUrl: string | null;
   careersAdapter: 'generic' | 'greenhouse';

@@ -1,5 +1,6 @@
 import { countMidSizedCareersConfigs } from '@/lib/crawler/mid-sized-careers-urls';
 import { CRAWL_MID_SIZED_SITES_PER_RUN } from '@/lib/crawler/schedule';
+import { isReservedForItOrSemiSeedRegistry } from '@/lib/registry-segment-membership';
 import {
   loadMidSizedRegistryDbCompanies,
   type MidSizedRegistryDbCompany,
@@ -7,9 +8,11 @@ import {
 
 export type MidSizedRegistryCrawlRecord = MidSizedRegistryDbCompany;
 
-/** 중견기업 DB 파일(data/mid-sized-registry-db.json) 기준 수집 명단 */
+/** 중견기업 DB — IT·장비 전용 DB에 있는 회사는 제외 */
 export function getUniqueMidSizedRegistryForCrawl(): MidSizedRegistryCrawlRecord[] {
-  return loadMidSizedRegistryDbCompanies();
+  return loadMidSizedRegistryDbCompanies().filter(
+    (record) => !isReservedForItOrSemiSeedRegistry(record.companyName, record.industry),
+  );
 }
 
 export function selectMidSizedDbBatch(records: MidSizedRegistryCrawlRecord[]): MidSizedRegistryCrawlRecord[] {

@@ -16,6 +16,7 @@ import {
   type AdminCrawledJobsListUrlState,
 } from '@/lib/admin-crawled-jobs-list-url';
 import type { JobBoardCompanySegment } from '@/lib/job-board/company-segment';
+import { adminListRowNumberCellClassName, adminPagedRowNumber } from '@/features/admin/AdminRegistryListChrome';
 import { cn } from '@/lib/utils';
 import type { CrawledJobListItem, CrawledJobStatus } from '@/types/crawled-job';
 
@@ -365,6 +366,7 @@ export default function AdminCrawledJobsClient({
           <div className={cn('overflow-x-auto', isRefreshing && 'opacity-60')}>
             <table className="w-full table-fixed text-left text-sm">
               <colgroup>
+                <col className="w-14" />
                 <col className="w-24" />
                 <col />
                 <col className="w-32" />
@@ -374,6 +376,7 @@ export default function AdminCrawledJobsClient({
               </colgroup>
               <thead>
                 <tr className="border-b border-border text-subtle">
+                  <th className="whitespace-nowrap py-2 pr-4 font-semibold">번호</th>
                   <th className="whitespace-nowrap py-2 pr-4 font-semibold">상태</th>
                   <th className="py-2 pr-4 font-semibold">제목</th>
                   <th className="whitespace-nowrap py-2 pr-4 font-semibold">회사</th>
@@ -383,11 +386,16 @@ export default function AdminCrawledJobsClient({
                 </tr>
               </thead>
               <tbody>
-                {jobs.map((job) => {
+                {jobs.map((job, index) => {
                   const busy = pendingId === job.id;
                   const canViewOnSite = job.status === 'active' && !job.displayHidden;
                   return (
                     <tr key={job.id} className="border-b border-border last:border-0">
+                      <td className={cn(adminListRowNumberCellClassName, 'py-2.5 pr-4 align-middle')}>
+                        {adminPagedRowNumber(page, ADMIN_CRAWLED_JOBS_PAGE_SIZE, index).toLocaleString(
+                          'ko-KR',
+                        )}
+                      </td>
                       <td className="whitespace-nowrap py-2.5 pr-4 align-middle">
                         <div className="flex flex-nowrap items-center gap-1">
                           <span

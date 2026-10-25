@@ -30,7 +30,7 @@ export default function AdminExtractListLogicClient() {
           </li>
           <li>
             <span className="font-medium">수집 채용 회사</span> — 위 네 분류 탭별 등록 명단, 채용 URL 연결, 모집
-            공고 건수입니다. IT·장비 명단에 있는 회사는 대기업·계열 탭에서 빼고 각각의 탭에만 보입니다.
+            공고 건수입니다. IT·장비 명단에 있는 회사는 대기업 탭에서 빼고 각각의 탭에만 보입니다.
           </li>
           <li>
             <span className="font-medium">수집 채용 공고</span> — DB에 저장된 모집 중(active) 공고 전체입니다. 같은
@@ -48,6 +48,12 @@ export default function AdminExtractListLogicClient() {
           <li>
             <span className="font-medium">자동 실행</span> — {autoRunLabel}에 전체 수집이 돌아갑니다. 「통계
             요약」에서 「지금 수집 실행」으로 수동 실행할 수 있습니다.
+          </li>
+          <li>
+            <span className="font-medium">명단 DB</span> — 대기업·중견기업·IT 회사·반도체·디스플레이 장비사는 각각
+            별도 DB이며 한 회사는 하나의 DB에만 속합니다. IT·장비 명단 회사는 대기업·중견 명단·수집에 포함되지
+            않습니다. 각 회사는 명단에 고유한 사업자번호와 전용 채용 URL이 있어야 수집·연결 완료로
+            집계됩니다. 집단 통합 URL만 있는 경우는 연결되지 않습니다.
           </li>
           <li>
             <span className="font-medium">수집 대상</span> — 「수집 채용 회사」에 채용 URL이 연결된 페이지입니다.

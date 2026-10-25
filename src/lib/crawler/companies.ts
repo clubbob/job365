@@ -1,10 +1,22 @@
 import { ENTERPRISE_CAREERS_CONFIGS } from '@/lib/crawler/enterprise-careers-urls';
+import { loadEnterpriseRegistryDbCompanies } from '@/lib/enterprise-companies/registry-db';
+import { isCompleteRegistryCompanyIdentity } from '@/lib/registry-company-identity';
 import {
   countMidSizedCareersConfigs,
   getMidSizedCareersConfigs,
 } from '@/lib/crawler/mid-sized-careers-urls';
 import { getUniqueMidSizedRegistryForCrawl } from '@/lib/mid-sized-companies/registry-for-crawl';
-import { isItComputingCompanyName } from '@/lib/it-companies/catalog';
+import {
+  countSeedCareersCrawlConfigs,
+  getSeedCareersCrawlConfigs,
+} from '@/lib/seed-careers/careers-urls';
+import { loadSeedCareersRegistryDbCompanies } from '@/lib/seed-careers/registry-db';
+import { IT_ENTERPRISE_CRAWL_SOURCE_IDS, isItComputingCompanyName } from '@/lib/it-companies/catalog';
+import {
+  isCompanyInItSeedRegistry,
+  isCompanyInSemiSeedRegistry,
+  isReservedEnterpriseGroupForItOrSemi,
+} from '@/lib/registry-segment-membership';
 import type { CompanySize } from '@/lib/job-board/constants';
 
 export type CrawlerAdapterId =
@@ -14,10 +26,12 @@ export type CrawlerAdapterId =
   | 'greenhouse'
   | 'generic'
   | 'mid-sized-registry-batch'
-  | 'work24-mid-sized-batch';
+  | 'work24-mid-sized-batch'
+  | 'it-seed-registry-batch'
+  | 'semi-seed-registry-batch';
 
 /** `extra` = 관리자 「기타기업」 명단·매일 수집 소스 */
-export type CrawlerTier = 'enterprise' | 'mid-sized' | 'extra';
+export type CrawlerTier = 'enterprise' | 'mid-sized' | 'it' | 'semi-equipment' | 'extra';
 
 export type CrawlerCompany = {
   id: string;
@@ -37,7 +51,16 @@ export type CrawlerCompany = {
   companySize?: CompanySize;
 };
 
-const EXTRA_CRAWLER_COMPANIES: CrawlerCompany[] = [
+function filterExtraCrawlerCompanies(companies: CrawlerCompany[]): CrawlerCompany[] {
+  return companies.filter(
+    (company) =>
+      !isCompanyInItSeedRegistry(company.name) &&
+      !isCompanyInSemiSeedRegistry(company.name) &&
+      !isItComputingCompanyName(company.name),
+  );
+}
+
+const EXTRA_CRAWLER_COMPANIES_RAW: CrawlerCompany[] = [
   {
     id: 'daangn',
     name: '당근마켓',
@@ -62,8 +85,21 @@ const EXTRA_CRAWLER_COMPANIES: CrawlerCompany[] = [
   },
 ];
 
+const EXTRA_CRAWLER_COMPANIES = filterExtraCrawlerCompanies(EXTRA_CRAWLER_COMPANIES_RAW);
+
 function buildFtcCrawlerCompanies(): CrawlerCompany[] {
-  return ENTERPRISE_CAREERS_CONFIGS.map((config) => ({
+  const enterpriseByGroup = new Map(
+    loadEnterpriseRegistryDbCompanies().map((row) => [row.groupName, row]),
+  );
+  return ENTERPRISE_CAREERS_CONFIGS.filter(
+    (config) =>
+      !IT_ENTERPRISE_CRAWL_SOURCE_IDS.has(config.crawlSourceId) &&
+      !isReservedEnterpriseGroupForItOrSemi(config.ftcName) &&
+      isCompleteRegistryCompanyIdentity({
+        careersUrl: config.careersUrl,
+        businessNumber: enterpriseByGroup.get(config.ftcName)?.businessNumber ?? null,
+      }),
+  ).map((config) => ({
     id: config.crawlSourceId,
     name: config.ftcName,
     careersUrl: config.careersUrl,
@@ -76,6 +112,33 @@ function buildFtcCrawlerCompanies(): CrawlerCompany[] {
     koreaOnly: config.koreaOnly,
     companySize: '대기업',
   }));
+}
+
+function buildSeedCareersCrawlerCompanies(
+  segment: 'it' | 'semi-equipment',
+  existing: CrawlerCompany[],
+): CrawlerCompany[] {
+  const adapter = segment === 'it' ? 'it-seed-registry-batch' : 'semi-seed-registry-batch';
+  const sourceId = segment === 'it' ? 'it-seed-registry-batch-careers' : 'semi-seed-registry-batch-careers';
+  if (existing.some((item) => item.sourceId === sourceId)) return [];
+
+  const registry = loadSeedCareersRegistryDbCompanies(segment);
+  const linked = countSeedCareersCrawlConfigs(segment);
+  const label = segment === 'it' ? 'IT 회사' : '반도체·디스플레이 장비사';
+  const sampleUrl = getSeedCareersCrawlConfigs(segment)[0]?.careersUrl ?? 'https://example.com/';
+
+  return [
+    {
+      id: adapter,
+      name: `${label} DB (${registry.length.toLocaleString('ko-KR')}곳 명단)`,
+      careersUrl: sampleUrl,
+      sourceId,
+      sourceName: `${label} DB 수집 (URL ${linked.toLocaleString('ko-KR')}곳 · 매일 전체)`,
+      tier: segment === 'it' ? 'it' : 'semi-equipment',
+      adapter,
+      companySize: '중견기업',
+    },
+  ];
 }
 
 function buildMidSizedCrawlerCompanies(existing: CrawlerCompany[]): CrawlerCompany[] {
@@ -113,8 +176,23 @@ function buildMidSizedCrawlerCompanies(existing: CrawlerCompany[]): CrawlerCompa
 
 function buildAllCrawlerCompanies(): CrawlerCompany[] {
   const enterpriseCompanies = buildFtcCrawlerCompanies();
-  const midSizedCompanies = buildMidSizedCrawlerCompanies(enterpriseCompanies);
-  return [...enterpriseCompanies, ...midSizedCompanies, ...EXTRA_CRAWLER_COMPANIES];
+  const itCompanies = buildSeedCareersCrawlerCompanies('it', enterpriseCompanies);
+  const semiCompanies = buildSeedCareersCrawlerCompanies('semi-equipment', [
+    ...enterpriseCompanies,
+    ...itCompanies,
+  ]);
+  const midSizedCompanies = buildMidSizedCrawlerCompanies([
+    ...enterpriseCompanies,
+    ...itCompanies,
+    ...semiCompanies,
+  ]);
+  return [
+    ...enterpriseCompanies,
+    ...itCompanies,
+    ...semiCompanies,
+    ...midSizedCompanies,
+    ...EXTRA_CRAWLER_COMPANIES,
+  ];
 }
 
 /**
@@ -148,6 +226,9 @@ export function countCrawlerCompaniesByTier(): Record<CrawlerTier, number> {
       acc[company.tier] += 1;
       return acc;
     },
-    { enterprise: 0, 'mid-sized': 0, extra: 0 } as Record<CrawlerTier, number>,
+    { enterprise: 0, 'mid-sized': 0, it: 0, 'semi-equipment': 0, extra: 0 } as Record<
+      CrawlerTier,
+      number
+    >,
   );
 }

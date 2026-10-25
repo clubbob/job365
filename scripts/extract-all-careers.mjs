@@ -1,5 +1,5 @@
 /**
- * 대기업·계열사 + 연결된 중견기업 채용 공고 전수 수집
+ * 대기업 + 연결된 중견기업 채용 공고 전수 수집
  * 1) (선택) 중견 URL 탐색  2) Firestore 명단 동기화  3) 전체 크롤
  */
 import { spawnSync } from 'node:child_process';
@@ -57,7 +57,7 @@ async function main() {
   console.log('중견기업 DB·Firestore 채용 URL 동기화…');
   run('pnpm', ['reconcile:mid-sized']);
 
-  console.log('대기업·계열사·중견(연결된 전체) 채용 공고 수집…');
+  console.log('대기업·중견기업(연결된 전체) 채용 공고 수집…');
   run('pnpm', ['crawl'], {
     CRAWL_MID_SIZED_BATCH_SIZE: process.env.CRAWL_MID_SIZED_BATCH_SIZE ?? '10000',
     CRAWL_MID_SIZED_DB_BATCH_SIZE: process.env.CRAWL_MID_SIZED_DB_BATCH_SIZE ?? '10000',

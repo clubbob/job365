@@ -20,15 +20,19 @@ function getCrawlSourcePrimarySegmentMap(): Map<string, JobBoardCompanySegment> 
   for (const company of getCrawlerCompanies()) {
     let segment: JobBoardCompanySegment;
     if (company.tier === 'enterprise') {
-      segment = IT_ENTERPRISE_CRAWL_SOURCE_IDS.has(company.id) ? 'IT 회사' : '대기업·계열사';
+      segment = IT_ENTERPRISE_CRAWL_SOURCE_IDS.has(company.id) ? 'IT 회사' : '대기업';
+    } else if (company.tier === 'it') {
+      segment = 'IT 회사';
+    } else if (company.tier === 'semi-equipment') {
+      segment = '반도체·디스플레이 장비사';
     } else if (company.tier === 'extra') {
       if (isSemiDisplayEquipmentCompanyName(company.name)) {
         segment = '반도체·디스플레이 장비사';
       } else {
-        segment = isItComputingCompanyName(company.name) ? 'IT 회사' : '중견 기업';
+        segment = isItComputingCompanyName(company.name) ? 'IT 회사' : '중견기업';
       }
     } else {
-      segment = '중견 기업';
+      segment = '중견기업';
     }
     map.set(company.sourceId, segment);
     map.set(crawlSourceKey(company.sourceId), segment);
@@ -49,9 +53,11 @@ function primaryCompanySegmentForCrawlSource(sourceId: string, sourceName: strin
   if (label && isItComputingCompanyName(label)) return 'IT 회사';
   if (IT_ENTERPRISE_CRAWL_SOURCE_IDS.has(crawlSourceKey(key))) return 'IT 회사';
 
-  if (key.includes('mid-sized') || key.includes('work24-mid-sized')) return '중견 기업';
-  if (key.endsWith('-careers')) return '대기업·계열사';
-  return '중견 기업';
+  if (key.includes('it-seed-registry-batch')) return 'IT 회사';
+  if (key.includes('semi-seed-registry-batch')) return '반도체·디스플레이 장비사';
+  if (key.includes('mid-sized') || key.includes('work24-mid-sized')) return '중견기업';
+  if (key.endsWith('-careers')) return '대기업';
+  return '중견기업';
 }
 
 /** 저장된 run에 분류별 건수가 없을 때 소스별 fetched로 근사 */

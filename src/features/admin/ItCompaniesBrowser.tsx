@@ -12,6 +12,8 @@ import {
   COMPANY_REGISTRY_LIST_CARD_DESCRIPTION,
   COMPANY_REGISTRY_STAT_EMPTY,
   RegistryCareersUrlLink,
+  adminListRowNumberCellClassName,
+  adminRegistryRowNumber,
   adminRegistryTableClassName,
   adminRegistryTableWrapClassName,
   formatCompanyRegistryResultMeta,
@@ -21,7 +23,7 @@ import {
 type ItRegistryRow = {
   companyName: string;
   businessNumber: string;
-  segment: '대기업·계열' | '중견기업' | 'IT 기업';
+  segment: '대기업' | '중견기업' | 'IT 회사';
   active: boolean | null;
   careersUrl: string | null;
   linked: boolean;
@@ -78,11 +80,11 @@ export default function ItCompaniesBrowser() {
       const res = await fetch(`/api/admin/it-companies?${params}`);
       const json = (await res.json()) as { ok?: boolean; data?: RegistryResponse };
       if (!res.ok || !json.ok || !json.data) {
-        throw new Error('IT 기업 명단을 불러오지 못했습니다.');
+        throw new Error('IT 회사 명단을 불러오지 못했습니다.');
       }
       setData(json.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'IT 기업 명단을 불러오지 못했습니다.');
+      setError(err instanceof Error ? err.message : 'IT 회사 명단을 불러오지 못했습니다.');
       setData(null);
     } finally {
       setLoading(false);
@@ -131,6 +133,7 @@ export default function ItCompaniesBrowser() {
             <table className={adminRegistryTableClassName}>
               <thead className="bg-neutral-50 text-left text-xs text-muted">
                 <tr>
+                  <th className="w-14 px-3 py-2 font-semibold">번호</th>
                   <th className="px-3 py-2 font-semibold">구분</th>
                   <th className="px-3 py-2 font-semibold">기업명</th>
                   <th className="px-3 py-2 font-semibold">사업자번호</th>
@@ -139,8 +142,11 @@ export default function ItCompaniesBrowser() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {data.items.map((row) => (
+                {data.items.map((row, index) => (
                   <tr key={`${row.segment}-${row.companyName}-${row.businessNumber}`} className="text-foreground">
+                    <td className={adminListRowNumberCellClassName}>
+                      {adminRegistryRowNumber(data.offset, index).toLocaleString('ko-KR')}
+                    </td>
                     <td className="px-3 py-2 text-muted">{row.segment}</td>
                     <td className="px-3 py-2 font-medium">{row.companyName}</td>
                     <td className="px-3 py-2 text-muted">{row.businessNumber}</td>

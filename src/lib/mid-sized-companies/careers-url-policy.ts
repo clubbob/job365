@@ -1,6 +1,6 @@
 /** 절대 저장하지 않는 URL(스크립트·SNS·명백한 오탐) */
 const HARD_BLOCK_RE =
-  /pstatic\.net|instagram\.|facebook\.|youtube\.|wikipedia\.|w3\.org|schema\.org|example\.com|linkedin\.com\/(?!.*jobs)|doubleclick\.|googletagmanager/i;
+  /pstatic\.net|instagram\.|facebook\.|youtube\.|wikipedia\.|w3\.org|schema\.org|example\.com|linkedin\.com\/(?!.*jobs)|doubleclick\.|googletagmanager|melon\.com/i;
 
 /** 공식 채용 사이트만(포털 제외) — 통계·품질 표시용 */
 const PORTAL_HOST_RE =

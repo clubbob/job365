@@ -12,6 +12,10 @@ import { pauseBetweenCrawlSources } from '@/lib/crawler/crawl-throttle';
 import { isCareersUrlRobotsAllowed } from '@/lib/crawler/robots';
 import { crawlMidSizedRegistryBatch } from '@/lib/crawler/adapters/mid-sized-registry-batch';
 import { crawlWork24MidSizedBatch } from '@/lib/crawler/adapters/work24-mid-sized';
+import {
+  crawlItSeedCareersRegistryBatch,
+  crawlSemiSeedCareersRegistryBatch,
+} from '@/lib/crawler/adapters/seed-careers-registry-batch';
 import { getCompanyCrawlersForRun } from '@/lib/crawler/registry';
 import { shouldSyncCrawlSourceResult } from '@/lib/crawler/should-sync-source';
 import type {
@@ -212,6 +216,31 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
         if (company.adapter === 'work24-mid-sized-batch') {
           const incremental = createIncrementalSyncAccumulator(closedBySegment);
           result = await crawlWork24MidSizedBatch({ onSourceResult: incremental.sink });
+          countFetchedJobs(result.jobs);
+          const totals = incremental.getTotals();
+          sourceSummaries.push({
+            sourceId: result.sourceId,
+            sourceName: result.sourceName,
+            fetched: totals.fetched,
+            upserted: totals.upserted,
+            closed: totals.closed,
+            errors: result.errors,
+          });
+          totalUpserted += totals.upserted;
+          totalClosed += totals.closed;
+          continue;
+        }
+
+        if (
+          company.adapter === 'it-seed-registry-batch' ||
+          company.adapter === 'semi-seed-registry-batch'
+        ) {
+          const incremental = createIncrementalSyncAccumulator(closedBySegment);
+          const crawlSeedBatch =
+            company.adapter === 'it-seed-registry-batch'
+              ? crawlItSeedCareersRegistryBatch
+              : crawlSemiSeedCareersRegistryBatch;
+          result = await crawlSeedBatch({ onSourceResult: incremental.sink });
           countFetchedJobs(result.jobs);
           const totals = incremental.getTotals();
           sourceSummaries.push({

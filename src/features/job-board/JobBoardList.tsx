@@ -26,9 +26,8 @@ import { cn } from '@/lib/utils';
 import { dedupeCrawledJobListItems } from '@/lib/job-board/dedupe-list-jobs';
 import { CRAWLED_JOB_DETAIL_FROM_MY_JOBS } from '@/lib/job-board/detail-navigation';
 import {
-  coerceJobBoardFilterState,
-  hasJobBoardListUrlParams,
-  parseJobBoardListSearchParams,
+  hasJobBoardListFilterUrlParams,
+  resolveJobBoardListUrlState,
 } from '@/lib/job-board/list-url';
 import {
   clearJobBoardListRestore,
@@ -73,8 +72,7 @@ function resolveUrlListState(
 ): { page: number; filters: JobBoardFilterState } | null {
   if (!persistKey || !urlSync) return null;
   const params = new URLSearchParams(urlSync.searchParams.toString());
-  if (!hasJobBoardListUrlParams(params)) return null;
-  return parseJobBoardListSearchParams(params);
+  return resolveJobBoardListUrlState(params);
 }
 
 function JobCardSkeleton() {
@@ -91,6 +89,22 @@ function JobCardSkeleton() {
   );
 }
 
+function jobBoardListHasActiveFilters(
+  state: JobBoardFilterState,
+  todayOnly: boolean,
+  searchOnly: boolean,
+): boolean {
+  if (searchOnly) return state.q.trim() !== '';
+  return (
+    todayOnly ||
+    state.q.trim() !== '' ||
+    state.employmentTypes.length > 0 ||
+    state.companySegments.length > 0 ||
+    state.roles.length > 0 ||
+    state.regions.length > 0
+  );
+}
+
 function buildQuery(
   state: JobBoardFilterState,
   page: number,
@@ -100,14 +114,23 @@ function buildQuery(
 ) {
   const params = new URLSearchParams();
   if (state.q.trim()) params.set('q', state.q.trim());
-  params.set('page', String(page));
-  params.set('pageSize', String(pageSize));
-  if (searchOnly) return params.toString();
+  if (searchOnly) {
+    if (page > 1) {
+      params.set('page', String(page));
+      params.set('pageSize', String(pageSize));
+    }
+    return params.toString();
+  }
   if (todayOnly) params.set('today', '1');
   for (const item of state.employmentTypes) params.append('employmentType', item);
   for (const item of state.companySegments) params.append('companySegment', item);
   for (const item of state.roles) params.append('role', item);
   for (const item of state.regions) params.append('region', item);
+  const hasFilters = jobBoardListHasActiveFilters(state, todayOnly, false);
+  if (page > 1 || hasFilters) {
+    params.set('page', String(page));
+    params.set('pageSize', String(pageSize));
+  }
   return params.toString();
 }
 
@@ -346,41 +369,20 @@ function JobBoardList({
       setReady(true);
       return;
     }
-    if (urlSync && hasJobBoardListUrlParams(urlSync.searchParams)) {
-      const parsed = parseJobBoardListSearchParams(
-        new URLSearchParams(urlSync.searchParams.toString()),
-      );
-      skipDebouncedUrlRef.current = true;
-      setFilters(parsed.filters);
-      setDebouncedQ(parsed.filters.q);
-      setPage(parsed.page);
-    } else {
-    const restored = loadJobBoardListRestore(persistKey);
-    if (restored && restored.mode === mode) {
-      setFilters(coerceJobBoardFilterState(restored.filters));
-      setDebouncedQ(restored.filters.q);
-      setPage(restored.page);
-      if (pagedMainList) {
-        setTotal(restored.total);
-        setHasMore(restored.hasMore);
-        if (mode === 'all') {
-          setTodayPage(restored.todayPage);
-          setTodayItems(restored.todayItems);
-          setTodayHasMore(restored.todayHasMore);
-        }
-      } else {
-        setTodayPage(restored.todayPage);
-        setItems(restored.items);
-        setTodayItems(restored.todayItems);
-        setHasMore(restored.hasMore);
-        setTodayHasMore(restored.todayHasMore);
-        setTotal(restored.total);
-        setLoading(false);
-        if (restored.items.length > 0) {
-          skipFetchOnceRef.current = true;
-        }
+    if (urlSync) {
+      const params = new URLSearchParams(urlSync.searchParams.toString());
+      const fromUrl = resolveJobBoardListUrlState(params);
+      if (fromUrl) {
+        skipDebouncedUrlRef.current = true;
+        setFilters(fromUrl.filters);
+        setDebouncedQ(fromUrl.filters.q);
+        setPage(fromUrl.page);
+      } else if (!hasJobBoardListFilterUrlParams(params)) {
+        clearJobBoardListRestore(persistKey);
+        setFilters(INITIAL_FILTERS);
+        setDebouncedQ('');
+        setPage(1);
       }
-    }
     }
     setReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore snapshot once per persistKey/mode

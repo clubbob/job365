@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { stringifyJsonSafe } from '@/lib/json-safe-stringify';
+import type { DiscoveredAffiliate } from '@/types/crawled-job';
 
 /** IDE·git에 올리지 않는 로컬 전용 경로 */
 export const CRAWLED_SOURCE_STATS_CACHE_PATH = resolve(process.cwd(), '.cache/crawled-source-stats.json');
@@ -19,6 +20,8 @@ export type PersistedCrawledJobSourceStats = {
   cachedAt: number;
   cacheKey: string;
   jobCountsBySource: Record<string, number>;
+  /** 집단·공유 채용 사이트의 회사별 건수(관리자 명단 모집 공고 열). */
+  discoveredBySource?: Record<string, DiscoveredAffiliate[]>;
 };
 
 function ensureCacheDir(): void {
@@ -51,11 +54,18 @@ function parsePersistedPayload(raw: unknown, cacheKey: string): PersistedCrawled
   const version = record.version;
   if (version !== 2 && version !== 1) return null;
 
+  const discoveredBySource = record.discoveredBySource;
+  const parsedDiscovered =
+    discoveredBySource && typeof discoveredBySource === 'object'
+      ? (discoveredBySource as Record<string, DiscoveredAffiliate[]>)
+      : undefined;
+
   return {
     version: 2,
     cachedAt,
     cacheKey,
     jobCountsBySource: record.jobCountsBySource as Record<string, number>,
+    discoveredBySource: parsedDiscovered,
   };
 }
 
@@ -126,11 +136,24 @@ export function writePersistedCrawledJobSourceStats(payload: PersistedCrawledJob
     cachedAt: payload.cachedAt,
     cacheKey: payload.cacheKey,
     jobCountsBySource: payload.jobCountsBySource,
+    discoveredBySource: payload.discoveredBySource,
   };
 
   try {
     ensureCacheDir();
-    writeFileSync(CRAWLED_SOURCE_STATS_CACHE_PATH, stringifyJsonSafe(slim), 'utf8');
+    const serialized = stringifyJsonSafe(slim);
+    if (serialized.length > MAX_CACHE_FILE_BYTES) {
+      const withoutDiscovered: PersistedCrawledJobSourceStats = {
+        version: 2,
+        cachedAt: payload.cachedAt,
+        cacheKey: payload.cacheKey,
+        jobCountsBySource: payload.jobCountsBySource,
+      };
+      writeFileSync(CRAWLED_SOURCE_STATS_CACHE_PATH, stringifyJsonSafe(withoutDiscovered), 'utf8');
+      console.warn('[crawled-jobs] source stats cache omitted discoveredBySource (size limit)');
+      return;
+    }
+    writeFileSync(CRAWLED_SOURCE_STATS_CACHE_PATH, serialized, 'utf8');
   } catch (error) {
     console.warn('[crawled-jobs] failed to persist source stats cache', error);
   }

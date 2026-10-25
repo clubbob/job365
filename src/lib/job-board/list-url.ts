@@ -1,4 +1,7 @@
-import type { JobBoardFilterState } from '@/lib/job-board/filter-state';
+import {
+  EMPTY_JOB_BOARD_FILTERS,
+  type JobBoardFilterState,
+} from '@/lib/job-board/filter-state';
 import { parseJobBoardCompanySegments } from '@/lib/job-board/company-segment';
 import { isEmploymentType, isJobRegion, parseJobRoles } from '@/lib/job-board/constants';
 import type { JobBoardListRestoreFilters } from '@/lib/job-board/list-restore';
@@ -46,8 +49,36 @@ export function parseJobBoardListSearchParams(searchParams: URLSearchParams): {
   };
 }
 
+/** 검색·필터 조건(페이지 번호·pageSize만 있는 경우는 제외) */
+export function hasJobBoardListFilterUrlParams(searchParams: URLSearchParams): boolean {
+  if (searchParams.get('q')?.trim()) return true;
+  if (searchParams.get('today') === '1') return true;
+  if (searchParams.has('employmentType')) return true;
+  if (searchParams.has('companySegment')) return true;
+  if (searchParams.has('role')) return true;
+  if (searchParams.has('region')) return true;
+  return false;
+}
+
 export function hasJobBoardListUrlParams(searchParams: URLSearchParams): boolean {
-  return LIST_RETURN_PARAM_KEYS.some((key) => searchParams.has(key));
+  if (hasJobBoardListFilterUrlParams(searchParams)) return true;
+  const page = parsePage(searchParams.get('page'));
+  return page > 1 || searchParams.has('pageSize');
+}
+
+/** 목록 URL에서 페이지·필터 복원(필터 없고 1페이지면 null → 전체 목록) */
+export function resolveJobBoardListUrlState(searchParams: URLSearchParams): {
+  page: number;
+  filters: JobBoardFilterState;
+} | null {
+  if (hasJobBoardListFilterUrlParams(searchParams)) {
+    return parseJobBoardListSearchParams(searchParams);
+  }
+  const page = parsePage(searchParams.get('page'));
+  if (page > 1) {
+    return { page, filters: EMPTY_JOB_BOARD_FILTERS };
+  }
+  return null;
 }
 
 export function copyJobBoardListSearchParams(searchParams: URLSearchParams): URLSearchParams {

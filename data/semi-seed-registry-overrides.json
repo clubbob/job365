@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "updatedAt": "2026-10-25T00:00:00.000Z",
+  "companies": [
+    {
+      "seedCompanyName": "원익IPS",
+      "registryCompanyName": "원익IPS",
+      "businessNumber": "6958100374",
+      "careersUrl": "https://www.ips.co.kr/ko/careers/talent.php"
+    },
+    {
+      "seedCompanyName": "원익피앤이",
+      "registryCompanyName": "원익피앤이",
+      "businessNumber": "1248167704",
+      "careersUrl": "https://www.wonikpne.com/kr/recruit/personel_system.php"
+    },
+    {
+      "seedCompanyName": "아진엑스텍",
+      "registryCompanyName": "아진엑스텍",
+      "businessNumber": "6218129249",
+      "careersUrl": "https://www.ajinextek.com/kr/career/recruit.php"
+    },
+    {
+      "seedCompanyName": "알에스오토메이션",
+      "registryCompanyName": "알에스오토메이션",
+      "businessNumber": "1428124514",
+      "careersUrl": "https://www.rsautomation.co.kr/ko/company/recruit"
+    }
+  ]
+}

@@ -10,12 +10,12 @@ export const RECRUITING_COMPANY_SEGMENT_TABS: ReadonlyArray<{
   label: string;
   jobBoardSegment: JobBoardCompanySegment;
 }> = [
-  { id: 'enterprise', label: '대기업·계열사', jobBoardSegment: '대기업·계열사' },
-  { id: 'mid-sized', label: '중견 기업', jobBoardSegment: '중견 기업' },
+  { id: 'enterprise', label: '대기업', jobBoardSegment: '대기업' },
+  { id: 'mid-sized', label: '중견기업', jobBoardSegment: '중견기업' },
   { id: 'it', label: 'IT 회사', jobBoardSegment: 'IT 회사' },
   {
     id: 'semi-equipment',
-    label: '반도체·디스플레이 장비',
+    label: '반도체·디스플레이 장비사',
     jobBoardSegment: '반도체·디스플레이 장비사',
   },
 ];
@@ -24,7 +24,7 @@ export function recruitingCompanySegmentJobBoardSegment(
   id: RecruitingCompanySegmentId,
 ): JobBoardCompanySegment {
   const tab = RECRUITING_COMPANY_SEGMENT_TABS.find((item) => item.id === id);
-  return tab?.jobBoardSegment ?? '대기업·계열사';
+  return tab?.jobBoardSegment ?? '대기업';
 }
 
 export function segmentTabCountsFromJobBoard(

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { ADMIN_RECRUITING_COMPANIES_PAGE_SIZE } from '@/lib/admin-constants';
+import { humanizeAdminFetchError } from '@/lib/admin-ui';
 import {
   AdminCompanyRegistrySearchAndFilters,
   AdminCompanyRegistryTableHead,
@@ -11,6 +12,8 @@ import {
   COMPANY_REGISTRY_EMPTY_LIST_MESSAGE,
   COMPANY_REGISTRY_LIST_CARD_DESCRIPTION,
   RegistryCareersUrlLink,
+  adminListRowNumberCellClassName,
+  adminRegistryRowNumber,
   adminRegistryTableClassName,
   adminRegistryTableWrapClassName,
   formatCompanyRegistryResultMeta,
@@ -48,7 +51,7 @@ const PAGE_SIZE = ADMIN_RECRUITING_COMPANIES_PAGE_SIZE;
 
 const SEGMENT_LIST_DESCRIPTION: Record<Segment, string> = {
   enterprise: `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 공정거래위원회 공시 집단 명단을 공시 순위로 보여 줍니다.`,
-  'mid-sized': `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 중견 기업 명단을 유명도 순으로 보여 줍니다.`,
+  'mid-sized': `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 중견기업 명단을 유명도 순으로 보여 줍니다.`,
   it: `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} IT 회사 명단을 유명도·모집 공고 순으로 보여 줍니다.`,
   'semi-equipment': `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 반도체·디스플레이 장비사 명단을 유명도·모집 공고 순으로 보여 줍니다.`,
 };
@@ -71,8 +74,7 @@ export default function RecruitingEmployerBrowser({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const onListMetaRef = useRef(onListMeta);
-  const listFilterEpochRef = useRef(0);
-  const offsetSyncedEpochRef = useRef(0);
+  const fetchRequestIdRef = useRef(0);
 
   useEffect(() => {
     onListMetaRef.current = onListMeta;
@@ -84,17 +86,12 @@ export default function RecruitingEmployerBrowser({
   }, [query]);
 
   useEffect(() => {
-    listFilterEpochRef.current += 1;
     setOffset(0);
   }, [debouncedQuery, segment]);
 
   useEffect(() => {
-    if (offsetSyncedEpochRef.current !== listFilterEpochRef.current && offset !== 0) {
-      return;
-    }
-    offsetSyncedEpochRef.current = listFilterEpochRef.current;
-
     const controller = new AbortController();
+    const requestId = ++fetchRequestIdRef.current;
     setLoading(true);
     setError(null);
 
@@ -126,10 +123,14 @@ export default function RecruitingEmployerBrowser({
         });
       } catch (err) {
         if (isAbortError(err) || controller.signal.aborted) return;
-        setError(err instanceof Error ? err.message : '수집 채용 회사 목록을 불러오지 못했습니다.');
+        setError(
+          humanizeAdminFetchError(
+            err instanceof Error ? err.message : '수집 채용 회사 목록을 불러오지 못했습니다.',
+          ),
+        );
         setData(null);
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (fetchRequestIdRef.current === requestId) setLoading(false);
       }
     })();
 
@@ -169,8 +170,11 @@ export default function RecruitingEmployerBrowser({
             <table className={adminRegistryTableClassName}>
               <AdminCompanyRegistryTableHead />
               <tbody className="divide-y divide-border">
-                {data.items.map((row) => (
+                {data.items.map((row, index) => (
                   <tr key={`${row.companyName}-${row.businessNumber}`} className="text-foreground">
+                    <td className={adminListRowNumberCellClassName}>
+                      {adminRegistryRowNumber(data.offset, index).toLocaleString('ko-KR')}
+                    </td>
                     <td className="px-3 py-2 font-medium">{row.companyName}</td>
                     <td className="px-3 py-2 text-muted">{row.businessNumber}</td>
                     <td className="px-3 py-2 text-muted">

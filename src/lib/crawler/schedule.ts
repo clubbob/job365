@@ -11,7 +11,7 @@ export const CRAWL_SCHEDULE = {
   label: '매일 02:00 (한국 시간), GitHub Actions',
   /** 관리자·안내용. 자동 수집은 Vercel이 아니라 GitHub에서 돌아 서버 비용을 줄입니다. */
   detail:
-    '대기업·계열 채용 사이트와 별도 등록 소스는 수집할 때마다 전부 가져옵니다. 중견 기업은 연결된 채용 URL을 회당 1,000곳씩 순환해 약 5~6일에 한 바퀴를 돕니다.',
+    '대기업·IT 회사·반도체·디스플레이 장비사는 각 명단 DB에 연결된 채용 URL을 매일 02:00에 전부 수집합니다. 중견기업은 중견 DB에서 매일 1,000곳씩 순환해 약 5~6일에 한 바퀴를 돕니다.',
   frequency: 'daily',
   runner: 'GitHub Actions',
   maxRunnerMinutes: 180,

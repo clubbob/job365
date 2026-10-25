@@ -251,7 +251,7 @@ export default function AdminCrawlRunsClient() {
     if (running) return;
     if (
       !window.confirm(
-        '지금 채용 공고 수집을 실행할까요?\n\n대기업·계열은 전부, 중견은 오늘 배치만 순환합니다. 수십 분이 걸릴 수 있습니다.',
+        '지금 채용 공고 수집을 실행할까요?\n\n대기업·IT 회사·반도체·디스플레이 장비사는 명단 DB 전체, 중견기업은 오늘 1,000곳 배치만 순환합니다. 수십 분이 걸릴 수 있습니다.',
       )
     ) {
       return;

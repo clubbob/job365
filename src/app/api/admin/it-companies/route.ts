@@ -27,9 +27,9 @@ export async function GET(request: Request) {
 
   let rows = buildItCompanyRegistryRows(jobCountsBySource);
 
-  if (segment === 'enterprise') rows = rows.filter((row) => row.segment === '대기업·계열');
-  if (segment === 'misc' || segment === 'extra') rows = rows.filter((row) => row.segment === 'IT 기업');
-  if (segment === 'mid-sized') rows = rows.filter((row) => row.segment === '중견기업');
+  if (segment === 'enterprise' || segment === 'mid-sized') {
+    rows = [];
+  }
 
   if (activeOnly) rows = rows.filter((row) => row.active === true || row.active === null);
 
@@ -53,8 +53,8 @@ export async function GET(request: Request) {
       limit,
       hasMore: offset + limit < total,
       uniqueCompanyCount: allRows.length,
-      enterpriseCount: allRows.filter((row) => row.segment === '대기업·계열').length,
-      midSizedCount: allRows.filter((row) => row.segment === '중견기업').length,
+      enterpriseCount: 0,
+      midSizedCount: 0,
       activeCertificateCount: allRows.filter((row) => row.active === true).length,
       probedCount: allRows.filter((row) =>
         row.careersDiscoveryStatus === 'found' || row.careersDiscoveryStatus === 'not_found',

@@ -2,10 +2,14 @@ import { normalizeCompanyLabel } from '@/lib/crawler/company-name-match';
 import { countMiscCrawlerCompanies, getRegistryMiscCrawlerCompanies } from '@/lib/crawler/companies';
 import type { CrawledJobSourceStats } from '@/lib/crawled-jobs-server';
 import { loadEnterpriseRegistryDbCompanies } from '@/lib/enterprise-companies/registry-db';
-import { isItComputingCompany } from '@/lib/it-companies/catalog';
 import { buildItCompanyRegistryRows, registryRowDedupeKey } from '@/lib/it-companies/build-registry-rows';
-import { isSemiDisplayEquipmentCompany } from '@/lib/semi-display-equipment/catalog';
 import { buildSemiDisplayEquipmentRegistryRows } from '@/lib/semi-display-equipment/build-registry-rows';
+import { isRegistryRowLinked } from '@/lib/registry-company-identity';
+import {
+  isReservedForItOrSemiSeedRegistry,
+  itSeedRegistryDedupeKeys,
+  semiSeedRegistryDedupeKeys,
+} from '@/lib/registry-segment-membership';
 import { isMidSizedCertificateActive } from '@/lib/mid-sized-companies/registry-dedupe';
 import {
   loadMidSizedRegistryDbCompanies,
@@ -13,6 +17,7 @@ import {
 } from '@/lib/mid-sized-companies/registry-db';
 import { compareMidSizedCompaniesByFame } from '@/lib/mid-sized-companies/fame-rank';
 import { activeJobCountForRegistryCompany } from '@/lib/recruiting-employers/registry-active-job-count';
+import { displayRegistryBusinessNumber } from '@/lib/recruiting-employers/registry-display';
 import { resolveRegistryBusinessNumber } from '@/lib/recruiting-employers/careers-url-business-number';
 import type { RecruitingEmployerAdminSegment } from '@/lib/recruiting-employers/segments';
 
@@ -24,10 +29,8 @@ function matchesAdminCompanyNameSearch(companyName: string, q: string): boolean 
 }
 
 function loadEnterpriseRegistryForAdminSegment() {
-  const itKeys = new Set(buildItCompanyRegistryRows({}).map((row) => registryRowDedupeKey(row.companyName)));
-  const semiKeys = new Set(
-    buildSemiDisplayEquipmentRegistryRows({}).map((row) => registryRowDedupeKey(row.companyName)),
-  );
+  const itKeys = itSeedRegistryDedupeKeys();
+  const semiKeys = semiSeedRegistryDedupeKeys();
   return loadEnterpriseRegistryDbCompanies().filter(
     (record) =>
       !itKeys.has(registryRowDedupeKey(record.groupName)) &&
@@ -65,7 +68,7 @@ function midSizedRowFromRecord(
   const careersUrl = record.careersUrl?.trim() || null;
   return {
     companyName: record.companyName,
-    businessNumber: resolveRegistryBusinessNumber({
+    businessNumber: displayRegistryBusinessNumber(record.businessNumber, {
       companyName: record.companyName,
       careersUrl,
       crawlSourceId: record.crawlSourceId,
@@ -74,7 +77,7 @@ function midSizedRowFromRecord(
     segmentLabel: '중견기업',
     active: isMidSizedCertificateActive(record.validTo),
     careersUrl,
-    linked: Boolean(careersUrl),
+    linked: isRegistryRowLinked(record),
     careersDiscoveryStatus: record.careersDiscoveryStatus ?? (careersUrl ? 'found' : 'pending'),
     careersUrlCheckedAt: record.careersUrlCheckedAt ?? null,
     activeJobCount: midSizedActiveJobCount(record.companyName, record.crawlSourceId, stats),
@@ -133,7 +136,7 @@ function buildEnterpriseRows(stats: CrawledJobSourceStats): AdminRecruitingCompa
     )
     .map((record) => {
       const careersUrl = record.careersUrl?.trim() || null;
-      const linked = Boolean(careersUrl);
+      const linked = isRegistryRowLinked(record);
       const activeJobCount = record.sourceId ? stats.jobCountsBySource[record.sourceId] ?? 0 : 0;
       const discoveryStatus: AdminRecruitingCompanyRow['careersDiscoveryStatus'] = linked
         ? 'enterprise'
@@ -143,13 +146,13 @@ function buildEnterpriseRows(stats: CrawledJobSourceStats): AdminRecruitingCompa
 
       return {
         companyName: record.groupName,
-        businessNumber: resolveRegistryBusinessNumber({
+        businessNumber: displayRegistryBusinessNumber(record.businessNumber, {
           companyName: record.groupName,
           careersUrl,
           crawlSourceId: record.crawlSourceId,
           sourceId: record.sourceId,
         }),
-        segmentLabel: '대기업·계열',
+        segmentLabel: '대기업',
         active: null,
         careersUrl,
         linked,
@@ -174,7 +177,7 @@ function buildMiscRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[
           crawlSourceId: company.id,
           sourceId: company.sourceId,
         }),
-        segmentLabel: '중견 기업',
+        segmentLabel: '중견기업',
         active: null,
         careersUrl,
         linked: Boolean(careersUrl),
@@ -191,11 +194,11 @@ function buildSemiEquipmentRows(stats: CrawledJobSourceStats): AdminRecruitingCo
   const registryRows = buildSemiDisplayEquipmentRegistryRows(stats);
 
   return registryRows.map((row) => {
-    const segmentLabel = row.segment === '중견기업' ? '중견 기업' : '장비·부품';
+    const segmentLabel = row.segment;
 
     return {
       companyName: row.companyName,
-      businessNumber: resolveRegistryBusinessNumber({
+      businessNumber: displayRegistryBusinessNumber(row.businessNumber, {
         companyName: row.companyName,
         careersUrl: row.careersUrl,
         crawlSourceId: row.crawlSourceId?.startsWith('mid-') ? row.crawlSourceId : null,
@@ -223,12 +226,7 @@ function buildItRows(stats: CrawledJobSourceStats): AdminRecruitingCompanyRow[] 
       stats,
       row.crawlSourceId,
     );
-    const segmentLabel =
-      row.segment === '대기업·계열'
-        ? '대기업·계열'
-        : row.segment === 'IT 기업'
-          ? 'IT 기업'
-          : '중견 기업';
+    const segmentLabel = row.segment;
 
     return {
       companyName: row.companyName,
@@ -273,9 +271,7 @@ function computeRecruitingSegmentRegistryCounts(): RecruitingCompanyActiveCounts
   ).length;
   const mid =
     loadMidSizedRegistryDbCompanies().filter(
-      (record) =>
-        !isItComputingCompany(record.companyName, record.industry) &&
-        !isSemiDisplayEquipmentCompany(record.companyName, record.industry),
+      (record) => !isReservedForItOrSemiSeedRegistry(record.companyName, record.industry),
     ).length + miscRegistryCount();
   return {
     enterprise,
@@ -285,7 +281,7 @@ function computeRecruitingSegmentRegistryCounts(): RecruitingCompanyActiveCounts
   };
 }
 
-/** 탭·통계용 명단 규모. IT 명단에 있는 회사는 대기업·계열·중견 건수에서 뺍니다. */
+/** 탭·통계용 명단 규모. IT 명단에 있는 회사는 대기업·중견기업 건수에서 뺍니다. */
 export function recruitingSegmentRegistryCount(segment: RecruitingEmployerAdminSegment): number {
   if (segment === 'misc') return miscRegistryCount();
   return getRecruitingSegmentRegistryCounts()[segment];
@@ -296,10 +292,10 @@ function miscRegistryCount(): number {
 }
 
 export function recruitingSegmentRegistryStatLabel(segment: RecruitingEmployerAdminSegment): string {
-  if (segment === 'enterprise') return '대기업·계열';
-  if (segment === 'mid-sized' || segment === 'misc') return '중견 명단';
-  if (segment === 'semi-equipment') return '반도체·디스플레이 장비 명단';
-  return 'IT 명단';
+  if (segment === 'enterprise') return '대기업';
+  if (segment === 'mid-sized' || segment === 'misc') return '중견기업';
+  if (segment === 'semi-equipment') return '반도체·디스플레이 장비사';
+  return 'IT 회사';
 }
 
 export function getRecruitingSegmentRegistryCounts(): RecruitingCompanyActiveCounts {
@@ -452,13 +448,13 @@ function buildEnterpriseListPage(
 
     return {
       companyName: record.groupName,
-      businessNumber: resolveRegistryBusinessNumber({
+      businessNumber: displayRegistryBusinessNumber(record.businessNumber, {
         companyName: record.groupName,
         careersUrl,
         crawlSourceId: record.crawlSourceId,
         sourceId: record.sourceId,
       }),
-      segmentLabel: '대기업·계열',
+      segmentLabel: '대기업',
       active: null,
       careersUrl,
       linked,

@@ -30,14 +30,12 @@ export async function GET(request: Request) {
   try {
     const [prefs, all] = await Promise.all([getJobAlertPrefs(decoded.uid), listCrawledJobs()]);
     const matched = dedupeCrawledJobListItems(
-      hasJobAlertFilterPrefs(prefs)
-        ? all.filter(
-            (job) =>
-              job.status === 'active' &&
-              isCrawledJobPostingOpen(job.deadline, job.title) &&
-              jobMatchesSavedPrefs(job, prefs, { requireFilterPrefs: true }),
-          )
-        : [],
+      all.filter(
+        (job) =>
+          job.status === 'active' &&
+          isCrawledJobPostingOpen(job.deadline, job.title) &&
+          jobMatchesSavedPrefs(job, prefs),
+      ),
     );
     const list = matched.filter((job) =>
       matchesCrawledJobKeyword(job, q, { titleAndRecruitingCompanyOnly: true }),

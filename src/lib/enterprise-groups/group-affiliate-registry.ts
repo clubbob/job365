@@ -68,15 +68,16 @@ export function enrichRegistryRowWithGroupAffiliate(input: {
   }
 
   const dedicated = link.dedicatedCareersUrl?.trim() || null;
-  const careersUrl = input.careersUrl?.trim() || dedicated || link.groupCareersUrl;
-  const usesGroupPortal = !input.careersUrl?.trim() && !dedicated && Boolean(link.groupCareersUrl);
+  const ownUrl = input.careersUrl?.trim() || dedicated || null;
+  const needsDedicatedUrl =
+    !ownUrl && Boolean(link.groupCareersUrl) && !input.careersUrl?.trim() && !dedicated;
 
   return {
-    careersUrl,
-    careersUrlNote: usesGroupPortal ? '집단 통합 채용' : null,
-    linked: Boolean(careersUrl),
-    careersDiscoveryStatus: usesGroupPortal ? 'enterprise' : input.careersDiscoveryStatus,
-    groupSourceId: link.groupSourceId,
+    careersUrl: ownUrl,
+    careersUrlNote: needsDedicatedUrl ? '집단 통합 채용만 있음 · 회사별 전용 URL 필요' : null,
+    linked: Boolean(ownUrl),
+    careersDiscoveryStatus: input.careersDiscoveryStatus,
+    groupSourceId: ownUrl ? link.groupSourceId : null,
   };
 }
 

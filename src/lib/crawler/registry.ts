@@ -1,6 +1,10 @@
 import { crawlGenericHtmlCareers } from '@/lib/crawler/adapters/generic-html';
 import { crawlGreenhouseCareers } from '@/lib/crawler/adapters/greenhouse';
 import { crawlMidSizedRegistryBatch } from '@/lib/crawler/adapters/mid-sized-registry-batch';
+import {
+  crawlItSeedCareersRegistryBatch,
+  crawlSemiSeedCareersRegistryBatch,
+} from '@/lib/crawler/adapters/seed-careers-registry-batch';
 import { crawlWork24MidSizedBatch } from '@/lib/crawler/adapters/work24-mid-sized';
 import { crawlLgCareers } from '@/lib/crawler/adapters/lg';
 import { getCrawlerCompanies, type CrawlerAdapterId, type CrawlerCompany } from '@/lib/crawler/companies';
@@ -73,6 +77,14 @@ function resolveCrawler(company: CrawlerCompany): CrawlerFn {
     return () => crawlWork24MidSizedBatch();
   }
 
+  if (company.adapter === 'it-seed-registry-batch') {
+    return () => crawlItSeedCareersRegistryBatch();
+  }
+
+  if (company.adapter === 'semi-seed-registry-batch') {
+    return () => crawlSemiSeedCareersRegistryBatch();
+  }
+
   const crawl = SINGLETON_ADAPTERS[company.adapter];
   return crawl ?? genericCrawler(company);
 }
@@ -85,7 +97,9 @@ function buildCompanyCrawlers(companies: CrawlerCompany[]): CompanyCrawler[] {
       company.adapter === 'greenhouse' ||
       company.adapter === 'generic' ||
       company.adapter === 'mid-sized-registry-batch' ||
-      company.adapter === 'work24-mid-sized-batch'
+      company.adapter === 'work24-mid-sized-batch' ||
+      company.adapter === 'it-seed-registry-batch' ||
+      company.adapter === 'semi-seed-registry-batch'
     ) {
       return { company, crawl: resolveCrawler(company) };
     }

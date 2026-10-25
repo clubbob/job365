@@ -1,7 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { crawlGenericHtmlCareers } from '@/lib/crawler/adapters/generic-html';
-import { crawlGreenhouseCareers } from '@/lib/crawler/adapters/greenhouse';
+import { crawlRegistryCareersRecord } from '@/lib/crawler/adapters/registry-careers-crawl';
 import { paceCrawlRequest } from '@/lib/crawler/crawl-throttle';
 import {
   countMidSizedCareersConfigs,
@@ -14,57 +13,6 @@ import type { CrawledJob } from '@/types/crawled-job';
 
 const BATCH_SOURCE_ID = 'mid-sized-registry-batch-careers';
 const BATCH_SOURCE_NAME = '중견기업 DB 수집';
-
-function isGreenhouseUrl(url: string): { board: string } | null {
-  const match = url.match(/boards\.greenhouse\.io\/([^/?#]+)/i);
-  if (match?.[1]) return { board: match[1] };
-  return null;
-}
-
-async function crawlOneRecord(record: {
-  companyName: string;
-  careersUrl: string;
-  crawlSourceId: string;
-  careersAdapter?: 'generic' | 'greenhouse';
-  greenhouseBoard?: string | null;
-}): Promise<CrawlerSourceResult> {
-  const sourceId = `${record.crawlSourceId}-careers`;
-  const sourceName = `${record.companyName} 채용`;
-  const ghFromUrl = isGreenhouseUrl(record.careersUrl);
-  const board = record.greenhouseBoard ?? ghFromUrl?.board;
-
-  if (record.careersAdapter === 'greenhouse' && board) {
-    return crawlGreenhouseCareers({
-      sourceId,
-      sourceName,
-      companyName: record.companyName,
-      boardToken: board,
-      careersUrl: record.careersUrl,
-      koreaOnly: true,
-      companySize: '중견기업',
-    });
-  }
-
-  if (ghFromUrl) {
-    return crawlGreenhouseCareers({
-      sourceId,
-      sourceName,
-      companyName: record.companyName,
-      boardToken: ghFromUrl.board,
-      careersUrl: record.careersUrl,
-      koreaOnly: true,
-      companySize: '중견기업',
-    });
-  }
-
-  return crawlGenericHtmlCareers({
-    sourceId,
-    sourceName,
-    companyName: record.companyName,
-    careersUrl: record.careersUrl,
-    companySize: '중견기업',
-  });
-}
 
 /**
  * 중견기업 DB 명단을 읽어, 채용 URL이 있는 회사부터 공고를 수집합니다.
@@ -119,12 +67,13 @@ export async function crawlMidSizedRegistryBatch(
   for (const record of withUrl) {
     await paceCrawlRequest();
     try {
-      const result = await crawlOneRecord({
+      const result = await crawlRegistryCareersRecord({
         companyName: record.name,
         careersUrl: record.careersUrl,
         crawlSourceId: record.crawlSourceId,
         careersAdapter: record.adapter,
         greenhouseBoard: record.greenhouseBoard,
+        companySize: '중견기업',
       });
       if (options?.onSourceResult) {
         await options.onSourceResult({

@@ -403,7 +403,7 @@ type CrawledJobSourceStatsInternal = CrawledJobSourceStats & {
 function statsFromPersisted(persisted: PersistedCrawledJobSourceStats): CrawledJobSourceStatsInternal {
   return {
     jobCountsBySource: persisted.jobCountsBySource,
-    discoveredBySource: {},
+    discoveredBySource: persisted.discoveredBySource ?? {},
     recruitingEmployerCountByNorm: {},
     recruitingEmployerAggregates: [],
   };
@@ -483,6 +483,19 @@ export async function getAdminActiveJobCountForStats(): Promise<number> {
   return countActiveCrawledJobs();
 }
 
+function discoveredBySourceForPersist(
+  discoveredBySource: Record<string, DiscoveredAffiliate[]>,
+): Record<string, DiscoveredAffiliate[]> | undefined {
+  const out: Record<string, DiscoveredAffiliate[]> = {};
+  for (const [sourceId, rows] of Object.entries(discoveredBySource)) {
+    if (!rows?.length) continue;
+    if (rows.length > 1 || sourceId.endsWith('-careers')) {
+      out[sourceId] = rows;
+    }
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 function persistSourceStats(cacheKey: string, stats: CrawledJobSourceStatsInternal): void {
   setImmediate(() => {
     writePersistedCrawledJobSourceStats({
@@ -490,6 +503,7 @@ function persistSourceStats(cacheKey: string, stats: CrawledJobSourceStatsIntern
       cachedAt: Date.now(),
       cacheKey,
       jobCountsBySource: stats.jobCountsBySource,
+      discoveredBySource: discoveredBySourceForPersist(stats.discoveredBySource),
     });
   });
 }
@@ -703,6 +717,23 @@ export async function getCrawledJobSourceStats(options?: {
   return promise;
 }
 
+/**
+ * 수집 채용 회사 목록 API — 메모리·파일 캐시가 있으면 쓰고, 없으면 소스별 건수만 반환합니다.
+ * 전체 active 공고 스캔은 기다리지 않으며, 백그라운드에서 갱신합니다.
+ */
+export async function getAdminRecruitingListSourceStats(): Promise<CrawledJobSourceStats> {
+  const cacheKey = 'all';
+  if (sourceStatsCache && sourceStatsCache.key === cacheKey && sourceStatsCache.expiresAt > Date.now()) {
+    return sourceStatsCache.data;
+  }
+
+  const persisted =
+    readPersistedCrawledJobSourceStats(cacheKey) ?? readPersistedCrawledJobSourceStatsStale(cacheKey);
+  const jobCounts = persisted?.jobCountsBySource ?? (await getJobCountsForAdminList());
+  scheduleAdminSourceStatsRefresh();
+  return buildAdminStatsFromJobCounts(jobCounts, persisted?.discoveredBySource);
+}
+
 /** 관리자 회사 목록 — 캐시된 건수만 쓰고, 전체 공고 스캔은 기다리지 않습니다. */
 export async function getJobCountsForAdminList(): Promise<Record<string, number>> {
   const cacheKey = 'all';
@@ -729,10 +760,11 @@ export async function getJobCountsForAdminList(): Promise<Record<string, number>
 
 export function buildAdminStatsFromJobCounts(
   jobCountsBySource: Record<string, number>,
+  discoveredBySource: Record<string, DiscoveredAffiliate[]> = {},
 ): CrawledJobSourceStats {
   return {
     jobCountsBySource,
-    discoveredBySource: {},
+    discoveredBySource: discoveredBySource ?? {},
     recruitingEmployerCountByNorm: {},
     recruitingEmployerAggregates: [],
   };

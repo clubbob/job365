@@ -1,22 +1,15 @@
-import { getCrawlerCompanies } from '@/lib/crawler/companies';
-import { getFtcEnterpriseGroups } from '@/lib/enterprise-groups';
-import {
-  isItComputingCompany,
-  isItComputingCompanyName,
-  IT_ENTERPRISE_CRAWL_SOURCE_IDS,
-} from '@/lib/it-companies/catalog';
-import { isMidSizedCertificateActive } from '@/lib/mid-sized-companies/registry-dedupe';
-import { loadMidSizedRegistryDbCompanies } from '@/lib/mid-sized-companies/registry-db';
 import { activeJobCountForMidSizedCrawlSource } from '@/lib/crawled-jobs-server';
 import { compareItCompaniesByFame } from '@/lib/it-companies/fame-rank';
 import { masterSeedNormalizeKey } from '@/lib/it-companies/master-seed';
 import { loadSeedCareersRegistryDbCompanies } from '@/lib/seed-careers/registry-db';
+import { digitsOnly, formatBusinessNumber } from '@/lib/business-number';
+import { isRegistryRowLinked } from '@/lib/registry-company-identity';
 import { resolveRegistryBusinessNumber } from '@/lib/recruiting-employers/careers-url-business-number';
 
 export type ItCompanyRegistryRow = {
   companyName: string;
   businessNumber: string;
-  segment: '대기업·계열' | '중견기업' | 'IT 기업';
+  segment: 'IT 회사';
   active: boolean | null;
   careersUrl: string | null;
   linked: boolean;
@@ -26,132 +19,57 @@ export type ItCompanyRegistryRow = {
   crawlSourceId: string | null;
 };
 
-function enterpriseItGroups() {
-  const crawlers = new Map(getCrawlerCompanies().map((item) => [item.id, item]));
-  const rows: ItCompanyRegistryRow[] = [];
-
-  for (const group of getFtcEnterpriseGroups()) {
-    const crawlSourceId = group.crawlSourceId;
-    const isIt =
-      (crawlSourceId && IT_ENTERPRISE_CRAWL_SOURCE_IDS.has(crawlSourceId)) ||
-      isItComputingCompanyName(group.name);
-    if (!isIt) continue;
-
-    const crawler = crawlSourceId ? crawlers.get(crawlSourceId) : undefined;
-    const careersUrl = crawler?.careersUrl ?? null;
-    rows.push({
-      companyName: group.name,
-      businessNumber: resolveRegistryBusinessNumber({
-        companyName: group.name,
-        careersUrl,
-        crawlSourceId: crawlSourceId ?? null,
-        sourceId: crawler?.sourceId ?? null,
-      }),
-      segment: '대기업·계열',
-      active: null,
-      careersUrl,
-      linked: Boolean(careersUrl),
-      careersDiscoveryStatus: 'enterprise',
-      careersUrlCheckedAt: null,
-      activeJobCount: 0,
-      crawlSourceId: crawler?.sourceId ?? null,
-    });
-  }
-
-  for (const company of getCrawlerCompanies()) {
-    if (company.tier !== 'extra') continue;
-    if (!isItComputingCompanyName(company.name)) continue;
-    rows.push({
-      companyName: company.name,
-      businessNumber: resolveRegistryBusinessNumber({
-        companyName: company.name,
-        careersUrl: company.careersUrl,
-        crawlSourceId: company.id,
-        sourceId: company.sourceId,
-      }),
-      segment: 'IT 기업',
-      active: null,
-      careersUrl: company.careersUrl,
-      linked: Boolean(company.careersUrl),
-      careersDiscoveryStatus: 'enterprise',
-      careersUrlCheckedAt: null,
-      activeJobCount: 0,
-      crawlSourceId: company.sourceId,
-    });
-  }
-
-  return rows;
-}
-
-function midSizedItRows(): ItCompanyRegistryRow[] {
-  const companies = loadMidSizedRegistryDbCompanies();
-  return companies
-    .filter((record) => isItComputingCompany(record.companyName, record.industry))
-    .map((record) => {
-      const careersUrl = record.careersUrl?.trim() || null;
-      return {
-        companyName: record.companyName,
-        businessNumber: resolveRegistryBusinessNumber({
-          companyName: record.companyName,
-          careersUrl,
-          crawlSourceId: record.crawlSourceId,
-          existing: record.businessNumber,
-        }),
-        segment: '중견기업' as const,
-        active: isMidSizedCertificateActive(record.validTo),
-        careersUrl,
-        linked: Boolean(careersUrl),
-        careersDiscoveryStatus: record.careersDiscoveryStatus ?? (careersUrl ? 'found' : 'pending'),
-        careersUrlCheckedAt: record.careersUrlCheckedAt ?? null,
-        activeJobCount: 0,
-        crawlSourceId: record.crawlSourceId,
-      };
-    });
-}
-
-function seedRegistryItRows(): ItCompanyRegistryRow[] {
-  return loadSeedCareersRegistryDbCompanies('it').map((record) => ({
+function businessNumberForSeedRow(record: {
+  companyName: string;
+  businessNumber: string | null;
+  careersUrl: string | null;
+  crawlSourceId: string;
+}): string {
+  const digits = digitsOnly(record.businessNumber ?? '');
+  if (digits.length === 10) return formatBusinessNumber(digits);
+  return resolveRegistryBusinessNumber({
     companyName: record.companyName,
-    businessNumber: resolveRegistryBusinessNumber({
-      companyName: record.companyName,
-      careersUrl: record.careersUrl,
-      crawlSourceId: record.crawlSourceId,
-      sourceId: record.crawlSourceId,
-    }),
-    segment: 'IT 기업' as const,
-    active: null,
     careersUrl: record.careersUrl,
-    linked: Boolean(record.careersUrl),
-    careersDiscoveryStatus: record.careersDiscoveryStatus,
-    careersUrlCheckedAt: record.careersUrlCheckedAt,
-    activeJobCount: 0,
-    crawlSourceId: record.careersUrl ? record.crawlSourceId : null,
-  }));
+    crawlSourceId: record.crawlSourceId,
+    sourceId: record.crawlSourceId,
+    existing: record.businessNumber,
+  });
 }
 
+/** IT 회사 명단 — `it-seed-registry-db.json` 전용 (대기업·중견 명단과 겹치지 않음) */
 export function buildItCompanyRegistryRows(
   jobCountsBySource: Record<string, number>,
 ): ItCompanyRegistryRow[] {
-  const seen = new Set<string>();
-  const merged: ItCompanyRegistryRow[] = [];
+  return loadSeedCareersRegistryDbCompanies('it')
+    .map((record) => {
+      const careersUrl = record.careersUrl?.trim() || null;
+      const crawlSourceId =
+        isRegistryRowLinked(record) ? record.crawlSourceId : null;
+      const activeJobCount =
+        crawlSourceId && crawlSourceId.startsWith('mid-')
+          ? activeJobCountForMidSizedCrawlSource(crawlSourceId, jobCountsBySource)
+          : crawlSourceId
+            ? jobCountsBySource[`${crawlSourceId}-careers`] ??
+              jobCountsBySource[crawlSourceId] ??
+              0
+            : 0;
 
-  for (const row of [...enterpriseItGroups(), ...midSizedItRows(), ...seedRegistryItRows()]) {
-    const key = registryRowDedupeKey(row.companyName);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const activeJobCount =
-      row.crawlSourceId && row.segment === '중견기업'
-        ? activeJobCountForMidSizedCrawlSource(row.crawlSourceId, jobCountsBySource)
-        : row.crawlSourceId
-          ? jobCountsBySource[row.crawlSourceId] ?? 0
-          : 0;
-    merged.push({ ...row, activeJobCount });
-  }
-
-  return merged.sort(compareItCompaniesByFame);
+      return {
+        companyName: record.companyName,
+        businessNumber: businessNumberForSeedRow(record),
+        segment: 'IT 회사' as const,
+        active: null,
+        careersUrl,
+        linked: isRegistryRowLinked(record),
+        careersDiscoveryStatus: record.careersDiscoveryStatus,
+        careersUrlCheckedAt: record.careersUrlCheckedAt,
+        activeJobCount,
+        crawlSourceId,
+      };
+    })
+    .sort(compareItCompaniesByFame);
 }
 
-/** 기존 대기업·중견 명단과 시드 dedupe (시드·catalog와 동일 규칙) */
 export function registryRowDedupeKey(name: string): string {
   return masterSeedNormalizeKey(name);
 }
