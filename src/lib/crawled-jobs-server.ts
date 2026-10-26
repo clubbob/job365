@@ -17,7 +17,7 @@ import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { decodeHtmlEntities } from '@/lib/crawler/decode-html-text';
 import { inferJobRoles } from '@/lib/crawler/map-fields';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
-import { isJobTitleStaleForListing, isLikelyJobUrl } from '@/lib/crawler/job-heuristics';
+import { isJobTitleStaleForListing } from '@/lib/crawler/job-heuristics';
 import {
   isBrowsableCrawledJob,
   isInvalidJobTitle,
@@ -31,7 +31,6 @@ import {
   emptyCompanySegmentCounts,
   JOB_BOARD_COMPANY_SEGMENTS,
   primaryCompanySegmentForJob,
-  sumCompanySegmentCounts,
   type JobBoardCompanySegment,
 } from '@/lib/job-board/company-segment';
 import {
@@ -69,9 +68,6 @@ const ADMIN_META_COLLECTION = 'adminMeta';
 const ADMIN_JOB_COUNTS_DOC_ID = 'crawledActiveJobCountsBySource';
 /** 사용자 목록·검색용 노출 가능 공고 캐시 TTL (서버리스 인스턴스별 — 길게 두어 Firestore 읽기 절감) */
 const LIST_CACHE_TTL_MS = 300_000;
-/** adminMeta에 분류 통계가 이 시간 안에 갱신됐으면 백그라운드 전체 스캔 생략 */
-const CRAWL_STATS_META_FRESH_MS = 6 * 60 * 60 * 1000;
-const CRAWL_STATS_BACKGROUND_MIN_INTERVAL_MS = 30 * 60 * 1000;
 /** 회사 분류 탭 목록 — Firestore를 배치로 읽어 해당 페이지만 채움 */
 const SEGMENT_ADMIN_QUERY_BATCH = 100;
 const SEGMENT_ADMIN_MAX_SCAN = 10_000;
@@ -124,7 +120,6 @@ let adminCrawlStatsJobCountsInflight: Promise<{
   activeJobs: number;
   activeJobsBySegment: Record<JobBoardCompanySegment, number>;
 }> | null = null;
-let lastCrawlStatsBackgroundRefreshAt = 0;
 const ADMIN_CRAWL_STATS_JOB_COUNTS_TTL_MS = 300_000;
 let adminFullListCache: { expiresAt: number; jobs: CrawledJob[] } | null = null;
 let adminFullListLoadPromise: Promise<CrawledJob[]> | null = null;
@@ -236,10 +231,9 @@ function isJobEligibleForBoardList(job: CrawledJob): boolean {
   if (job.status !== 'active' || isInvalidJobTitle(job.title)) return false;
   if (!isCrawledJobPostingOpen(job.deadline, job.title)) return false;
   if (job.showInJobBoard === false) return false;
-  // 목록 조회는 description을 생략할 수 있음(구버전·select). 제목·지원 URL이 공고 형태여야 함.
-  if (!job.description?.trim()) {
-    return typeof job.applyUrl === 'string' && job.applyUrl.trim() !== '' && isLikelyJobUrl(job.applyUrl);
-  }
+  // 수집 때 저장한 노출 가능 여부. URL만 보고 통과시키면 통계 노출보다 목록이 많아집니다.
+  if (job.showInJobBoard === true) return true;
+  if (!job.description?.trim()) return false;
   return isBrowsableCrawledJob(job);
 }
 
@@ -529,13 +523,6 @@ type AdminMetaCrawlStatsSnapshot = {
   crawlStatsComputedAt: string | null;
 };
 
-function isCrawlStatsMetaFresh(computedAt: string | null): boolean {
-  if (!computedAt) return false;
-  const t = new Date(computedAt).getTime();
-  if (Number.isNaN(t)) return false;
-  return Date.now() - t < CRAWL_STATS_META_FRESH_MS;
-}
-
 async function readAdminMetaCrawlStats(): Promise<AdminMetaCrawlStatsSnapshot | null> {
   const db = getAdminFirestore();
   if (!db) return null;
@@ -605,58 +592,35 @@ function writeAdminMetaCrawlStats(snapshot: AdminMetaCrawlStatsSnapshot): void {
     });
 }
 
-function scheduleAdminCrawlStatsJobCountsRefresh(options?: { force?: boolean }): void {
-  if (adminCrawlStatsJobCountsInflight) return;
-  if (!options?.force) {
-    const cached = adminCrawlStatsJobCountsCache;
-    if (cached && cached.expiresAt > Date.now() && !cached.provisional) {
-      return;
-    }
-    if (Date.now() - lastCrawlStatsBackgroundRefreshAt < CRAWL_STATS_BACKGROUND_MIN_INTERVAL_MS) {
-      return;
-    }
-  }
-
-  lastCrawlStatsBackgroundRefreshAt = Date.now();
-  adminCrawlStatsJobCountsInflight = loadAdminCrawlStatsJobCountsAndCache()
-    .catch((error) => {
-      console.warn('[crawled-jobs] background crawl stats job counts failed', error);
-      const empty = countStoredActiveJobsByPrimaryCompanySegmentFromList([]);
-      return {
-        storedActiveJobs: 0,
-        storedActiveJobsBySegment: empty,
-        activeJobs: 0,
-        activeJobsBySegment: empty,
-      };
-    })
-    .finally(() => {
-      adminCrawlStatsJobCountsInflight = null;
-    });
-}
-
-/** 관리자 분류 탭 건수 — adminMeta 1회 읽기만 */
+/** 관리자 분류 탭 건수 — 채용 정보 목록과 같은 집계 */
 export async function getAdminCrawlSegmentCountsForTabs(): Promise<{
   storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
   activeJobsBySegment: Record<JobBoardCompanySegment, number>;
 }> {
-  const meta = await readAdminMetaCrawlStats();
-  const empty = emptyCompanySegmentCounts();
-  if (!meta) {
+  try {
+    const counts = await getAdminCrawlStatsJobCounts();
+    return {
+      storedActiveJobsBySegment: counts.storedActiveJobsBySegment,
+      activeJobsBySegment: counts.activeJobsBySegment,
+    };
+  } catch (error) {
+    console.warn('[crawled-jobs] segment tab counts failed', error);
+    const empty = emptyCompanySegmentCounts();
     return { storedActiveJobsBySegment: empty, activeJobsBySegment: empty };
   }
-  return {
-    storedActiveJobsBySegment: meta.storedActiveJobsBySegment,
-    activeJobsBySegment: meta.activeJobsBySegment,
-  };
 }
 
-/** 관리자 대시보드 — 구직자 「채용 정보」와 같은 노출 공고 건수(adminMeta 우선, 전체 스캔 없음) */
+/** 관리자 대시보드 — 구직자 「채용 정보」와 같은 노출 공고 건수 */
 export async function getAdminActiveJobCountForStats(): Promise<number> {
-  const crawl = await readAdminMetaCrawlStats();
-  if (crawl) return crawl.activeJobs;
-  const meta = await readAdminMetaJobStats();
-  if (meta && meta.activeJobCount !== null) return meta.activeJobCount;
-  return countBrowsableCrawledJobs();
+  try {
+    const jobs = await getBrowsableCrawledJobs();
+    return jobs.length;
+  } catch (error) {
+    console.warn('[crawled-jobs] dashboard active count failed', error);
+    const crawl = await readAdminMetaCrawlStats();
+    if (crawl) return crawl.activeJobs;
+    return 0;
+  }
 }
 
 function discoveredBySourceForPersist(
@@ -1203,24 +1167,11 @@ async function attachAdminCrawledJobCounts(
 ): Promise<AdminCrawledJobsPageResult> {
   if (page !== 1 || status !== 'active') return result;
   try {
-    if (
-      adminCrawlStatsJobCountsCache &&
-      adminCrawlStatsJobCountsCache.expiresAt > Date.now()
-    ) {
-      const cached = adminCrawlStatsJobCountsCache.data;
-      return {
-        ...result,
-        counts: { storedActive: cached.storedActiveJobs, boardVisible: cached.activeJobs },
-      };
-    }
-    const meta = await readAdminMetaCrawlStats();
-    scheduleAdminCrawlStatsJobCountsRefresh();
-    if (meta) {
-      return {
-        ...result,
-        counts: { storedActive: meta.storedActiveJobs, boardVisible: meta.activeJobs },
-      };
-    }
+    const cached = await getAdminCrawlStatsJobCounts();
+    return {
+      ...result,
+      counts: { storedActive: cached.storedActiveJobs, boardVisible: cached.activeJobs },
+    };
   } catch {
     // ignore
   }
@@ -1542,33 +1493,13 @@ async function computeAdminCrawlStatsJobCounts(): Promise<{
   activeJobs: number;
   activeJobsBySegment: Record<JobBoardCompanySegment, number>;
 }> {
-  const [activeList, hiddenSources, hiddenCompanies] = await Promise.all([
-    listActiveJobsForCrawlStats(),
-    getDisplayDisabledSourceIds(),
-    getDisplayDisabledCompanyKeys(),
-  ]);
-
-  const storedActiveJobsBySegment = countStoredActiveJobsByPrimaryCompanySegmentFromList(activeList);
-
-  const hasDisplayBlocks = hiddenSources.size > 0 || hiddenCompanies.size > 0;
-  const browsableCandidates: CrawledJob[] = [];
-  for (const job of activeList) {
-    if (!isJobEligibleForBoardList(job)) continue;
-    if (hasDisplayBlocks) {
-      if (hiddenSources.has(job.sourceId)) continue;
-      const companyKey = `${job.sourceId}::${job.companyName.trim()}`;
-      if (hiddenCompanies.has(companyKey)) continue;
-    }
-    browsableCandidates.push(job);
-  }
-  const browsableList = dedupeCrawledJobListItems(browsableCandidates);
-  const activeJobsBySegment = countStoredActiveJobsByPrimaryCompanySegmentFromList(browsableList);
-
+  const browsableList = await getBrowsableCrawledJobs();
+  const activeList = await getActiveCrawledJobsCached();
   const snapshot: AdminMetaCrawlStatsSnapshot = {
     storedActiveJobs: activeList.length,
-    storedActiveJobsBySegment,
+    storedActiveJobsBySegment: countStoredActiveJobsByPrimaryCompanySegmentFromList(activeList),
     activeJobs: browsableList.length,
-    activeJobsBySegment,
+    activeJobsBySegment: countStoredActiveJobsByPrimaryCompanySegmentFromList(browsableList),
     crawlStatsComputedAt: new Date().toISOString(),
   };
   writeAdminMetaCrawlStats(snapshot);
@@ -1603,9 +1534,9 @@ async function loadAdminCrawlStatsJobCountsAndCache(): Promise<{
   return data;
 }
 
-/** 통계 요약 — 분류별 합과 합계 열이 같은 목록에서 계산되도록 한 번에 조회 */
+/** 통계 요약 — `/jobs` 노출 목록과 같은 캐시에서 수집·노출 건수를 셉니다. */
 export async function getAdminCrawlStatsJobCounts(options?: {
-  /** true면 전체 active 스캔을 기다립니다(수 분 소요 가능). 기본은 메타·집계 count만 즉시 반환합니다. */
+  /** true면 목록 캐시를 비우고 Firestore에서 다시 읽습니다. */
   waitForFullScan?: boolean;
 }): Promise<{
   storedActiveJobs: number;
@@ -1613,64 +1544,43 @@ export async function getAdminCrawlStatsJobCounts(options?: {
   activeJobs: number;
   activeJobsBySegment: Record<JobBoardCompanySegment, number>;
 }> {
+  if (options?.waitForFullScan) {
+    activeCrawledJobsCache = null;
+    activeCrawledJobsLoadPromise = null;
+    browsableJobsCache = null;
+    browsableLoadPromise = null;
+    listCache = null;
+    adminCrawlStatsJobCountsCache = null;
+  }
+
   if (
     adminCrawlStatsJobCountsCache &&
-    adminCrawlStatsJobCountsCache.expiresAt > Date.now()
+    adminCrawlStatsJobCountsCache.expiresAt > Date.now() &&
+    !adminCrawlStatsJobCountsCache.provisional
   ) {
     return adminCrawlStatsJobCountsCache.data;
   }
-  if (adminCrawlStatsJobCountsInflight && options?.waitForFullScan) {
+  if (adminCrawlStatsJobCountsInflight) {
     return adminCrawlStatsJobCountsInflight;
   }
 
-  const meta = await readAdminMetaCrawlStats();
-  if (meta && !options?.waitForFullScan) {
-    const hasSegmentBreakdown =
-      sumCompanySegmentCounts(meta.storedActiveJobsBySegment) > 0 ||
-      sumCompanySegmentCounts(meta.activeJobsBySegment) > 0;
-    const provisional = !hasSegmentBreakdown && meta.storedActiveJobs > 0;
-    cacheAdminCrawlStatsJobCounts(meta, provisional);
-    if (provisional || !isCrawlStatsMetaFresh(meta.crawlStatsComputedAt)) {
-      scheduleAdminCrawlStatsJobCountsRefresh();
-    }
-    return meta;
-  }
-
-  if (options?.waitForFullScan) {
-    if (!adminCrawlStatsJobCountsInflight) {
-      adminCrawlStatsJobCountsInflight = loadAdminCrawlStatsJobCountsAndCache()
-        .catch((error) => {
-          console.warn('[crawled-jobs] admin crawl stats job counts failed', error);
-          const empty = countStoredActiveJobsByPrimaryCompanySegmentFromList([]);
-          return {
-            storedActiveJobs: 0,
-            storedActiveJobsBySegment: empty,
-            activeJobs: 0,
-            activeJobsBySegment: empty,
-          };
-        })
-        .finally(() => {
-          adminCrawlStatsJobCountsInflight = null;
-        });
-    }
-    return adminCrawlStatsJobCountsInflight;
-  }
-
-  const jobMeta = await readAdminMetaJobStats();
-  let storedActiveJobs = jobMeta?.activeJobCount ?? 0;
-  if (storedActiveJobs <= 0 && jobMeta?.jobCountsBySource) {
-    storedActiveJobs = Object.values(jobMeta.jobCountsBySource).reduce((sum, n) => sum + n, 0);
-  }
-  const emptySegments = emptyCompanySegmentCounts();
-  const provisional = {
-    storedActiveJobs,
-    storedActiveJobsBySegment: emptySegments,
-    activeJobs: storedActiveJobs,
-    activeJobsBySegment: emptySegments,
-  };
-  cacheAdminCrawlStatsJobCounts(provisional, true);
-  scheduleAdminCrawlStatsJobCountsRefresh();
-  return provisional;
+  adminCrawlStatsJobCountsInflight = loadAdminCrawlStatsJobCountsAndCache()
+    .catch(async (error) => {
+      console.warn('[crawled-jobs] admin crawl stats job counts failed', error);
+      const meta = await readAdminMetaCrawlStats();
+      if (meta) return meta;
+      const empty = countStoredActiveJobsByPrimaryCompanySegmentFromList([]);
+      return {
+        storedActiveJobs: 0,
+        storedActiveJobsBySegment: empty,
+        activeJobs: 0,
+        activeJobsBySegment: empty,
+      };
+    })
+    .finally(() => {
+      adminCrawlStatsJobCountsInflight = null;
+    });
+  return adminCrawlStatsJobCountsInflight;
 }
 
 /** 구직자 채용 공고 목록(`/jobs`)과 동일한 모집 중 건수 */

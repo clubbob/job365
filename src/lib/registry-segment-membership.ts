@@ -7,11 +7,22 @@ import {
 } from '@/lib/semi-display-equipment/catalog';
 import { semiEquipmentSeedNormalizeKey } from '@/lib/semi-display-equipment/master-seed';
 
+/** IT 시드 표기와 중견·대기업 명단 표기가 다를 때 같은 회사로 봅니다. */
+const IT_SEED_EQUIVALENT_KEYS: Record<string, readonly string[]> = {
+  [masterSeedNormalizeKey('HL만도')]: [masterSeedNormalizeKey('에이치엘만도')],
+  [masterSeedNormalizeKey('KINX')]: [masterSeedNormalizeKey('케이아이엔엑스')],
+  [masterSeedNormalizeKey('케이아이엔엑스')]: [masterSeedNormalizeKey('KINX')],
+  [masterSeedNormalizeKey('주식회사칸트')]: [masterSeedNormalizeKey('칸트')],
+};
+
 export function itSeedRegistryDedupeKeys(): Set<string> {
   const keys = new Set<string>();
   for (const row of loadSeedCareersRegistryDbCompanies('it')) {
     const key = masterSeedNormalizeKey(row.companyName);
     if (key) keys.add(key);
+    for (const alias of IT_SEED_EQUIVALENT_KEYS[key] ?? []) {
+      if (alias) keys.add(alias);
+    }
   }
   return keys;
 }
