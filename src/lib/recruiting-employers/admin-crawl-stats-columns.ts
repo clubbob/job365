@@ -54,3 +54,15 @@ export function netAdminCrawlStatsCounts(
   }
   return out;
 }
+
+/** 수집 − 노출 = 목록에 올리지 않은 건(마감·중복·품질·노출 제한 등) */
+export function unsuitableAdminCrawlStatsCounts(
+  stored: Record<AdminCrawlStatsSegment, number>,
+  exposed: Record<AdminCrawlStatsSegment, number>,
+): Record<AdminCrawlStatsSegment, number> {
+  const out = emptyCompanySegmentCounts();
+  for (const key of JOB_BOARD_COMPANY_SEGMENTS) {
+    out[key] = Math.max(0, (stored[key] ?? 0) - (exposed[key] ?? 0));
+  }
+  return out;
+}

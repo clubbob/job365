@@ -34,7 +34,7 @@ export default function AdminCrawledJobsBySegmentPanel({
     void (async () => {
       try {
         const json = await adminJson<{ ok?: boolean; data?: CrawlStatsSegments }>(
-          '/api/admin/crawl-stats-summary',
+          '/api/admin/crawl-segment-counts',
         );
         if (!json.ok || !json.data) return;
         const boardCounts = mergeJobBoardSegmentCounts(
@@ -81,7 +81,6 @@ export default function AdminCrawledJobsBySegmentPanel({
       <div role="tabpanel">
         <Suspense fallback={<p className="text-sm text-muted">목록을 불러오는 중…</p>}>
           <AdminCrawledJobsClient
-            key={`${listMode}-${segment}`}
             listMode={listMode}
             companySegment={companySegment}
             embeddedInSegmentPanel

@@ -56,6 +56,8 @@ const IT_COMPUTING_BRAND_SUBSTRINGS = [
   'sk씨앤씨',
   '포스코dx',
   '현대오토에버',
+  '현대hds',
+  '현대에이치디에스',
   '롯데정보통신',
   '신세계i&c',
   'cj올리브네트웍스',

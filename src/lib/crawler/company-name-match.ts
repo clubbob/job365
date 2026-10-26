@@ -45,7 +45,21 @@ export function companyLabelsMatch(a: string, b: string): boolean {
 }
 
 const JOB_TITLE_NOISE_WORDS =
-  /^(?:신입|경력|공채|모집|채용|하반기|상반기|품질보증|개발|운영|사원|직원)$/u;
+  /^(?:신입|경력|경력무관|학력무관|성별무관|나이유관|공채|모집|채용|하반기|상반기|품질보증|개발|운영|사원|직원|정규직|계약직|인턴|인턴십|파견직|기간제|생산직|사무직|기술직|연구직|영업직|관리직|운전직|화학소재|연구개발|생산관리|품질관리|영업관리|경영지원|고객지원|기술영업|해외영업|국내영업)$/u;
+
+/** 제목에서 떼어 낸 조각이 회사명으로 믿을 만한지(채용 조건·직무명 제외) */
+const TITLE_COMPANY_HINT =
+  /(?:주식회사|\(\s*주\s*\)|㈜|그룹|홀딩스|코리아|건설|공업|산업|제약|전자|전기|중공업|물산|카드|페이|테크놀로지|테크|시스템즈|시스템|솔루션즈|솔루션|캐피탈|은행|증권|보험|병원|대학교|엔지니어링|파트너스|네트웍스|네트워크|로지스틱스|바이오|푸드)$/u;
+
+export function titleFragmentLooksLikeCompanyName(label: string): boolean {
+  const trimmed = label.trim();
+  if (!trimmed || trimmed.length < 2) return false;
+  if (JOB_TITLE_NOISE_WORDS.test(trimmed)) return false;
+  if (/무관$/u.test(trimmed)) return false;
+  if (/\(\s*주\s*\)|주식회사|㈜/u.test(trimmed)) return true;
+  if (TITLE_COMPANY_HINT.test(trimmed.replace(/\s+/g, ''))) return true;
+  return false;
+}
 
 /** 제목 앞부분이 직무·직급으로 잘못 잘리는 영문 단어 */
 const ENGLISH_RECRUITING_EMPLOYER_NOISE = new Set([
@@ -193,7 +207,7 @@ export function extractEmployerLabelFromCrawledTitle(title: string): string | nu
   }
 
   const end = decoded.match(/(?:\)\)|\)|\]|\s)([가-힣][가-힣A-Za-z0-9·&.\-]{3,36})\s*$/u);
-  if (end?.[1] && !isJobTitleNoiseWord(end[1])) {
+  if (end?.[1] && titleFragmentLooksLikeCompanyName(end[1])) {
     return end[1].trim();
   }
 
@@ -235,6 +249,7 @@ export function isPlausibleRecruitingEmployerLabel(employer: string): boolean {
   const lower = compact.toLowerCase();
 
   if (JOB_TITLE_NOISE_WORDS.test(compact)) return false;
+  if (/무관$/u.test(compact)) return false;
 
   const tokens = lower.split(/[\s/|,·]+/).filter(Boolean);
   if (tokens.length === 0) return false;

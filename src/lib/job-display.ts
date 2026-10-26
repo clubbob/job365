@@ -7,6 +7,7 @@ import {
   normalizeCorpTitlePrefix,
   stripCrawledListTitleNoise,
   stripEmployerFromCrawledTitle,
+  titleFragmentLooksLikeCompanyName,
 } from '@/lib/crawler/company-name-match';
 import { extractHeadcountFromJobContent } from '@/lib/crawler/parse-headcount';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
@@ -308,23 +309,28 @@ export function splitCrawledJobHeading(
 }
 
 const WEAK_LEADING_EMPLOYER =
-  /^(?:남음|\d+일|\d{4}|신입|경력|공채|모집|채용|하반기|상반기)$/u;
+  /^(?:남음|\d+일|\d{4}|신입|경력|경력무관|학력무관|공채|모집|채용|하반기|상반기|화학소재)$/u;
 
 function isWeakLeadingEmployer(employer: string): boolean {
   const trimmed = employer.trim();
   if (!trimmed || trimmed.length < 2) return true;
   if (WEAK_LEADING_EMPLOYER.test(trimmed)) return true;
-  return !isPlausibleRecruitingEmployerLabel(trimmed);
+  if (/무관$/u.test(trimmed)) return true;
+  if (!isPlausibleRecruitingEmployerLabel(trimmed)) return true;
+  if (!titleFragmentLooksLikeCompanyName(trimmed)) return true;
+  return false;
 }
 
-/** 잘못 추출된 직무·조직명 대신 수집 명단 회사를 씁니다. */
+/** 제목에서 잘못 떼어 낸 직무·조건 대신 수집된 채용 회사명을 씁니다. */
 function resolveRecruitingEmployer(candidate: string, sourceCompany: string): string {
   const preferred = candidate.trim();
-  if (preferred && isPlausibleRecruitingEmployerLabel(preferred)) return preferred;
-
   const source = sourceCompany.trim();
+  if (preferred && isPlausibleRecruitingEmployerLabel(preferred)) {
+    if (titleFragmentLooksLikeCompanyName(preferred)) return preferred;
+    if (source && companyLabelsMatch(preferred, source)) return preferred;
+  }
   if (source && isPlausibleRecruitingEmployerLabel(source)) return source;
-
+  if (source) return source;
   return '';
 }
 

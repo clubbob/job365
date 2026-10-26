@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { ADMIN_RECRUITING_COMPANIES_PAGE_SIZE } from '@/lib/admin-constants';
 import { humanizeAdminFetchError } from '@/lib/admin-ui';
+import { normalizeCompanyLabel } from '@/lib/crawler/company-name-match';
 import {
   AdminCompanyRegistrySearchAndFilters,
   AdminCompanyRegistryTableHead,
@@ -70,7 +71,11 @@ export default function RecruitingEmployerBrowser({
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [offset, setOffset] = useState(0);
-  const [data, setData] = useState<RegistryResponse | null>(null);
+  const [allItems, setAllItems] = useState<RegistryRow[]>([]);
+  const [listMeta, setListMeta] = useState<{
+    registryCount: number;
+    withActiveJobsCount: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const onListMetaRef = useRef(onListMeta);
@@ -94,15 +99,16 @@ export default function RecruitingEmployerBrowser({
     const requestId = ++fetchRequestIdRef.current;
     setLoading(true);
     setError(null);
+    setAllItems([]);
+    setListMeta(null);
 
     void (async () => {
       try {
         const params = new URLSearchParams({
           segment,
-          offset: String(offset),
-          limit: String(PAGE_SIZE),
+          offset: '0',
+          limit: '20000',
         });
-        if (debouncedQuery.trim()) params.set('q', debouncedQuery.trim());
 
         const res = await fetch(`/api/admin/recruiting-companies?${params}`, {
           signal: controller.signal,
@@ -116,7 +122,11 @@ export default function RecruitingEmployerBrowser({
           throw new Error('수집 채용 회사 목록을 불러오지 못했습니다.');
         }
 
-        setData(json.data);
+        setAllItems(json.data.items);
+        setListMeta({
+          registryCount: json.data.registryCount,
+          withActiveJobsCount: json.data.withActiveJobsCount,
+        });
         onListMetaRef.current?.({
           segment,
           registryCount: json.data.registryCount,
@@ -129,18 +139,25 @@ export default function RecruitingEmployerBrowser({
             err instanceof Error ? err.message : '수집 채용 회사 목록을 불러오지 못했습니다.',
           ),
         );
-        setData(null);
+        setAllItems([]);
+        setListMeta(null);
       } finally {
         if (fetchRequestIdRef.current === requestId) setLoading(false);
       }
     })();
 
     return () => controller.abort();
-  }, [debouncedQuery, offset, segment]);
+  }, [segment]);
 
-  const resultTotal = data?.total ?? 0;
-  const initialLoading = loading && data === null;
-  const refreshing = loading && data !== null;
+  const filteredItems = useMemo(() => {
+    const needle = normalizeCompanyLabel(debouncedQuery);
+    if (!needle) return allItems;
+    return allItems.filter((row) => normalizeCompanyLabel(row.companyName).includes(needle));
+  }, [allItems, debouncedQuery]);
+
+  const resultTotal = filteredItems.length;
+  const pageItems = filteredItems.slice(offset, offset + PAGE_SIZE);
+  const initialLoading = loading && allItems.length === 0;
 
   return (
     <Card
@@ -154,10 +171,7 @@ export default function RecruitingEmployerBrowser({
       />
 
       <AdminListResultMeta>
-        {data
-          ? formatCompanyRegistryResultMeta(resultTotal, debouncedQuery)
-          : formatCompanyRegistryResultMeta(0, debouncedQuery)}
-        {refreshing ? ' · 갱신 중' : ''}
+        {formatCompanyRegistryResultMeta(listMeta ? resultTotal : 0, debouncedQuery)}
       </AdminListResultMeta>
 
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
@@ -165,16 +179,16 @@ export default function RecruitingEmployerBrowser({
         <p className="text-sm text-muted">불러오는 중…</p>
       ) : null}
 
-      {data && data.items.length > 0 ? (
+      {pageItems.length > 0 ? (
         <>
           <div className={adminRegistryTableWrapClassName}>
             <table className={adminRegistryTableClassName}>
               <AdminCompanyRegistryTableHead />
               <tbody className="divide-y divide-border">
-                {data.items.map((row, index) => (
+                {pageItems.map((row, index) => (
                   <tr key={`${row.companyName}-${row.businessNumber}`} className="text-foreground">
                     <td className={adminListRowNumberCellClassName}>
-                      {adminRegistryRowNumber(data.offset, index).toLocaleString('ko-KR')}
+                      {adminRegistryRowNumber(offset, index).toLocaleString('ko-KR')}
                     </td>
                     <td className="px-3 py-2 font-medium">{row.companyName}</td>
                     <td className="px-3 py-2 text-muted">{row.businessNumber}</td>
@@ -191,18 +205,20 @@ export default function RecruitingEmployerBrowser({
           </div>
 
           <AdminListPagination
-            page={Math.floor(data.offset / data.limit) + 1}
-            totalPages={Math.max(1, Math.ceil(data.total / data.limit))}
-            total={data.total}
-            pageSize={data.limit}
-            loading={refreshing}
+            page={Math.floor(offset / PAGE_SIZE) + 1}
+            totalPages={Math.max(1, Math.ceil(resultTotal / PAGE_SIZE))}
+            total={resultTotal}
+            pageSize={PAGE_SIZE}
             ariaLabel="수집 채용 회사 페이지"
             onPageChange={(nextPage) => setOffset((nextPage - 1) * PAGE_SIZE)}
           />
         </>
       ) : null}
 
-      {!loading && data && data.items.length === 0 ? (
+      {!loading && allItems.length > 0 && pageItems.length === 0 ? (
+        <p className="text-sm text-muted">{COMPANY_REGISTRY_EMPTY_LIST_MESSAGE}</p>
+      ) : null}
+      {!loading && allItems.length === 0 ? (
         <p className="text-sm text-muted">{COMPANY_REGISTRY_EMPTY_LIST_MESSAGE}</p>
       ) : null}
     </Card>

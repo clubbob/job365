@@ -2,17 +2,18 @@ import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/admin-auth';
 import { getAdminRecruitingListSourceStats } from '@/lib/crawled-jobs-server';
 import {
-  buildAdminRecruitingCompanyListPage,
   computeRecruitingCompanyActiveCounts,
   countRecruitingCompaniesWithActiveJobs,
+  getAdminRecruitingCompanyRows,
   getRecruitingSegmentRegistryCounts,
+  paginateAdminRecruitingCompanyRows,
   recruitingSegmentRegistryCount,
 } from '@/lib/recruiting-employers/admin-list';
 import { loadMidSizedRegistryDbCompanies } from '@/lib/mid-sized-companies/registry-db';
 import type { RecruitingEmployerAdminSegment } from '@/lib/recruiting-employers/segments';
 
 const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 100;
+const MAX_LIMIT = 20_000;
 
 export const maxDuration = 120;
 
@@ -91,7 +92,8 @@ export async function GET(request: Request) {
       });
     }
 
-    const pageResult = buildAdminRecruitingCompanyListPage(segment!, stats, {
+    const rows = await getAdminRecruitingCompanyRows(segment!, stats);
+    const pageResult = paginateAdminRecruitingCompanyRows(rows, {
       offset,
       limit,
       q,

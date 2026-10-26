@@ -82,6 +82,8 @@ export default function AdminCrawledJobsClient({
   const [firebaseAdminMessage, setFirebaseAdminMessage] = useState('');
   const [query, setQuery] = useState(initialList.q);
   const [debouncedQuery, setDebouncedQuery] = useState(initialList.q);
+  const queryRef = useRef(query);
+  queryRef.current = query;
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialList.status);
   const [boardFilter, setBoardFilter] = useState<BoardFilter>(initialList.board);
   const [page, setPage] = useState(initialList.page);
@@ -93,6 +95,12 @@ export default function AdminCrawledJobsClient({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const searchQueryReadyRef = useRef(false);
   const skipDebouncedPageResetRef = useRef(false);
+  const pageCacheRef = useRef(
+    new Map<
+      string,
+      { jobs: AdminCrawledJob[]; total: number; totalPages: number; counts: { storedActive: number; boardVisible: number } | null }
+    >(),
+  );
 
   const pushListUrl = useCallback(
     (state: AdminCrawledJobsListUrlState) => {
@@ -106,7 +114,22 @@ export default function AdminCrawledJobsClient({
     [browsableOnly, pathname, router, searchParams],
   );
 
+  function syncSearchToUrl(nextQuery: string) {
+    setDebouncedQuery(nextQuery);
+    setPage(1);
+    pushListUrl({
+      page: 1,
+      q: nextQuery,
+      status: statusFilter,
+      board: boardFilter,
+    });
+  }
+
   useEffect(() => {
+    if (!query.trim()) {
+      if (debouncedQuery !== '') syncSearchToUrl('');
+      return;
+    }
     const timer = window.setTimeout(() => {
       setDebouncedQuery(query);
       if (skipDebouncedPageResetRef.current) {
@@ -126,17 +149,29 @@ export default function AdminCrawledJobsClient({
       });
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [query, statusFilter, boardFilter, pushListUrl]);
+  }, [query, statusFilter, boardFilter, pushListUrl, debouncedQuery]);
 
   useEffect(() => {
     const parsed = parseAdminCrawledJobsListSearchParams(searchParams, browsableOnly);
     skipDebouncedPageResetRef.current = true;
     setPage(parsed.page);
-    setQuery(parsed.q);
-    setDebouncedQuery(parsed.q);
     setStatusFilter(parsed.status);
     setBoardFilter(parsed.board);
+    if (queryRef.current.trim() === parsed.q.trim()) {
+      setDebouncedQuery(parsed.q);
+      return;
+    }
+    if (!queryRef.current.trim() && parsed.q.trim()) {
+      return;
+    }
+    setQuery(parsed.q);
+    setDebouncedQuery(parsed.q);
   }, [searchParams, browsableOnly]);
+
+  useEffect(() => {
+    setPage(1);
+    pageCacheRef.current.clear();
+  }, [companySegment]);
 
   const listUrlState = useMemo(
     () => ({
@@ -185,6 +220,24 @@ export default function AdminCrawledJobsClient({
   }
 
   useEffect(() => {
+    const cacheKey = [
+      companySegment ?? '',
+      statusFilter,
+      boardFilter,
+      debouncedQuery.trim(),
+      String(page),
+    ].join('|');
+    const cached = pageCacheRef.current.get(cacheKey);
+    if (cached) {
+      setJobs(cached.jobs);
+      setTotal(cached.total);
+      setTotalPages(cached.totalPages);
+      setJobCounts(cached.counts);
+      setLoading(false);
+      setError('');
+      return;
+    }
+
     const controller = new AbortController();
     setLoading(true);
     setError('');
@@ -225,6 +278,12 @@ export default function AdminCrawledJobsClient({
         setTotalPages(json.data.totalPages);
         setJobCounts(json.data.counts ?? null);
         setFirebaseAdminMessage(json.data.firebaseReady === false ? json.data.firebaseAdminMessage ?? '' : '');
+        pageCacheRef.current.set(cacheKey, {
+          jobs: json.data.jobs,
+          total: json.data.total,
+          totalPages: json.data.totalPages,
+          counts: json.data.counts ?? null,
+        });
       } catch (err) {
         if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : '수집 공고를 불러오지 못했습니다.');
@@ -252,6 +311,8 @@ export default function AdminCrawledJobsClient({
       if (!res.ok || !json.ok) {
         throw new Error(json.error?.message ?? '마감 처리하지 못했습니다.');
       }
+
+      pageCacheRef.current.clear();
 
       if (statusFilter === 'active') {
         setJobs((current) => current.filter((item) => item.id !== job.id));

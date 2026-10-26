@@ -137,6 +137,7 @@ const ZONE_4_ENTERPRISE_SW: readonly string[] = [
   'LG CNS',
   'SK C&C',
   '현대오토에버',
+  '현대HDS',
   '포스코DX',
   '한화시스템',
   'CJ올리브네트웍스',

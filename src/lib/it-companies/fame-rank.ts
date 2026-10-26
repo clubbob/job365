@@ -31,6 +31,8 @@ const IT_COMPANY_FAME_NAME_TOKENS = [
   'lgcns',
   '엘지cns',
   '현대오토에버',
+  '현대hds',
+  '현대에이치디에스',
   '포스코dx',
   '롯데정보통신',
   '신세계아이앤씨',

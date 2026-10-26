@@ -3,7 +3,7 @@
   "updatedAt": "2026-10-25T10:57:32.634Z",
   "segment": "it",
   "sourceNote": "IT 시드 전용 명단 DB(사업자번호·채용 URL은 crawl-targets·보정·탐색 결과)",
-  "uniqueCompanyCount": 343,
+  "uniqueCompanyCount": 344,
   "careersUrlLinkedCount": 340,
   "companies": [
     {"companyName":"구글코리아","businessNumber":null,"crawlSourceId":"it-seed-7c4efcd7105a","careersUrl":"http://www.careerbrdg.com/","careersAdapter":"generic","greenhouseBoard":null,"careersDiscoveryStatus":"found","careersUrlCheckedAt":"2026-10-25T10:54:26.798Z"},
@@ -128,6 +128,7 @@
     {"companyName":"LG CNS","businessNumber":null,"crawlSourceId":"it-seed-d497894fd009","careersUrl":"https://careers.lg.com/apply?c=CNS\\n[2]","careersAdapter":"generic","greenhouseBoard":null,"careersDiscoveryStatus":"found","careersUrlCheckedAt":"2026-10-25T10:55:20.542Z"},
     {"companyName":"SK C&C","businessNumber":null,"crawlSourceId":"it-seed-b1683eaa6a7b","careersUrl":"https://www.skcareers.com/Recruit/Detail/R240933\\n\\nAI브리핑에서","careersAdapter":"generic","greenhouseBoard":null,"careersDiscoveryStatus":"found","careersUrlCheckedAt":"2026-10-25T10:55:22.468Z"},
     {"companyName":"현대오토에버","businessNumber":null,"crawlSourceId":"it-seed-8dfabe821f37","careersUrl":"https://opening-attachments.greetinghr.com/2025-02-17/5a96fcdc-be9e-4b48-8d54-cbebd111dde0/c49be4021af2c844ff0f017ad00627af.webp","careersAdapter":"generic","greenhouseBoard":null,"careersDiscoveryStatus":"found","careersUrlCheckedAt":"2026-10-25T10:55:19.295Z"},
+    {"companyName":"현대HDS","businessNumber":null,"crawlSourceId":"it-seed-cd2918314fb8","careersUrl":null,"careersAdapter":"generic","greenhouseBoard":null,"careersDiscoveryStatus":"pending","careersUrlCheckedAt":null},
     {"companyName":"포스코DX","businessNumber":null,"crawlSourceId":"it-seed-efd4bdc0c9ae","careersUrl":"https://www.jobkorea.co.kr/Recruit/GI_Read/48959591","careersAdapter":"generic","greenhouseBoard":null,"careersDiscoveryStatus":"found","careersUrlCheckedAt":"2026-10-25T10:55:28.369Z"},
     {"companyName":"한화시스템","businessNumber":null,"crawlSourceId":"it-seed-9289c695a2dc","careersUrl":"https://www.hanwhasystems.com/kr/recruit/recruit3.do","careersAdapter":"generic","greenhouseBoard":null,"careersDiscoveryStatus":"found","careersUrlCheckedAt":"2026-10-25T10:55:20.220Z"},
     {"companyName":"CJ올리브네트웍스","businessNumber":null,"crawlSourceId":"it-seed-965a092411c4","careersUrl":"https://www.cj.com/careers","careersAdapter":"generic","greenhouseBoard":null,"careersDiscoveryStatus":"found","careersUrlCheckedAt":"2026-10-25T10:55:13.603Z"},

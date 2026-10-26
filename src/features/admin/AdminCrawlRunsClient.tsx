@@ -22,6 +22,7 @@ import {
   LAST_ADMIN_CRAWL_STATS_SEGMENT,
   netAdminCrawlStatsCounts,
   registryToAdminCrawlStatsCounts,
+  unsuitableAdminCrawlStatsCounts,
   sumAdminCrawlStatsSegmentCounts,
   type AdminCrawlStatsSegment,
 } from '@/lib/recruiting-employers/admin-crawl-stats-columns';
@@ -124,6 +125,8 @@ type StatsRow = {
   signed?: boolean;
   /** 마감 등 차감 의미 — 양수를 −504건 형태로 표시 */
   negative?: boolean;
+  /** 구직자에게 보이는 노출 건수 — 표에서 한 줄만 구분 */
+  highlight?: boolean;
 };
 
 function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
@@ -141,6 +144,7 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
   const activeValues = jobBoardToAdminCrawlStatsCounts(
     summary.activeJobsBySegment ?? emptyCompanySegmentCounts(),
   );
+  const unsuitableValues = unsuitableAdminCrawlStatsCounts(storedValues, activeValues);
 
   const rows: StatsRow[] = [
     {
@@ -159,10 +163,19 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
     },
     {
       group: '지금',
+      label: '부적합 채용 공고',
+      total: sumAdminCrawlStatsSegmentCounts(unsuitableValues),
+      values: unsuitableValues,
+      unit: '건',
+      negative: true,
+    },
+    {
+      group: '지금',
       label: '노출 채용 공고',
       total: sumAdminCrawlStatsSegmentCounts(activeValues),
       values: activeValues,
       unit: '건',
+      highlight: true,
     },
   ];
 
@@ -361,7 +374,7 @@ export default function AdminCrawlRunsClient() {
       {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
       {runMessage ? <FormFeedback variant="success">{runMessage}</FormFeedback> : null}
 
-      <Card description={loading ? '불러오는 중…' : lastRunLabel}>
+      <Card description={loading && !summary ? '불러오는 중…' : lastRunLabel}>
         {loading && !summary ? <p className="text-sm text-muted">불러오는 중…</p> : null}
         {!loading &&
         summary &&
@@ -400,8 +413,9 @@ export default function AdminCrawlRunsClient() {
                 {withGroupRowSpans(buildStatsRows(summary)).map((row) => {
                   const total =
                     row.total === null || row.values === null ? null : row.total;
+                  const highlightClass = row.highlight ? 'font-semibold text-primary' : '';
                   return (
-                    <tr key={`${row.group}-${row.label}`}>
+                    <tr key={`${row.group}-${row.label}`} className={highlightClass}>
                       {row.showGroupCell ? (
                         <td
                           rowSpan={row.groupRowSpan}
@@ -410,9 +424,9 @@ export default function AdminCrawlRunsClient() {
                           {row.group}
                         </td>
                       ) : null}
-                      <td className={STATS_LABEL_CELL}>{row.label}</td>
+                      <td className={cn(STATS_LABEL_CELL, highlightClass)}>{row.label}</td>
                       {ADMIN_CRAWL_STATS_SEGMENTS.map((segment) => (
-                        <td key={segment} className={statsSegmentCellClass(segment)}>
+                        <td key={segment} className={cn(statsSegmentCellClass(segment), highlightClass)}>
                           {row.values === null
                             ? '—'
                             : formatAmount(row.values[segment], row.unit, {
@@ -421,7 +435,7 @@ export default function AdminCrawlRunsClient() {
                               })}
                         </td>
                       ))}
-                      <td className={STATS_TOTAL_CELL}>
+                      <td className={cn(STATS_TOTAL_CELL, highlightClass)}>
                         {total === null
                           ? '—'
                           : formatAmount(total, row.unit, {

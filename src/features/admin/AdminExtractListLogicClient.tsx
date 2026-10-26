@@ -26,8 +26,9 @@ export default function AdminExtractListLogicClient() {
         <ul className={logicListClassName}>
           <li>
             <span className="font-medium">통계 요약</span> — 회사 분류({companySegmentList})별로 「수집 채용 회사」
-            명단 곳수, 지금 DB의 수집·노출 공고 건수, 마지막 수집의 추가된 공고·마감 처리 공고·순 증감 공고를
-            봅니다. 공고 행은 분류마다 한 번만 세며, 네 분류 합이 「합계」 열과 같습니다.
+            명단 곳수, 지금 DB의 수집·부적합·노출 공고 건수, 마지막 수집의 추가된 공고·마감 처리 공고·순 증감 공고를
+            봅니다. 부적합은 수집에서 노출을 뺀 값(마감으로 보이는 건, 중복, 품질·노출 제한 등)이며 −로 표시합니다.
+            공고 행은 분류마다 한 번만 세며, 네 분류 합이 「합계」 열과 같습니다.
           </li>
           <li>
             <span className="font-medium">수집 채용 회사</span> — 네 분류 탭별 등록 명단, 채용 URL 연결(사업자번호·전용
@@ -36,8 +37,8 @@ export default function AdminExtractListLogicClient() {
           </li>
           <li>
             <span className="font-medium">수집 채용 공고</span> — Firestore에 저장된 모집 중(active) 공고 전체입니다.
-            노출 필터·중복 제거 전 건수라 「노출 채용 공고」보다 많을 수 있습니다. 분류 탭은 공고당 하나의 회사
-            분류로 걸러 봅니다.
+            노출 필터·중복 제거 전 건수라 「노출 채용 공고」보다 많을 수 있습니다. 그 차이는 통계 요약의 「부적합
+            채용 공고」입니다. 분류 탭은 공고당 하나의 회사 분류로 걸러 봅니다.
           </li>
           <li>
             <span className="font-medium">노출 채용 공고</span> — 아래 노출 로직과 목록 중복 제거를 거친 공고입니다.

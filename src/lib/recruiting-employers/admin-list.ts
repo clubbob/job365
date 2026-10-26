@@ -345,6 +345,13 @@ export type AdminRecruitingListPageResult = {
   withActiveJobsCount: number;
 };
 
+export function paginateAdminRecruitingCompanyRows(
+  rows: AdminRecruitingCompanyRow[],
+  query: AdminRecruitingListPageQuery,
+): AdminRecruitingListPageResult {
+  return paginateAdminRows(rows, query);
+}
+
 function paginateAdminRows(
   rows: AdminRecruitingCompanyRow[],
   query: AdminRecruitingListPageQuery,
