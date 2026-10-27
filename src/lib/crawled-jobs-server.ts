@@ -994,7 +994,7 @@ function toAdminCrawledJobRow(job: CrawledJob, hidden: Set<string>): AdminCrawle
 }
 
 function matchesAdminCrawledJobQuery(job: CrawledJob, q: string): boolean {
-  return matchesCrawledJobKeyword(job, q, { includeCollectSource: true });
+  return matchesCrawledJobKeyword(job, q, { companyOnly: true });
 }
 
 function paginateAdminCrawledJobs(

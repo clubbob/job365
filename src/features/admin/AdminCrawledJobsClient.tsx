@@ -16,7 +16,11 @@ import {
   type AdminCrawledJobsListUrlState,
 } from '@/lib/admin-crawled-jobs-list-url';
 import type { JobBoardCompanySegment } from '@/lib/job-board/company-segment';
-import { adminListRowNumberCellClassName, adminPagedRowNumber } from '@/features/admin/AdminRegistryListChrome';
+import {
+  adminListRowNumberCellClassName,
+  adminPagedRowNumber,
+  COMPANY_REGISTRY_SEARCH_PLACEHOLDER,
+} from '@/features/admin/AdminRegistryListChrome';
 import { cn } from '@/lib/utils';
 import type { CrawledJobListItem, CrawledJobStatus } from '@/types/crawled-job';
 
@@ -84,8 +88,8 @@ export default function AdminCrawledJobsClient({
   const [debouncedQuery, setDebouncedQuery] = useState(initialList.q);
   const queryRef = useRef(query);
   queryRef.current = query;
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialList.status);
-  const [boardFilter, setBoardFilter] = useState<BoardFilter>(initialList.board);
+  const statusFilter: StatusFilter = 'active';
+  const boardFilter: BoardFilter = browsableOnly ? 'on_board' : 'all';
   const [page, setPage] = useState(initialList.page);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -155,8 +159,6 @@ export default function AdminCrawledJobsClient({
     const parsed = parseAdminCrawledJobsListSearchParams(searchParams, browsableOnly);
     skipDebouncedPageResetRef.current = true;
     setPage(parsed.page);
-    setStatusFilter(parsed.status);
-    setBoardFilter(parsed.board);
     if (queryRef.current.trim() === parsed.q.trim()) {
       setDebouncedQuery(parsed.q);
       return;
@@ -194,28 +196,6 @@ export default function AdminCrawledJobsClient({
       q: debouncedQuery,
       status: statusFilter,
       board: boardFilter,
-    });
-  }
-
-  function changeStatusFilter(next: StatusFilter) {
-    setStatusFilter(next);
-    setPage(1);
-    pushListUrl({
-      page: 1,
-      q: debouncedQuery,
-      status: next,
-      board: boardFilter,
-    });
-  }
-
-  function changeBoardFilter(next: BoardFilter) {
-    setBoardFilter(next);
-    setPage(1);
-    pushListUrl({
-      page: 1,
-      q: debouncedQuery,
-      status: statusFilter,
-      board: next,
     });
   }
 
@@ -333,13 +313,7 @@ export default function AdminCrawledJobsClient({
     total === 0 && !debouncedQuery.trim()
       ? browsableOnly
         ? '노출 채용 공고가 없습니다.'
-        : boardFilter === 'on_board'
-          ? '채용 정보에 노출되는 수집 공고가 없습니다.'
-          : boardFilter === 'off_board'
-            ? '노출 제외된 수집 공고가 없습니다.'
-            : statusFilter === 'active'
-              ? '모집 중인 수집 채용 공고가 없습니다.'
-              : '수집된 채용 공고가 없습니다.'
+        : '모집 중인 수집 채용 공고가 없습니다.'
       : '검색 결과가 없습니다.';
 
   const isInitialLoad = loading && jobs.length === 0;
@@ -347,48 +321,18 @@ export default function AdminCrawledJobsClient({
 
   const listCard = (
       <Card>
-        <div className="mb-4 flex flex-wrap gap-3">
-          <div className="min-w-[12rem] flex-1">
-            <label className="sr-only" htmlFor="crawled-job-search">수집 채용 공고 검색</label>
-            <input
-              id="crawled-job-search"
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="공고 제목, 회사, 직무, 지역, 수집 소스 검색"
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
-            />
-          </div>
-          {!browsableOnly ? (
-            <div>
-              <label className="sr-only" htmlFor="crawled-job-status">상태</label>
-              <select
-                id="crawled-job-status"
-                value={statusFilter}
-                onChange={(event) => changeStatusFilter(event.target.value as StatusFilter)}
-                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
-              >
-                <option value="active">모집 중</option>
-                <option value="closed">마감</option>
-                <option value="all">전체 상태</option>
-              </select>
-            </div>
-          ) : null}
-          {!browsableOnly ? (
-            <div>
-              <label className="sr-only" htmlFor="crawled-job-board">노출</label>
-              <select
-                id="crawled-job-board"
-                value={boardFilter}
-                onChange={(event) => changeBoardFilter(event.target.value as BoardFilter)}
-                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
-              >
-                <option value="all">전체 수집</option>
-                <option value="on_board">채용 정보 노출</option>
-                <option value="off_board">노출 제외</option>
-              </select>
-            </div>
-          ) : null}
+        <div className="mb-4">
+          <label className="sr-only" htmlFor="crawled-job-search">
+            {COMPANY_REGISTRY_SEARCH_PLACEHOLDER}
+          </label>
+          <input
+            id="crawled-job-search"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={COMPANY_REGISTRY_SEARCH_PLACEHOLDER}
+            className="min-w-0 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
+          />
         </div>
 
         {!embeddedInSegmentPanel && browsableOnly && jobCounts ? (
@@ -399,18 +343,16 @@ export default function AdminCrawledJobsClient({
               : ''}
           </p>
         ) : null}
-        {!embeddedInSegmentPanel && !browsableOnly && statusFilter === 'active' && jobCounts ? (
+        {!embeddedInSegmentPanel && !browsableOnly && jobCounts ? (
           <p className="mb-2 text-xs text-muted">
             수집 채용 공고 {jobCounts.storedActive.toLocaleString('ko-KR')}건 · 노출 채용 공고{' '}
             {jobCounts.boardVisible.toLocaleString('ko-KR')}건
           </p>
         ) : null}
 
-        {total > 0 || debouncedQuery.trim() || boardFilter !== 'all' ? (
+        {total > 0 || debouncedQuery.trim() ? (
           <p className="mb-3 text-xs text-subtle">
             {total.toLocaleString('ko-KR')}건 · {page}/{totalPages}페이지
-            {boardFilter === 'on_board' ? ' · 채용 정보 노출' : ''}
-            {boardFilter === 'off_board' ? ' · 노출 제외' : ''}
             {debouncedQuery.trim() ? ' · 검색 결과' : ''}
             {isRefreshing ? ' · 불러오는 중…' : ''}
           </p>
@@ -622,7 +564,7 @@ export default function AdminCrawledJobsClient({
         description={
           browsableOnly
             ? '구직자 채용 정보(/jobs)와 같은 노출·마감·중복 제거 기준 목록입니다.'
-            : 'DB 모집 중 수집 공고입니다. 노출 여부는 필터로 구분할 수 있습니다.'
+            : 'DB 모집 중 수집 공고입니다.'
         }
         homeHref="/admin"
         homeLabel="대시보드"

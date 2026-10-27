@@ -11,7 +11,6 @@ import {
   AdminListPagination,
   AdminListResultMeta,
   COMPANY_REGISTRY_EMPTY_LIST_MESSAGE,
-  COMPANY_REGISTRY_LIST_CARD_DESCRIPTION,
   RegistryCareersUrlLink,
   adminListRowNumberCellClassName,
   adminRegistryBusinessNumberCellClassName,
@@ -53,13 +52,6 @@ type RegistryResponse = {
 };
 
 const PAGE_SIZE = ADMIN_RECRUITING_COMPANIES_PAGE_SIZE;
-
-const SEGMENT_LIST_DESCRIPTION: Record<Segment, string> = {
-  enterprise: `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 공정거래위원회 공시 집단 명단을 공시 순위로 보여 줍니다.`,
-  'mid-sized': `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 중견기업 명단을 유명도 순으로 보여 줍니다.`,
-  it: `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} IT 회사 명단을 유명도·모집 공고 순으로 보여 줍니다.`,
-  'semi-equipment': `${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 반도체·디스플레이 장비사 명단을 유명도·모집 공고 순으로 보여 줍니다.`,
-};
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError';
@@ -164,10 +156,7 @@ export default function RecruitingEmployerBrowser({
   const initialLoading = loading && allItems.length === 0;
 
   return (
-    <Card
-      title="수집 채용 회사 목록"
-      description={SEGMENT_LIST_DESCRIPTION[segment]}
-    >
+    <Card>
       <AdminCompanyRegistrySearchAndFilters
         searchId={`recruiting-employer-search-${segment}`}
         query={query}

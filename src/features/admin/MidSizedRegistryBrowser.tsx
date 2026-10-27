@@ -10,7 +10,6 @@ import {
   AdminListPagination,
   AdminListResultMeta,
   COMPANY_REGISTRY_EMPTY_LIST_MESSAGE,
-  COMPANY_REGISTRY_LIST_CARD_DESCRIPTION,
   COMPANY_REGISTRY_STAT_EMPTY,
   RegistryCareersUrlLink,
   adminListRowNumberCellClassName,
@@ -106,10 +105,7 @@ export default function MidSizedRegistryBrowser() {
   const refreshing = loading && data !== null;
 
   return (
-    <Card
-      title="목록 검색"
-      description={`${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 목록은 유명도 순입니다.`}
-    >
+    <Card>
       <AdminCompanyRegistryStatGrid
         uniqueCompanies={
           data ? `${data.uniqueCompanyCount.toLocaleString('ko-KR')}곳` : COMPANY_REGISTRY_STAT_EMPTY

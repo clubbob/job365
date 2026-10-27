@@ -35,17 +35,21 @@ export function matchesCrawledJobKeyword(
     includeCollectSource?: boolean;
     /** 맞춤 채용 목록: 직무·지역은 설정으로 이미 걸러짐 */
     titleAndRecruitingCompanyOnly?: boolean;
+    /** 관리자 수집·노출 공고: 회사명만 */
+    companyOnly?: boolean;
   },
 ): boolean {
   const q = keyword.trim().toLowerCase();
   if (!q) return true;
 
   const recruitingCompany = crawledJobRecruitingCompanyName(job);
-  const parts = options?.titleAndRecruitingCompanyOnly
-    ? [job.title, recruitingCompany]
-    : [job.title, recruitingCompany, ...job.roles, ...job.regions];
+  const parts = options?.companyOnly
+    ? [recruitingCompany, job.companyName]
+    : options?.titleAndRecruitingCompanyOnly
+      ? [job.title, recruitingCompany]
+      : [job.title, recruitingCompany, ...job.roles, ...job.regions];
 
-  if (options?.includeCollectSource) {
+  if (options?.includeCollectSource && !options.companyOnly) {
     parts.push(job.companyName, job.sourceName, job.sourceId ?? '');
   }
 

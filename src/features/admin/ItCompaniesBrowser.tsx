@@ -9,7 +9,6 @@ import {
   AdminListPagination,
   AdminListResultMeta,
   COMPANY_REGISTRY_EMPTY_LIST_MESSAGE,
-  COMPANY_REGISTRY_LIST_CARD_DESCRIPTION,
   COMPANY_REGISTRY_STAT_EMPTY,
   RegistryCareersUrlLink,
   adminListRowNumberCellClassName,
@@ -104,10 +103,7 @@ export default function ItCompaniesBrowser() {
   const refreshing = loading && data !== null;
 
   return (
-    <Card
-      title="목록 검색"
-      description={`${COMPANY_REGISTRY_LIST_CARD_DESCRIPTION} 전산·소프트웨어·프로그래밍·정보서비스(SI 등) 관련 회사만 모았습니다. 목록은 유명도 순입니다.`}
-    >
+    <Card>
       <AdminCompanyRegistryStatGrid
         uniqueCompanies={
           data ? `${data.uniqueCompanyCount.toLocaleString('ko-KR')}곳` : COMPANY_REGISTRY_STAT_EMPTY
@@ -147,7 +143,7 @@ export default function ItCompaniesBrowser() {
                 <tr>
                   <th className="whitespace-nowrap px-3 py-2 font-semibold">번호</th>
                   <th className="whitespace-nowrap px-3 py-2 font-semibold">구분</th>
-                  <th className="whitespace-nowrap px-3 py-2 font-semibold">기업명</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">회사</th>
                   <th className="whitespace-nowrap px-3 py-2 font-semibold">사업자번호</th>
                   <th className="whitespace-nowrap px-3 py-2 font-semibold">수집 공고</th>
                   <th className="whitespace-nowrap px-3 py-2 font-semibold">채용 URL</th>

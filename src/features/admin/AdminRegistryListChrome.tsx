@@ -53,7 +53,7 @@ export function AdminListSearchField({
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       aria-label={label}
-      className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground sm:min-w-[14rem]"
+      className="min-w-0 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
     />
   );
 }
@@ -129,7 +129,7 @@ export const adminRegistryTableWrapClassName = 'overflow-x-auto rounded-lg borde
 /** 대기업·중견 탭 공통 목록 열 */
 export const COMPANY_REGISTRY_TABLE_COLUMNS = [
   '번호',
-  '기업명',
+  '회사',
   '사업자번호',
   '모집 공고',
   '채용 URL',
@@ -158,16 +158,13 @@ export const adminRegistryUrlCellClassName = 'whitespace-nowrap px-3 py-2';
 
 const COMPANY_REGISTRY_COL_WIDTH: Record<(typeof COMPANY_REGISTRY_TABLE_COLUMNS)[number], string> = {
   번호: 'w-[8%]',
-  기업명: 'w-[23%]',
+  회사: 'w-[23%]',
   사업자번호: 'w-[23%]',
   '모집 공고': 'w-[23%]',
   '채용 URL': 'w-[23%]',
 };
 
-export const COMPANY_REGISTRY_LIST_CARD_DESCRIPTION =
-  '등록 명단에 있는 회사만 표시합니다. 모집 공고는 활성 수집 건수이고, 없으면 −입니다.';
-
-export const COMPANY_REGISTRY_SEARCH_PLACEHOLDER = '기업명 검색';
+export const COMPANY_REGISTRY_SEARCH_PLACEHOLDER = '회사 검색';
 
 export const COMPANY_REGISTRY_EMPTY_LIST_MESSAGE = '조건에 맞는 항목이 없습니다.';
 
