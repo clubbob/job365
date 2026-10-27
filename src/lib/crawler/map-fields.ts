@@ -106,7 +106,9 @@ export function normalizeNaverCompanyName(name: string): string {
 
 /** 채용 정보·관리자·맞춤 알림에 쓰는 현재 직무. 제목 기준으로 다시 붙입니다. */
 export function rolesForCrawledJob(job: { title: string; companyName?: string | null }): JobRole[] {
-  return inferJobRoles(job.title, undefined, job.companyName ?? undefined);
+  return job.companyName
+    ? inferJobRoles(job.title, undefined, job.companyName)
+    : inferJobRoles(job.title);
 }
 
 export function inferJobRoles(title: string, part?: string, ...extraLabels: string[]): JobRole[] {
