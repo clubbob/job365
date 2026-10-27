@@ -1,0 +1,18 @@
+---
+description: 채용 공고 직무는 JOB_ROLES 하나로 사용자·관리자 화면에 같이 반영한다
+alwaysApply: true
+---
+
+# 채용 공고 직무
+
+채용 공고 직무 이름·칸은 `src/lib/job-board/constants.ts`의 `JOB_ROLES`만 고친다. 제목으로 붙이는 규칙은 `src/lib/crawler/map-fields.ts`의 `inferJobRoles` / `rolesForCrawledJob`다. 화면에 직무 문자열을 하드코딩하지 않는다.
+
+이름을 바꾸거나 칸을 나누면 **같은 작업에서** 사용자·관리자에 같이 반영한다. 채용 정보만 바꾸고 관리자 상세·맞춤 알림·트렌드를 남겨 두지 않는다.
+
+- 필터·관심 직무 (`JOB_ROLES` 배열 순서가 드롭다운 순서)
+- 채용 트렌드
+- 카드·상세 (사용자·관리자 모두 `CrawledJobCard` / `CrawledJobDetailView`)
+- 예전 이름 (`LEGACY_JOB_ROLE_ALIASES`)
+- 제목 키워드 (`TITLE_ROLE_KEYWORDS`)
+
+이력서 직종(`OCCUPATION_OPTIONS`)은 다른 목록이다. 채용 공고 직무와 섞지 않는다.

@@ -56,13 +56,20 @@ const TITLE_ROLE_KEYWORDS: Array<{ pattern: RegExp; role: JobRole }> = [
   { pattern: /디자인|Design|UX|UI/i, role: '디자인' },
   { pattern: /마케팅|Marketing|광고|브랜드|\bMD\b/i, role: '마케팅·광고' },
   { pattern: /영업|Sales|판매|수주|무역|쇼핑몰/i, role: '영업·판매' },
-  { pattern: /회계|재무|세무|경리|자금|결산|금융|보험|증권|Finance/i, role: '금융·회계' },
-  { pattern: /인사|\bHR\b|총무|경영|사무|행정|비서|법무|구매|자재|외주/i, role: '경영·사무' },
+  { pattern: /회계|재무|세무|경리|자금|결산|금융|보험|증권|Finance/i, role: '재무·회계·경리' },
+  {
+    pattern: /인사|\bHR\b|총무|노무|채용\s*담당|리크루터|Recruiter/i,
+    role: '인사·총무',
+  },
+  { pattern: /구매|자재|외주|조달/i, role: '구매·자재' },
+  { pattern: /경영|사무|행정|비서|법무/i, role: '경영·사무' },
   {
     pattern:
-      /생산|제조|생산직|기능직|공정|설비|기계|품질|가공|조립|용접|보전|공무|오퍼레이터|Operator|교대|현장직|패키징|포장|금형|사출|프레스|\bCNC\b|\bNCT\b|비파괴|검사원|물류|피킹|기술직|전기|전장|냉동|공조|유지\s*[,·]?\s*보수|설비OP|기술\s*엔지니어/i,
+      /생산|제조|생산직|기능직|공정|설비|기계|가공|조립|용접|보전|공무|오퍼레이터|Operator|교대|현장직|금형|사출|프레스|\bCNC\b|\bNCT\b|기술직|전기|전장|냉동|공조|유지\s*[,·]?\s*보수|설비OP|기술\s*엔지니어/i,
     role: '생산·제조',
   },
+  { pattern: /품질|검사원|비파괴|안전|\bQC\b/i, role: '품질·안전' },
+  { pattern: /물류|포장|패키징|피킹|창고|입출고|출하/i, role: '물류·포장' },
   { pattern: /연구|R&D|설계|연구원|연구소|Test\s*Engineer|\bEngineer\b/i, role: '연구·개발' },
   { pattern: /교육|강사/i, role: '교육' },
   {
@@ -71,7 +78,7 @@ const TITLE_ROLE_KEYWORDS: Array<{ pattern: RegExp; role: JobRole }> = [
     role: '서비스·고객 관리',
   },
   { pattern: /홍보|콘텐츠|기자/i, role: '마케팅·광고' },
-  { pattern: /건축|건설|토목|안전|환경|\bUtility\b/i, role: '생산·제조' },
+  { pattern: /건축|건설|토목|환경|\bUtility\b/i, role: '생산·제조' },
 ];
 
 export function parseEmploymentTypesFromTitle(title: string): EmploymentType[] {
@@ -95,6 +102,11 @@ const NAVER_COMPANY_NAMES: Record<string, string> = {
 export function normalizeNaverCompanyName(name: string): string {
   const trimmed = name.trim();
   return NAVER_COMPANY_NAMES[trimmed] ?? trimmed;
+}
+
+/** 채용 정보·관리자·맞춤 알림에 쓰는 현재 직무. 제목 기준으로 다시 붙입니다. */
+export function rolesForCrawledJob(job: { title: string; companyName?: string | null }): JobRole[] {
+  return inferJobRoles(job.title, undefined, job.companyName ?? undefined);
 }
 
 export function inferJobRoles(title: string, part?: string, ...extraLabels: string[]): JobRole[] {

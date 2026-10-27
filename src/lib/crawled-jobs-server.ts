@@ -15,7 +15,7 @@ import { getDisplayDisabledCompanyKeys, isCompanyCrawlDisabled } from '@/lib/cra
 import { getDisplayDisabledSourceIds, isDisplayDisabled } from '@/lib/crawl-source-policy-server';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { decodeHtmlEntities } from '@/lib/crawler/decode-html-text';
-import { inferJobRoles } from '@/lib/crawler/map-fields';
+import { rolesForCrawledJob } from '@/lib/crawler/map-fields';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 import { isJobTitleStaleForListing } from '@/lib/crawler/job-heuristics';
 import {
@@ -210,7 +210,7 @@ function fromDoc(id: string, data: DocumentData): CrawledJob | null {
     companyName,
     title,
     employmentTypes: parseStringArray(data.employmentTypes, isEmploymentType),
-    roles: parseJobRoles(data.roles),
+    roles: rolesForCrawledJob({ title, companyName }),
     regions: parseStringArray(data.regions, isJobRegion),
     companySize: companySizeRaw,
     headcount:
@@ -261,7 +261,7 @@ function toListItem(job: CrawledJob): CrawledJobListItem {
     companyName,
     title,
     employmentTypes,
-    roles: inferJobRoles(title, undefined, companyName),
+    roles: rolesForCrawledJob({ title, companyName }),
     regions,
     companySize,
     deadline,

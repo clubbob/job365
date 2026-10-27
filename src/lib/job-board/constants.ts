@@ -16,19 +16,23 @@ export const QUICK_EMPLOYMENT_TYPES = QUICK_FILTER_OPTIONS.filter(
   (item) => item.id !== 'all',
 ).map((item) => item.id) as [EmploymentType, EmploymentType, EmploymentType, EmploymentType];
 
-/** 관심 직무 */
+/** 관심 직무 — 채용 정보 필터·맞춤 알림 순서. 사무 → 영업·고객 → 생산·기술 → 기타 */
 export const JOB_ROLES = [
-  'IT·AI·프로그래밍',
-  '기획·PM',
-  '디자인',
-  '마케팅·광고',
-  '영업·판매',
   '경영·사무',
-  '생산·제조',
-  '연구·개발',
-  '금융·회계',
-  '교육',
+  '인사·총무',
+  '재무·회계·경리',
+  '구매·자재',
+  '기획·PM',
+  '영업·판매',
+  '마케팅·광고',
   '서비스·고객 관리',
+  '생산·제조',
+  '품질·안전',
+  '물류·포장',
+  '연구·개발',
+  'IT·AI·프로그래밍',
+  '디자인',
+  '교육',
 ] as const;
 export type JobRole = (typeof JOB_ROLES)[number];
 
@@ -96,6 +100,8 @@ const LEGACY_JOB_ROLE_ALIASES: Record<string, JobRole> = {
   'IT. 개발': 'IT·AI·프로그래밍',
   'IT, 프로그래밍': 'IT·AI·프로그래밍',
   'IT, AI, 프로그래밍': 'IT·AI·프로그래밍',
+  '금융·회계': '재무·회계·경리',
+  '재무·회계': '재무·회계·경리',
 };
 
 export function normalizeJobRole(value: string): JobRole | null {

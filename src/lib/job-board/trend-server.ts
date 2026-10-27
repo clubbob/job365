@@ -1,5 +1,6 @@
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
+import { normalizeJobRole, type JobRole } from '@/lib/job-board/constants';
 import {
   countJobBoardTrendSnapshot,
   emptyJobBoardTrendSnapshot,
@@ -36,6 +37,19 @@ function parseCountMap<K extends string>(
   return out;
 }
 
+function parseRoleCounts(raw: unknown): Record<JobRole, number> {
+  const empty = emptyJobBoardTrendSnapshot().roles;
+  if (!isRecord(raw)) return empty;
+  const out = { ...empty };
+  for (const [key, value] of Object.entries(raw)) {
+    const role = normalizeJobRole(key);
+    if (!role) continue;
+    const n = Number(value);
+    if (Number.isFinite(n) && n > 0) out[role] += n;
+  }
+  return out;
+}
+
 function parseSnapshot(raw: unknown): JobBoardTrendSnapshot | null {
   if (!isRecord(raw)) return null;
   const empty = emptyJobBoardTrendSnapshot();
@@ -51,7 +65,7 @@ function parseSnapshot(raw: unknown): JobBoardTrendSnapshot | null {
     day,
     total,
     regions: parseCountMap(raw.regions, Object.keys(empty.regions) as (keyof typeof empty.regions)[]) ?? empty.regions,
-    roles: parseCountMap(raw.roles, Object.keys(empty.roles) as (keyof typeof empty.roles)[]) ?? empty.roles,
+    roles: parseRoleCounts(raw.roles),
     companySegments:
       parseCountMap(
         raw.companySegments,

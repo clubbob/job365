@@ -10,6 +10,7 @@ import {
 } from '@/lib/job-board/detail-navigation';
 import { jobBoardCompanySegmentLabel } from '@/lib/job-board/company-segment';
 import { effectiveCrawledJobDeadline } from '@/lib/job-board/crawled-deadline';
+import { rolesForCrawledJob } from '@/lib/crawler/map-fields';
 import { isJobNewToday } from '@/lib/job-board/match';
 import { cn } from '@/lib/utils';
 import type { CrawledJobListItem } from '@/types/crawled-job';
@@ -99,7 +100,7 @@ export default function CrawledJobCard({
         </div>
         <div className="flex min-w-0 gap-2 text-xs sm:text-sm">
           <dt className="shrink-0 font-medium text-subtle">직무</dt>
-          <dd className="min-w-0 truncate font-medium text-foreground/85">{roleLabel(job.roles)}</dd>
+          <dd className="min-w-0 truncate font-medium text-foreground/85">{roleLabel(rolesForCrawledJob(job))}</dd>
         </div>
         <div className="flex min-w-0 gap-2 text-xs sm:text-sm">
           <dt className="shrink-0 font-medium text-subtle">지역</dt>

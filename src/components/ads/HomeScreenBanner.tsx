@@ -62,10 +62,10 @@ export default function HomeScreenBanner() {
       <div className="relative flex items-center justify-between gap-6 px-5 py-7 sm:px-8 sm:py-9">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-blue-100">JobLink 365 채용 정보</p>
-          <h2 className="mt-2 max-w-xl text-xl font-bold leading-snug text-white sm:text-2xl">
+          <h2 className="mt-2 max-w-xl break-keep text-xl font-bold leading-snug text-white sm:text-2xl">
             {HOME_BANNER_TITLE}
           </h2>
-          <p className="mt-3 max-w-lg text-sm leading-relaxed text-blue-100 sm:text-base">
+          <p className="mt-3 max-w-2xl whitespace-pre-line break-keep text-pretty text-sm leading-relaxed text-blue-100 sm:text-base">
             {HOME_BANNER_SUBTITLE}
           </p>
           <div className="mt-5 flex flex-wrap gap-2">

@@ -5,6 +5,7 @@ import {
   DetailStatGrid,
 } from '@/components/ui/PostingDetail';
 import { getCrawledJobSummaryFields } from '@/features/job-board/CrawledJobDescriptionSummary';
+import { rolesForCrawledJob } from '@/lib/crawler/map-fields';
 import { getCrawledJobOriginalUrl } from '@/lib/crawler/source-url';
 import {
   crawledJobDetailTitle,
@@ -48,7 +49,7 @@ export default function CrawledJobDetailView({
   const outlineItems = [
     { label: '채용 회사', value: heading.employer },
     { label: '회사 분류', value: companySegment },
-    { label: '직무', value: job.roles.join(', ') },
+    { label: '직무', value: rolesForCrawledJob(job).join(', ') },
     { label: '지역', value: job.regions.join(', ') },
     { label: '채용 형태', value: job.employmentTypes.join(', ') },
     { label: '채용 인원', value: headcount },

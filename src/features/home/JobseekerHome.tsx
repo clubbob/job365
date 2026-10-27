@@ -12,8 +12,8 @@ export default function JobseekerHome() {
         <h1 className="mt-2 text-2xl font-bold leading-snug sm:text-3xl">
           지금 지원할 수 있는 채용 정보를 찾아 보세요
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-blue-100 sm:text-base">
-          모인 채용 공고를 확인하고, 채용 트렌드로 최근 흐름을 볼 수 있습니다. 지원은 원문 사이트로 연결됩니다.
+        <p className="mt-3 whitespace-pre-line break-keep text-sm leading-relaxed text-blue-100 sm:text-base">
+          {'모인 채용 공고를 확인하고, 채용 트렌드로 최근 흐름을 볼 수 있습니다.\n지원은 회사 채용 페이지에서 합니다.'}
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
