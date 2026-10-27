@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getLastCrawlKoreaDayRange } from '@/lib/crawl-runs-server';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import type { JobBoardFilters } from '@/lib/job-board/match';
@@ -32,6 +33,12 @@ export async function GET(request: Request) {
     !todayOnly;
 
   try {
+    const crawlDays = await getLastCrawlKoreaDayRange();
+    const lastCrawlMeta = {
+      lastCrawlDayStart: crawlDays.start,
+      lastCrawlDay: crawlDays.end,
+    };
+
     if (isUnfiltered && !todayOnly) {
       const { items, total } = await listActiveCrawledJobsPage(page, pageSize);
       const hasMore = (page - 1) * pageSize + items.length < total;
@@ -45,6 +52,7 @@ export async function GET(request: Request) {
           pageSize,
           hasMore,
           todayDate,
+          ...lastCrawlMeta,
         },
       });
     }
@@ -72,6 +80,7 @@ export async function GET(request: Request) {
         pageSize,
         hasMore,
         todayDate,
+        ...lastCrawlMeta,
       },
     });
   } catch (error) {

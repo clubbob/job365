@@ -14,7 +14,7 @@ import {
 } from '@/lib/job-display';
 import { jobBoardCompanySegmentLabel } from '@/lib/job-board/company-segment';
 import { effectiveCrawledJobDeadline } from '@/lib/job-board/crawled-deadline';
-import { isJobNewToday } from '@/lib/job-board/match';
+import { isCrawledJobNew } from '@/lib/job-board/match';
 import type { CrawledJob } from '@/types/crawled-job';
 import type { ReactNode } from 'react';
 
@@ -24,13 +24,19 @@ export const crawledJobExternalLinkClass =
 export default function CrawledJobDetailView({
   job,
   todayDate,
+  lastCrawlDayStart,
+  lastCrawlDay,
   actions,
 }: {
   job: CrawledJob;
   todayDate: string;
+  lastCrawlDayStart?: string;
+  lastCrawlDay?: string;
   actions?: ReactNode;
 }) {
-  const isNew = todayDate ? isJobNewToday(job, todayDate) : false;
+  const isNew =
+    isCrawledJobNew(job, lastCrawlDayStart, lastCrawlDay) ||
+    (todayDate ? isCrawledJobNew(job, todayDate, todayDate) : false);
   const originalJobUrl = getCrawledJobOriginalUrl(job.applyUrl);
   const heading = splitCrawledJobHeading(job.companyName, job.title);
   const companyHints = [heading.employer, heading.sourceCompany, job.companyName].filter(Boolean);

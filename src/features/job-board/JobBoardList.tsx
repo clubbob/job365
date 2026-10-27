@@ -19,7 +19,8 @@ import {
   resolveJobBoardListPageSize,
 } from '@/lib/job-board/constants';
 import { useIsBelowSm } from '@/lib/use-is-below-sm';
-import { MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site-menu-copy';
+import { MATCHED_JOBS_NEW_SECTION_TITLE, MATCHED_JOBS_SETTINGS_TITLE } from '@/lib/site-menu-copy';
+import { formatKoreaDateDot, formatKoreaDateRangeDot } from '@/lib/datetime';
 import { JOB_BOARD_REFRESH_EVENT } from '@/lib/job-board/refresh';
 import { JOB_BOARD_RESET_EVENT } from '@/lib/job-board/reset';
 import { cn } from '@/lib/utils';
@@ -173,6 +174,10 @@ function JobBoardList({
   const [items, setItems] = useState<CrawledJobListItem[]>(prefetchedItems ?? EMPTY);
   const [todayItems, setTodayItems] = useState<CrawledJobListItem[]>(EMPTY);
   const [todayDate, setTodayDate] = useState('');
+  const [newItems, setNewItems] = useState<CrawledJobListItem[]>(EMPTY);
+  const [newTotal, setNewTotal] = useState<number | null>(null);
+  const [lastCrawlDay, setLastCrawlDay] = useState('');
+  const [lastCrawlDayStart, setLastCrawlDayStart] = useState('');
   const [page, setPage] = useState(() => resolveUrlListState(persistKey, urlSync)?.page ?? 1);
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
@@ -480,6 +485,8 @@ function JobBoardList({
             setItems([]);
             setTotal(0);
             setHasMore(false);
+            setNewItems(EMPTY);
+            setNewTotal(null);
             setLoading(false);
             return;
           }
@@ -498,6 +505,11 @@ function JobBoardList({
               total: number;
               hasMore: boolean;
               noMatches?: boolean;
+              todayDate?: string;
+              lastCrawlDay?: string;
+              lastCrawlDayStart?: string;
+              newTotal?: number;
+              newItems?: CrawledJobListItem[];
             };
             error?: { message?: string };
           };
@@ -510,6 +522,11 @@ function JobBoardList({
           setTotal(json.data.total);
           setHasMore(json.data.hasMore);
           setNoMatches(Boolean(json.data.noMatches));
+          setTodayDate(json.data.todayDate ?? '');
+          setLastCrawlDay(json.data.lastCrawlDay ?? '');
+          setLastCrawlDayStart(json.data.lastCrawlDayStart ?? json.data.lastCrawlDay ?? '');
+          setNewTotal(json.data.newTotal ?? 0);
+          setNewItems(dedupeCrawledJobListItems(json.data.newItems ?? []));
           return;
         }
 
@@ -524,6 +541,8 @@ function JobBoardList({
             total: number;
             hasMore: boolean;
             todayDate: string;
+            lastCrawlDay?: string;
+            lastCrawlDayStart?: string;
           };
           error?: { message?: string };
         };
@@ -544,6 +563,8 @@ function JobBoardList({
         setTotal(json.data.total);
         setHasMore(json.data.hasMore);
         setTodayDate(json.data.todayDate);
+        setLastCrawlDay(json.data.lastCrawlDay ?? '');
+        setLastCrawlDayStart(json.data.lastCrawlDayStart ?? json.data.lastCrawlDay ?? '');
       } catch (err) {
         if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : '채용 공고를 불러오지 못했습니다.');
@@ -566,6 +587,17 @@ function JobBoardList({
     if (loading) return `모집 중 총 ${totalLabel}건 · 갱신 중…`;
     return `모집 중 총 ${totalLabel}건`;
   }, [loading, total, items.length]);
+
+  const lastCrawlLabel = useMemo(() => {
+    if (!lastCrawlDay) return '';
+    if (!lastCrawlDayStart || lastCrawlDayStart === lastCrawlDay) {
+      return formatKoreaDateDot(lastCrawlDay);
+    }
+    return formatKoreaDateRangeDot(lastCrawlDayStart, lastCrawlDay);
+  }, [lastCrawlDay, lastCrawlDayStart]);
+
+  const showMatchedNewSection =
+    showNewSection && mode === 'matched' && newTotal !== null && !noMatches;
 
   return (
     <div className="flex flex-col gap-5">
@@ -596,6 +628,39 @@ function JobBoardList({
         />
       ) : null}
 
+      {showMatchedNewSection ? (
+        <section className="flex flex-col gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">{MATCHED_JOBS_NEW_SECTION_TITLE}</h2>
+            <p className="mt-1 text-sm text-muted">
+              {lastCrawlLabel ? `이번 수집 · ${lastCrawlLabel}` : '이번 수집'}
+              {newTotal ? ` · ${newTotal.toLocaleString('ko-KR')}건` : ''}
+            </p>
+          </div>
+          {newTotal === 0 ? (
+            <p className="rounded-xl border border-border bg-surface px-4 py-6 text-center text-sm text-muted">
+              이번 수집에서 조건에 맞는 새 공고가 없습니다.
+            </p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {newItems.map((job) => (
+                <CrawledJobCard
+                  key={`new-${job.id}`}
+                  job={job}
+                  todayDate={todayDate}
+                  lastCrawlDayStart={lastCrawlDayStart}
+                  lastCrawlDay={lastCrawlDay}
+                  highlightNew
+                  onNavigate={persistKey ? rememberListPosition : undefined}
+                  detailFrom={matchedDetailFrom}
+                  listReturnQuery={persistKey ? listReturnQuery : undefined}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
+
       {showNewSection && mode === 'all' && !hideNewSectionHeader ? (
         <section
           className={
@@ -619,6 +684,8 @@ function JobBoardList({
                   key={job.id}
                   job={job}
                   todayDate={todayDate}
+                  lastCrawlDayStart={lastCrawlDayStart}
+                  lastCrawlDay={lastCrawlDay}
                   onNavigate={persistKey ? rememberListPosition : undefined}
                   detailFrom={matchedDetailFrom}
                   listReturnQuery={persistKey ? listReturnQuery : undefined}
@@ -642,7 +709,7 @@ function JobBoardList({
 
       <section
         className={
-          showNewSection && mode === 'all'
+          (showNewSection && mode === 'all') || showMatchedNewSection
             ? 'flex flex-col gap-3 border-t border-border pt-8'
             : 'flex flex-col gap-3'
         }
@@ -696,6 +763,8 @@ function JobBoardList({
                 key={job.id}
                 job={job}
                 todayDate={todayDate}
+                lastCrawlDayStart={lastCrawlDayStart}
+                lastCrawlDay={lastCrawlDay}
                 onNavigate={persistKey ? rememberListPosition : undefined}
                 detailFrom={matchedDetailFrom}
                 listReturnQuery={persistKey ? listReturnQuery : undefined}

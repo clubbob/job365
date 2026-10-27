@@ -37,6 +37,8 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
   const { user } = useAuth();
   const [job, setJob] = useState<CrawledJob | null>(null);
   const [todayDate, setTodayDate] = useState('');
+  const [lastCrawlDay, setLastCrawlDay] = useState('');
+  const [lastCrawlDayStart, setLastCrawlDayStart] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bookmarked, setBookmarked] = useState(false);
@@ -54,7 +56,12 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
         const res = await fetch(`/api/crawled-jobs/${encodeURIComponent(jobId)}`);
         const json = (await res.json()) as {
           ok?: boolean;
-          data?: { job: CrawledJob };
+          data?: {
+            job: CrawledJob;
+            todayDate?: string;
+            lastCrawlDay?: string;
+            lastCrawlDayStart?: string;
+          };
           error?: { message?: string };
         };
 
@@ -64,7 +71,9 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
 
         if (!mounted) return;
         setJob(json.data.job);
-        setTodayDate(json.data.job.crawledAt.slice(0, 10));
+        setTodayDate(json.data.todayDate ?? '');
+        setLastCrawlDay(json.data.lastCrawlDay ?? '');
+        setLastCrawlDayStart(json.data.lastCrawlDayStart ?? json.data.lastCrawlDay ?? '');
       } catch (err) {
         if (!mounted) return;
         setError(err instanceof Error ? err.message : '채용 공고를 불러오지 못했습니다.');
@@ -182,6 +191,8 @@ export default function CrawledJobDetailPageClient({ jobId }: { jobId: string })
       <CrawledJobDetailView
         job={job}
         todayDate={todayDate}
+        lastCrawlDayStart={lastCrawlDayStart}
+        lastCrawlDay={lastCrawlDay}
         actions={
           <>
             <div className="flex w-full max-w-xl flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center">

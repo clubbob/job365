@@ -1,5 +1,6 @@
 import type { EmploymentType, JobRegion, JobRole } from '@/lib/job-board/constants';
 import { companySegmentsForJob, type JobBoardCompanySegment } from '@/lib/job-board/company-segment';
+import { getKoreaDateFromIso } from '@/lib/datetime';
 import { crawledJobRecruitingCompanyName } from '@/lib/job-display';
 import type { CrawledJobListItem } from '@/types/crawled-job';
 import type { JobAlertPrefs } from '@/types/job-alert-prefs';
@@ -110,5 +111,32 @@ export function jobMatchesAlertPrefs(job: CrawledJobListItem, prefs: JobAlertPre
 }
 
 export function isJobNewToday(job: CrawledJobListItem, todayDate: string): boolean {
-  return job.crawledAt.slice(0, 10) === todayDate;
+  return isJobFirstSeenOnDays(job, todayDate, todayDate);
+}
+
+/** 이번 수집에서 이 사이트에 처음 들어온 공고 */
+export function isCrawledJobNew(
+  job: Pick<CrawledJobListItem, 'createdAt' | 'crawledAt'>,
+  lastCrawlDayStart?: string | null,
+  lastCrawlDay?: string | null,
+): boolean {
+  const end = lastCrawlDay?.trim();
+  if (!end) return false;
+  const start = lastCrawlDayStart?.trim() || end;
+  return isJobFirstSeenOnDays(job, start, end);
+}
+
+/** 이 사이트에 처음 들어온 한국 날짜 */
+export function crawledJobFirstSeenDay(job: Pick<CrawledJobListItem, 'createdAt' | 'crawledAt'>): string | null {
+  return getKoreaDateFromIso(job.createdAt) ?? getKoreaDateFromIso(job.crawledAt);
+}
+
+export function isJobFirstSeenOnDays(
+  job: Pick<CrawledJobListItem, 'createdAt' | 'crawledAt'>,
+  startDay: string,
+  endDay: string,
+): boolean {
+  const day = crawledJobFirstSeenDay(job);
+  if (!day) return false;
+  return day >= startDay && day <= endDay;
 }

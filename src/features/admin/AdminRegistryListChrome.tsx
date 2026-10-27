@@ -122,7 +122,7 @@ export function AdminListPagination({
   );
 }
 
-export const adminRegistryTableClassName = 'w-full min-w-[44rem] text-left text-sm';
+export const adminRegistryTableClassName = 'w-full min-w-[44rem] table-fixed text-left text-sm';
 export const adminRegistryTableHeadClassName = 'border-b border-border bg-neutral-50 text-xs text-muted';
 export const adminRegistryTableWrapClassName = 'overflow-x-auto rounded-lg border border-border';
 
@@ -144,7 +144,25 @@ export function adminPagedRowNumber(page: number, pageSize: number, index: numbe
 }
 
 export const adminListRowNumberCellClassName =
-  'w-14 whitespace-nowrap px-3 py-2 tabular-nums text-muted';
+  'whitespace-nowrap px-3 py-2 tabular-nums text-muted';
+
+export const adminRegistryCompanyNameCellClassName =
+  'min-w-0 truncate px-3 py-2 font-medium text-foreground';
+
+export const adminRegistryBusinessNumberCellClassName =
+  'whitespace-nowrap px-3 py-2 text-muted';
+
+export const adminRegistryJobCountCellClassName = 'whitespace-nowrap px-3 py-2 text-muted';
+
+export const adminRegistryUrlCellClassName = 'whitespace-nowrap px-3 py-2';
+
+const COMPANY_REGISTRY_COL_WIDTH: Record<(typeof COMPANY_REGISTRY_TABLE_COLUMNS)[number], string> = {
+  번호: 'w-[8%]',
+  기업명: 'w-[23%]',
+  사업자번호: 'w-[23%]',
+  '모집 공고': 'w-[23%]',
+  '채용 URL': 'w-[23%]',
+};
 
 export const COMPANY_REGISTRY_LIST_CARD_DESCRIPTION =
   '등록 명단에 있는 회사만 표시합니다. 모집 공고는 활성 수집 건수이고, 없으면 −입니다.';
@@ -212,21 +230,22 @@ export function formatRegistryActiveJobCount(activeJobCount: number): string {
 
 export function AdminCompanyRegistryTableHead() {
   return (
-    <thead className={adminRegistryTableHeadClassName}>
-      <tr>
+    <>
+      <colgroup>
         {COMPANY_REGISTRY_TABLE_COLUMNS.map((label) => (
-          <th
-            key={label}
-            className={cn(
-              'px-3 py-2 font-semibold',
-              label === '번호' && 'w-14',
-            )}
-          >
-            {label}
-          </th>
+          <col key={label} className={COMPANY_REGISTRY_COL_WIDTH[label]} />
         ))}
-      </tr>
-    </thead>
+      </colgroup>
+      <thead className={adminRegistryTableHeadClassName}>
+        <tr>
+          {COMPANY_REGISTRY_TABLE_COLUMNS.map((label) => (
+            <th key={label} className="whitespace-nowrap px-3 py-2 font-semibold">
+              {label}
+            </th>
+          ))}
+        </tr>
+      </thead>
+    </>
   );
 }
 

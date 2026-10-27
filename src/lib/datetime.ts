@@ -29,6 +29,16 @@ export function getKoreaDateLocalToday(date = new Date()): string {
   return getKoreaDateTimeLocalMin(date).split('T')[0]!;
 }
 
+/** ISO·Firestore 시각을 한국 날짜(YYYY-MM-DD)로 바꿉니다. */
+export function getKoreaDateFromIso(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Date.parse(trimmed);
+  if (!Number.isNaN(parsed)) return getKoreaDateLocalToday(new Date(parsed));
+  return parseKoreaDateParam(trimmed.slice(0, 10));
+}
+
 export function parseKoreaDateParam(value: string | null | undefined): string | null {
   if (!value) return null;
   const trimmed = value.trim();

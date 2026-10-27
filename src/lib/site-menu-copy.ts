@@ -22,3 +22,7 @@ export const MATCHED_JOBS_PAGE_DESCRIPTION =
   '회원이 마이페이지에서 설정한 맞춤 채용 설정에 해당되는 채용 공고입니다.';
 
 export const MATCHED_JOBS_MORE_LINK_LABEL = '맞춤 채용 공고 더보기';
+
+export const MATCHED_JOBS_NEW_SECTION_TITLE = '새로 들어온 맞춤 공고';
+
+export const MATCHED_JOBS_ALL_LIST_TITLE = '전체 맞춤 채용 공고';

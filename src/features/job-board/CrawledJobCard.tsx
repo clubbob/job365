@@ -11,7 +11,7 @@ import {
 import { jobBoardCompanySegmentLabel } from '@/lib/job-board/company-segment';
 import { effectiveCrawledJobDeadline } from '@/lib/job-board/crawled-deadline';
 import { rolesForCrawledJob } from '@/lib/crawler/map-fields';
-import { isJobNewToday } from '@/lib/job-board/match';
+import { isCrawledJobNew } from '@/lib/job-board/match';
 import { cn } from '@/lib/utils';
 import type { CrawledJobListItem } from '@/types/crawled-job';
 
@@ -35,6 +35,9 @@ function deadlineLabel(deadline: string | null): string {
 export default function CrawledJobCard({
   job,
   todayDate,
+  lastCrawlDayStart,
+  lastCrawlDay,
+  highlightNew = false,
   onNavigate,
   detailFrom,
   listReturnQuery,
@@ -42,12 +45,18 @@ export default function CrawledJobCard({
 }: {
   job: CrawledJobListItem;
   todayDate?: string;
+  lastCrawlDayStart?: string;
+  lastCrawlDay?: string;
+  highlightNew?: boolean;
   onNavigate?: () => void;
   detailFrom?: typeof CRAWLED_JOB_DETAIL_FROM_MY_JOBS;
   listReturnQuery?: string;
   className?: string;
 }) {
-  const isNew = todayDate ? isJobNewToday(job, todayDate) : false;
+  const isNew =
+    highlightNew ||
+    isCrawledJobNew(job, lastCrawlDayStart, lastCrawlDay) ||
+    (todayDate ? isCrawledJobNew(job, todayDate, todayDate) : false);
   const heading = splitCrawledJobHeading(job.companyName, job.title);
   const displayTitle = crawledJobDetailTitle(job.title, heading.title, heading.employer);
   const showCollectSource = shouldShowCrawledCollectSource(heading.employer, heading.sourceCompany);

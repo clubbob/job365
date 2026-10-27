@@ -14,8 +14,12 @@ import {
   COMPANY_REGISTRY_STAT_EMPTY,
   RegistryCareersUrlLink,
   adminListRowNumberCellClassName,
+  adminRegistryBusinessNumberCellClassName,
+  adminRegistryCompanyNameCellClassName,
+  adminRegistryJobCountCellClassName,
   adminRegistryRowNumber,
   adminRegistryTableClassName,
+  adminRegistryUrlCellClassName,
   formatRegistryActiveJobCount,
   adminRegistryTableWrapClassName,
   formatCompanyRegistryResultMeta,
@@ -140,12 +144,14 @@ export default function MidSizedRegistryBrowser() {
                     <td className={adminListRowNumberCellClassName}>
                       {adminRegistryRowNumber(data.offset, index).toLocaleString('ko-KR')}
                     </td>
-                    <td className="px-3 py-2 font-medium">{row.companyName}</td>
-                    <td className="px-3 py-2 text-muted">{row.businessNumber}</td>
-                    <td className="px-3 py-2 text-muted">
+                    <td className={adminRegistryCompanyNameCellClassName} title={row.companyName}>
+                      {row.companyName}
+                    </td>
+                    <td className={adminRegistryBusinessNumberCellClassName}>{row.businessNumber}</td>
+                    <td className={adminRegistryJobCountCellClassName}>
                       {formatRegistryActiveJobCount(row.activeJobCount)}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className={adminRegistryUrlCellClassName}>
                       <RegistryCareersUrlLink url={row.careersUrl} />
                     </td>
                   </tr>

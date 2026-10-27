@@ -8,6 +8,7 @@ import JobBoardList from '@/features/job-board/JobBoardList';
 import { JOB_LIST_PAGE_SIZE } from '@/lib/job-board/constants';
 import { useAuth } from '@/features/auth/auth-context';
 import {
+  MATCHED_JOBS_ALL_LIST_TITLE,
   MATCHED_JOBS_PAGE_DESCRIPTION,
   MATCHED_JOBS_PAGE_TITLE,
   MATCHED_JOBS_SETTINGS_TITLE,
@@ -46,7 +47,8 @@ export default function MyJobsPageClient() {
         matchedUser={user}
         persistKey="jobs-matched"
         pageSize={JOB_LIST_PAGE_SIZE}
-        showNewSection={false}
+        showNewSection
+        listTitle={MATCHED_JOBS_ALL_LIST_TITLE}
       />
     </div>
   );

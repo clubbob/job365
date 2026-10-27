@@ -13,8 +13,12 @@ import {
   COMPANY_REGISTRY_STAT_EMPTY,
   RegistryCareersUrlLink,
   adminListRowNumberCellClassName,
+  adminRegistryBusinessNumberCellClassName,
+  adminRegistryCompanyNameCellClassName,
+  adminRegistryJobCountCellClassName,
   adminRegistryRowNumber,
   adminRegistryTableClassName,
+  adminRegistryUrlCellClassName,
   adminRegistryTableWrapClassName,
   formatCompanyRegistryResultMeta,
   formatRegistryActiveJobCount,
@@ -131,14 +135,22 @@ export default function ItCompaniesBrowser() {
         <>
           <div className={adminRegistryTableWrapClassName}>
             <table className={adminRegistryTableClassName}>
+              <colgroup>
+                <col className="w-[8%]" />
+                <col className="w-[18%]" />
+                <col className="w-[20%]" />
+                <col className="w-[18%]" />
+                <col className="w-[18%]" />
+                <col className="w-[18%]" />
+              </colgroup>
               <thead className="bg-neutral-50 text-left text-xs text-muted">
                 <tr>
-                  <th className="w-14 px-3 py-2 font-semibold">번호</th>
-                  <th className="px-3 py-2 font-semibold">구분</th>
-                  <th className="px-3 py-2 font-semibold">기업명</th>
-                  <th className="px-3 py-2 font-semibold">사업자번호</th>
-                  <th className="px-3 py-2 font-semibold">수집 공고</th>
-                  <th className="px-3 py-2 font-semibold">채용 URL</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">번호</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">구분</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">기업명</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">사업자번호</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">수집 공고</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">채용 URL</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -147,13 +159,15 @@ export default function ItCompaniesBrowser() {
                     <td className={adminListRowNumberCellClassName}>
                       {adminRegistryRowNumber(data.offset, index).toLocaleString('ko-KR')}
                     </td>
-                    <td className="px-3 py-2 text-muted">{row.segment}</td>
-                    <td className="px-3 py-2 font-medium">{row.companyName}</td>
-                    <td className="px-3 py-2 text-muted">{row.businessNumber}</td>
-                    <td className="px-3 py-2 text-muted">
+                    <td className="whitespace-nowrap px-3 py-2 text-muted">{row.segment}</td>
+                    <td className={adminRegistryCompanyNameCellClassName} title={row.companyName}>
+                      {row.companyName}
+                    </td>
+                    <td className={adminRegistryBusinessNumberCellClassName}>{row.businessNumber}</td>
+                    <td className={adminRegistryJobCountCellClassName}>
                       {formatRegistryActiveJobCount(row.activeJobCount)}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className={adminRegistryUrlCellClassName}>
                       <RegistryCareersUrlLink url={row.careersUrl} />
                     </td>
                   </tr>

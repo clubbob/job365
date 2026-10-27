@@ -2,6 +2,7 @@ import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { ADMIN_CRAWL_RUNS_PAGE_SIZE, ADMIN_CRAWL_RUNS_RETENTION_DAYS } from '@/lib/admin-constants';
 import type { CrawlRunSummary } from '@/lib/crawler/types';
+import { getKoreaDateFromIso, getKoreaDateLocalToday } from '@/lib/datetime';
 import {
   emptyCompanySegmentCounts,
   readLegacyCompanySegmentCount,
@@ -109,6 +110,25 @@ export async function listCrawlRunsPage(
 export async function listCrawlRuns(limit = 20): Promise<CrawlRunListItem[]> {
   const { runs } = await listCrawlRunsPage(1, limit);
   return runs;
+}
+
+export type LastCrawlKoreaDayRange = { start: string; end: string };
+
+/** 마지막 수집이 걸친 한국 날짜. New 뱃지·새로 들어온 맞춤 공고 공통. */
+export async function getLastCrawlKoreaDayRange(): Promise<LastCrawlKoreaDayRange> {
+  const today = getKoreaDateLocalToday();
+  try {
+    const { runs } = await listCrawlRunsPage(1, 1);
+    const run = runs[0];
+    if (!run) return { start: today, end: today };
+    const end =
+      getKoreaDateFromIso(run.finishedAt) ?? getKoreaDateFromIso(run.startedAt) ?? today;
+    const start = getKoreaDateFromIso(run.startedAt) ?? end;
+    return start <= end ? { start, end } : { start: end, end };
+  } catch (error) {
+    console.warn('[crawl-runs] last crawl day failed', error);
+    return { start: today, end: today };
+  }
 }
 
 function resolveRunTimestamp(data: DocumentData): Date | null {

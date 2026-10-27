@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCrawledJob } from '@/lib/crawled-jobs-server';
+import { getLastCrawlKoreaDayRange } from '@/lib/crawl-runs-server';
+import { getKoreaDateLocalToday } from '@/lib/datetime';
 
 export async function GET(
   _request: Request,
@@ -8,7 +10,7 @@ export async function GET(
   const { id } = await context.params;
 
   try {
-    const job = await getCrawledJob(id);
+    const [job, crawlDays] = await Promise.all([getCrawledJob(id), getLastCrawlKoreaDayRange()]);
     if (!job) {
       return NextResponse.json(
         { ok: false, error: { code: 'NOT_FOUND', message: '채용 공고를 찾을 수 없습니다.' } },
@@ -16,7 +18,15 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ ok: true, data: { job } });
+    return NextResponse.json({
+      ok: true,
+      data: {
+        job,
+        todayDate: getKoreaDateLocalToday(),
+        lastCrawlDayStart: crawlDays.start,
+        lastCrawlDay: crawlDays.end,
+      },
+    });
   } catch (error) {
     console.error('[crawled-jobs] get failed', error);
     return NextResponse.json(
