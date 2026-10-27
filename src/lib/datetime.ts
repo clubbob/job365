@@ -225,6 +225,30 @@ export function formatKoreaDateTime(value: string | null | undefined): string {
   }).format(date);
 }
 
+export function formatKoreaDateDot(
+  value: string | null | undefined,
+  options?: { withYear?: boolean },
+): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: KOREA_TZ,
+    ...(options?.withYear === false ? {} : { year: 'numeric' }),
+    month: 'numeric',
+    day: 'numeric',
+  }).format(date);
+}
+
+export function formatKoreaDateRangeDot(start: string, end: string): string {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return '';
+  const yearFmt = new Intl.DateTimeFormat('en', { timeZone: KOREA_TZ, year: 'numeric' });
+  const sameYear = yearFmt.format(startDate) === yearFmt.format(endDate);
+  return `${formatKoreaDateDot(start)} ~ ${formatKoreaDateDot(end, { withYear: !sameYear })}`;
+}
+
 export function formatDurationMinutes(minutes: number): string {
   const rounded = Math.max(0, Math.round(minutes));
   if (rounded < 60) return `${rounded}분`;

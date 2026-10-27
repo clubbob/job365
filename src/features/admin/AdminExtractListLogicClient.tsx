@@ -26,7 +26,7 @@ export default function AdminExtractListLogicClient() {
         <ul className={logicListClassName}>
           <li>
             <span className="font-medium">통계 요약</span> — 회사 분류({companySegmentList})별로 「수집 채용 회사」
-            명단 곳수, 지금 DB의 수집·부적합·노출 공고 건수, 마지막 수집의 추가된 공고·마감 처리 공고·순 증감 공고를
+            명단 곳수, 마지막 수집의 추가된 공고·마감 처리 공고·순 증감 공고, 지금 DB의 수집·부적합·노출 공고 건수를
             봅니다. 부적합은 수집에서 노출을 뺀 값(마감으로 보이는 건, 중복, 품질·노출 제한 등)이며 −로 표시합니다.
             공고 행은 분류마다 한 번만 세며, 네 분류 합이 「합계」 열과 같습니다.
           </li>

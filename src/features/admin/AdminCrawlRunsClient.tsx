@@ -154,6 +154,43 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
       values: registryValues,
       unit: '곳',
     },
+  ];
+
+  if (summary.lastRun) {
+    const fetchedRaw = summary.fetchedBySegment ?? emptyCompanySegmentCounts();
+    const closedRaw = summary.closedBySegment ?? emptyCompanySegmentCounts();
+    const fetched = jobBoardToAdminCrawlStatsCounts(fetchedRaw);
+    const closed = jobBoardToAdminCrawlStatsCounts(closedRaw);
+    const netValues = netAdminCrawlStatsCounts(fetchedRaw, closedRaw);
+
+    rows.push(
+      {
+        group: '마지막 수집',
+        label: '추가된 공고',
+        total: sumAdminCrawlStatsSegmentCounts(fetched),
+        values: fetched,
+        unit: '건',
+      },
+      {
+        group: '마지막 수집',
+        label: '마감 처리 공고',
+        total: sumAdminCrawlStatsSegmentCounts(closed),
+        values: closed,
+        unit: '건',
+        negative: true,
+      },
+      {
+        group: '마지막 수집',
+        label: '순 증감 공고',
+        total: sumAdminCrawlStatsSegmentCounts(netValues),
+        values: netValues,
+        unit: '건',
+        signed: true,
+      },
+    );
+  }
+
+  rows.push(
     {
       group: '지금',
       label: '수집 채용 공고',
@@ -176,40 +213,6 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
       values: activeValues,
       unit: '건',
       highlight: true,
-    },
-  ];
-
-  if (!summary.lastRun) return rows;
-
-  const fetchedRaw = summary.fetchedBySegment ?? emptyCompanySegmentCounts();
-  const closedRaw = summary.closedBySegment ?? emptyCompanySegmentCounts();
-  const fetched = jobBoardToAdminCrawlStatsCounts(fetchedRaw);
-  const closed = jobBoardToAdminCrawlStatsCounts(closedRaw);
-  const netValues = netAdminCrawlStatsCounts(fetchedRaw, closedRaw);
-
-  rows.push(
-    {
-      group: '마지막 수집',
-      label: '추가된 공고',
-      total: sumAdminCrawlStatsSegmentCounts(fetched),
-      values: fetched,
-      unit: '건',
-    },
-    {
-      group: '마지막 수집',
-      label: '마감 처리 공고',
-      total: sumAdminCrawlStatsSegmentCounts(closed),
-      values: closed,
-      unit: '건',
-      negative: true,
-    },
-    {
-      group: '마지막 수집',
-      label: '순 증감 공고',
-      total: sumAdminCrawlStatsSegmentCounts(netValues),
-      values: netValues,
-      unit: '건',
-      signed: true,
     },
   );
 
@@ -261,7 +264,7 @@ export default function AdminCrawlRunsClient() {
       summary.storedActiveJobsBySegment ?? emptyCompanySegmentCounts(),
     );
     if (stored <= 0 || segmentTotal > 0) return;
-    const timer = window.setTimeout(() => void load(), 20_000);
+    const timer = window.setTimeout(() => void load(), 3_000);
     return () => window.clearTimeout(timer);
   }, [summary, load]);
 
@@ -329,7 +332,7 @@ export default function AdminCrawlRunsClient() {
     <div className="space-y-5">
       <PageHeader
         title="통계 요약"
-        description="기업 카테고리별 통계 요약한 페이지입니다."
+        description="기업 카테고리별 통계 요약한 페이지입니다. 매일 같은 표를 일자별로 저장합니다."
         homeHref="/admin"
         homeLabel="대시보드"
         trailing={

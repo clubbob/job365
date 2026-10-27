@@ -9,7 +9,7 @@ export default function RefreshButton() {
   const router = useRouter();
 
   function handleRefresh() {
-    if (pathname === '/jobs' || pathname === '/my-jobs') {
+    if (pathname === '/jobs' || pathname === '/my-jobs' || pathname === '/jobs/trend') {
       requestJobBoardRefresh();
       return;
     }

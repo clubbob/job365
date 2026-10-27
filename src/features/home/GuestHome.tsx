@@ -21,8 +21,8 @@ const AUDIENCES: Array<{
     title: '구직자',
     description: '취업을 준비하는 개인',
     points: [
-      '알바부터 정규직까지 채용 정보를 찾아 바로 지원합니다.',
-      '이력서를 등록·공개하면 구인자가 먼저 면접을 제안할 수 있습니다.',
+      '대기업·중견기업·IT·장비사 채용 공고를 한 곳에서 보고 바로 지원합니다.',
+      '채용 트렌드로 최근 흐름을 확인하고, 맞춤 공고를 메일로 받을 수 있습니다.',
     ],
   },
   {
@@ -30,8 +30,8 @@ const AUDIENCES: Array<{
     title: '구인자',
     description: '채용하는 회사',
     points: [
-      '인재 정보를 살펴보고 맞는 구직자에게 면접을 제안합니다.',
-      '채용 정보를 등록하고 지원 현황을 한곳에서 관리합니다.',
+      '공개된 인재 정보를 살펴보고 맞는 구직자에게 면접을 제안합니다.',
+      '이용료 없이 이력서를 열람하고 면접을 제안할 수 있습니다.',
     ],
   },
 ];
@@ -46,8 +46,8 @@ const HIGHLIGHTS = [
     body: '로그인 한 번으로 구직자와 구인자를 바꿔 가며 이용할 수 있습니다.',
   },
   {
-    title: '알바부터 정규직까지',
-    body: '단기·시간제부터 정규 채용까지, 여러 근무 형태를 한곳에서 다룹니다.',
+    title: '채용 트렌드',
+    body: '이 사이트에 모인 채용 공고가 수집할 때마다 어떻게 변했는지 봅니다.',
   },
 ];
 
@@ -61,11 +61,10 @@ export default function GuestHome() {
       <section className="rounded-2xl bg-gradient-to-br from-primary to-primary-dark px-5 py-8 text-white shadow-card sm:px-8 sm:py-10">
         <p className="text-sm font-semibold text-blue-100">100% 무료 이용·매칭</p>
         <h1 className="mt-2 text-2xl font-bold leading-snug sm:text-3xl">
-          알바부터 정규직까지, 이용료 없이 연결합니다
+          모인 채용 공고와 인재를, 이용료 없이 연결합니다
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-blue-100 sm:text-base">
-          JobLink 365는 구직자와 구인자를 위한 무료 매칭 서비스입니다. 로그인 후 이용 주체를 고르면 바로 시작할 수
-          있습니다.
+          JobLink 365는 구직자와 구인자를 위한 무료 매칭 서비스입니다. 채용 트렌드로 최근 흐름도 볼 수 있습니다.
         </p>
         <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-stretch">
           {isLoggedIn ? (

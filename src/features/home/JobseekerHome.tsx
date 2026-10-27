@@ -2,6 +2,7 @@ import Link from 'next/link';
 import AdSlot from '@/components/ads/AdSlot';
 import JobBoardList from '@/features/job-board/JobBoardList';
 import { JOB_HOME_PAGE_SIZE } from '@/lib/job-board/constants';
+import { JOB_TREND_PAGE_TITLE } from '@/lib/site-menu-copy';
 
 export default function JobseekerHome() {
   return (
@@ -12,14 +13,20 @@ export default function JobseekerHome() {
           지금 지원할 수 있는 채용 정보를 찾아 보세요
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-blue-100 sm:text-base">
-          수집된 채용 공고를 확인하고 원문 사이트에서 지원할 수 있습니다. 이용료는 없습니다.
+          모인 채용 공고를 확인하고, 채용 트렌드로 최근 흐름을 볼 수 있습니다. 지원은 원문 사이트로 연결됩니다.
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
-            href="/mypage?tab=resume"
+            href="/jobs"
             className="inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition hover:bg-blue-50"
           >
-            취업 관리
+            채용 공고 보기
+          </Link>
+          <Link
+            href="/jobs/trend"
+            className="inline-flex rounded-lg border border-white/70 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
+          >
+            {JOB_TREND_PAGE_TITLE}
           </Link>
         </div>
       </section>

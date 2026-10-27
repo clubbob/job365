@@ -29,7 +29,6 @@ export const JOB_ROLES = [
   '금융·회계',
   '교육',
   '서비스·고객 관리',
-  '기타',
 ] as const;
 export type JobRole = (typeof JOB_ROLES)[number];
 

@@ -15,7 +15,7 @@ const HIDE_CONTENT_AD = new Set([
 
 function isPostingDetailPath(pathname: string): boolean {
   const job = pathname.match(/^\/jobs\/([^/]+)$/);
-  if (job && job[1] !== 'new') return true;
+  if (job && job[1] !== 'new' && job[1] !== 'trend' && job[1] !== 'companies') return true;
   const talent = pathname.match(/^\/talents\/([^/]+)$/);
   if (talent && talent[1] !== 'new') return true;
   return false;

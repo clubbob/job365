@@ -1,7 +1,9 @@
+import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
+import { JOB_TREND_PAGE_TITLE, MATCHED_JOBS_PAGE_TITLE } from '@/lib/site-menu-copy';
 import { cn } from '@/lib/utils';
 
-type HighlightIcon = 'channels' | 'summary' | 'matched';
+type HighlightIcon = 'channels' | 'trend' | 'matched';
 
 type HighlightTheme = {
   card: string;
@@ -23,14 +25,14 @@ const THEMES: Record<HighlightIcon, HighlightTheme> = {
     iconStroke: 'stroke-sky-600',
     iconFill: 'fill-sky-500/25',
   },
-  summary: {
+  trend: {
     card: cn(
       CARD_HOVER,
-      'border-t-4 border-t-emerald-500 bg-gradient-to-b from-emerald-50 to-surface hover:border-emerald-200/90 hover:from-emerald-50/95',
+      'border-t-4 border-t-amber-500 bg-gradient-to-b from-amber-50 to-surface hover:border-amber-200/90 hover:from-amber-50/95',
     ),
-    iconWrap: 'bg-gradient-to-br from-emerald-100 to-teal-50 ring-emerald-200/80',
-    iconStroke: 'stroke-emerald-600',
-    iconFill: 'fill-emerald-500/25',
+    iconWrap: 'bg-gradient-to-br from-amber-100 to-orange-50 ring-amber-200/80',
+    iconStroke: 'stroke-amber-600',
+    iconFill: 'fill-amber-500/25',
   },
   matched: {
     card: cn(
@@ -47,21 +49,29 @@ const HIGHLIGHTS: Array<{
   id: HighlightIcon;
   title: string;
   body: string;
+  href: string;
+  cta: string;
 }> = [
   {
     id: 'channels',
-    title: '여러 채용 공고를 한 곳에서 조회',
-    body: '대기업·중견·채용 사이트 공고를 한 곳에서 검색합니다.',
+    title: '여러 채용 공고를 한 곳에서',
+    body: '대기업·중견기업·IT 회사·반도체·디스플레이 장비사 공고를 모읍니다.',
+    href: '/jobs',
+    cta: '채용 공고 보기',
   },
   {
-    id: 'summary',
-    title: '채용 공고 요약 제공, 바로 지원',
-    body: '공고는 읽기 쉽게 요약하고, 지원은 원문 사이트로 연결합니다.',
+    id: 'trend',
+    title: JOB_TREND_PAGE_TITLE,
+    body: '수집할 때마다 늘어난·줄어든 채용 공고 흐름을 분류별로 봅니다.',
+    href: '/jobs/trend',
+    cta: `${JOB_TREND_PAGE_TITLE} 보기`,
   },
   {
     id: 'matched',
-    title: '내 맞춤 채용 공고, 이메일 전송',
-    body: '희망 조건에 맞는 공고만 골라 볼 수 있습니다.',
+    title: MATCHED_JOBS_PAGE_TITLE,
+    body: '희망 조건에 맞는 공고만 골라 보고, 메일로도 받을 수 있습니다.',
+    href: '/my-jobs',
+    cta: `${MATCHED_JOBS_PAGE_TITLE} 보기`,
   },
 ];
 
@@ -77,19 +87,18 @@ function HighlightIconGraphic({ id, theme }: { id: HighlightIcon; theme: Highlig
       </svg>
     );
   }
-  if (id === 'summary') {
+  if (id === 'trend') {
     return (
       <svg viewBox="0 0 48 48" fill="none" className={common} aria-hidden>
-        <rect x="8" y="6" width="26" height="34" rx="4" className={cn(fill, theme.iconStroke)} strokeWidth="2" />
-        <path d="M14 16h18M14 22h14M14 28h10" strokeWidth="2" strokeLinecap="round" className={theme.iconStroke} />
-        <circle cx="36" cy="34" r="8" className="fill-emerald-500 stroke-emerald-600" strokeWidth="2" />
+        <rect x="6" y="8" width="36" height="32" rx="4" className={cn(fill, theme.iconStroke)} strokeWidth="2" />
         <path
-          d="M33 34l2 2 4-5"
-          className="stroke-white"
-          strokeWidth="2"
+          d="M12 30l8-8 6 4 10-12"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          className={theme.iconStroke}
         />
+        <circle cx="36" cy="14" r="2.5" className="fill-amber-600" />
       </svg>
     );
   }
@@ -113,20 +122,23 @@ export default function HomeServiceHighlights() {
           const theme = THEMES[item.id];
           return (
             <li key={item.id} className="min-w-0">
-              <Card className={cn('h-full overflow-hidden p-0 shadow-card', theme.card)}>
-                <div className="flex h-full flex-col p-3 sm:p-4">
-                  <div
-                    className={cn(
-                      'mb-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 ease-out group-hover:scale-105',
-                      theme.iconWrap,
-                    )}
-                  >
-                    <HighlightIconGraphic id={item.id} theme={theme} />
+              <Link href={item.href} className="block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+                <Card className={cn('h-full overflow-hidden p-0 shadow-card', theme.card)}>
+                  <div className="flex h-full flex-col p-3 sm:p-4">
+                    <div
+                      className={cn(
+                        'mb-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 ease-out group-hover:scale-105',
+                        theme.iconWrap,
+                      )}
+                    >
+                      <HighlightIconGraphic id={item.id} theme={theme} />
+                    </div>
+                    <p className="text-sm font-bold leading-snug text-foreground sm:text-base">{item.title}</p>
+                    <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted">{item.body}</p>
+                    <p className="mt-auto pt-3 text-sm font-semibold text-primary">{item.cta}</p>
                   </div>
-                  <p className="text-sm font-bold leading-snug text-foreground sm:text-base">{item.title}</p>
-                  <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted">{item.body}</p>
-                </div>
-              </Card>
+                </Card>
+              </Link>
             </li>
           );
         })}

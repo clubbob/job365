@@ -10,7 +10,7 @@ import { getUserNicknameFallback } from '@/lib/user-display';
 import { clearJobBoardListRestore } from '@/lib/job-board/list-restore';
 import { requestJobBoardReset } from '@/lib/job-board/reset';
 import { isCrawledJobDetailFromMyJobs } from '@/lib/job-board/detail-navigation';
-import { MATCHED_JOBS_PAGE_TITLE } from '@/lib/site-menu-copy';
+import { JOB_TREND_PAGE_TITLE, MATCHED_JOBS_PAGE_TITLE } from '@/lib/site-menu-copy';
 import { cn } from '@/lib/utils';
 
 function MenuIcon({ open }: { open: boolean }) {
@@ -46,6 +46,7 @@ const NAV_ITEMS: Array<{
   prefetch?: boolean;
 }> = [
   { href: '/jobs', label: '채용 공고', exact: false },
+  { href: '/jobs/trend', label: JOB_TREND_PAGE_TITLE, exact: true },
   { href: '/my-jobs', label: MATCHED_JOBS_PAGE_TITLE, exact: false, authOnly: true },
   { href: '/notices', label: '공지 사항', exact: false },
 ];
@@ -59,7 +60,11 @@ function isNavActive(
   if (exact) return pathname === href;
   if (href === '/jobs') {
     if (jobDetailFromMyJobs) return false;
+    if (pathname === '/jobs/trend' || pathname.startsWith('/jobs/trend/')) return false;
     return pathname === '/jobs' || pathname.startsWith('/jobs/');
+  }
+  if (href === '/jobs/trend') {
+    return pathname === '/jobs/trend' || pathname.startsWith('/jobs/trend/');
   }
   if (href === '/my-jobs') {
     if (jobDetailFromMyJobs) return true;

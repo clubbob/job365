@@ -1,4 +1,5 @@
-import { HOME_BANNER_SUBTITLE, HOME_BANNER_TITLE } from '@/lib/site-menu-copy';
+import Link from 'next/link';
+import { HOME_BANNER_SUBTITLE, HOME_BANNER_TITLE, JOB_TREND_PAGE_TITLE } from '@/lib/site-menu-copy';
 
 function BannerIllustration({ className }: { className?: string }) {
   return (
@@ -67,6 +68,20 @@ export default function HomeScreenBanner() {
           <p className="mt-3 max-w-lg text-sm leading-relaxed text-blue-100 sm:text-base">
             {HOME_BANNER_SUBTITLE}
           </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link
+              href="/jobs"
+              className="inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition hover:bg-blue-50"
+            >
+              채용 공고 보기
+            </Link>
+            <Link
+              href="/jobs/trend"
+              className="inline-flex rounded-lg border border-white/70 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
+            >
+              {JOB_TREND_PAGE_TITLE}
+            </Link>
+          </div>
         </div>
 
         <BannerIllustration className="hidden h-32 w-40 shrink-0 sm:block lg:h-36 lg:w-44" />

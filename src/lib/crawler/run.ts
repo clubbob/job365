@@ -28,6 +28,7 @@ import type {
 import { emptyCompanySegmentCounts, type JobBoardCompanySegment } from '@/lib/job-board/company-segment';
 import { addJobsToPrimaryCompanySegmentCounts } from '@/lib/job-board/stored-active-segment-stats';
 import type { CrawledJob } from '@/types/crawled-job';
+import { captureCrawlStatsDailyBeforeCrawl } from '@/lib/crawl-stats-daily-server';
 import { saveCrawlRun } from '@/lib/crawl-runs-server';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 
@@ -149,6 +150,7 @@ function createIncrementalSyncAccumulator(closedBySegment: Record<JobBoardCompan
 
 export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
   const startedAt = new Date().toISOString();
+  await captureCrawlStatsDailyBeforeCrawl();
   const sourceSummaries = [];
   const fetchedBySegment = emptyCompanySegmentCounts();
   const closedBySegment = emptyCompanySegmentCounts();

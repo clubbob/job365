@@ -54,11 +54,24 @@ const TITLE_ROLE_KEYWORDS: Array<{ pattern: RegExp; role: JobRole }> = [
   { pattern: /(?:SW|소프트웨어)\s*QA|테스트\s*엔지니어|QA\s*엔지니어/i, role: ROLE_IT_AI_PROGRAMMING },
   { pattern: /기획|(?:^|[^A-Za-z])PM(?:[^A-Za-z]|$)|Product\s*Manager|Product\s*Owner/i, role: '기획·PM' },
   { pattern: /디자인|Design|UX|UI/i, role: '디자인' },
-  { pattern: /마케팅|Marketing|광고|브랜드/i, role: '마케팅·광고' },
-  { pattern: /영업|Sales/i, role: '영업·판매' },
-  { pattern: /인사|HR|총무|경영|사무|회계|재무|Finance/i, role: '경영·사무' },
-  { pattern: /연구|R&D/i, role: '연구·개발' },
+  { pattern: /마케팅|Marketing|광고|브랜드|\bMD\b/i, role: '마케팅·광고' },
+  { pattern: /영업|Sales|판매|수주|무역|쇼핑몰/i, role: '영업·판매' },
+  { pattern: /회계|재무|세무|경리|자금|결산|금융|보험|증권|Finance/i, role: '금융·회계' },
+  { pattern: /인사|\bHR\b|총무|경영|사무|행정|비서|법무|구매|자재|외주/i, role: '경영·사무' },
+  {
+    pattern:
+      /생산|제조|생산직|기능직|공정|설비|기계|품질|가공|조립|용접|보전|공무|오퍼레이터|Operator|교대|현장직|패키징|포장|금형|사출|프레스|\bCNC\b|\bNCT\b|비파괴|검사원|물류|피킹|기술직|전기|전장|냉동|공조|유지\s*[,·]?\s*보수|설비OP|기술\s*엔지니어/i,
+    role: '생산·제조',
+  },
+  { pattern: /연구|R&D|설계|연구원|연구소|Test\s*Engineer|\bEngineer\b/i, role: '연구·개발' },
   { pattern: /교육|강사/i, role: '교육' },
+  {
+    pattern:
+      /고객|상담|콜센터|\bCS\b|\bCX\b|\bTM\b|예약|미화|시설관리|방역|방제|위생|호텔|조리|요리|매장|서비스|간호|의료|보건|운전|배송/i,
+    role: '서비스·고객 관리',
+  },
+  { pattern: /홍보|콘텐츠|기자/i, role: '마케팅·광고' },
+  { pattern: /건축|건설|토목|안전|환경|\bUtility\b/i, role: '생산·제조' },
 ];
 
 export function parseEmploymentTypesFromTitle(title: string): EmploymentType[] {
@@ -106,7 +119,14 @@ export function inferJobRoles(title: string, part?: string, ...extraLabels: stri
 
   if (blockSoftwareIt) roles.delete(ROLE_IT_AI_PROGRAMMING);
 
-  if (roles.size === 0) roles.add('기타');
+  if (roles.size === 0) {
+    if (/공장|캠퍼스|부품|현장|반도체|기술|단조|철강|화학|전지/i.test(haystack)) {
+      roles.add('생산·제조');
+    } else {
+      roles.add('경영·사무');
+    }
+  }
+
   return [...roles];
 }
 

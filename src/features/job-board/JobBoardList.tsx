@@ -127,7 +127,8 @@ function buildQuery(
   for (const item of state.roles) params.append('role', item);
   for (const item of state.regions) params.append('region', item);
   const hasFilters = jobBoardListHasActiveFilters(state, todayOnly, false);
-  if (page > 1 || hasFilters) {
+  const customPageSize = pageSize !== JOB_LIST_PAGE_SIZE;
+  if (page > 1 || hasFilters || customPageSize) {
     params.set('page', String(page));
     params.set('pageSize', String(pageSize));
   }
@@ -690,7 +691,7 @@ function JobBoardList({
             )}
             aria-busy={loading}
           >
-            {items.map((job) => (
+            {(showLoadMore ? items : items.slice(0, listPageSize)).map((job) => (
               <CrawledJobCard
                 key={job.id}
                 job={job}

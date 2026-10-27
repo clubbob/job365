@@ -8,6 +8,7 @@ const TITLE_HEADER_PATHS = new Set([
   '/mypage',
   '/my-jobs',
   '/jobs',
+  '/jobs/trend',
   '/talents',
   '/talents/new',
   '/inquiry',

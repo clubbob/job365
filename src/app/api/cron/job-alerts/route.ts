@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyCronRequest } from '@/lib/cron-auth';
+import { captureCrawlStatsDailyIfNeeded } from '@/lib/crawl-stats-daily-server';
 import { sendDailyJobAlertEmails } from '@/lib/job-alert-email-server';
 
 export const maxDuration = 60;
@@ -9,8 +10,9 @@ export async function GET(request: Request) {
   if (denied) return denied;
 
   try {
+    const daily = await captureCrawlStatsDailyIfNeeded('cron');
     const summary = await sendDailyJobAlertEmails();
-    return NextResponse.json({ ok: true, data: summary });
+    return NextResponse.json({ ok: true, data: { ...summary, dailyStats: daily } });
   } catch (error) {
     console.error('[cron/job-alerts] failed', error);
     const message = error instanceof Error ? error.message : '이메일 발송에 실패했습니다.';

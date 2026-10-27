@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/admin-auth';
+import { saveCrawlStatsDailyIfNeeded } from '@/lib/crawl-stats-daily-server';
 import { getCrawlStatsSummary } from '@/lib/crawl-stats-summary';
 import { emptyCompanySegmentCounts } from '@/lib/job-board/company-segment';
 import { firebaseAdminListFields, isFirebaseAdminReady } from '@/lib/firebaseAdmin';
@@ -36,6 +37,7 @@ export async function GET(request: Request) {
 
   try {
     const summary = await getCrawlStatsSummary({ waitForFullScan });
+    void saveCrawlStatsDailyIfNeeded(summary, 'summary');
     return NextResponse.json({ ok: true, data: { ...summary, ...firebaseAdminListFields() } });
   } catch (error) {
     console.error('[crawl-stats-summary] GET failed', error);
