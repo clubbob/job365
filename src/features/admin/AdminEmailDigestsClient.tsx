@@ -38,7 +38,7 @@ export default function AdminEmailDigestsClient() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="이메일 발송 내역" description="채용 공고 알림 메일 발송 기록입니다." homeHref="/admin" homeLabel="관리자" />
+      <PageHeader title="이메일 발송 내역" description="맞춤 채용 안내 메일은 매일 한 번 발송됩니다." homeHref="/admin" homeLabel="관리자" />
 
       {loading ? <p className="text-sm text-muted">불러오는 중…</p> : null}
       {error ? <p className="text-sm text-red-700">{error}</p> : null}

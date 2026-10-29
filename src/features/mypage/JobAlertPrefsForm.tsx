@@ -144,8 +144,8 @@ export default function JobAlertPrefsForm({ user }: { user: User }) {
             ))}
           </div>
           <p className="text-xs leading-relaxed text-muted">
-            &quot;채용 공고 이메일 받기&quot;를 선택하고 저장하면 맞춤 채용 설정에 따라 채용 공고 안내 메일을 받는 것에
-            동의한 것으로 봅니다. 마케팅 수신 동의와는 별개입니다.
+            &quot;채용 공고 이메일 받기&quot;를 선택하고 저장하면 맞춤 채용 설정에 따라 매일 한 번 채용 공고 안내 메일을
+            받는 것에 동의한 것으로 봅니다. 마케팅 수신 동의와는 별개입니다.
           </p>
         </div>
 

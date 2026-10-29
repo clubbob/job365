@@ -67,8 +67,10 @@ export default function PrivacyPage() {
         <LegalP>동의 또는 법령에 따른 경우에만 제3자에게 제공합니다.</LegalP>
         <LegalP>법령에 따른 제공이 필요한 경우에 한해 관계 기관에 제공할 수 있습니다.</LegalP>
         <LegalP>
-          위탁: Google(Firebase·이메일·비밀번호 인증·저장). Firebase 이용에 따라 개인정보가
-          미국으로 이전될 수 있으며, 회원가입 시 개인정보처리방침(국외 이전 포함) 동의로 이전·이용합니다.
+          위탁: Google LLC(미국). Firebase Authentication, Cloud Firestore 등 Google Cloud 인프라에서 회원 인증·데이터
+          저장·서비스 운영을 처리합니다. 회사는 생성형 AI·AI 에이전트 제공을 위해 개인정보를 위탁하지 않습니다.
+          Firebase 이용에 따라 개인정보가 미국으로 이전될 수 있으며, 회원가입 시 개인정보처리방침(국외 이전 포함)
+          동의로 이전·이용합니다.
         </LegalP>
       </LegalSection>
 

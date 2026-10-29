@@ -1,6 +1,7 @@
 'use client';
 
 import HomeScreenBanner from '@/components/ads/HomeScreenBanner';
+import HomeJobCoverage, { type HomeJobCoverageStats } from '@/features/home/HomeJobCoverage';
 import HomeServiceHighlights from '@/features/home/HomeServiceHighlights';
 import RecruiterHome from '@/features/home/RecruiterHome';
 import JobBoardList from '@/features/job-board/JobBoardList';
@@ -10,9 +11,10 @@ import type { CrawledJobListItem } from '@/types/crawled-job';
 
 type HomePageClientProps = {
   prefetchedRecentJobs?: CrawledJobListItem[];
+  jobCoverage?: HomeJobCoverageStats;
 };
 
-export default function HomePageClient({ prefetchedRecentJobs }: HomePageClientProps) {
+export default function HomePageClient({ prefetchedRecentJobs, jobCoverage }: HomePageClientProps) {
   const { mode, ready } = useUserMode();
 
   if (ready && mode === 'recruiter') {
@@ -22,6 +24,7 @@ export default function HomePageClient({ prefetchedRecentJobs }: HomePageClientP
   return (
     <div className="flex flex-col gap-6">
       <HomeScreenBanner />
+      <HomeJobCoverage stats={jobCoverage} />
       <HomeServiceHighlights />
       <JobBoardList
         showFilters={false}

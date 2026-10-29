@@ -1,15 +1,15 @@
-name: Job crawl (every 3 days)
+name: Job crawl (Mon Wed Fri)
 
 on:
   schedule:
-    # 한국 02:00 ≈ UTC 17:00(전날), 약 3일마다 — src/lib/crawler/schedule.ts CRAWL_CRON_UTC
-    - cron: '0 17 */3 * *'
+    # 한국 월·수·금 02:00 = UTC 일·화·목 17:00 — src/lib/crawler/schedule.ts CRAWL_CRON_UTC
+    - cron: '0 17 * * 0,2,4'
   workflow_dispatch:
 
 jobs:
   crawl:
     runs-on: ubuntu-latest
-    # 3일에 1회·중견 배치 (GitHub Actions 분). Vercel 함수는 사용하지 않음.
+    # 주 3회·중견 배치 (GitHub Actions 분). Vercel 함수는 사용하지 않음.
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4

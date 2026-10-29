@@ -1,5 +1,11 @@
 import Link from 'next/link';
-import { HOME_BANNER_SUBTITLE, HOME_BANNER_TITLE, JOB_TREND_PAGE_TITLE } from '@/lib/site-menu-copy';
+import {
+  HOME_BANNER_SUBTITLE,
+  HOME_BANNER_TITLE,
+  HOME_BANNER_VALUE_CHIPS,
+  JOB_TREND_PAGE_TITLE,
+  MATCHED_JOBS_PAGE_TITLE,
+} from '@/lib/site-menu-copy';
 
 function BannerIllustration({ className }: { className?: string }) {
   return (
@@ -10,42 +16,30 @@ function BannerIllustration({ className }: { className?: string }) {
       className={className}
       aria-hidden
     >
-      <ellipse cx="100" cy="142" rx="72" ry="10" fill="white" fillOpacity="0.12" />
-      <rect x="28" y="52" width="52" height="72" rx="6" fill="white" fillOpacity="0.18" />
-      <rect x="40" y="66" width="12" height="10" rx="2" fill="white" fillOpacity="0.35" />
-      <rect x="56" y="66" width="12" height="10" rx="2" fill="white" fillOpacity="0.35" />
-      <rect x="40" y="82" width="12" height="10" rx="2" fill="white" fillOpacity="0.22" />
-      <rect x="56" y="82" width="12" height="10" rx="2" fill="white" fillOpacity="0.22" />
-      <rect x="40" y="98" width="12" height="10" rx="2" fill="white" fillOpacity="0.22" />
-      <rect x="56" y="98" width="12" height="10" rx="2" fill="white" fillOpacity="0.22" />
-      <rect x="88" y="36" width="48" height="88" rx="6" fill="white" fillOpacity="0.22" />
-      <rect x="98" y="50" width="10" height="8" rx="2" fill="white" fillOpacity="0.35" />
-      <rect x="112" y="50" width="10" height="8" rx="2" fill="white" fillOpacity="0.35" />
-      <rect x="98" y="64" width="10" height="8" rx="2" fill="white" fillOpacity="0.25" />
-      <rect x="112" y="64" width="10" height="8" rx="2" fill="white" fillOpacity="0.25" />
-      <rect x="98" y="78" width="10" height="8" rx="2" fill="white" fillOpacity="0.25" />
-      <rect x="112" y="78" width="10" height="8" rx="2" fill="white" fillOpacity="0.25" />
-      <rect x="144" y="64" width="40" height="60" rx="6" fill="white" fillOpacity="0.16" />
-      <rect x="154" y="76" width="10" height="8" rx="2" fill="white" fillOpacity="0.3" />
-      <rect x="168" y="76" width="10" height="8" rx="2" fill="white" fillOpacity="0.3" />
-      <circle cx="156" cy="28" r="20" stroke="white" strokeOpacity="0.45" strokeWidth="3.5" />
-      <path d="M168 40l12 12" stroke="white" strokeOpacity="0.65" strokeWidth="3.5" strokeLinecap="round" />
-      <rect x="118" y="108" width="56" height="38" rx="8" fill="white" fillOpacity="0.92" />
-      <rect x="128" y="118" width="36" height="5" rx="2.5" fill="#2563eb" fillOpacity="0.45" />
-      <rect x="128" y="128" width="28" height="4" rx="2" fill="#2563eb" fillOpacity="0.25" />
-      <rect x="128" y="136" width="32" height="4" rx="2" fill="#2563eb" fillOpacity="0.25" />
+      <ellipse cx="100" cy="148" rx="68" ry="8" fill="white" fillOpacity="0.12" />
+      <rect x="18" y="42" width="108" height="78" rx="10" fill="white" fillOpacity="0.16" />
       <path
-        d="M72 124h34a8 8 0 0 1 8 8v6H64v-6a8 8 0 0 1 8-8z"
-        fill="white"
-        fillOpacity="0.85"
-      />
-      <path
-        d="M80 124v-14a18 18 0 0 1 36 0v14"
+        d="M32 96l18-16 14 8 22-24"
         stroke="white"
         strokeOpacity="0.9"
-        strokeWidth="4.5"
+        strokeWidth="4"
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
+      <circle cx="86" cy="64" r="4" fill="white" fillOpacity="0.95" />
+      <rect x="132" y="70" width="54" height="64" rx="10" fill="white" fillOpacity="0.92" />
+      <rect x="144" y="82" width="30" height="5" rx="2.5" fill="#2563eb" fillOpacity="0.5" />
+      <rect x="144" y="92" width="24" height="4" rx="2" fill="#2563eb" fillOpacity="0.28" />
+      <rect x="144" y="102" width="28" height="4" rx="2" fill="#2563eb" fillOpacity="0.28" />
+      <path
+        d="M148 118h28m0 0-6-6m6 6-6 6"
+        stroke="#2563eb"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="156" cy="28" r="16" stroke="white" strokeOpacity="0.5" strokeWidth="3" />
+      <path d="M167 39l10 10" stroke="white" strokeOpacity="0.7" strokeWidth="3" strokeLinecap="round" />
     </svg>
   );
 }
@@ -65,21 +59,31 @@ export default function HomeScreenBanner() {
           <h2 className="mt-2 max-w-xl break-keep text-xl font-bold leading-snug text-white sm:text-2xl">
             {HOME_BANNER_TITLE}
           </h2>
-          <p className="mt-3 max-w-2xl whitespace-pre-line break-keep text-pretty text-sm leading-relaxed text-blue-100 sm:text-base">
+          <p className="mt-3 max-w-xl whitespace-pre-line break-keep text-pretty text-sm leading-relaxed text-blue-100 sm:text-base">
             {HOME_BANNER_SUBTITLE}
           </p>
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {HOME_BANNER_VALUE_CHIPS.map((chip) => (
+              <li
+                key={chip}
+                className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold text-white sm:text-sm"
+              >
+                {chip}
+              </li>
+            ))}
+          </ul>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link
-              href="/jobs"
+              href="/jobs/trend"
               className="inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition hover:bg-blue-50"
             >
-              채용 공고 보기
+              {JOB_TREND_PAGE_TITLE}
             </Link>
             <Link
-              href="/jobs/trend"
+              href="/my-jobs"
               className="inline-flex rounded-lg border border-white/70 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
             >
-              {JOB_TREND_PAGE_TITLE}
+              {MATCHED_JOBS_PAGE_TITLE}
             </Link>
           </div>
         </div>

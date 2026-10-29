@@ -129,7 +129,7 @@ const ENTERPRISE_CAREERS_CONFIG_RECORDS: EnterpriseCareersConfig[] = [
   { ftcName: '토스', crawlSourceId: 'toss', careersUrl: 'https://toss.im/career/jobs' },
   { ftcName: '유코카캐리어스', crawlSourceId: 'eukor', careersUrl: 'https://recruit.eukor.com' },
   { ftcName: '한국콜마', crawlSourceId: 'kolmar', careersUrl: 'https://recruit.kolmar.co.kr' },
-  { ftcName: '원익', crawlSourceId: 'wonik', careersUrl: 'https://recruit.wonik.com' },
+  { ftcName: '원익', crawlSourceId: 'wonik', careersUrl: 'https://wonik.recruiter.co.kr/career/home' },
   { ftcName: '희성', crawlSourceId: 'heesung', careersUrl: 'https://recruit.heesung.com' },
   { ftcName: '오리온', crawlSourceId: 'orion', careersUrl: 'https://recruit.orionworld.com' },
   { ftcName: 'QCP그룹', crawlSourceId: 'qcp', careersUrl: 'https://recruit.qcpgroup.com' },
