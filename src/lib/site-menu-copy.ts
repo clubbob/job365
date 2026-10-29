@@ -6,10 +6,12 @@ export const HOME_BANNER_TITLE =
 export const HOME_BANNER_SUBTITLE =
   '대기업·중견기업·IT 회사·반도체·디스플레이 장비사 공고를 모읍니다.\n수집할 때마다 늘어난·줄어든 흐름과, 내 조건에 새로 들어온 공고를 먼저 보여 줍니다.';
 
+export const HOME_BRIDGE_LABEL = '채용 회사 지원 연결';
+
 export const HOME_BANNER_VALUE_CHIPS = [
   '채용 공고 흐름',
   '새로 들어온 맞춤 공고',
-  '회사 채용 페이지 지원',
+  HOME_BRIDGE_LABEL,
 ] as const;
 
 export const HOME_COVERAGE_TITLE = '진행 중인 채용 공고';

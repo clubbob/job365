@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import {
+  HOME_BRIDGE_LABEL,
   HOME_VALUE_SECTION_TITLE,
   JOB_TREND_PAGE_TITLE,
   MATCHED_JOBS_NEW_SECTION_TITLE,
@@ -81,7 +82,7 @@ const HIGHLIGHTS: Array<{
   {
     id: 'bridge',
     step: '03',
-    title: '회사 채용 페이지로 지원',
+    title: HOME_BRIDGE_LABEL,
     body: '지원은 회사 채용 페이지에서 합니다.',
     href: '/jobs',
     cta: '채용 공고 보기',
