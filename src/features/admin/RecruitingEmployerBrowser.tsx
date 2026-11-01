@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { ADMIN_RECRUITING_COMPANIES_PAGE_SIZE } from '@/lib/admin-constants';
 import { humanizeAdminFetchError } from '@/lib/admin-ui';
-import { normalizeCompanyLabel } from '@/lib/crawler/company-name-match';
 import {
   AdminCompanyRegistrySearchAndFilters,
   AdminCompanyRegistryTableHead,
@@ -67,7 +66,8 @@ export default function RecruitingEmployerBrowser({
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [offset, setOffset] = useState(0);
-  const [allItems, setAllItems] = useState<RegistryRow[]>([]);
+  const [pageItems, setPageItems] = useState<RegistryRow[]>([]);
+  const [resultTotal, setResultTotal] = useState(0);
   const [listMeta, setListMeta] = useState<{
     registryCount: number;
     withActiveJobsCount: number;
@@ -95,16 +95,16 @@ export default function RecruitingEmployerBrowser({
     const requestId = ++fetchRequestIdRef.current;
     setLoading(true);
     setError(null);
-    setAllItems([]);
-    setListMeta(null);
 
     void (async () => {
       try {
         const params = new URLSearchParams({
           segment,
-          offset: '0',
-          limit: '20000',
+          offset: String(offset),
+          limit: String(PAGE_SIZE),
         });
+        const q = debouncedQuery.trim();
+        if (q) params.set('q', q);
 
         const res = await fetch(`/api/admin/recruiting-companies?${params}`, {
           signal: controller.signal,
@@ -118,7 +118,8 @@ export default function RecruitingEmployerBrowser({
           throw new Error('수집 채용 회사 목록을 불러오지 못했습니다.');
         }
 
-        setAllItems(json.data.items);
+        setPageItems(json.data.items);
+        setResultTotal(json.data.total);
         setListMeta({
           registryCount: json.data.registryCount,
           withActiveJobsCount: json.data.withActiveJobsCount,
@@ -135,7 +136,8 @@ export default function RecruitingEmployerBrowser({
             err instanceof Error ? err.message : '수집 채용 회사 목록을 불러오지 못했습니다.',
           ),
         );
-        setAllItems([]);
+        setPageItems([]);
+        setResultTotal(0);
         setListMeta(null);
       } finally {
         if (fetchRequestIdRef.current === requestId) setLoading(false);
@@ -143,17 +145,9 @@ export default function RecruitingEmployerBrowser({
     })();
 
     return () => controller.abort();
-  }, [segment]);
+  }, [segment, offset, debouncedQuery]);
 
-  const filteredItems = useMemo(() => {
-    const needle = normalizeCompanyLabel(debouncedQuery);
-    if (!needle) return allItems;
-    return allItems.filter((row) => normalizeCompanyLabel(row.companyName).includes(needle));
-  }, [allItems, debouncedQuery]);
-
-  const resultTotal = filteredItems.length;
-  const pageItems = filteredItems.slice(offset, offset + PAGE_SIZE);
-  const initialLoading = loading && allItems.length === 0;
+  const initialLoading = loading && pageItems.length === 0;
 
   return (
     <Card>
@@ -210,10 +204,7 @@ export default function RecruitingEmployerBrowser({
         </>
       ) : null}
 
-      {!loading && allItems.length > 0 && pageItems.length === 0 ? (
-        <p className="text-sm text-muted">{COMPANY_REGISTRY_EMPTY_LIST_MESSAGE}</p>
-      ) : null}
-      {!loading && allItems.length === 0 ? (
+      {!loading && pageItems.length === 0 ? (
         <p className="text-sm text-muted">{COMPANY_REGISTRY_EMPTY_LIST_MESSAGE}</p>
       ) : null}
     </Card>

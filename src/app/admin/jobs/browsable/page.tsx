@@ -1,5 +1,4 @@
-import AdminCrawledJobsBySegmentPanel from '@/features/admin/AdminCrawledJobsBySegmentPanel';
-
+/** 화면은 AdminJobsTabPanels에서 바로 보여 줍니다. */
 export default function AdminBrowsableJobsPage() {
-  return <AdminCrawledJobsBySegmentPanel listMode="browsable" />;
+  return null;
 }

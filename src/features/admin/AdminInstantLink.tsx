@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { startTransition, type MouseEvent, type ReactNode } from 'react';
+import { type MouseEvent, type ReactNode } from 'react';
 
 type AdminInstantLinkProps = {
   href: string;
@@ -21,6 +21,10 @@ export default function AdminInstantLink({
 }: AdminInstantLinkProps) {
   const router = useRouter();
 
+  function handlePrefetch() {
+    router.prefetch(href);
+  }
+
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
     onClick?.(event);
     if (event.defaultPrevented) return;
@@ -28,13 +32,18 @@ export default function AdminInstantLink({
       return;
     }
     event.preventDefault();
-    startTransition(() => {
-      router.push(href);
-    });
+    router.push(href);
   }
 
   return (
-    <a href={href} onClick={handleClick} className={className} title={title}>
+    <a
+      href={href}
+      onClick={handleClick}
+      onMouseEnter={handlePrefetch}
+      onFocus={handlePrefetch}
+      className={className}
+      title={title}
+    >
       {children}
     </a>
   );

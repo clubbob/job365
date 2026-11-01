@@ -1,6 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { flushSync } from 'react-dom';
+import { useRouter } from 'next/navigation';
+import { useAdminJobsNav } from '@/features/admin/AdminJobsNavContext';
 import AdminInstantLink from '@/features/admin/AdminInstantLink';
 import { cn } from '@/lib/utils';
 
@@ -25,16 +28,26 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 export default function AdminJobsSubNav() {
-  const pathname = usePathname();
+  const { shownPath, setPendingHref } = useAdminJobsNav();
+  const router = useRouter();
+
+  useEffect(() => {
+    for (const item of ITEMS) {
+      router.prefetch(item.href);
+    }
+  }, [router]);
 
   return (
     <nav className="flex flex-wrap gap-2" aria-label="채용 정보 메뉴">
       {ITEMS.map((item) => {
-        const active = isActive(pathname, item.href);
+        const active = isActive(shownPath, item.href);
         return (
           <AdminInstantLink
             key={item.href}
             href={item.href}
+            onClick={() => {
+              flushSync(() => setPendingHref(item.href));
+            }}
             className={cn(
               'rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors',
               active
