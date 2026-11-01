@@ -12,9 +12,10 @@ export const CRAWL_INTERVAL_DAYS = 2;
 
 /**
  * 수집 1회당 중견 채용 URL 순환 건수.
- * 주 3회 × 3,000곳 기준으로 명단을 순환합니다.
+ * 3,000곳이면 회차가 3시간에 닿아 GitHub 제한으로 통째로 취소됩니다.
+ * 주 3회 × 2,000곳이면 3시간 안에 끝내고 중견 명단은 약 일주일 만에 한 바퀴입니다.
  */
-export const CRAWL_MID_SIZED_SITES_PER_RUN = 3000;
+export const CRAWL_MID_SIZED_SITES_PER_RUN = 2000;
 
 const midPerRun = CRAWL_MID_SIZED_SITES_PER_RUN.toLocaleString('ko-KR');
 
@@ -28,7 +29,7 @@ export const CRAWL_SCHEDULE = {
   /** 대기업·IT·장비 등 「수집 회차마다 전부」 안내 문구 */
   perRunFullCrawlLabel: '수집 회차마다 전체',
   detail:
-    `대기업·IT 회사·반도체·디스플레이 장비사는 각 명단 DB에 연결된 채용 URL을 매주 ${CRAWL_WEEKDAYS_KO} 02:00 수집 때 전부 가져옵니다. 중견기업은 중견 DB에서 회차당 ${midPerRun}곳씩 순환해 약 4~5일에 한 바퀴를 돕니다.`,
+    `대기업·IT 회사·반도체·디스플레이 장비사는 각 명단 DB에 연결된 채용 URL을 매주 ${CRAWL_WEEKDAYS_KO} 02:00 수집 때 전부 가져옵니다. 중견기업은 중견 DB에서 회차당 ${midPerRun}곳씩 순환해 약 7일에 한 바퀴를 돕니다.`,
   frequency: 'mwf',
   runner: 'GitHub Actions',
   maxRunnerMinutes: 180,

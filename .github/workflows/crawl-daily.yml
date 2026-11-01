@@ -9,7 +9,7 @@ on:
 jobs:
   crawl:
     runs-on: ubuntu-latest
-    # 주 3회·중견 배치 (GitHub Actions 분). Vercel 함수는 사용하지 않음.
+    # 주 3회·중견 2,000곳. 3시간 안에 끝내 제한으로 회차 전체가 취소되지 않게 합니다.
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
@@ -35,8 +35,8 @@ jobs:
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           CRAWLER_USE_SAMPLES: 'false'
           # src/lib/crawler/schedule.ts CRAWL_MID_SIZED_SITES_PER_RUN 과 동일
-          CRAWL_MID_SIZED_BATCH_SIZE: '3000'
-          CRAWL_MID_SIZED_DB_BATCH_SIZE: '3000'
+          CRAWL_MID_SIZED_BATCH_SIZE: '2000'
+          CRAWL_MID_SIZED_DB_BATCH_SIZE: '2000'
           CRAWL_SOURCE_DELAY_MS: '1200'
           CRAWL_REQUEST_GAP_MS: '300'
           WORK24_AUTH_KEY: ${{ secrets.WORK24_AUTH_KEY }}
