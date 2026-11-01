@@ -1,4 +1,5 @@
 import { getKoreaDateLocalToday } from '@/lib/datetime';
+import { isClassifiedsBoardUrl } from '@/lib/mid-sized-companies/careers-url-policy';
 
 /** 채용 공고가 아닌 안내·메뉴 링크 제목 */
 const NAV_TITLE_PATTERN =
@@ -14,6 +15,37 @@ const EMPLOYEE_PROFILE_TITLE_PATTERN =
 /** 가이드·아티클 등 채용 공고가 아닌 콘텐츠 제목 */
 const NON_JOB_CONTENT_TITLE_PATTERN =
   /포트폴리오\s*(?:양식|예시|작성|템플릿|가이드)|(?:이력서|자소서|면접)\s*(?:양식|예시|팁|가이드|질문)|양식·예시|(?:뭘|무엇을)\s*담(?:아야|을까)|담아야\s*할까|비중\s*\d+\s*%|커리어\s*(?:팁|가이드|인사이트)|채용\s*(?:팁|정보\s*알아보기)|(?:아티클|칼럼|인사이트|에피소드|웨비나|세미나|뉴스레터)\b|이벤트\s*안내/i;
+
+/** 채용 공고가 아닌 프로모션·광고·과외·컨설팅 홍보 제목 */
+function looksLikePromotionOrAdTitle(title: string): boolean {
+  if (/SKALA/i.test(title) && /모집/u.test(title)) return true;
+  if (/도약을\s*위한\s*첫걸음|전문가로의\s*도약/u.test(title)) return true;
+  if (
+    /모집\s*안내/u.test(title) &&
+    /(?:교육|과정|아카데미|프로그램|저널|첫걸음|도약)/u.test(title) &&
+    !/채용\s*공고|채용합니다/u.test(title)
+  ) {
+    return true;
+  }
+  if (hasFormalRecruitmentTitle(title)) return false;
+  if (/\[\s*광고\s*[·ㆍ./]\s*행사\s*\]/u.test(title) && !/(?:채용|모집)/u.test(title)) return true;
+  if (/오픈\s*(?:프로모션|이벤트|기념(?:행사)?|세일|할인)/u.test(title)) return true;
+  if (
+    /(?:프로모션|할인\s*행사|특가\s*행사)/u.test(title) &&
+    !/(?:채용|모집|담당|기획|운영|마케터|마케팅)/u.test(title)
+  ) {
+    return true;
+  }
+  if (
+    /전문\s*과외|(?:Digital\s*)?SAT\s*(?:전문|과외)|미국대학\s*컨설팅|AP\s*[·.]\s*GPA/iu.test(title) &&
+    !/(?:강사|선생님|교사).*(?:채용|모집)|(?:채용|모집).*(?:강사|선생님|교사)/u.test(title)
+  ) {
+    return true;
+  }
+  if (/연구\s*참여자/u.test(title)) return true;
+  if (/모병관|미\s*육군/u.test(title)) return true;
+  return false;
+}
 
 /** 구직자 스펙·합격 후기형 제목 (채용 공고 제목이 아님) */
 const CANDIDATE_SPEC_TITLE_PATTERN =
@@ -136,6 +168,7 @@ const NAV_URL_PATTERN =
 export function isNonJobContentTitle(title: string): boolean {
   const trimmed = title.trim();
   if (!trimmed) return false;
+  if (looksLikePromotionOrAdTitle(trimmed)) return true;
   if (looksLikeCandidateSpecTitle(trimmed)) return true;
   if (looksLikeNewsHeadlineTitle(trimmed)) return true;
   if (looksLikeEditorialHeadlineTitle(trimmed)) return true;
@@ -172,6 +205,7 @@ export function isLikelyJobTitle(title: string): boolean {
 
 export function isLikelyJobUrl(url: string): boolean {
   try {
+    if (isClassifiedsBoardUrl(url)) return false;
     const { pathname, search } = new URL(url);
     const path = `${pathname}${search}`;
     if (NAV_URL_PATTERN.test(path)) return false;

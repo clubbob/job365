@@ -24,9 +24,34 @@ export function stripJobTitleCountdownNoise(title: string): string {
   return t;
 }
 
+/** 포털 목록 카드에 붙은 저장·해시태그·다음 공고 조각 */
+export function stripAggregatorCardNoise(title: string): string {
+  let t = title.trim();
+  t = t.replace(/\s+[가-힣A-Za-z][가-힣A-Za-z0-9·&.\-]{1,24}\s+\d{1,4}\s*관심없음\s*$/u, '');
+  t = t.replace(/\s*관심없음\s*/gu, ' ');
+  t = t.replace(/#[^\s#]+/gu, ' ');
+  t = t.replace(/(?:\s+상시){2,}/gu, ' ');
+  t = t.replace(/\s+상시\s*$/u, '');
+  t = t.replace(
+    /^[가-힣A-Za-z0-9·&.\-]{2,24}\s+(?:신입|경력|경력무관)(?:\s*·\s*(?:신입|경력|정규직|계약직|인턴|파견직|기간제|무관))+\s*·\s*[가-힣]{2,8}\s+저장\s+/u,
+    '',
+  );
+  t = t.replace(
+    /\s+(?:신입|경력)(?:\s*[,，]\s*(?:정규직|계약직|인턴|파견직))+(?:\s*[,，]\s*[가-힣]{2,8})?\s*$/u,
+    '',
+  );
+  t = t.replace(/^([가-힣A-Za-z0-9·&.\-]{2,24})\s+(\(\s*주\s*\)\s*\1)(?=\s|$)/u, '$2');
+  t = t.replace(
+    /(?<=[)\]）】])\s+(?:[A-Za-z][A-Za-z0-9]{2,32}\s+)?[가-힣A-Za-z]{2,16}\s+경력\s+\d+\s*년\s+이상\s+(?:정규직|계약직)(?:\s+[가-힣]{2,8})?\s*$/u,
+    '',
+  );
+  t = t.replace(/[\[［][\s\u00a0\u3000]*[\]］]/gu, ' ');
+  return t.replace(/\s+/g, ' ').trim();
+}
+
 /** 포털 목록에 붙는 말줄임·마감 문구 */
 function stripPortalListNoise(title: string): string {
-  return stripJobTitleCountdownNoise(title)
+  return stripAggregatorCardNoise(stripJobTitleCountdownNoise(title))
     .replace(/^[:：]\s*/u, '')
     .replace(/\s*마감\s*\(\s*~\s*\d{4}\.\d{1,2}\.\d{1,2}\s*\)\s*$/u, '')
     .replace(/\s*마감\s*\(\s*\d{4}\.\d{1,2}\.\d{1,2}\s*\)\s*$/u, '')

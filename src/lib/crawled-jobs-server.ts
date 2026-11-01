@@ -23,9 +23,10 @@ import {
   isInvalidJobTitle,
   shouldPersistCrawledJob,
 } from '@/lib/crawler/job-quality';
+import { isClassifiedsBoardUrl } from '@/lib/mid-sized-companies/careers-url-policy';
 import {
+  effectiveCrawledJobDeadline,
   isCrawledJobPostingOpen,
-  parseDeadlineFromJobTitle,
 } from '@/lib/job-board/crawled-deadline';
 import {
   emptyCompanySegmentCounts,
@@ -229,7 +230,8 @@ function fromDoc(id: string, data: DocumentData): CrawledJob | null {
 
 function isJobEligibleForBoardList(job: CrawledJob): boolean {
   if (job.status !== 'active' || isInvalidJobTitle(job.title)) return false;
-  if (!isCrawledJobPostingOpen(job.deadline, job.title)) return false;
+  if (isClassifiedsBoardUrl(job.applyUrl)) return false;
+  if (!isCrawledJobPostingOpen(job.deadline, job.title, undefined, job.description)) return false;
   if (job.showInJobBoard === false) return false;
   // 수집 때 저장한 노출 가능 여부. URL만 보고 통과시키면 통계 노출보다 목록이 많아집니다.
   if (job.showInJobBoard === true) return true;
@@ -1762,7 +1764,12 @@ export async function upsertCrawledJob(job: CrawledJob): Promise<UpsertCrawledJo
   }
 
   const normalizedTitle = normalizeJobTitle(decodeHtmlEntities(job.title));
-  const embeddedDeadline = parseDeadlineFromJobTitle(normalizedTitle);
+  const decodedDescription = decodeHtmlEntities(job.description);
+  const embeddedDeadline = effectiveCrawledJobDeadline(
+    job.deadline,
+    normalizedTitle,
+    decodedDescription,
+  );
   let resolvedDeadline = job.deadline;
   if (embeddedDeadline) {
     const stored = job.deadline;
@@ -1786,7 +1793,7 @@ export async function upsertCrawledJob(job: CrawledJob): Promise<UpsertCrawledJo
     ...job,
     companyName: canonicalCompanyName,
     title: normalizedTitle,
-    description: decodeHtmlEntities(job.description),
+    description: decodedDescription,
     deadline: resolvedDeadline,
   };
 

@@ -47,7 +47,7 @@ export default function CrawledJobDetailView({
   const workField = descriptionFields.find((field) => field.label === '업무');
   const processField = descriptionFields.find((field) => field.label === '전형');
   const headcount = crawledJobHeadcountDisplay(job.headcount, job.description);
-  const effectiveDeadline = effectiveCrawledJobDeadline(job.deadline, job.title);
+  const effectiveDeadline = effectiveCrawledJobDeadline(job.deadline, job.title, job.description);
   const deadline = effectiveDeadline ?? '채용 시까지';
 
   const companySegment = jobBoardCompanySegmentLabel(job);

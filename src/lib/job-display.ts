@@ -1,8 +1,10 @@
 import {
   companyLabelContainedInTitle,
   companyLabelsMatch,
+  collapseEmptyTitleBrackets,
   extractCompanyHintFromTitle,
   extractEmployerLabelFromCrawledTitle,
+  isLeadingBracketEmployerLabel,
   isPlausibleRecruitingEmployerLabel,
   normalizeCorpTitlePrefix,
   stripCrawledListTitleNoise,
@@ -189,7 +191,7 @@ const LEADING_CORP_WITH_BRACKET_RE =
   /^(\(\s*주\s*\)\s*[가-힣A-Za-z0-9][가-힣A-Za-z0-9·&.\-]*?)(\s*\[.+)$/u;
 
 const LEADING_COMPANY_IN_TITLE_RE =
-  /^((?:\(주\)\s*)?[가-힣A-Za-z0-9][가-힣A-Za-z0-9·&.\-]*?(?:주식회사|㈜)?)\s+(.+)$/u;
+  /^((?:\(\s*주\s*\)|㈜)?\s*[가-힣A-Za-z0-9][가-힣A-Za-z0-9·&.\-]*?(?:주식회사|\(\s*주\s*\)|㈜)?)\s+(.+)$/u;
 
 function splitBracketedCompanyPrefix(full: string): { employer: string; title: string } | null {
   const match = full.match(LEADING_BRACKETED_COMPANY_RE);
@@ -200,9 +202,17 @@ function splitBracketedCompanyPrefix(full: string): { employer: string; title: s
   return { employer, title: position };
 }
 
-function trySplitLeadingEmployer(full: string): { employer: string; title: string } | null {
+function trySplitLeadingEmployer(
+  full: string,
+): { employer: string; title: string; fromBracket: boolean } | null {
   const bracketCompany = splitBracketedCompanyPrefix(full);
-  if (bracketCompany) return bracketCompany;
+  if (bracketCompany) {
+    if (isLeadingBracketEmployerLabel(bracketCompany.employer)) {
+      return { ...bracketCompany, fromBracket: true };
+    }
+    const stripped = trySplitLeadingEmployer(bracketCompany.title);
+    if (stripped) return stripped;
+  }
 
   for (const re of [LEADING_CORP_WITH_BRACKET_RE, LEADING_COMPANY_IN_TITLE_RE]) {
     const match = full.match(re);
@@ -210,17 +220,20 @@ function trySplitLeadingEmployer(full: string): { employer: string; title: strin
     const employer = match[1].trim();
     const position = match[2].trim();
     if (employer.length >= 2 && position.length >= 2) {
-      return { employer, title: position };
+      return { employer, title: position, fromBracket: false };
     }
   }
 
   const hint = extractCompanyHintFromTitle(full);
   if (hint) {
     const corpPrefix = full.match(/^(\(\s*주\s*\)\s*[가-힣A-Za-z0-9·&.\-\s]+?)(?=\s*\[|\s+[^\s[]|\s*$)/u)?.[1]?.trim();
-    const employer = corpPrefix ?? `(주) ${hint}`;
-    const rest = full.slice(employer.length).trim();
-    if (rest.length >= 2) {
-      return { employer, title: rest };
+    const suffixCorp = full.match(/^([가-힣A-Za-z0-9·&.\-]{2,36}\(\s*주\s*\))/u)?.[1]?.trim();
+    const employer = suffixCorp ?? corpPrefix ?? `(주) ${hint}`;
+    const rest = full.startsWith(employer)
+      ? full.slice(employer.length).trim()
+      : stripEmployerFromCrawledTitle(full, employer);
+    if (rest.length >= 2 && rest !== full) {
+      return { employer, title: rest, fromBracket: false };
     }
   }
 
@@ -263,21 +276,30 @@ export function splitCrawledJobHeading(
   const preferEmbeddedOverSplit =
     Boolean(embeddedEmployer && split) &&
     !companyLabelsMatch(split!.employer, embeddedEmployer!) &&
-    (/\|\s*중견기업\s*$/u.test(denoised) || isWeakLeadingEmployer(split!.employer));
+    (/\|\s*중견기업\s*$/u.test(denoised) || isWeakLeadingEmployer(split!.employer, split!.fromBracket));
 
-  if (split && !isWeakLeadingEmployer(split.employer) && !preferEmbeddedOverSplit) {
-    const employer = resolveRecruitingEmployer(split.employer, sourceCompany);
-    return { employer, title: split.title, sourceCompany };
+  if (
+    split &&
+    !preferEmbeddedOverSplit &&
+    (split.fromBracket || !isWeakLeadingEmployer(split.employer, split.fromBracket))
+  ) {
+    const employer = resolveRecruitingEmployer(split.employer, sourceCompany, denoised);
+    const roleTitle = stripEmployerFromCrawledTitle(split.title, split.employer);
+    return {
+      employer,
+      title: stripLeadingTitlePunctuation(roleTitle.length >= 4 ? roleTitle : split.title),
+      sourceCompany,
+    };
   }
 
   const stripped = stripLeadingCompanyPrefix(denoised, sourceCompany);
   if (stripped) {
-    const employer = resolveRecruitingEmployer(sourceCompany, sourceCompany);
+    const employer = resolveRecruitingEmployer(sourceCompany, sourceCompany, denoised);
     return { employer, title: stripped, sourceCompany };
   }
 
   if (embeddedEmployer && sourceCompany && !companyLabelsMatch(embeddedEmployer, sourceCompany)) {
-    const employer = resolveRecruitingEmployer(embeddedEmployer, sourceCompany);
+    const employer = resolveRecruitingEmployer(embeddedEmployer, sourceCompany, denoised);
     if (employer) {
       const roleTitle = stripEmployerFromCrawledTitle(denoised, embeddedEmployer);
       return {
@@ -291,7 +313,7 @@ export function splitCrawledJobHeading(
   if (!extractCompanyHintFromTitle(denoised)) {
     const cn = sourceCompany.trim();
     if (cn && !companyLabelContainedInTitle(denoised, cn) && !embeddedEmployer) {
-      const employer = resolveRecruitingEmployer(cn, cn);
+      const employer = resolveRecruitingEmployer(cn, cn, denoised);
       return { employer, title: denoised, sourceCompany: cn };
     }
   }
@@ -299,37 +321,75 @@ export function splitCrawledJobHeading(
   if (embeddedEmployer && sourceCompany && companyLabelsMatch(embeddedEmployer, sourceCompany)) {
     const roleTitle = stripEmployerFromCrawledTitle(denoised, embeddedEmployer);
     if (roleTitle.length >= 4) {
-      const employer = resolveRecruitingEmployer(sourceCompany, sourceCompany);
+      const employer = resolveRecruitingEmployer(sourceCompany, sourceCompany, denoised);
       return { employer, title: roleTitle, sourceCompany };
     }
   }
 
-  const employer = resolveRecruitingEmployer('', sourceCompany);
+  const employer = resolveRecruitingEmployer('', sourceCompany, denoised);
   return { employer, title: denoised, sourceCompany };
+}
+
+function stripLeadingTitlePunctuation(title: string): string {
+  return collapseEmptyTitleBrackets(
+    title.replace(/^[\s)）\]】］]+/u, ''),
+  );
 }
 
 const WEAK_LEADING_EMPLOYER =
   /^(?:남음|\d+일|\d{4}|신입|경력|경력무관|학력무관|공채|모집|채용|하반기|상반기|화학소재)$/u;
 
-function isWeakLeadingEmployer(employer: string): boolean {
+function isWeakLeadingEmployer(employer: string, fromBracket = false): boolean {
   const trimmed = employer.trim();
   if (!trimmed || trimmed.length < 2) return true;
   if (WEAK_LEADING_EMPLOYER.test(trimmed)) return true;
   if (/무관$/u.test(trimmed)) return true;
   if (!isPlausibleRecruitingEmployerLabel(trimmed)) return true;
+  if (fromBracket && isLeadingBracketEmployerLabel(trimmed)) return false;
   if (!titleFragmentLooksLikeCompanyName(trimmed)) return true;
   return false;
 }
 
+/** 계열사 채용 페이지에 본사 공고가 섞인 경우 제목에 적힌 회사를 우선합니다. */
+const GROUP_UNIT_DISPLAY_PARENT: Array<{ units: string[]; parent: string }> = [
+  { units: ['무신사로지스틱스', '무신사페이먼츠'], parent: '무신사' },
+];
+
+function compactEmployerKey(name: string): string {
+  return name.replace(/주식회사|\(\s*주\s*\)|㈜|\s+/gu, '');
+}
+
+function displayEmployerFromSource(sourceCompany: string, title: string): string {
+  const compactSource = compactEmployerKey(sourceCompany);
+  const compactTitle = title.replace(/\s+/g, '');
+  for (const group of GROUP_UNIT_DISPLAY_PARENT) {
+    const sourceIsGroup =
+      compactSource === group.parent || group.units.some((unit) => compactSource.includes(unit));
+    if (!sourceIsGroup) continue;
+    const namedUnit = group.units.find((unit) => compactTitle.includes(unit));
+    if (namedUnit) return namedUnit;
+    return group.parent;
+  }
+  return sourceCompany;
+}
+
 /** 제목에서 잘못 떼어 낸 직무·조건 대신 수집된 채용 회사명을 씁니다. */
-function resolveRecruitingEmployer(candidate: string, sourceCompany: string): string {
+function resolveRecruitingEmployer(candidate: string, sourceCompany: string, title = ''): string {
   const preferred = candidate.trim();
   const source = sourceCompany.trim();
+  const sourceDisplay = displayEmployerFromSource(source, title);
   if (preferred && isPlausibleRecruitingEmployerLabel(preferred)) {
+    if (source && companyLabelsMatch(preferred, source)) {
+      if (compactEmployerKey(sourceDisplay) !== compactEmployerKey(source)) {
+        return sourceDisplay;
+      }
+      return preferred;
+    }
     if (titleFragmentLooksLikeCompanyName(preferred)) return preferred;
-    if (source && companyLabelsMatch(preferred, source)) return preferred;
+    if (isLeadingBracketEmployerLabel(preferred)) return preferred;
   }
-  if (source && isPlausibleRecruitingEmployerLabel(source)) return source;
+  if (sourceDisplay && isPlausibleRecruitingEmployerLabel(sourceDisplay)) return sourceDisplay;
+  if (sourceDisplay) return sourceDisplay;
   if (source) return source;
   return '';
 }
@@ -387,7 +447,7 @@ export function crawledJobDetailTitle(
     if (fromWork) candidate = fromWork;
   }
 
-  return candidate.trim() || full;
+  return collapseEmptyTitleBrackets(stripLeadingTitlePunctuation(candidate.trim() || full));
 }
 
 /** 목록·검색에서 쓰는 모집 회사명(카드 파란 줄과 동일) */

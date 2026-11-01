@@ -1,10 +1,21 @@
 /** 절대 저장하지 않는 URL(스크립트·SNS·명백한 오탐) */
 const HARD_BLOCK_RE =
-  /pstatic\.net|instagram\.|facebook\.|youtube\.|wikipedia\.|w3\.org|schema\.org|example\.com|linkedin\.com\/(?!.*jobs)|doubleclick\.|googletagmanager|melon\.com/i;
+  /pstatic\.net|instagram\.|facebook\.|youtube\.|wikipedia\.|w3\.org|schema\.org|example\.com|linkedin\.com\/(?!.*jobs)|doubleclick\.|googletagmanager|melon\.com|higoodday\.com|skcareersjournal\.com|linkareer\.com|inthiswork\.com/i;
+
+/** 회사 채용 페이지가 아닌 커뮤니티 구인·홍보·저널·대외활동 게시판 */
+const CLASSIFIEDS_HOST_RE =
+  /(?:^|\.)(?:higoodday|skcareersjournal|linkareer|inthiswork)\.com$/i;
 
 /** 공식 채용 사이트만(포털 제외) — 통계·품질 표시용 */
 const PORTAL_HOST_RE =
-  /catch\.co\.kr|jobkorea\.|saramin\.|wanted\.co\.kr|jumpit\.|programmers\.co\.kr|incruit\.|albamon\.|work24\.go\.kr/i;
+  /catch\.co\.kr|jobkorea\.|saramin\.|wanted\.co\.kr|jumpit\.|programmers\.co\.kr|incruit\.|albamon\.|work24\.go\.kr|zighang\.com/i;
+
+export function isClassifiedsBoardUrl(url: string | null | undefined): boolean {
+  if (!url?.trim()) return false;
+  const parsed = parseHttpUrl(url);
+  if (!parsed) return false;
+  return CLASSIFIEDS_HOST_RE.test(parsed.hostname);
+}
 
 function parseHttpUrl(url: string): URL | null {
   try {

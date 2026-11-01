@@ -1,9 +1,9 @@
 /** @see src/lib/mid-sized-companies/careers-url-policy.ts */
 const HARD_BLOCK_RE =
-  /pstatic\.net|instagram\.|facebook\.|youtube\.|wikipedia\.|w3\.org|schema\.org|example\.com|linkedin\.com\/(?!.*jobs)|doubleclick\.|googletagmanager|melon\.com/i;
+  /pstatic\.net|instagram\.|facebook\.|youtube\.|wikipedia\.|w3\.org|schema\.org|example\.com|linkedin\.com\/(?!.*jobs)|doubleclick\.|googletagmanager|melon\.com|higoodday\.com|skcareersjournal\.com|linkareer\.com|inthiswork\.com/i;
 
 const PORTAL_HOST_RE =
-  /catch\.co\.kr|jobkorea\.|saramin\.|wanted\.co\.kr|jumpit\.|programmers\.co\.kr|incruit\.|albamon\.|work24\.go\.kr/i;
+  /catch\.co\.kr|jobkorea\.|saramin\.|wanted\.co\.kr|jumpit\.|programmers\.co\.kr|incruit\.|albamon\.|work24\.go\.kr|zighang\.com/i;
 
 function parseHttpUrl(url) {
   try {
