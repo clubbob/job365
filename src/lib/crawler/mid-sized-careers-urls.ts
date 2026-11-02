@@ -1,7 +1,4 @@
-import {
-  dedupeRegistryRowsByBusinessNumberAndUrl,
-  isCompleteRegistryCompanyIdentity,
-} from '@/lib/registry-company-identity';
+import { dedupeRegistryRowsByBusinessNumberAndUrl, isCompleteRegistryCompanyIdentity } from '@/lib/registry-company-identity';
 import { getUniqueMidSizedRegistryForCrawl } from '@/lib/mid-sized-companies/registry-for-crawl';
 import { loadMidSizedRegistryDbFromDisk } from '@/lib/mid-sized-companies/registry-db';
 

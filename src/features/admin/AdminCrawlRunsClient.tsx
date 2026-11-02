@@ -28,6 +28,7 @@ import {
 } from '@/lib/recruiting-employers/admin-crawl-stats-columns';
 import type { RecruitingRegistrySegmentCounts } from '@/lib/recruiting-employers/registry-count-format';
 import { cn } from '@/lib/utils';
+import AdminCrawlActivityLog from '@/features/admin/AdminCrawlActivityLog';
 
 type CrawlStatsSummary = {
   companyCount: number;
@@ -166,7 +167,7 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
     rows.push(
       {
         group: '마지막 수집',
-        label: '추가된 공고',
+        label: '추출한 공고',
         total: sumAdminCrawlStatsSegmentCounts(fetched),
         values: fetched,
         unit: '건',
@@ -221,6 +222,7 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
 
 export default function AdminCrawlRunsClient() {
   const [summary, setSummary] = useState<CrawlStatsSummary | null>(null);
+  const [logReloadKey, setLogReloadKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [running, setRunning] = useState(false);
@@ -238,6 +240,7 @@ export default function AdminCrawlRunsClient() {
       const json = await adminJson<{ ok?: boolean; data?: CrawlStatsSummary }>(path);
       if (!json.ok || !json.data) throw new Error('수집 통계를 불러오지 못했습니다.');
       setSummary(json.data);
+      setLogReloadKey((key) => key + 1);
     } catch (err) {
       setError(
         humanizeAdminFetchError(err instanceof Error ? err.message : '수집 통계를 불러오지 못했습니다.'),
@@ -333,8 +336,6 @@ export default function AdminCrawlRunsClient() {
       <PageHeader
         title="통계 요약"
         description="기업 카테고리별 통계 요약한 페이지입니다."
-        homeHref="/admin"
-        homeLabel="대시보드"
         trailing={
           <button
             type="button"
@@ -457,6 +458,8 @@ export default function AdminCrawlRunsClient() {
           <p className="text-sm text-muted">통계를 불러오지 못했습니다. 새로 고침을 눌러 주세요.</p>
         ) : null}
       </Card>
+
+      <AdminCrawlActivityLog reloadKey={logReloadKey} />
     </div>
   );
 }

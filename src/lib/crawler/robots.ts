@@ -113,12 +113,20 @@ async function loadRobotsRules(origin: string): Promise<RobotsRules> {
 
 /** careers URL이 robots.txt 정책상 수집 가능한지 확인합니다. */
 export async function isCareersUrlRobotsAllowed(careersUrl: string): Promise<boolean> {
+  const access = await classifyCareersUrlRobotsAccess(careersUrl);
+  return access === 'allowed';
+}
+
+export type CareersUrlRobotsAccess = 'allowed' | 'blocked' | 'invalid_url';
+
+/** URL 형식 오류는 robots 불허와 구분합니다. */
+export async function classifyCareersUrlRobotsAccess(careersUrl: string): Promise<CareersUrlRobotsAccess> {
   try {
     const url = new URL(careersUrl);
     const rules = await loadRobotsRules(url.origin);
-    return isPathAllowed(url.pathname, rules);
+    return isPathAllowed(url.pathname, rules) ? 'allowed' : 'blocked';
   } catch {
-    return false;
+    return 'invalid_url';
   }
 }
 

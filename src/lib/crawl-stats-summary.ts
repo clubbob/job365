@@ -21,7 +21,7 @@ export type CrawlStatsSummary = {
   companyRegistryBySegment: RecruitingCompanyActiveCounts;
   /** 마지막 수집에서 추가된(페이지에서 읽어 온) 공고 건수 합계 */
   fetched: number;
-  /** 마지막 수집 추가된 공고 — 회사 분류별 */
+  /** 마지막 수집에서 페이지에서 추출한 공고 — 회사 분류별 */
   fetchedBySegment: Record<JobBoardCompanySegment, number>;
   /** 마지막 수집에서 마감 처리한 공고 건수 */
   closed: number;

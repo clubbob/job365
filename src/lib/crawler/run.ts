@@ -11,7 +11,11 @@ import {
 } from '@/lib/crawled-jobs-server';
 import { closeBrowserCrawlSession } from '@/lib/crawler/browser-page-crawl';
 import { pauseBetweenCrawlSources } from '@/lib/crawler/crawl-throttle';
-import { isCareersUrlRobotsAllowed } from '@/lib/crawler/robots';
+import { classifyCareersUrlRobotsAccess } from '@/lib/crawler/robots';
+import {
+  excludeCompanyExtractionForRobots,
+  isExtractionBlockedForRobots,
+} from '@/lib/crawler/robots-blocked-extraction';
 import { crawlMidSizedRegistryBatch } from '@/lib/crawler/adapters/mid-sized-registry-batch';
 import {
   crawlItSeedCareersRegistryBatch,
@@ -213,17 +217,21 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
 
         if (
           company.adapter !== 'mid-sized-registry-batch' &&
-          !(await isCareersUrlRobotsAllowed(company.careersUrl))
+          company.adapter !== 'it-seed-registry-batch' &&
+          company.adapter !== 'semi-seed-registry-batch'
         ) {
-          sourceSummaries.push({
-            sourceId: company.sourceId,
-            sourceName: company.sourceName,
-            fetched: 0,
-            upserted: 0,
-            closed: 0,
-            errors: ['robots.txt 정책상 수집이 허용되지 않습니다.'],
-          });
-          continue;
+          if (isExtractionBlockedForRobots(company.id)) {
+            continue;
+          }
+          const robotsAccess = await classifyCareersUrlRobotsAccess(company.careersUrl);
+          if (robotsAccess === 'blocked') {
+            await excludeCompanyExtractionForRobots({
+              crawlSourceId: company.id,
+              careersUrl: company.careersUrl,
+              companyName: company.name,
+            });
+            continue;
+          }
         }
 
         let result: CrawlerSourceResult;

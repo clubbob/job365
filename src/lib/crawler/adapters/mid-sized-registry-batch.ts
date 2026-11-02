@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 
 import { crawlRegistryCareersRecord } from '@/lib/crawler/adapters/registry-careers-crawl';
 import { paceCrawlRequest } from '@/lib/crawler/crawl-throttle';
+import { skipRegistryRecordForRobots } from '@/lib/crawler/robots-blocked-extraction';
 import {
   countMidSizedCareersConfigs,
   getMidSizedCareersConfigs,
@@ -65,6 +66,15 @@ export async function crawlMidSizedRegistryBatch(
   );
 
   for (const record of withUrl) {
+    if (
+      await skipRegistryRecordForRobots({
+        crawlSourceId: record.crawlSourceId,
+        careersUrl: record.careersUrl,
+        companyName: record.name,
+      })
+    ) {
+      continue;
+    }
     await paceCrawlRequest();
     try {
       const result = await crawlRegistryCareersRecord({

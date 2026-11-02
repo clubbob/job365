@@ -41,6 +41,7 @@
     "materialize:registries": "tsx scripts/materialize-four-registries.ts",
     "enrich:seed-business-numbers": "tsx scripts/enrich-seed-business-numbers.ts",
     "enrich:enterprise-registry": "tsx scripts/enrich-enterprise-registry.ts",
+    "purge:robots-blocked": "tsx scripts/purge-robots-blocked-extraction.ts",
     "preprocess:mid-sized": "node scripts/preprocess-mid-sized.mjs",
     "maximize:mid-sized": "node scripts/preprocess-mid-sized.mjs && pnpm crawl:mid-sized",
     "sync:mid-sized:full": "node scripts/sync-mid-sized-full.mjs",

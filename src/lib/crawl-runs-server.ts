@@ -1,6 +1,10 @@
 import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
-import { ADMIN_CRAWL_RUNS_PAGE_SIZE, ADMIN_CRAWL_RUNS_RETENTION_DAYS } from '@/lib/admin-constants';
+import {
+  ADMIN_CRAWL_RUNS_MAX_PAGE_SIZE,
+  ADMIN_CRAWL_RUNS_PAGE_SIZE,
+  ADMIN_CRAWL_RUNS_RETENTION_DAYS,
+} from '@/lib/admin-constants';
 import type { CrawlRunSummary } from '@/lib/crawler/types';
 import { getKoreaDateFromIso, getKoreaDateLocalToday } from '@/lib/datetime';
 import {
@@ -83,7 +87,7 @@ export async function listCrawlRunsPage(
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
 
   const safePage = Math.max(1, page);
-  const safePageSize = Math.max(1, Math.min(pageSize, ADMIN_CRAWL_RUNS_PAGE_SIZE));
+  const safePageSize = Math.max(1, Math.min(pageSize, ADMIN_CRAWL_RUNS_MAX_PAGE_SIZE));
   const offset = (safePage - 1) * safePageSize;
   const collection = db.collection(COLLECTION);
 

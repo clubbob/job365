@@ -152,6 +152,10 @@ export function loadMidSizedRegistryDbFromDisk(): MidSizedRegistryDbFile | null 
 
 let midSizedRegistryCompaniesCache: MidSizedRegistryDbCompany[] | null = null;
 
+export function invalidateMidSizedRegistryDbCache(): void {
+  midSizedRegistryCompaniesCache = null;
+}
+
 export function loadMidSizedRegistryDbCompanies(): MidSizedRegistryDbCompany[] {
   if (midSizedRegistryCompaniesCache) return midSizedRegistryCompaniesCache;
   const file = loadMidSizedRegistryDbFromDisk();

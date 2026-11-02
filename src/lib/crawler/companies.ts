@@ -1,5 +1,6 @@
 import { CRAWL_SCHEDULE } from '@/lib/crawler/schedule';
 import { ENTERPRISE_CAREERS_CONFIGS } from '@/lib/crawler/enterprise-careers-urls';
+import { isExtractionBlockedForRobots } from '@/lib/crawler/robots-blocked-extraction';
 import { loadEnterpriseRegistryDbCompanies } from '@/lib/enterprise-companies/registry-db';
 import { isCompleteRegistryCompanyIdentity } from '@/lib/registry-company-identity';
 import {
@@ -85,14 +86,22 @@ const EXTRA_CRAWLER_COMPANIES_RAW: CrawlerCompany[] = [
   },
 ];
 
-const EXTRA_CRAWLER_COMPANIES = filterExtraCrawlerCompanies(EXTRA_CRAWLER_COMPANIES_RAW);
+const EXTRA_CRAWLER_COMPANIES = filterExtraCrawlerCompanies(EXTRA_CRAWLER_COMPANIES_RAW).filter(
+  (company) => !isExtractionBlockedForRobots(company.id),
+);
 
 function buildFtcCrawlerCompanies(): CrawlerCompany[] {
   const enterpriseByGroup = new Map(
     loadEnterpriseRegistryDbCompanies().map((row) => [row.groupName, row]),
   );
+  const extractionSourceIds = new Set(
+    loadEnterpriseRegistryDbCompanies()
+      .map((row) => row.crawlSourceId?.trim())
+      .filter((id): id is string => Boolean(id)),
+  );
   return ENTERPRISE_CAREERS_CONFIGS.filter(
     (config) =>
+      extractionSourceIds.has(config.crawlSourceId) &&
       !IT_ENTERPRISE_CRAWL_SOURCE_IDS.has(config.crawlSourceId) &&
       !isReservedEnterpriseGroupForItOrSemi(config.ftcName) &&
       isCompleteRegistryCompanyIdentity({
