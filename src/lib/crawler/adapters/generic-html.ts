@@ -15,9 +15,9 @@ import { fetchRecruiterNoticeCandidates, type RecruiterNoticeCandidate } from '@
 import { fetchHanwhainRecruitDetail, parseHanwhainRtSeq } from '@/lib/crawler/hanwha-career-api';
 import { fetchTossCareerCandidates } from '@/lib/crawler/toss-career-api';
 import { jobMatchesExpectedCompany } from '@/lib/crawler/company-name-match';
-import { isLikelyJobPosting, isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
-import { isPortalCareersUrl } from '@/lib/mid-sized-companies/careers-url-policy';
-import { isInvalidJobDescription, isInvalidJobTitle } from '@/lib/crawler/job-quality';
+import { acceptRecruitListCandidate, isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
+import { isStorableCareersUrl } from '@/lib/mid-sized-companies/careers-url-policy';
+import { isInvalidJobDescription, isInvalidJobTitle, lacksJobPostingContext } from '@/lib/crawler/job-quality';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 import { extractHeadcountFromJobContent } from '@/lib/crawler/parse-headcount';
 import {
@@ -29,6 +29,7 @@ import {
   textSection,
 } from '@/lib/crawler/map-fields';
 import type { CompanySize } from '@/lib/job-board/constants';
+import { jobDetailFetchTimeoutMs, withCrawlTimeout } from '@/lib/crawler/crawl-timeout';
 import { paceCrawlRequest } from '@/lib/crawler/crawl-throttle';
 import type { CrawledJob } from '@/types/crawled-job';
 import {
@@ -186,7 +187,16 @@ function extractCandidatesFromLinks(html: string, baseUrl: string, config: Gener
 
     const applyUrl = resolveUrl(href, baseUrl);
     if (!applyUrl || seen.has(applyUrl)) continue;
-    if (!isLikelyJobPosting(title, applyUrl, config.careersUrl)) continue;
+    if (
+      !acceptRecruitListCandidate({
+        title: normalizeJobTitle(title),
+        applyUrl,
+        careersUrl: config.careersUrl,
+        expectedCompanyName: config.companyName,
+      })
+    ) {
+      continue;
+    }
 
     seen.add(applyUrl);
     candidates.push({
@@ -253,9 +263,13 @@ function walkJsonForCandidates(
               : undefined;
 
       if (
-        isLikelyJobPosting(title, applyUrl, config.careersUrl) ||
-        (recruitKeys && isLikelyJobTitle(title)) ||
-        (id && detailUrlPrefix && isLikelyJobPosting(title, applyUrl, config.careersUrl))
+        acceptRecruitListCandidate({
+          title: normalizeJobTitle(title),
+          applyUrl,
+          careersUrl: config.careersUrl,
+          expectedCompanyName: config.companyName,
+          candidateCompanyName: companyName,
+        })
       ) {
         seen.add(applyUrl);
         candidates.push({
@@ -340,9 +354,20 @@ function extractCandidatesFromRenderedDom(html: string, baseUrl: string, config:
     const href = itemHtml.match(/href=["']([^"']+)["']/i)?.[1];
     if (!title || !href) continue;
     const applyUrl = resolveUrl(href, baseUrl);
-    if (!applyUrl || seen.has(applyUrl) || !isLikelyJobPosting(title, applyUrl, config.careersUrl)) continue;
-
+    if (!applyUrl || seen.has(applyUrl)) continue;
     const companyName = cleanText(itemHtml.match(/class="[^"]*company[^"]*"[^>]*>([\s\S]*?)<\//i)?.[1] ?? '') || config.companyName;
+    if (
+      !acceptRecruitListCandidate({
+        title: normalizeJobTitle(title),
+        applyUrl,
+        careersUrl: config.careersUrl,
+        expectedCompanyName: config.companyName,
+        candidateCompanyName: companyName,
+      })
+    ) {
+      continue;
+    }
+
     seen.add(applyUrl);
     candidates.push({
       title: normalizeJobTitle(title),
@@ -501,12 +526,18 @@ function extractCandidatesFromHtmlFragments(
   return candidates;
 }
 
-async function fetchWithSessionCookies(careersUrl: string): Promise<{ html: string; cookieHeader: string }> {
-  await paceCrawlRequest();
-  const res = await fetch(careersUrl, { headers: BROWSER_HTML_HEADERS, signal: AbortSignal.timeout(30_000) });
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${careersUrl}`);
-  const cookieHeader = (res.headers.getSetCookie?.() ?? []).map((item) => item.split(';')[0]).join('; ');
-  return { html: await res.text(), cookieHeader };
+async function fetchWithSessionCookies(
+  careersUrl: string,
+): Promise<{ html: string; cookieHeader: string } | null> {
+  try {
+    await paceCrawlRequest();
+    const res = await fetch(careersUrl, { headers: BROWSER_HTML_HEADERS, signal: AbortSignal.timeout(30_000) });
+    if (!res.ok) return null;
+    const cookieHeader = (res.headers.getSetCookie?.() ?? []).map((item) => item.split(';')[0]).join('; ');
+    return { html: await res.text(), cookieHeader };
+  } catch {
+    return null;
+  }
 }
 
 async function tryDiscoveredApis(
@@ -601,9 +632,17 @@ async function buildJobsFromCandidates(
   const jobs: CrawledJob[] = [];
 
   await mapWithConcurrency(limited, genericDetailFetchConcurrency(), async (candidate) => {
+    const detailMs = jobDetailFetchTimeoutMs();
+    try {
+      await withCrawlTimeout(candidate.title.slice(0, 40), detailMs, async () => {
     if (
-      isPortalCareersUrl(config.careersUrl) &&
-      !jobMatchesExpectedCompany(config.companyName, candidate.title, candidate.companyName)
+      !acceptRecruitListCandidate({
+        title: candidate.title,
+        applyUrl: candidate.applyUrl,
+        careersUrl: config.careersUrl,
+        expectedCompanyName: config.companyName,
+        candidateCompanyName: candidate.companyName,
+      })
     ) {
       return;
     }
@@ -628,7 +667,6 @@ async function buildJobsFromCandidates(
     if (isInvalidJobTitle(title)) return;
     let companyName = detail?.companyName ?? candidate.companyName;
     if (
-      isPortalCareersUrl(config.careersUrl) &&
       !jobMatchesExpectedCompany(config.companyName, title, companyName)
     ) {
       return;
@@ -641,6 +679,7 @@ async function buildJobsFromCandidates(
           ? detail.description
           : buildListDescription(candidate);
     if (isInvalidJobDescription(description)) return;
+    if (lacksJobPostingContext(description)) return;
 
     const locationSource = `${candidate.locationHint ?? ''} ${title}`;
     jobs.push({
@@ -662,6 +701,10 @@ async function buildJobsFromCandidates(
       createdAt: crawledAt,
       closedAt: null,
     });
+      });
+    } catch {
+      // 시간 초과·상세 실패 — 다른 공고는 계속
+    }
   });
 
   return jobs;
@@ -681,22 +724,36 @@ export async function crawlGenericHtmlCareers(config: GenericHtmlConfig): Promis
   const errors: string[] = [];
   const crawledAt = new Date().toISOString();
 
+  if (!isStorableCareersUrl(config.careersUrl)) {
+    return {
+      sourceId: config.sourceId,
+      sourceName: config.sourceName,
+      jobs: [],
+      errors: ['수집할 수 없는 채용 URL입니다.'],
+    };
+  }
+
   try {
     let candidates = await collectApiJobCandidates(config);
     const apiListHit = candidates.length > 0;
     let html = '';
 
     if (!apiListHit || !skipHtmlWhenApiCandidatesFound()) {
-      const { html: initialHtml, cookieHeader } = await fetchWithSessionCookies(config.careersUrl);
-      html = initialHtml;
+      const session = await fetchWithSessionCookies(config.careersUrl);
+      if (session) {
+        const { html: initialHtml, cookieHeader } = session;
+        html = initialHtml;
 
-      candidates = [
-        ...candidates,
-        ...extractCandidatesFromJson(html, config),
-        ...extractCandidatesFromLinks(html, config.careersUrl, config),
-        ...(await tryHtmlListApis(config.careersUrl, cookieHeader, config)),
-        ...(await tryDiscoveredApis(config.careersUrl, html, cookieHeader, config)),
-      ];
+        candidates = [
+          ...candidates,
+          ...extractCandidatesFromJson(html, config),
+          ...extractCandidatesFromLinks(html, config.careersUrl, config),
+          ...(await tryHtmlListApis(config.careersUrl, cookieHeader, config)),
+          ...(await tryDiscoveredApis(config.careersUrl, html, cookieHeader, config)),
+        ];
+      } else {
+        errors.push(`${config.companyName}: 채용 페이지를 열지 못했습니다.`);
+      }
     }
 
     if (
@@ -731,7 +788,17 @@ export async function crawlGenericHtmlCareers(config: GenericHtmlConfig): Promis
       (item, index, list) => list.findIndex((row) => row.dedupeKey === item.dedupeKey) === index,
     );
 
-    const jobs = await buildJobsFromCandidates(config, deduped, crawledAt);
+    const vetted = deduped.filter((candidate) =>
+      acceptRecruitListCandidate({
+        title: candidate.title,
+        applyUrl: candidate.applyUrl,
+        careersUrl: config.careersUrl,
+        expectedCompanyName: config.companyName,
+        candidateCompanyName: candidate.companyName,
+      }),
+    );
+
+    const jobs = await buildJobsFromCandidates(config, vetted, crawledAt);
 
     if (jobs.length === 0) {
       errors.push(`${config.companyName}: 상세 내용을 확인할 수 있는 채용 공고를 찾지 못했습니다.`);

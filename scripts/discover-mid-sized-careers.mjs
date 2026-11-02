@@ -32,7 +32,7 @@ const ALL_MISSING = process.env.DISCOVER_ALL_MISSING === '1';
 
 async function discoverForCompany(company) {
   const hit = await discoverCareersUrl(company, TIMEOUT_MS);
-  if (!hit) return null;
+  if (!hit || !isStorableCareersUrl(hit)) return null;
   return {
     name: company.companyName,
     crawlSourceId: crawlSourceId(company.businessNumber, company.companyName),

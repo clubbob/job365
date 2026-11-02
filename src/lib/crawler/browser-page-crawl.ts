@@ -2,6 +2,7 @@ import type { Browser } from 'playwright';
 import { chromium } from 'playwright';
 
 import { BROWSER_USER_AGENT } from '@/lib/crawler/browser-headers';
+import { browserPageTimeoutMs } from '@/lib/crawler/crawl-timeout';
 
 export type BrowserPageCrawlResult = {
   html: string;
@@ -57,8 +58,11 @@ export async function crawlPageWithBrowser(careersUrl: string): Promise<BrowserP
   });
 
   try {
-    await page.goto(careersUrl, { waitUntil: 'networkidle', timeout: 45_000 });
-    await page.waitForTimeout(1_500);
+    const navMs = browserPageTimeoutMs();
+    page.setDefaultNavigationTimeout(navMs);
+    page.setDefaultTimeout(navMs);
+    await page.goto(careersUrl, { waitUntil: 'domcontentloaded', timeout: navMs });
+    await page.waitForTimeout(800);
     return { html: await page.content(), jsonPayloads, htmlFragments };
   } finally {
     await page.close();

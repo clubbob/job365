@@ -9,9 +9,15 @@ const TABLE_CLASS =
 
 const ROWS: Array<{ group: string; label: string; value: string }> = [
   { group: '수집', label: '언제', value: `매주 ${CRAWL_SCHEDULE.weekdaysKo} ${CRAWL_SCHEDULE.localTime}` },
+  { group: '수집', label: '대상', value: '기업 자사 채용 페이지만 (전문 구인·구직 포털 HTML·API 수집 안 함)' },
   {
     group: '수집',
-    label: '대상',
+    label: '중단',
+    value: '한 회사·한 공고·한 소스가 실패하거나 시간을 넘기면 건너뛰고, 회차는 끝까지 진행합니다.',
+  },
+  {
+    group: '수집',
+    label: '회차',
     value: `대기업·IT·장비는 매번 전부, 중견은 회차당 ${CRAWL_SCHEDULE.midSizedSitesPerRun.toLocaleString('ko-KR')}곳`,
   },
   { group: '수집', label: '저장', value: '실제 채용만 넣고, 홍보는 빼기' },

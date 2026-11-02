@@ -1,5 +1,5 @@
 import { BROWSER_AJAX_HEADERS } from '@/lib/crawler/browser-headers';
-import { isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
+import { acceptRecruitListCandidate, isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 import type { RecruiterNoticeCandidate } from '@/lib/crawler/recruiter-notice-api';
 

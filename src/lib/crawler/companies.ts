@@ -27,7 +27,6 @@ export type CrawlerAdapterId =
   | 'greenhouse'
   | 'generic'
   | 'mid-sized-registry-batch'
-  | 'work24-mid-sized-batch'
   | 'it-seed-registry-batch'
   | 'semi-seed-registry-batch';
 
@@ -149,27 +148,18 @@ function buildMidSizedCrawlerCompanies(existing: CrawlerCompany[]): CrawlerCompa
 
   const registry = getUniqueMidSizedRegistryForCrawl();
   const linked = countMidSizedCareersConfigs();
-  const sampleUrl = getMidSizedCareersConfigs()[0]?.careersUrl ?? 'https://www.work24.go.kr/';
+  const sampleUrl =
+    getMidSizedCareersConfigs()[0]?.careersUrl ?? ENTERPRISE_CAREERS_CONFIGS[0]?.careersUrl ?? '';
 
   return [
     {
       id: 'mid-sized-registry-batch',
       name: `중견기업 채용 URL DB (${registry.length.toLocaleString('ko-KR')}곳 명단)`,
-      careersUrl: sampleUrl,
+      careersUrl: sampleUrl || 'https://careers.lg.com/',
       sourceId: batchSourceId,
       sourceName: `중견기업 채용 수집 (DB URL ${linked.toLocaleString('ko-KR')}곳)`,
       tier: 'mid-sized',
       adapter: 'mid-sized-registry-batch',
-      companySize: '중견기업',
-    },
-    {
-      id: 'work24-mid-sized-batch',
-      name: `중견기업 고용24 (${registry.length.toLocaleString('ko-KR')}곳)`,
-      careersUrl: 'https://www.work24.go.kr/',
-      sourceId: 'work24-mid-sized-batch-careers',
-      sourceName: `중견기업 고용24 (명단 ${registry.length.toLocaleString('ko-KR')}곳)`,
-      tier: 'mid-sized',
-      adapter: 'work24-mid-sized-batch',
       companySize: '중견기업',
     },
   ];

@@ -5,7 +5,6 @@ import {
   crawlItSeedCareersRegistryBatch,
   crawlSemiSeedCareersRegistryBatch,
 } from '@/lib/crawler/adapters/seed-careers-registry-batch';
-import { crawlWork24MidSizedBatch } from '@/lib/crawler/adapters/work24-mid-sized';
 import { crawlLgCareers } from '@/lib/crawler/adapters/lg';
 import { getCrawlerCompanies, type CrawlerAdapterId, type CrawlerCompany } from '@/lib/crawler/companies';
 import { selectCompaniesForCrawlRun } from '@/lib/crawler/mid-sized-batch';
@@ -73,10 +72,6 @@ function resolveCrawler(company: CrawlerCompany): CrawlerFn {
     return () => crawlMidSizedRegistryBatch();
   }
 
-  if (company.adapter === 'work24-mid-sized-batch') {
-    return () => crawlWork24MidSizedBatch();
-  }
-
   if (company.adapter === 'it-seed-registry-batch') {
     return () => crawlItSeedCareersRegistryBatch();
   }
@@ -97,7 +92,6 @@ function buildCompanyCrawlers(companies: CrawlerCompany[]): CompanyCrawler[] {
       company.adapter === 'greenhouse' ||
       company.adapter === 'generic' ||
       company.adapter === 'mid-sized-registry-batch' ||
-      company.adapter === 'work24-mid-sized-batch' ||
       company.adapter === 'it-seed-registry-batch' ||
       company.adapter === 'semi-seed-registry-batch'
     ) {

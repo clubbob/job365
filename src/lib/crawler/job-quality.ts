@@ -1,6 +1,6 @@
-import { isLikelyJobTitle, isNonJobContentTitle } from '@/lib/crawler/job-heuristics';
+import { isLikelyJobTitle, isLikelyJobUrl, isNonJobContentTitle } from '@/lib/crawler/job-heuristics';
 import { isTitleMarkedRecruitmentClosed } from '@/lib/job-board/crawled-deadline';
-import { isClassifiedsBoardUrl } from '@/lib/mid-sized-companies/careers-url-policy';
+import { isClassifiedsBoardUrl, isNewsArticleJobUrl, isPortalSourcedCrawledJob } from '@/lib/mid-sized-companies/careers-url-policy';
 import type { CrawledJob } from '@/types/crawled-job';
 
 export function htmlToPlainText(html: string): string {
@@ -55,18 +55,26 @@ export function isInvalidJobTitle(title: string | null | undefined): boolean {
 
 /** 채용 공고 목록·상세에 노출할 수 있는 공고 */
 export function isBrowsableCrawledJob(
-  job: Pick<CrawledJob, 'title' | 'description' | 'status' | 'applyUrl'>,
+  job: Pick<CrawledJob, 'id' | 'sourceId' | 'title' | 'description' | 'status' | 'applyUrl'>,
 ): boolean {
   if (job.status !== 'active') return false;
+  if (isPortalSourcedCrawledJob(job)) return false;
+  if (isNewsArticleJobUrl(job.applyUrl)) return false;
   if (isClassifiedsBoardUrl(job.applyUrl)) return false;
+  if (!isLikelyJobUrl(job.applyUrl)) return false;
   if (isInvalidJobTitle(job.title)) return false;
   if (isInvalidJobDescription(job.description)) return false;
   if (lacksJobPostingContext(job.description)) return false;
   return true;
 }
 
-export function shouldPersistCrawledJob(job: Pick<CrawledJob, 'title' | 'description' | 'applyUrl'>): boolean {
+export function shouldPersistCrawledJob(
+  job: Pick<CrawledJob, 'id' | 'sourceId' | 'title' | 'description' | 'applyUrl'>,
+): boolean {
+  if (isPortalSourcedCrawledJob(job)) return false;
+  if (isNewsArticleJobUrl(job.applyUrl)) return false;
   if (isClassifiedsBoardUrl(job.applyUrl)) return false;
+  if (!isLikelyJobUrl(job.applyUrl)) return false;
   if (isInvalidJobTitle(job.title)) return false;
   if (isInvalidJobDescription(job.description)) return false;
   if (lacksJobPostingContext(job.description)) return false;

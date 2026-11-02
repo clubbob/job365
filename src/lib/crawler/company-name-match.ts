@@ -397,6 +397,20 @@ export function jobMatchesExpectedCompany(
   const expectedNorm = normalizeCompanyLabel(expected);
   if (expectedNorm.length >= 4 && titleNorm.length >= 8 && !titleNorm.includes(expectedNorm)) {
     if (hint) return false;
+    if (/[가-힣]/u.test(title) && /(?:채용|모집|공고|모집분야|직무|담당)/u.test(title)) {
+      return false;
+    }
+    const latin = (title.match(/[A-Za-z]/g) ?? []).length;
+    const hangul = (title.match(/[가-힣]/g) ?? []).length;
+    if (latin >= 12 && latin > hangul * 2) {
+      if (
+        !/\b(?:hiring|recruit(?:ment|ing)?|engineer|developer|designer|intern|position|opening|careers?)\b/i.test(
+          title,
+        )
+      ) {
+        return false;
+      }
+    }
   }
 
   return true;

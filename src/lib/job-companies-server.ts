@@ -284,10 +284,7 @@ export async function buildJobCompaniesPayload(options: {
     : standaloneSources.filter((source) => !source.policy.displayDisabled);
 
   /** 배치 수집기는 회사별 sourceId로 공고가 쌓여 목록에 두면 0건으로 보입니다. 명단 UI만 사용합니다. */
-  const MID_SIZED_BATCH_SOURCE_IDS = new Set([
-    'mid-sized-registry-batch-careers',
-    'work24-mid-sized-batch-careers',
-  ]);
+  const MID_SIZED_BATCH_SOURCE_IDS = new Set(['mid-sized-registry-batch-careers']);
 
   const filteredExtra = filteredStandalone.filter((source) => {
     if (MID_SIZED_BATCH_SOURCE_IDS.has(source.sourceId)) return false;

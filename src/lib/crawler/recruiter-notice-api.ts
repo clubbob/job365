@@ -1,5 +1,5 @@
 import { BROWSER_AJAX_HEADERS } from '@/lib/crawler/browser-headers';
-import { isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
+import { acceptRecruitListCandidate, isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 
 export type RecruiterNoticeCandidate = {
@@ -27,6 +27,7 @@ function noticeRecordToCandidate(
   item: NoticeRecord,
   origin: string,
   defaultCompanyName: string,
+  careersUrl?: string,
 ): RecruiterNoticeCandidate | null {
   const title = [item.recruitNoticeName, item.title, item.jobNoticeName].find(
     (value) => typeof value === 'string' && value.trim().length >= 4,
@@ -57,6 +58,19 @@ function noticeRecordToCandidate(
 
   if (!applyUrl) return null;
 
+  const normalizedTitle = normalizeJobTitle(title.trim());
+  if (
+    !acceptRecruitListCandidate({
+      title: normalizedTitle,
+      applyUrl,
+      careersUrl,
+      expectedCompanyName: defaultCompanyName,
+      candidateCompanyName: companyName,
+    })
+  ) {
+    return null;
+  }
+
   const receiveStart =
     typeof item.receiveStartDatetime === 'string' ? item.receiveStartDatetime.slice(0, 10) : null;
   const receiveEnd =
@@ -69,7 +83,7 @@ function noticeRecordToCandidate(
     .join(' · ');
 
   return {
-    title: normalizeJobTitle(title.trim()),
+    title: normalizedTitle,
     applyUrl,
     companyName,
     dedupeKey: applyUrl,
@@ -138,7 +152,7 @@ export async function fetchRecruiterNoticeCandidates(
 
     for (const item of items) {
       if (item.isPost === false || item.isInProgress === false) continue;
-      const candidate = noticeRecordToCandidate(item, origin, defaultCompanyName);
+      const candidate = noticeRecordToCandidate(item, origin, defaultCompanyName, careersUrl);
       if (!candidate || seen.has(candidate.dedupeKey)) continue;
       seen.add(candidate.dedupeKey);
       candidates.push(candidate);

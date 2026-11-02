@@ -20,7 +20,11 @@ export function normalizeCompanyName(name) {
 export function slugAscii(name) {
   const cleaned = normalizeCompanyName(name).toLowerCase();
   if (!cleaned) return '';
-  return cleaned.replace(/[^a-z0-9]/g, '');
+  const slug = cleaned.replace(/[^a-z0-9]/g, '');
+  /** 한글 회사명에서 짧은 ASCII만 남으면 cs.com 등 오탐 */
+  if (slug.length < 4) return '';
+  if (/^(cs|it|ai|hr|go|ok|me|st|ent|sns|se|co|kr|tv|io|us|uk)$/i.test(slug)) return '';
+  return slug;
 }
 
 export function crawlSourceId(businessNumber, companyName) {
@@ -71,7 +75,7 @@ async function tryGreenhouseBoard(slug, timeoutMs) {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    if (Array.isArray(data.jobs) && data.jobs.length >= 0) {
+    if (Array.isArray(data.jobs) && data.jobs.length > 0) {
       return `https://boards.greenhouse.io/${slug}`;
     }
     return null;
@@ -106,6 +110,7 @@ async function tryLeverBoard(slug, timeoutMs) {
 function isBlockedCareerHost(url) {
   try {
     const host = new URL(url).hostname.toLowerCase();
+    if (host === 'cs.com' || host.endsWith('.cs.com')) return true;
     if (host.endsWith('.ac.kr') || host.endsWith('.go.kr')) return true;
     if (/^news\./i.test(host)) return true;
     return false;
@@ -116,6 +121,7 @@ function isBlockedCareerHost(url) {
 
 export async function probeUrl(url, timeoutMs) {
   if (isBlockedCareerHost(url)) return null;
+  if (!isStorableCareersUrl(url)) return null;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -128,9 +134,8 @@ export async function probeUrl(url, timeoutMs) {
     if (!res.ok) return null;
     const text = await res.text();
     if (text.length < HTML_MIN_LENGTH) return null;
-    if (isStorableCareersUrl(url) && CAREER_PATH_HINTS.test(text)) return url;
-    if (isStorableCareersUrl(url) && /recruit|career|채용|jobs|\/Comp\/Recruit|greetinghr/i.test(url)) return url;
-    return null;
+    if (!CAREER_PATH_HINTS.test(text)) return null;
+    return url;
   } catch {
     return null;
   } finally {
@@ -200,6 +205,7 @@ export async function discoverCareersUrl(company, timeoutMs = 8000) {
     Math.max(timeoutMs, 12_000),
   );
   for (const url of portalCandidates) {
+    if (!isStorableCareersUrl(url)) continue;
     if (await verifyCompanyOnRecruitPage(url, company.companyName, Math.min(timeoutMs, 10_000))) {
       return url;
     }

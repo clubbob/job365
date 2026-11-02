@@ -1,5 +1,5 @@
 import { BROWSER_AJAX_HEADERS } from '@/lib/crawler/browser-headers';
-import { isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
+import { acceptRecruitListCandidate, isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 import { fetchText } from '@/lib/crawler/fetch-text';
 
@@ -48,6 +48,7 @@ export function recruitRecordToCandidate(
   item: RecruitRecord,
   origin: string,
   defaultCompanyName: string,
+  careersUrl?: string,
 ): JsonRecruitListCandidate | null {
   const title = [item.recuNoticeNm, item.title, item.jobNoticeName, item.jobOfferTitle].find(
     (value) => typeof value === 'string' && value.trim().length >= 4,
@@ -86,13 +87,26 @@ export function recruitRecordToCandidate(
 
   if (!applyUrl) return null;
 
+  const normalizedTitle = normalizeJobTitle(title.trim());
+  if (
+    !acceptRecruitListCandidate({
+      title: normalizedTitle,
+      applyUrl,
+      careersUrl,
+      expectedCompanyName: defaultCompanyName,
+      candidateCompanyName: companyName,
+    })
+  ) {
+    return null;
+  }
+
   const applyEndDt = parseYmdDate(item.applyEndDt ?? item.appDispEdDt);
   const roleHint = [item.fldCodeNm, item.secCodeNm, item.channelCodeNm]
     .filter((value) => typeof value === 'string' && value.trim())
     .join(' · ');
 
   return {
-    title: normalizeJobTitle(title.trim()),
+    title: normalizedTitle,
     applyUrl,
     companyName,
     dedupeKey: applyUrl,
@@ -193,7 +207,7 @@ export async function fetchRecruitListCandidates(
     }
 
     for (const item of allItems) {
-      const candidate = recruitRecordToCandidate(item, origin, defaultCompanyName);
+      const candidate = recruitRecordToCandidate(item, origin, defaultCompanyName, careersUrl);
       if (!candidate || seen.has(candidate.dedupeKey)) continue;
       seen.add(candidate.dedupeKey);
       candidates.push(candidate);

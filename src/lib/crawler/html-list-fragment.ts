@@ -1,6 +1,5 @@
-import { jobMatchesExpectedCompany } from '@/lib/crawler/company-name-match';
 import { decodeHtmlEntities } from '@/lib/crawler/decode-html-text';
-import { isLikelyJobPosting, isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
+import { acceptRecruitListCandidate, isLikelyJobTitle } from '@/lib/crawler/job-heuristics';
 import { normalizeJobTitle } from '@/lib/crawler/normalize-job-title';
 import { isPortalCareersUrl } from '@/lib/mid-sized-companies/careers-url-policy';
 
@@ -99,11 +98,14 @@ export function extractCandidatesFromHtmlFragment(
     }
 
     if (!applyUrl || seen.has(applyUrl)) continue;
-    if (!isLikelyJobPosting(title, applyUrl, careersUrl) && !seq) continue;
     if (
-      careersUrl &&
-      isPortalCareersUrl(careersUrl) &&
-      !jobMatchesExpectedCompany(defaultCompanyName, title, companyName)
+      !acceptRecruitListCandidate({
+        title: normalizeJobTitle(title),
+        applyUrl,
+        careersUrl,
+        expectedCompanyName: defaultCompanyName,
+        candidateCompanyName: companyName,
+      })
     ) {
       continue;
     }
@@ -125,9 +127,19 @@ export function extractCandidatesFromHtmlFragment(
     if (careersUrl && isPortalCareersUrl(careersUrl)) continue;
     const href = match[1]?.trim();
     const title = cleanText(match[2] ?? '');
-    if (!href || !title || !isLikelyJobPosting(title, href, careersUrl)) continue;
+    if (!href || !title) continue;
     const applyUrl = resolveUrl(href, baseUrl);
     if (!applyUrl || seen.has(applyUrl)) continue;
+    if (
+      !acceptRecruitListCandidate({
+        title: normalizeJobTitle(title),
+        applyUrl,
+        careersUrl,
+        expectedCompanyName: defaultCompanyName,
+      })
+    ) {
+      continue;
+    }
     seen.add(applyUrl);
     candidates.push({
       title: normalizeJobTitle(title),

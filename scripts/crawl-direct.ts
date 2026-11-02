@@ -42,6 +42,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error('[crawl] fatal:', error);
   process.exit(1);
 });

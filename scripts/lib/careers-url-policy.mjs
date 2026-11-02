@@ -18,6 +18,8 @@ function parseHttpUrl(url) {
 function baseChecks(url) {
   const parsed = parseHttpUrl(url);
   if (!parsed) return false;
+  const host = parsed.hostname.toLowerCase();
+  if (host === 'cs.com' || host.endsWith('.cs.com')) return false;
   const hostPath = `${parsed.hostname}${parsed.pathname}`;
   if (HARD_BLOCK_RE.test(hostPath)) return false;
   if (/\.(js|css|png|jpe?g|gif|svg|woff2?|ico|xml)$/i.test(parsed.pathname)) return false;
@@ -36,6 +38,8 @@ export function isAcceptableCareersUrl(url) {
 export function isStorableCareersUrl(url) {
   if (!url?.trim() || !baseChecks(url)) return false;
   const parsed = parseHttpUrl(url);
+  const hostPath = `${parsed.hostname}${parsed.pathname}`;
+  if (PORTAL_HOST_RE.test(hostPath)) return false;
   const host = parsed.hostname.toLowerCase();
   const path = parsed.pathname.toLowerCase();
   if (host === 'www.se.com' && path.includes('/careers')) return false;
@@ -51,4 +55,28 @@ export function isPortalCareersUrl(url) {
   const parsed = parseHttpUrl(url);
   if (!parsed) return false;
   return PORTAL_HOST_RE.test(`${parsed.hostname}${parsed.pathname}`);
+}
+
+export function isPortalSourcedCrawledJob(job) {
+  const id = String(job.id ?? '').trim();
+  const sourceId = String(job.sourceId ?? '').trim();
+  if (id.startsWith('work24-')) return true;
+  if (sourceId.includes('work24')) return true;
+  const applyUrl = String(job.applyUrl ?? '').trim();
+  if (applyUrl && isPortalCareersUrl(applyUrl)) return true;
+  return false;
+}
+
+export function isNewsArticleJobUrl(url) {
+  if (!url?.trim()) return false;
+  const parsed = parseHttpUrl(url);
+  if (!parsed) return false;
+  const host = parsed.hostname.toLowerCase();
+  const path = parsed.pathname.toLowerCase();
+  if (host === 'cs.com' || host.endsWith('.cs.com')) return true;
+  if (/\/entertainment\/story\//i.test(path)) return true;
+  if (/\/(?:news|article|story)\//i.test(path) && !/(?:recruit|career|job|채용|모집)/i.test(path)) {
+    return true;
+  }
+  return false;
 }

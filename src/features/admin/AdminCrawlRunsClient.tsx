@@ -332,7 +332,7 @@ export default function AdminCrawlRunsClient() {
     <div className="space-y-5">
       <PageHeader
         title="통계 요약"
-        description="기업 카테고리별 통계 요약한 페이지입니다. 매일 같은 표를 일자별로 저장합니다."
+        description="기업 카테고리별 통계 요약한 페이지입니다."
         homeHref="/admin"
         homeLabel="대시보드"
         trailing={

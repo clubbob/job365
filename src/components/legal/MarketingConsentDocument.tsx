@@ -21,7 +21,7 @@ export default function MarketingConsentDocument() {
       <LegalSection title="1. 선택 동의">
         <LegalP>
           {COMPANY.name}의 {COMPANY.serviceName}에서 영리 목적 광고성 정보를 보내기 위한 선택 동의입니다. 동의하지
-          않아도 회원가입·채용 공고 열람·지원·등록 등 필수 기능은 이용할 수 있습니다.
+          않아도 회원가입·채용 공고 열람·찜 등 필수 기능은 이용할 수 있습니다.
         </LegalP>
         <LegalP>
           마이페이지 「맞춤 채용 설정」의 채용 공고 이메일은 별도 설정이며, 이 동의와 무관합니다.

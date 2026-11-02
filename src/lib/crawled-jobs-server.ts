@@ -23,7 +23,7 @@ import {
   isInvalidJobTitle,
   shouldPersistCrawledJob,
 } from '@/lib/crawler/job-quality';
-import { isClassifiedsBoardUrl } from '@/lib/mid-sized-companies/careers-url-policy';
+import { isClassifiedsBoardUrl, isNewsArticleJobUrl, isPortalSourcedCrawledJob } from '@/lib/mid-sized-companies/careers-url-policy';
 import {
   effectiveCrawledJobDeadline,
   isCrawledJobPostingOpen,
@@ -230,6 +230,8 @@ function fromDoc(id: string, data: DocumentData): CrawledJob | null {
 
 function isJobEligibleForBoardList(job: CrawledJob): boolean {
   if (job.status !== 'active' || isInvalidJobTitle(job.title)) return false;
+  if (isPortalSourcedCrawledJob(job)) return false;
+  if (isNewsArticleJobUrl(job.applyUrl)) return false;
   if (isClassifiedsBoardUrl(job.applyUrl)) return false;
   if (!isCrawledJobPostingOpen(job.deadline, job.title, undefined, job.description)) return false;
   if (job.showInJobBoard === false) return false;

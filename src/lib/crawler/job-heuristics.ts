@@ -1,5 +1,6 @@
 import { getKoreaDateLocalToday } from '@/lib/datetime';
-import { isClassifiedsBoardUrl } from '@/lib/mid-sized-companies/careers-url-policy';
+import { jobMatchesExpectedCompany } from '@/lib/crawler/company-name-match';
+import { isClassifiedsBoardUrl, isNewsArticleJobUrl } from '@/lib/mid-sized-companies/careers-url-policy';
 
 /** 채용 공고가 아닌 안내·메뉴 링크 제목 */
 const NAV_TITLE_PATTERN =
@@ -108,7 +109,32 @@ export function isJobTitleStaleForListing(title: string, todayDate = getKoreaDat
 }
 
 /** 언론·카드뉴스 헤드라인 (특정 회사 모집 공고 제목이 아님) */
+function looksLikeEnglishNewsHeadlineTitle(title: string): boolean {
+  if (hasFormalRecruitmentTitle(title)) return false;
+  if (/\b(?:hiring|recruitment|recruiting|job opening|apply now|we'?re hiring)\b/i.test(title)) return false;
+  if (/^Box Office\s*:/i.test(title)) return true;
+  if (/\bDaytime Emmys?\b/i.test(title)) return true;
+  if (/\bGeneral Hospital\b/i.test(title) && !/\b(?:nurse|staff)\s+(?:position|opening)\b/i.test(title)) {
+    return true;
+  }
+  if (/\b(?:Broadway|Hollywood|Oscars?|Grammys?)\b/i.test(title)) return true;
+  if (/\bsustain(?:s|ed)?\s+(?:\w+\s+){0,4}(?:injury|burns)\b/i.test(title)) return true;
+  if (/\b(?:director|actor|actress)\s+[^.]{0,80}\b(?:injury|gun range|dies|death|arrested)\b/i.test(title)) {
+    return true;
+  }
+  if (/\b(?:earn(?:s|ed)?)\s+lead\s+acting\b/i.test(title)) return true;
+  if (/^[''""][^''""]+[''""]\s+director\b/i.test(title)) return true;
+  if (/^(?:Box Office|Sports|Politics|Entertainment|Opinion|Business)\s*:/i.test(title)) return true;
+  if (/(\.\.\.|…)\s*$/.test(title) && !/\b(?:engineer|developer|채용|모집)\b/u.test(title)) {
+    const latin = (title.match(/[A-Za-z]/g) ?? []).length;
+    const hangul = (title.match(/[가-힣]/g) ?? []).length;
+    if (latin > hangul * 2 && latin >= 20) return true;
+  }
+  return false;
+}
+
 function looksLikeNewsHeadlineTitle(title: string): boolean {
+  if (looksLikeEnglishNewsHeadlineTitle(title)) return true;
   if (hasFormalRecruitmentTitle(title)) return false;
   if (/\[(?:단독|속보|기획|특집|인터뷰|심층|단신|리포트)\]/u.test(title)) return true;
   if (/^\d+\s+\[/u.test(title)) return true;
@@ -206,6 +232,7 @@ export function isLikelyJobTitle(title: string): boolean {
 export function isLikelyJobUrl(url: string): boolean {
   try {
     if (isClassifiedsBoardUrl(url)) return false;
+    if (isNewsArticleJobUrl(url)) return false;
     const { pathname, search } = new URL(url);
     const path = `${pathname}${search}`;
     if (NAV_URL_PATTERN.test(path)) return false;
@@ -226,6 +253,20 @@ export function isListingPageUrl(applyUrl: string, careersUrl: string): boolean 
   } catch {
     return false;
   }
+}
+
+export function acceptRecruitListCandidate(options: {
+  title: string;
+  applyUrl: string;
+  careersUrl?: string;
+  expectedCompanyName: string;
+  candidateCompanyName?: string;
+}): boolean {
+  const { title, applyUrl, careersUrl, expectedCompanyName, candidateCompanyName } = options;
+  if (!isLikelyJobPosting(title, applyUrl, careersUrl)) return false;
+  if (isNewsArticleJobUrl(applyUrl)) return false;
+  if (!jobMatchesExpectedCompany(expectedCompanyName, title, candidateCompanyName)) return false;
+  return true;
 }
 
 export function isLikelyJobPosting(title: string, applyUrl: string, careersUrl?: string): boolean {
