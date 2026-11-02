@@ -58,8 +58,7 @@ export default function JobCompaniesPanel({
       <PageHeader
         title="수집 채용 회사"
         description="수집 채용 회사별 활성 공고 건수를 조회합니다."
-        homeHref="/admin"
-        homeLabel="대시보드"
+        showHome={false}
       />
 
       {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}

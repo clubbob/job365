@@ -21,14 +21,14 @@ const BATCH_META: Record<
   },
   'semi-equipment': {
     sourceId: 'semi-seed-registry-batch-careers',
-    sourceName: '반도체·디스플레이 장비사 DB 수집',
+    sourceName: '반도체·디스플레이 회사 DB 수집',
     companySize: '중견기업',
   },
 };
 
 const SEGMENT_LABEL: Record<SeedCareersSegment, string> = {
   it: 'IT 회사',
-  'semi-equipment': '반도체·디스플레이 장비사',
+  'semi-equipment': '반도체·디스플레이 회사',
 };
 
 export async function crawlSeedCareersRegistryBatch(

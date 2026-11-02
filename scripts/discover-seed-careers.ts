@@ -11,7 +11,9 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { isStorableCareersUrl } from './lib/careers-url-policy.mjs';
-import { discoverCareersUrl } from './lib/mid-sized-discover-urls.mjs';
+import { discoverCareersUrl, probeUrl } from './lib/mid-sized-discover-urls.mjs';
+import { expandHomepageCareerPaths } from './lib/mid-sized-naver-discover.mjs';
+import { getSemiconWebsiteForSeedCompany } from '@/lib/semi-display-equipment/semicon-exhibitors';
 import { listSeedCareersCompanyNames } from '@/lib/seed-careers/company-names';
 import { seedCareersCrawlSourceId } from '@/lib/seed-careers/crawl-source-id';
 import { seedCareersNormalizeKey } from '@/lib/seed-careers/normalize-key';
@@ -20,6 +22,7 @@ import { parseSeedCareersSegment, SEED_CAREERS_SEGMENTS, type SeedCareersSegment
 import type { SeedCareersDiscoveryEntry, SeedCareersTarget } from '@/lib/seed-careers/types';
 import { stringifyJsonSafe } from '@/lib/json-safe-stringify';
 import { loadSeedCareersDiscoveryState, saveSeedCareersDiscoveryState } from '@/lib/seed-careers/discovery-state';
+import { normalizeStoredCareersUrl } from '@/lib/seed-careers/normalize-careers-url';
 
 const root = process.cwd();
 const CONCURRENCY = Number(process.env.DISCOVER_CONCURRENCY ?? 12);
@@ -60,6 +63,33 @@ function saveTargets(file: TargetsFile, targets: SeedCareersTarget[]): void {
 }
 
 async function discoverForCompany(segment: SeedCareersSegment, companyName: string): Promise<SeedCareersTarget | null> {
+  if (segment === 'semi-equipment') {
+    const semiconSite = getSemiconWebsiteForSeedCompany(companyName);
+    if (semiconSite) {
+      try {
+        const fromHome = await expandHomepageCareerPaths(
+          new URL(semiconSite).origin,
+          probeUrl,
+          TIMEOUT_MS,
+        );
+        if (fromHome && isStorableCareersUrl(fromHome)) {
+          return {
+            name: companyName,
+            crawlSourceId: seedCareersCrawlSourceId(segment, companyName),
+            careersUrl: fromHome,
+            adapter: fromHome.includes('greenhouse.io') ? 'greenhouse' : 'generic',
+            greenhouseBoard:
+              fromHome.includes('boards.greenhouse.io/')
+                ? fromHome.split('boards.greenhouse.io/')[1]?.replace(/\/$/, '') ?? null
+                : null,
+          };
+        }
+      } catch {
+        // fall through
+      }
+    }
+  }
+
   const hit = await discoverCareersUrl({ companyName, businessNumber: '' }, TIMEOUT_MS);
   if (!hit || !isStorableCareersUrl(hit)) return null;
   return {
@@ -144,11 +174,12 @@ async function discoverSegment(segment: SeedCareersSegment): Promise<void> {
       const norm = seedCareersNormalizeKey(segment, companyName);
       if (!norm) return;
       if (result) {
-        byNorm.set(norm, result);
+        const careersUrl = normalizeStoredCareersUrl(result.careersUrl) ?? result.careersUrl;
+        byNorm.set(norm, { ...result, careersUrl });
         discoveryState.entries[norm] = {
           status: 'found',
           checkedAt: checkedAt(),
-          careersUrl: result.careersUrl,
+          careersUrl,
         };
       } else {
         discoveryState.entries[norm] = { status: 'not_found', checkedAt: checkedAt() };

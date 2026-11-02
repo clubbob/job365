@@ -1622,23 +1622,14 @@ export async function getAdminCrawlStatsJobCounts(options?: {
     return startAdminCrawlStatsJobCountsRecompute();
   }
 
-  if (
-    adminCrawlStatsJobCountsCache &&
-    adminCrawlStatsJobCountsCache.expiresAt > Date.now() &&
-    !adminCrawlStatsJobCountsCache.provisional
-  ) {
-    return adminCrawlStatsJobCountsCache.data;
-  }
-
   const meta = await readAdminMetaCrawlStats();
   const stored = meta ? crawlStatsSnapshotFromMeta(meta) : null;
-  const hasStoredCounts = Boolean(stored && (stored.storedActiveJobs > 0 || stored.activeJobs > 0));
 
-  if (hasStoredCounts && stored) {
-    if (!adminCrawlStatsJobCountsInflight) {
-      void startAdminCrawlStatsJobCountsRecompute();
+  if (!options?.waitForFullScan) {
+    if (stored) {
+      return stored;
     }
-    return stored;
+    return emptyAdminCrawlStatsJobCounts();
   }
 
   return startAdminCrawlStatsJobCountsRecompute();

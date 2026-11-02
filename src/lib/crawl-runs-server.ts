@@ -55,6 +55,14 @@ function mapCrawlRunDoc(id: string, data: DocumentData): CrawlRunListItem {
     totalClosed: Number(data.totalClosed ?? 0),
     fetchedBySegment: parseSegmentCountField(data.fetchedBySegment),
     closedBySegment: parseSegmentCountField(data.closedBySegment),
+    errorSourceCount:
+      typeof data.errorSourceCount === 'number' && Number.isFinite(data.errorSourceCount)
+        ? data.errorSourceCount
+        : undefined,
+    sourceCount:
+      typeof data.sourceCount === 'number' && Number.isFinite(data.sourceCount)
+        ? data.sourceCount
+        : undefined,
     createdAt,
   };
 }
@@ -79,9 +87,30 @@ export type CrawlRunsPageResult = {
   totalPages: number;
 };
 
+/** lean 조회 시 sources(오류 문자열)를 빼서 문서 크기를 줄입니다. */
+const CRAWL_RUN_LEAN_SELECT_FIELDS = [
+  'runKind',
+  'startedAt',
+  'finishedAt',
+  'totalUpserted',
+  'totalClosed',
+  'fetchedBySegment',
+  'closedBySegment',
+  'errorSourceCount',
+  'sourceCount',
+  'createdAt',
+] as const;
+
+export type ListCrawlRunsPageOptions = {
+  lean?: boolean;
+  /** lean 목록만 필요할 때 count() 집계를 생략합니다. */
+  skipTotalCount?: boolean;
+};
+
 export async function listCrawlRunsPage(
   page: number,
   pageSize: number = ADMIN_CRAWL_RUNS_PAGE_SIZE,
+  options?: ListCrawlRunsPageOptions,
 ): Promise<CrawlRunsPageResult> {
   const db = getAdminFirestore();
   if (!db) throw new Error('FIRESTORE_UNAVAILABLE');
@@ -92,11 +121,19 @@ export async function listCrawlRunsPage(
   const collection = db.collection(COLLECTION);
 
   const [totalSnap, pageSnap] = await Promise.all([
-    collection.count().get(),
-    collection.orderBy('createdAt', 'desc').limit(offset + safePageSize).get(),
+    options?.skipTotalCount
+      ? Promise.resolve(null)
+      : collection.count().get(),
+    (options?.lean
+      ? collection
+          .orderBy('createdAt', 'desc')
+          .select(...CRAWL_RUN_LEAN_SELECT_FIELDS)
+          .limit(offset + safePageSize)
+      : collection.orderBy('createdAt', 'desc').limit(offset + safePageSize)
+    ).get(),
   ]);
 
-  const total = totalSnap.data().count;
+  const total = totalSnap ? totalSnap.data().count : pageSnap.size;
   const runs = pageSnap.docs
     .slice(offset)
     .map((doc) => mapCrawlRunDoc(doc.id, doc.data()));

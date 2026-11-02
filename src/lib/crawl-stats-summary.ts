@@ -1,4 +1,5 @@
 import { getAdminCrawlStatsJobCounts } from '@/lib/crawled-jobs-server';
+import { getCrawlStatsDaily, listCrawlStatsDaily } from '@/lib/crawl-stats-daily-server';
 import {
   emptyCompanySegmentCounts,
   JOB_BOARD_COMPANY_SEGMENTS,
@@ -43,8 +44,11 @@ export type CrawlStatsSummary = {
   } | null;
 };
 
-function countErrorSources(sources: CrawlRunListItem['sources']): number {
-  return sources.filter((source) =>
+function countErrorSources(run: CrawlRunListItem): number {
+  if (typeof run.errorSourceCount === 'number' && Number.isFinite(run.errorSourceCount)) {
+    return run.errorSourceCount;
+  }
+  return run.sources.filter((source) =>
     source.errors.some((line) => {
       const t = line.trim();
       if (!t) return false;
@@ -123,6 +127,48 @@ function resolveLastRunFetchCloseStats(latest: CrawlRunListItem): {
   return { fetched, fetchedBySegment, closed, closedBySegment };
 }
 
+async function loadJobCountsForSummary(options?: { waitForFullScan?: boolean }): Promise<{
+  storedActiveJobs: number;
+  storedActiveJobsBySegment: Record<JobBoardCompanySegment, number>;
+  activeJobs: number;
+  activeJobsBySegment: Record<JobBoardCompanySegment, number>;
+}> {
+  const counts = await getAdminCrawlStatsJobCounts({
+    waitForFullScan: options?.waitForFullScan,
+  });
+  if (options?.waitForFullScan) {
+    return counts;
+  }
+  const hasJobTotals = counts.storedActiveJobs > 0 || counts.activeJobs > 0;
+  const hasSegmentTotals = sumCompanySegmentCounts(counts.storedActiveJobsBySegment) > 0;
+  if (hasJobTotals || hasSegmentTotals) {
+    return counts;
+  }
+
+  const today = await getCrawlStatsDaily();
+  if (today?.summary) {
+    return {
+      storedActiveJobs: today.summary.storedActiveJobs,
+      storedActiveJobsBySegment: today.summary.storedActiveJobsBySegment,
+      activeJobs: today.summary.activeJobs,
+      activeJobsBySegment: today.summary.activeJobsBySegment,
+    };
+  }
+
+  const recent = await listCrawlStatsDaily(3);
+  const latest = recent[recent.length - 1];
+  if (latest?.summary) {
+    return {
+      storedActiveJobs: latest.summary.storedActiveJobs,
+      storedActiveJobsBySegment: latest.summary.storedActiveJobsBySegment,
+      activeJobs: latest.summary.activeJobs,
+      activeJobsBySegment: latest.summary.activeJobsBySegment,
+    };
+  }
+
+  return counts;
+}
+
 export async function getCrawlStatsSummary(options?: {
   waitForFullScan?: boolean;
 }): Promise<CrawlStatsSummary> {
@@ -134,11 +180,11 @@ export async function getCrawlStatsSummary(options?: {
     companyRegistryBySegment['semi-equipment'];
 
   const [runsPage, jobCounts] = await Promise.all([
-    listCrawlRunsPage(1, 1).catch((error) => {
+    listCrawlRunsPage(1, 1, { lean: true, skipTotalCount: true }).catch((error) => {
       console.warn('[crawl-stats-summary] crawl runs list failed', error);
       return emptyRunsPage;
     }),
-    getAdminCrawlStatsJobCounts({ waitForFullScan: options?.waitForFullScan }),
+    loadJobCountsForSummary({ waitForFullScan: options?.waitForFullScan }),
   ]);
 
   const {
@@ -182,8 +228,8 @@ export async function getCrawlStatsSummary(options?: {
     lastRun: {
       finishedAt: latest.finishedAt || latest.startedAt,
       runKind: latest.runKind,
-      sourceCount: latest.sources.length,
-      errorSourceCount: countErrorSources(latest.sources),
+      sourceCount: latest.sourceCount ?? latest.sources.length,
+      errorSourceCount: countErrorSources(latest),
     },
   };
 }

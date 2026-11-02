@@ -15,8 +15,8 @@ export const RECRUITING_COMPANY_SEGMENT_TABS: ReadonlyArray<{
   { id: 'it', label: 'IT 회사', jobBoardSegment: 'IT 회사' },
   {
     id: 'semi-equipment',
-    label: '반도체·디스플레이 장비사',
-    jobBoardSegment: '반도체·디스플레이 장비사',
+    label: '반도체·디스플레이 회사',
+    jobBoardSegment: '반도체·디스플레이 회사',
   },
 ];
 

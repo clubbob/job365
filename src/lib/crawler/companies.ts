@@ -133,7 +133,7 @@ function buildSeedCareersCrawlerCompanies(
 
   const registry = loadSeedCareersRegistryDbCompanies(segment);
   const linked = countSeedCareersCrawlConfigs(segment);
-  const label = segment === 'it' ? 'IT 회사' : '반도체·디스플레이 장비사';
+  const label = segment === 'it' ? 'IT 회사' : '반도체·디스플레이 회사';
   const sampleUrl = getSeedCareersCrawlConfigs(segment)[0]?.careersUrl ?? 'https://example.com/';
 
   return [

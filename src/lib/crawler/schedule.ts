@@ -29,7 +29,7 @@ export const CRAWL_SCHEDULE = {
   /** 대기업·IT·장비 등 「수집 회차마다 전부」 안내 문구 */
   perRunFullCrawlLabel: '수집 회차마다 전체',
   detail:
-    `대기업·IT 회사·반도체·디스플레이 장비사는 각 명단 DB에 연결된 채용 URL을 매주 ${CRAWL_WEEKDAYS_KO} 02:00 수집 때 전부 가져옵니다. 중견기업은 중견 DB에서 회차당 ${midPerRun}곳씩 순환해 약 7일에 한 바퀴를 돕니다.`,
+    `대기업·IT 회사·반도체·디스플레이 회사는 각 명단 DB에 연결된 채용 URL을 매주 ${CRAWL_WEEKDAYS_KO} 02:00 수집 때 전부 가져옵니다. 중견기업은 중견 DB에서 회차당 ${midPerRun}곳씩 순환해 약 7일에 한 바퀴를 돕니다.`,
   frequency: 'mwf',
   runner: 'GitHub Actions',
   maxRunnerMinutes: 180,

@@ -41,7 +41,7 @@ function main(): void {
   if (sync.status !== 0) process.exit(sync.status ?? 1);
 
   report('IT 회사', loadSeedCareersRegistryDbCompanies('it'));
-  report('반도체·디스플레이 장비사', loadSeedCareersRegistryDbCompanies('semi-equipment'));
+  report('반도체·디스플레이 회사', loadSeedCareersRegistryDbCompanies('semi-equipment'));
 }
 
 main();

@@ -16,7 +16,7 @@ const SEGMENT_ACCENT: Record<JobBoardCompanySegment, string> = {
   대기업: 'hover:border-sky-300 hover:bg-sky-50',
   중견기업: 'hover:border-amber-300 hover:bg-amber-50',
   'IT 회사': 'hover:border-violet-300 hover:bg-violet-50',
-  '반도체·디스플레이 장비사': 'hover:border-emerald-300 hover:bg-emerald-50',
+  '반도체·디스플레이 회사': 'hover:border-emerald-300 hover:bg-emerald-50',
 };
 
 function jobsHrefForSegment(segment: JobBoardCompanySegment): string {

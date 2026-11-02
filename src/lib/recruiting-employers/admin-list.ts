@@ -3,13 +3,16 @@ import { countMiscCrawlerCompanies, getRegistryMiscCrawlerCompanies } from '@/li
 import type { CrawledJobSourceStats } from '@/lib/crawled-jobs-server';
 import { loadEnterpriseRegistryDbCompanies } from '@/lib/enterprise-companies/registry-db';
 import { buildItCompanyRegistryRows, registryRowDedupeKey } from '@/lib/it-companies/build-registry-rows';
+import { isItComputingCompany } from '@/lib/it-companies/catalog';
 import { buildSemiDisplayEquipmentRegistryRows } from '@/lib/semi-display-equipment/build-registry-rows';
+import { isSemiDisplayEquipmentCompany } from '@/lib/semi-display-equipment/catalog';
 import { isRegistryRowLinked } from '@/lib/registry-company-identity';
 import {
   isReservedForItOrSemiSeedRegistry,
   itSeedRegistryDedupeKeys,
   semiSeedRegistryDedupeKeys,
 } from '@/lib/registry-segment-membership';
+import { loadSeedCareersRegistryDbCompanies } from '@/lib/seed-careers/registry-db';
 import { isMidSizedCertificateActive } from '@/lib/mid-sized-companies/registry-dedupe';
 import {
   loadMidSizedRegistryDbCompanies,
@@ -260,24 +263,30 @@ let registrySegmentCountsCache: {
 } | null = null;
 
 function computeRecruitingSegmentRegistryCounts(): RecruitingCompanyActiveCounts {
-  const itRows = buildItCompanyRegistryRows({});
-  const itKeys = new Set(itRows.map((row) => registryCompanyKey(row.companyName)));
-  const semiRows = buildSemiDisplayEquipmentRegistryRows({});
-  const semiKeys = new Set(semiRows.map((row) => registryCompanyKey(row.companyName)));
+  const itSeed = loadSeedCareersRegistryDbCompanies('it');
+  const semiSeed = loadSeedCareersRegistryDbCompanies('semi-equipment');
+  const itKeys = new Set(itSeed.map((row) => registryCompanyKey(row.companyName)));
+  const semiKeys = new Set(semiSeed.map((row) => registryCompanyKey(row.companyName)));
   const enterprise = loadEnterpriseRegistryDbCompanies().filter(
     (record) =>
       !itKeys.has(registryCompanyKey(record.groupName)) &&
       !semiKeys.has(registryCompanyKey(record.groupName)),
   ).length;
   const mid =
-    loadMidSizedRegistryDbCompanies().filter(
-      (record) => !isReservedForItOrSemiSeedRegistry(record.companyName, record.industry),
-    ).length + miscRegistryCount();
+    loadMidSizedRegistryDbCompanies().filter((record) => {
+      const key = registryCompanyKey(record.companyName);
+      if (itKeys.has(key) || semiKeys.has(key)) return false;
+      if (isItComputingCompany(record.companyName, record.industry ?? undefined)) return false;
+      if (isSemiDisplayEquipmentCompany(record.companyName, record.industry ?? undefined)) {
+        return false;
+      }
+      return true;
+    }).length + miscRegistryCount();
   return {
     enterprise,
     'mid-sized': mid,
-    it: itRows.length,
-    'semi-equipment': semiRows.length,
+    it: itSeed.length,
+    'semi-equipment': semiSeed.length,
   };
 }
 
@@ -294,7 +303,7 @@ function miscRegistryCount(): number {
 export function recruitingSegmentRegistryStatLabel(segment: RecruitingEmployerAdminSegment): string {
   if (segment === 'enterprise') return '대기업';
   if (segment === 'mid-sized' || segment === 'misc') return '중견기업';
-  if (segment === 'semi-equipment') return '반도체·디스플레이 장비사';
+  if (segment === 'semi-equipment') return '반도체·디스플레이 회사';
   return 'IT 회사';
 }
 

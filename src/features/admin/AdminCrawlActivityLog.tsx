@@ -9,7 +9,6 @@ import {
 } from '@/lib/admin-ui';
 import type {
   AdminCrawlActivityLogPayload,
-  AdminCrawlDailyLogRow,
   AdminCrawlRunLogRow,
 } from '@/lib/admin-crawl-activity-log';
 import { ADMIN_JOBS_REFRESH_EVENT } from '@/lib/admin-jobs-refresh';
@@ -49,7 +48,11 @@ export default function AdminCrawlActivityLog({ reloadKey }: AdminCrawlActivityL
     setLoading(true);
     setError('');
     try {
-      const json = await adminJson<ActivityResponse>('/api/admin/crawl-activity-log');
+      const json = await adminJson<ActivityResponse>('/api/admin/crawl-activity-log', {
+        timeoutMs: null,
+        abortMessage:
+          '수집 실행 내역을 불러오는 데 시간이 걸리고 있습니다. 잠시 후 새로 고침해 주세요.',
+      });
       if (!json.ok || !json.data) {
         throw new Error(json.ok ? undefined : json.error?.message);
       }
@@ -57,7 +60,7 @@ export default function AdminCrawlActivityLog({ reloadKey }: AdminCrawlActivityL
     } catch (err) {
       setError(
         humanizeAdminFetchError(
-          err instanceof Error ? err.message : '수집·노출 내역을 불러오지 못했습니다.',
+          err instanceof Error ? err.message : '수집 실행 내역을 불러오지 못했습니다.',
         ),
       );
       setPayload(null);
@@ -77,7 +80,7 @@ export default function AdminCrawlActivityLog({ reloadKey }: AdminCrawlActivityL
   }, [load]);
 
   const retentionNote = payload
-    ? `수집 실행 기록은 ${payload.retentionDays}일이 지나면 자동으로 정리됩니다. 일별 스냅샷은 그날 처음 기록한 통계입니다.`
+    ? `수집 실행 기록은 ${payload.retentionDays}일이 지나면 자동으로 정리됩니다.`
     : undefined;
 
   return (
@@ -118,37 +121,6 @@ export default function AdminCrawlActivityLog({ reloadKey }: AdminCrawlActivityL
             </table>
           </div>
         ) : null}
-      </Card>
-
-      <Card
-        title="일별 노출 스냅샷"
-        description="날짜별로 한 번 남긴 노출·수집 건수입니다. 수집 전후 변화를 비교할 때 참고하세요."
-      >
-        {loading && !payload ? <p className="text-sm text-muted">불러오는 중…</p> : null}
-        {payload && payload.daily.length === 0 ? (
-          <p className="text-sm text-muted">일별 스냅샷이 아직 없습니다. 수집·통계 요약이 돌면 쌓입니다.</p>
-        ) : null}
-        {payload && payload.daily.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className={LOG_TABLE_CLASS}>
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="whitespace-nowrap text-left">날짜</th>
-                  <th className="whitespace-nowrap text-left">기록 시각</th>
-                  <th className="whitespace-nowrap text-left">기록 시점</th>
-                  <th className={cn(NUM_CELL, 'font-semibold text-primary')}>노출 공고</th>
-                  <th className={NUM_CELL}>수집 공고</th>
-                  <th className={NUM_CELL}>부적합</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border text-foreground">
-                {payload.daily.map((row) => (
-                  <DailyLogRow key={`${row.day}-${row.capturedAt}`} row={row} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
         {retentionNote ? <p className="mt-3 text-xs text-muted">{retentionNote}</p> : null}
       </Card>
     </div>
@@ -168,19 +140,6 @@ function RunLogRow({ row }: { row: AdminCrawlRunLogRow }) {
       <td className={cn(NUM_CELL, 'align-top')}>{formatSignedCount(row.netChange)}</td>
       <td className={cn(NUM_CELL, 'align-top')}>{hasError ? `${formatCount(row.errorSourceCount)}곳` : '—'}</td>
       <td className={NOTE_CELL}>{row.statusNote}</td>
-    </tr>
-  );
-}
-
-function DailyLogRow({ row }: { row: AdminCrawlDailyLogRow }) {
-  return (
-    <tr>
-      <td className="whitespace-nowrap tabular-nums">{row.day}</td>
-      <td className="whitespace-nowrap">{formatInquiryDateTime(row.capturedAt)}</td>
-      <td className="whitespace-nowrap">{row.capturedBeforeLabel}</td>
-      <td className={cn(NUM_CELL, 'font-semibold text-primary')}>{formatCount(row.activeJobs)}건</td>
-      <td className={NUM_CELL}>{formatCount(row.storedActiveJobs)}건</td>
-      <td className={NUM_CELL}>{formatCount(row.unsuitableJobs)}건</td>
     </tr>
   );
 }

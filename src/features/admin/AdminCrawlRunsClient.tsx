@@ -1,17 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import PageHeader from '@/components/navigation/PageHeader';
 import { Card } from '@/components/ui/Card';
 import {
   adminJson,
+  ADMIN_CRAWL_STATS_SUMMARY_TIMEOUT_MS,
   adminPrimaryActionClassName,
   humanizeAdminFetchError,
 } from '@/lib/admin-ui';
 import { FormFeedback } from '@/components/ui/FormFeedback';
 import { CRAWL_SCHEDULE } from '@/lib/crawler/schedule';
 import { formatInquiryDateTime } from '@/lib/inquiry-display';
-import { ADMIN_JOBS_REFRESH_EVENT } from '@/lib/admin-jobs-refresh';
+import { ADMIN_JOBS_REFRESH_EVENT, requestAdminJobsRefresh } from '@/lib/admin-jobs-refresh';
 import {
   emptyCompanySegmentCounts,
   sumCompanySegmentCounts,
@@ -222,29 +223,40 @@ function buildStatsRows(summary: CrawlStatsSummary): StatsRow[] {
 
 export default function AdminCrawlRunsClient() {
   const [summary, setSummary] = useState<CrawlStatsSummary | null>(null);
-  const [logReloadKey, setLogReloadKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [statsNotice, setStatsNotice] = useState('');
   const [running, setRunning] = useState(false);
   const [runMessage, setRunMessage] = useState('');
   const [crawlEtaSeconds, setCrawlEtaSeconds] = useState(0);
   const crawlEtaInitialSeconds = CRAWL_SCHEDULE.localManualRunEstimateMinutes * 60;
+  const summaryRef = useRef<CrawlStatsSummary | null>(null);
+  summaryRef.current = summary;
 
   const load = useCallback(async (options?: { recompute?: boolean }) => {
     setLoading(true);
     setError('');
+    setStatsNotice('');
     try {
       const path = options?.recompute
         ? '/api/admin/crawl-stats-summary?recompute=1'
         : '/api/admin/crawl-stats-summary';
-      const json = await adminJson<{ ok?: boolean; data?: CrawlStatsSummary }>(path);
+      const json = await adminJson<{ ok?: boolean; data?: CrawlStatsSummary }>(path, {
+        timeoutMs: options?.recompute ? ADMIN_CRAWL_STATS_SUMMARY_TIMEOUT_MS : null,
+      });
       if (!json.ok || !json.data) throw new Error('수집 통계를 불러오지 못했습니다.');
       setSummary(json.data);
-      setLogReloadKey((key) => key + 1);
     } catch (err) {
-      setError(
-        humanizeAdminFetchError(err instanceof Error ? err.message : '수집 통계를 불러오지 못했습니다.'),
+      const message = humanizeAdminFetchError(
+        err instanceof Error ? err.message : '수집 통계를 불러오지 못했습니다.',
       );
+      if (summaryRef.current && message.includes('요청 시간이 초과')) {
+        setStatsNotice(
+          '분류별 통계 집계가 아직 끝나지 않았습니다. 아래 표는 직전에 불러온 값입니다. 잠시 후 「새로 고침」을 눌러 주세요.',
+        );
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -292,7 +304,7 @@ export default function AdminCrawlRunsClient() {
     if (running) return;
     if (
       !window.confirm(
-        '지금 채용 공고 수집을 실행할까요?\n\n대기업·IT 회사·반도체·디스플레이 장비사는 명단 DB 전체, 중견기업은 오늘 1,000곳 배치만 순환합니다. 수십 분이 걸릴 수 있습니다.',
+        '지금 채용 공고 수집을 실행할까요?\n\n대기업·IT 회사·반도체·디스플레이 회사는 명단 DB 전체, 중견기업은 오늘 1,000곳 배치만 순환합니다. 수십 분이 걸릴 수 있습니다.',
       )
     ) {
       return;
@@ -311,6 +323,7 @@ export default function AdminCrawlRunsClient() {
         `수집 완료 — 저장 ${json.data.summary.totalUpserted.toLocaleString('ko-KR')}건 · 마감 ${json.data.summary.totalClosed.toLocaleString('ko-KR')}건`,
       );
       await load();
+      requestAdminJobsRefresh();
     } catch (err) {
       const base = humanizeAdminFetchError(
         err instanceof Error ? err.message : '수집을 실행하지 못했습니다.',
@@ -336,6 +349,7 @@ export default function AdminCrawlRunsClient() {
       <PageHeader
         title="통계 요약"
         description="기업 카테고리별 통계 요약한 페이지입니다."
+        showHome={false}
         trailing={
           <button
             type="button"
@@ -376,6 +390,11 @@ export default function AdminCrawlRunsClient() {
       ) : null}
 
       {error ? <FormFeedback variant="error">{error}</FormFeedback> : null}
+      {statsNotice ? (
+        <FormFeedback variant="success" className="border-amber-200 bg-amber-50 text-amber-900">
+          {statsNotice}
+        </FormFeedback>
+      ) : null}
       {runMessage ? <FormFeedback variant="success">{runMessage}</FormFeedback> : null}
 
       <Card description={loading && !summary ? '불러오는 중…' : lastRunLabel}>
@@ -459,7 +478,7 @@ export default function AdminCrawlRunsClient() {
         ) : null}
       </Card>
 
-      <AdminCrawlActivityLog reloadKey={logReloadKey} />
+      <AdminCrawlActivityLog />
     </div>
   );
 }

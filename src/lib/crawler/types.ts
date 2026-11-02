@@ -37,4 +37,8 @@ export type CrawlRunSummary = {
   fetchedBySegment?: Record<JobBoardCompanySegment, number>;
   /** 마지막 수집에서 마감 처리한 공고 — 회사 분류별 */
   closedBySegment?: Record<JobBoardCompanySegment, number>;
+  /** sources.errors를 매번 펼치지 않도록 run 저장 시 함께 기록 */
+  errorSourceCount?: number;
+  /** sources 배열 길이 — lean 조회 시 사용 */
+  sourceCount?: number;
 };

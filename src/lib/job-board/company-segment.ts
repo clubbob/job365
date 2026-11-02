@@ -11,7 +11,7 @@ export const JOB_BOARD_COMPANY_SEGMENTS = [
   '대기업',
   '중견기업',
   'IT 회사',
-  '반도체·디스플레이 장비사',
+  '반도체·디스플레이 회사',
 ] as const;
 export type JobBoardCompanySegment = (typeof JOB_BOARD_COMPANY_SEGMENTS)[number];
 
@@ -21,7 +21,8 @@ const LEGACY_COMPANY_SEGMENT: Record<string, JobBoardCompanySegment> = {
   '중견 기업': '중견기업',
   'IT 기업': 'IT 회사',
   '기타 기업': '중견기업',
-  '반도체·디스플레이 장비': '반도체·디스플레이 장비사',
+  '반도체·디스플레이 장비': '반도체·디스플레이 회사',
+  '반도체·디스플레이 장비사': '반도체·디스플레이 회사',
 };
 
 export type CompanySegmentJobFields = Pick<CrawledJobListItem, 'companyName' | 'companySize' | 'title'> & {
@@ -43,7 +44,7 @@ export function isItCompanyJob(
   return IT_ENTERPRISE_CRAWL_SOURCE_IDS.has(crawlSourceKey(sourceId));
 }
 
-/** 브라우저·API 공통 — 장비 시드·회사명 매칭 */
+/** 브라우저·API 공통 — 반도체·디스플레이 회사 시드·회사명 매칭 */
 export function isSemiDisplayEquipmentJob(
   job: Pick<CompanySegmentJobFields, 'companyName' | 'title'> & { sourceId?: string },
 ): boolean {
@@ -75,9 +76,9 @@ export function parseJobBoardCompanySegments(value: unknown): JobBoardCompanySeg
   return out;
 }
 
-/** 장비사 → IT → 대기업 → 그 외(중견기업) */
+/** 반도체·디스플레이 회사 → IT → 대기업 → 그 외(중견기업) */
 export function primaryCompanySegmentForJob(job: CompanySegmentJobFields): JobBoardCompanySegment {
-  if (isSemiDisplayEquipmentJob(job)) return '반도체·디스플레이 장비사';
+  if (isSemiDisplayEquipmentJob(job)) return '반도체·디스플레이 회사';
   if (isItCompanyJob(job)) return 'IT 회사';
   if (job.companySize === '대기업') return '대기업';
   return '중견기업';
@@ -97,7 +98,7 @@ export function emptyCompanySegmentCounts(): Record<JobBoardCompanySegment, numb
     대기업: 0,
     중견기업: 0,
     'IT 회사': 0,
-    '반도체·디스플레이 장비사': 0,
+    '반도체·디스플레이 회사': 0,
   };
 }
 
@@ -132,7 +133,9 @@ export function readLegacyCompanySegmentCount(
   if (segment === '대기업') keys.push('대기업·계열사', '대기업·계열');
   if (segment === '중견기업') keys.push('중견 기업', '기타 기업');
   if (segment === 'IT 회사') keys.push('IT 기업');
-  if (segment === '반도체·디스플레이 장비사') keys.push('반도체·디스플레이 장비');
+  if (segment === '반도체·디스플레이 회사') {
+    keys.push('반도체·디스플레이 장비', '반도체·디스플레이 장비사');
+  }
   for (const key of keys) {
     const n = Number(record[key]);
     if (Number.isFinite(n) && n > 0) return n;

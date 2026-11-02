@@ -24,10 +24,10 @@ function getCrawlSourcePrimarySegmentMap(): Map<string, JobBoardCompanySegment> 
     } else if (company.tier === 'it') {
       segment = 'IT 회사';
     } else if (company.tier === 'semi-equipment') {
-      segment = '반도체·디스플레이 장비사';
+      segment = '반도체·디스플레이 회사';
     } else if (company.tier === 'extra') {
       if (isSemiDisplayEquipmentCompanyName(company.name)) {
-        segment = '반도체·디스플레이 장비사';
+        segment = '반도체·디스플레이 회사';
       } else {
         segment = isItComputingCompanyName(company.name) ? 'IT 회사' : '중견기업';
       }
@@ -49,12 +49,12 @@ function primaryCompanySegmentForCrawlSource(sourceId: string, sourceName: strin
   if (fromMap) return fromMap;
 
   const label = sourceName.replace(/\s*채용\s*$/, '').trim();
-  if (label && isSemiDisplayEquipmentCompanyName(label)) return '반도체·디스플레이 장비사';
+  if (label && isSemiDisplayEquipmentCompanyName(label)) return '반도체·디스플레이 회사';
   if (label && isItComputingCompanyName(label)) return 'IT 회사';
   if (IT_ENTERPRISE_CRAWL_SOURCE_IDS.has(crawlSourceKey(key))) return 'IT 회사';
 
   if (key.includes('it-seed-registry-batch')) return 'IT 회사';
-  if (key.includes('semi-seed-registry-batch')) return '반도체·디스플레이 장비사';
+  if (key.includes('semi-seed-registry-batch')) return '반도체·디스플레이 회사';
   if (key.includes('mid-sized') || key.includes('work24-mid-sized')) return '중견기업';
   if (key.endsWith('-careers')) return '대기업';
   return '중견기업';

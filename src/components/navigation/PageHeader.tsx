@@ -6,6 +6,7 @@ export default function PageHeader({
   title,
   description,
   showRefresh = true,
+  showHome = true,
   homeHref,
   homeLabel,
   homeOpenInNewWindow,
@@ -15,6 +16,7 @@ export default function PageHeader({
   title: string;
   description?: string;
   showRefresh?: boolean;
+  showHome?: boolean;
   homeHref?: string;
   homeLabel?: string;
   homeOpenInNewWindow?: boolean;
@@ -31,6 +33,7 @@ export default function PageHeader({
       </div>
       <PageActions
         showRefresh={showRefresh}
+        showHome={showHome}
         homeHref={homeHref}
         homeLabel={homeLabel}
         homeOpenInNewWindow={homeOpenInNewWindow}

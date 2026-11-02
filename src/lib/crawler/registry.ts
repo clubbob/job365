@@ -118,6 +118,9 @@ export function getCompanyCrawlersForRun(): CompanyCrawler[] {
   if (process.env.CRAWL_MID_SIZED_ONLY === '1') {
     return crawlers.filter((entry) => entry.company.tier === 'mid-sized');
   }
+  if (process.env.CRAWL_SEMI_ONLY === '1') {
+    return crawlers.filter((entry) => entry.company.tier === 'semi-equipment');
+  }
   return crawlers;
 }
 

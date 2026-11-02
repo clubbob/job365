@@ -15,15 +15,18 @@ import { loadSeedCareersCrawlTargets } from '@/lib/seed-careers/crawl-targets';
 import { loadSeedCareersRegistryOverrides } from '@/lib/seed-careers/registry-overrides';
 import { seedCareersTargetsPath } from '@/lib/seed-careers/paths';
 import { parseSeedCareersSegment, SEED_CAREERS_SEGMENTS, type SeedCareersSegment } from '@/lib/seed-careers/segment';
+import { normalizeStoredCareersUrl } from '@/lib/seed-careers/normalize-careers-url';
 import type { SeedCareersTarget } from '@/lib/seed-careers/types';
 
 function syncSegment(segment: SeedCareersSegment): void {
   const names = listSeedCareersCompanyNames(segment);
   const overrides = loadSeedCareersRegistryOverrides(segment);
-  const byName = new Map<string, SeedCareersTarget>();
+  const existingByName = new Map<string, SeedCareersTarget>();
   for (const item of loadSeedCareersCrawlTargets(segment)) {
-    byName.set(item.name.trim(), item);
+    existingByName.set(item.name.trim(), item);
   }
+
+  const byName = new Map<string, SeedCareersTarget>();
 
   let fromOverride = 0;
   let fromMidSized = 0;
@@ -33,17 +36,24 @@ function syncSegment(segment: SeedCareersSegment): void {
     const key = seedName.trim();
     const override = overrides.get(key);
     const bridge = findMidSizedBridgeForSeedCompany(segment, seedName);
-    const existing = byName.get(key);
+    const existing = existingByName.get(key);
 
-    const careersUrl = (override?.careersUrl ?? bridge?.careersUrl ?? existing?.careersUrl ?? '').trim();
+    const careersUrl = normalizeStoredCareersUrl(
+      override?.careersUrl ?? bridge?.careersUrl ?? existing?.careersUrl ?? '',
+    );
     if (!careersUrl) continue;
 
     const businessNumber =
       override?.businessNumber ?? bridge?.businessNumber ?? existing?.businessNumber ?? null;
+    const defaultSourceId = seedCareersCrawlSourceId(segment, seedName);
     const crawlSourceId =
-      bridge?.careersUrl === careersUrl && bridge.crawlSourceId
-        ? bridge.crawlSourceId
-        : existing?.crawlSourceId ?? seedCareersCrawlSourceId(segment, seedName);
+      segment === 'semi-equipment'
+        ? existing?.crawlSourceId?.startsWith('semi-seed-')
+          ? existing.crawlSourceId
+          : defaultSourceId
+        : bridge?.careersUrl === careersUrl && bridge.crawlSourceId
+          ? bridge.crawlSourceId
+          : (existing?.crawlSourceId ?? defaultSourceId);
 
     byName.set(key, {
       name: seedName,
@@ -76,7 +86,7 @@ function syncSegment(segment: SeedCareersSegment): void {
   const dbFile = buildSeedCareersRegistryDbFile(segment);
   saveSeedCareersRegistryDbToDisk(segment, dbFile);
 
-  const label = segment === 'it' ? 'IT 시드' : '반도체·디스플레이 장비 시드';
+  const label = segment === 'it' ? 'IT 시드' : '반도체·디스플레이 회사 시드';
   console.log(
     `${label}: crawl-targets ${targets.length}곳 (보정 ${fromOverride} · 중견 이관 ${fromMidSized} · 기존 유지 ${keptExisting}) → ${targetsPath}`,
   );

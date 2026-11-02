@@ -30,7 +30,7 @@ export function registryToAdminCrawlStatsCounts(
   counts['대기업'] = registry.enterprise;
   counts['중견기업'] = registry['mid-sized'];
   counts['IT 회사'] = registry.it;
-  counts['반도체·디스플레이 장비사'] = registry['semi-equipment'];
+  counts['반도체·디스플레이 회사'] = registry['semi-equipment'];
   return counts;
 }
 

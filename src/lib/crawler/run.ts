@@ -34,6 +34,7 @@ import { addJobsToPrimaryCompanySegmentCounts } from '@/lib/job-board/stored-act
 import type { CrawledJob } from '@/types/crawled-job';
 import { captureCrawlStatsDailyBeforeCrawl } from '@/lib/crawl-stats-daily-server';
 import { saveCrawlRun } from '@/lib/crawl-runs-server';
+import { countCrawlRunErrorSources } from '@/lib/crawler/crawl-run-log';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
 
 async function syncSourceForId(
@@ -398,6 +399,8 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
     totalClosed,
     fetchedBySegment,
     closedBySegment,
+    errorSourceCount: countCrawlRunErrorSources(sourceSummaries),
+    sourceCount: sourceSummaries.length,
   };
 
   if (pipelineError) {

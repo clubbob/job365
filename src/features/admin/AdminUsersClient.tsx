@@ -156,9 +156,9 @@ export default function AdminUsersClient() {
                   <tr className="border-b border-border text-subtle">
                     <th className="py-2 pr-4 font-semibold">닉네임</th>
                     <th className="py-2 pr-4 font-semibold">이메일</th>
+                    <th className="py-2 pr-4 font-semibold">가입일</th>
                     <th className="py-2 pr-4 font-semibold">맞춤 채용 설정</th>
                     <th className="py-2 pr-4 font-semibold">최근 로그인</th>
-                    <th className="py-2 pr-4 font-semibold">가입일</th>
                     <th className="py-2 font-semibold">관리</th>
                   </tr>
                 </thead>
@@ -167,11 +167,11 @@ export default function AdminUsersClient() {
                     <tr key={user.id} className="border-b border-border last:border-0">
                       <td className="py-2.5 pr-4 font-medium text-foreground">{user.nickname}</td>
                       <td className="py-2.5 pr-4 break-all text-foreground">{user.email ?? '-'}</td>
+                      <td className="py-2.5 pr-4 whitespace-nowrap text-muted">{formatDateTime(user.createdAt)}</td>
                       <td className="py-2.5 pr-4 whitespace-nowrap text-muted">
                         {formatDateTime(user.jobAlertPrefsUpdatedAt)}
                       </td>
                       <td className="py-2.5 pr-4 whitespace-nowrap text-muted">{formatDateTime(user.lastLoginAt)}</td>
-                      <td className="py-2.5 pr-4 whitespace-nowrap text-muted">{formatDateTime(user.createdAt)}</td>
                       <td className="py-2.5">
                         {user.role === 'admin' ? (
                           <span className="text-xs text-muted">관리자</span>

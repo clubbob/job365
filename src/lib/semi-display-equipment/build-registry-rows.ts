@@ -11,7 +11,7 @@ import { resolveRegistryBusinessNumber } from '@/lib/recruiting-employers/career
 export type SemiDisplayEquipmentRegistryRow = {
   companyName: string;
   businessNumber: string;
-  segment: '반도체·디스플레이 장비사';
+  segment: '반도체·디스플레이 회사';
   active: boolean | null;
   careersUrl: string | null;
   linked: boolean;
@@ -48,7 +48,7 @@ function emptyRegistryStats(): CrawledJobSourceStats {
   };
 }
 
-/** 반도체·디스플레이 장비사 명단 — `semi-seed-registry-db.json` 전용 (대기업·중견과 겹치지 않음) */
+/** 반도체·디스플레이 회사 명단 — `semi-seed-registry-db.json` 전용 (대기업·중견과 겹치지 않음) */
 export function buildSemiDisplayEquipmentRegistryRows(
   stats: CrawledJobSourceStats | Record<string, number> = emptyRegistryStats(),
 ): SemiDisplayEquipmentRegistryRow[] {
@@ -63,7 +63,7 @@ export function buildSemiDisplayEquipmentRegistryRows(
       const base = {
         companyName: record.companyName,
         businessNumber: businessNumberForSeedRow(record),
-        segment: '반도체·디스플레이 장비사' as const,
+        segment: '반도체·디스플레이 회사' as const,
         active: null,
         careersUrl: storedCareersUrl,
         linked: isRegistryRowLinked(record),

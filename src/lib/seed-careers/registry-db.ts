@@ -9,6 +9,7 @@ import { seedCareersNormalizeKey } from '@/lib/seed-careers/normalize-key';
 import { seedCareersRegistryDbPath } from '@/lib/seed-careers/paths';
 import { loadSeedCareersRegistryOverrides } from '@/lib/seed-careers/registry-overrides';
 import type { SeedCareersSegment } from '@/lib/seed-careers/segment';
+import { dedupeSemiSeedRegistryDbCompanies } from '@/lib/semi-display-equipment/dedupe-semi-registry-rows';
 import type { SeedCareersDbCompany, SeedCareersRegistryDbFile, SeedCareersTarget } from '@/lib/seed-careers/types';
 
 function indexTargetsByName(targets: SeedCareersTarget[]): Map<string, SeedCareersTarget> {
@@ -77,14 +78,21 @@ export function buildSeedCareersRegistryDbCompanies(segment: SeedCareersSegment)
 }
 
 export function buildSeedCareersRegistryDbFile(segment: SeedCareersSegment): SeedCareersRegistryDbFile {
-  const companies = buildSeedCareersRegistryDbCompanies(segment);
+  let companies = buildSeedCareersRegistryDbCompanies(segment);
+  if (segment === 'semi-equipment') {
+    companies = dedupeSemiSeedRegistryDbCompanies(companies);
+  }
   const linked = companies.filter((item) => item.careersUrl).length;
-  const label = segment === 'it' ? 'IT 시드' : '반도체·디스플레이 장비 시드';
+  const label = segment === 'it' ? 'IT 시드' : '반도체·디스플레이 회사 시드';
+  const sourceNote =
+    segment === 'semi-equipment'
+      ? `${label} 마스터 명단 + SEMICON Korea 2026 참가사. 회사마다 고유 사업자번호·전용 채용 URL이 있어야 수집 대상입니다.`
+      : `${label} 전용 명단 DB. 회사마다 고유 사업자번호·전용 채용 URL이 있어야 수집 대상입니다.`;
   return {
     version: 1,
     updatedAt: new Date().toISOString(),
     segment,
-    sourceNote: `${label} 전용 명단 DB. 회사마다 고유 사업자번호·전용 채용 URL이 있어야 수집 대상입니다.`,
+    sourceNote,
     uniqueCompanyCount: companies.length,
     careersUrlLinkedCount: linked,
     companies,

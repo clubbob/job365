@@ -60,9 +60,24 @@ function homepageFromCareersUrl(careersUrl: string): string | null {
 
 function htmlMentionsCompany(html: string, companyName: string): boolean {
   const compact = companyName.replace(/\(주\)|주식회사|㈜|\s+/g, '').toLowerCase();
-  if (compact.length < 2) return false;
+  if (compact.length >= 2) {
+    const body = html.toLowerCase();
+    if (body.includes(compact) || body.includes(companyName.toLowerCase())) return true;
+  }
+  const tokens = companyName
+    .replace(/\(co\.?-?exhibitor\)/gi, ' ')
+    .replace(/\(주\)|주식회사|㈜|,|\./g, ' ')
+    .split(/\s+/)
+    .map((t) => t.replace(/[^a-z0-9가-힣]/gi, '').toLowerCase())
+    .filter(
+      (t) =>
+        t.length >= 3 &&
+        !['ltd', 'inc', 'corp', 'co', 'korea', 'limited', 'the', 'and', 'group'].includes(t),
+    );
+  if (tokens.length === 0) return true;
   const body = html.toLowerCase();
-  return body.includes(compact) || body.includes(companyName.toLowerCase());
+  const hits = tokens.filter((t) => body.includes(t)).length;
+  return hits >= Math.min(2, tokens.length);
 }
 
 async function discoverBusinessNumber(

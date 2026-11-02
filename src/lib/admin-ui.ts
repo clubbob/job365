@@ -14,10 +14,18 @@ export function firebaseAdminUnavailableText(message?: string | null) {
 }
 
 const ADMIN_FETCH_TIMEOUT_MS = 115_000;
+/** crawl-stats-summary는 Firestore 전체 스캔(maxDuration 120s) — 클라이언트가 먼저 끊지 않게 */
+export const ADMIN_CRAWL_STATS_SUMMARY_TIMEOUT_MS = 130_000;
 
-export async function adminJson<T>(path: string, init?: RequestInit): Promise<T> {
+export async function adminJson<T>(
+  path: string,
+  init?: RequestInit & { timeoutMs?: number | null; abortMessage?: string },
+): Promise<T> {
   const timeoutMs =
-    typeof init?.signal === 'object' && init.signal !== null ? null : ADMIN_FETCH_TIMEOUT_MS;
+    init?.timeoutMs === null
+      ? null
+      : (init?.timeoutMs ?? ADMIN_FETCH_TIMEOUT_MS);
+  const { timeoutMs: _omit, abortMessage: _abortMsg, ...fetchInit } = init ?? {};
   const controller = timeoutMs ? new AbortController() : null;
   const timeoutId =
     controller && timeoutMs
@@ -28,18 +36,19 @@ export async function adminJson<T>(path: string, init?: RequestInit): Promise<T>
   try {
     res = await fetch(path, {
       credentials: 'include',
-      ...init,
-      signal: init?.signal ?? controller?.signal,
+      ...fetchInit,
+      signal: fetchInit.signal ?? controller?.signal,
       headers: {
         'Content-Type': 'application/json',
-        ...init?.headers,
+        ...fetchInit.headers,
       },
     });
   } catch (error) {
     if (timeoutId) clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error(
-        '요청 시간이 초과되었습니다. 통계 집계가 길어질 수 있습니다. 잠시 후 새로 고침해 주세요.',
+        init?.abortMessage?.trim() ||
+          '요청 시간이 초과되었습니다. 통계 집계가 길어질 수 있습니다. 잠시 후 새로 고침해 주세요.',
       );
     }
     throw error;

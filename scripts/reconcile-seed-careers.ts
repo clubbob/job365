@@ -16,7 +16,7 @@ async function main(): Promise<void> {
   for (const segment of segments) {
     const dbFile = buildSeedCareersRegistryDbFile(segment);
     saveSeedCareersRegistryDbToDisk(segment, dbFile);
-    const label = segment === 'it' ? 'IT 시드' : '반도체·디스플레이 장비 시드';
+    const label = segment === 'it' ? 'IT 시드' : '반도체·디스플레이 회사 시드';
     console.log(
       `저장: data/${segment === 'it' ? 'it-seed' : 'semi-seed'}-registry-db.json — ${label} ${dbFile.uniqueCompanyCount}곳 · 채용 URL ${dbFile.careersUrlLinkedCount}곳`,
     );

@@ -66,8 +66,7 @@ export default function AdminCrawledJobsBySegmentPanel({
             ? '구직자 채용 정보(/jobs)와 같은 노출·마감·중복 제거 기준 목록입니다. 회사 분류별로 나눠 봅니다.'
             : 'DB 모집 중 수집 공고입니다. 회사 분류별로 나눠 봅니다.'
         }
-        homeHref="/admin"
-        homeLabel="대시보드"
+        showHome={false}
       />
 
       <RecruitingCompanySegmentTabBar

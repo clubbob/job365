@@ -18,7 +18,7 @@ const ROWS: Array<{ group: string; label: string; value: string }> = [
   {
     group: '수집',
     label: '회차',
-    value: `대기업·IT·장비는 매번 전부, 중견은 회차당 ${CRAWL_SCHEDULE.midSizedSitesPerRun.toLocaleString('ko-KR')}곳`,
+    value: `대기업·IT·반도체·디스플레이 회사는 매번 전부, 중견은 회차당 ${CRAWL_SCHEDULE.midSizedSitesPerRun.toLocaleString('ko-KR')}곳`,
   },
   { group: '수집', label: '저장', value: '실제 채용만 넣고, 홍보는 빼기' },
   { group: '수집', label: '마감', value: '기간이 지난 공고는 마감 처리' },
@@ -36,8 +36,7 @@ export default function AdminExtractListLogicClient() {
       <PageHeader
         title="수집/노출 로직"
         description="공고를 어떻게 가져오고, 구직자에게 어떻게 보여 주는지입니다."
-        homeHref="/admin"
-        homeLabel="대시보드"
+        showHome={false}
       />
 
       <Card>
