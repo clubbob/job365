@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-29T21:31:49.963Z",
+  "updatedAt": "2026-11-01T20:58:09.788Z",
   "sourceNote": "중견기업 명단 DB. 회사마다 고유 사업자번호·전용 채용 URL이 있어야 수집·연결 완료입니다.",
   "uniqueCompanyCount": 6421,
-  "careersUrlLinkedCount": 6217,
-  "careersUrlOfficialCount": 5328,
+  "careersUrlLinkedCount": 6234,
+  "careersUrlOfficialCount": 4661,
   "companies": [
     {
       "companyName": "동진상선(주)",
@@ -4175,7 +4175,7 @@
       "validTo": "2027-06-30",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/320311",
+      "careersUrl": null,
       "crawlSourceId": "mid-2648101505",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
@@ -5311,7 +5311,7 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://inthiswork.com/hr?paged1=2",
+      "careersUrl": null,
       "crawlSourceId": "mid-3788602680",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
@@ -9903,7 +9903,7 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/145377",
+      "careersUrl": null,
       "crawlSourceId": "mid-2018127348",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
@@ -10911,7 +10911,7 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/146369",
+      "careersUrl": null,
       "crawlSourceId": "mid-6888702435",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
@@ -11071,7 +11071,7 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/246941",
+      "careersUrl": null,
       "crawlSourceId": "mid-8468102214",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
@@ -15327,7 +15327,7 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/13754",
+      "careersUrl": null,
       "crawlSourceId": "mid-1448137150",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
@@ -15903,7 +15903,7 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/344627",
+      "careersUrl": null,
       "crawlSourceId": "mid-2208792541",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
@@ -26287,12 +26287,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://inthiswork.com/archives/311365",
+      "careersUrl": "https://www.jobkorea.co.kr/Recruit/GI_Read/50193149?Oem_Code=C1",
       "crawlSourceId": "mid-3948801955",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-25T19:26:42.549Z"
+      "careersUrlCheckedAt": "2026-11-01T20:56:29.333Z"
     },
     {
       "companyName": "케이비아이알로이(주)",
@@ -26319,12 +26319,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.jobkorea.co.kr/recruit/joblist?menucode=cotype&cotype=1,2,3",
       "crawlSourceId": "mid-1058716749",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:27:06.429Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:56:29.633Z"
     },
     {
       "companyName": "(주)디에이치글로벌",
@@ -26351,12 +26351,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/Z3Jjbk0ycW9adEFEZWJkK1puMWZHZz09/company_nm/%ED%95%9C%EA%B5%AD%EC%95%8C%ED%8C%8C%EB%9D%BC%EB%B0%9C(%EC%A3%BC)",
       "crawlSourceId": "mid-1068141079",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:27:27.376Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:40.206Z"
     },
     {
       "companyName": "(주)디어스E&C",
@@ -26415,12 +26415,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.jobkorea.co.kr/Recruit/Co_Read/C/lws1120/Company_name/%E3%88%9C%ED%9D%A5%EC%95%84",
       "crawlSourceId": "mid-6228113231",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:27:26.590Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:39.194Z"
     },
     {
       "companyName": "디아이동일(주)",
@@ -27332,7 +27332,7 @@
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:27:16.801Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:10.321Z"
     },
     {
       "companyName": "주식회사 라이온첨단소재",
@@ -27412,7 +27412,7 @@
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:27:26.711Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:13.535Z"
     },
     {
       "companyName": "한국인터텍테스팅서비스(주)",
@@ -27455,12 +27455,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view?csn=dmpOWkQ3TThFZGt1TVl1MDlLc2dtdz09",
       "crawlSourceId": "mid-1288677456",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:27:27.722Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:13.790Z"
     },
     {
       "companyName": "성경식품제2공장",
@@ -28543,12 +28543,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.jobkorea.co.kr/company/16152411/recruit",
       "crawlSourceId": "mid-1208157242",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:27:50.822Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:11.362Z"
     },
     {
       "companyName": "(주)세코닉스",
@@ -28724,7 +28724,7 @@
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:27:57.165Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:13.216Z"
     },
     {
       "companyName": "(주)피피이씨춘천",
@@ -28735,12 +28735,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/bHdLSTQzSUVxd3hRaW84eFF6TlVqQT09/company_nm/(%EC%A3%BC)%ED%94%BC%ED%94%BC%EC%9D%B4%EC%94%A8%EC%B6%98%EC%B2%9C",
       "crawlSourceId": "mid-2218122819",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:27:57.495Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:14.032Z"
     },
     {
       "companyName": "코스맥스엔에스 주식회사",
@@ -28751,12 +28751,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view?csn=Y1RheUttelF6VWI3d3BNamFGeFFndz09",
       "crawlSourceId": "mid-1108610003",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:27:59.781Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:14.321Z"
     },
     {
       "companyName": "한국주철관공업주식회사",
@@ -28767,12 +28767,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view?csn=dVBCY05rN0FhV3NqZ29RS2JsT2NJdz09",
       "crawlSourceId": "mid-6038104347",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:28:00.568Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:13.810Z"
     },
     {
       "companyName": "새한산업",
@@ -30175,12 +30175,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/354534",
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/RGhOZ3Rxdkc5UkhLQjFLTXhudTRYUT09/company_nm/(%EC%A3%BC)%EB%82%98%EC%9D%B4%EC%8A%A4%EB%94%94%EC%95%A4%EB%B9%84",
       "crawlSourceId": "mid-1078624874",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T01:44:51.751Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:02.253Z"
     },
     {
       "companyName": "키밸브기술(주)",
@@ -31055,12 +31055,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://job.incruit.com/jobdb_info/jobpost.asp?job=2008240004383",
       "crawlSourceId": "mid-1348612195",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:28:20.492Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:56:45.318Z"
     },
     {
       "companyName": "극동유화",
@@ -31119,12 +31119,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit?csn=ekorR3Z3U04rVFA2TlhsT09Tekp5UT09",
       "crawlSourceId": "mid-1148721192",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:28:44.402Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:25.943Z"
     },
     {
       "companyName": "삼진정공(주)",
@@ -31503,12 +31503,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/ZVkrYkpXRkxXdTNxYTZVRk5GM1FDZz09/company_nm/(%EC%A3%BC)%EB%B0%94%EC%98%A4%EC%8A%A4",
       "crawlSourceId": "mid-1258173378",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:28:54.558Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:06.213Z"
     },
     {
       "companyName": "주식회사 신우",
@@ -31855,12 +31855,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/jobs/list/highschool?url=%2Fzf_user%2Frecruit%2Frecruit-view%3Fidx%3D29066795",
       "crawlSourceId": "mid-5458603275",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:29:02.173Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:56:34.902Z"
     },
     {
       "companyName": "대성쎌틱에너시스(주)",
@@ -31935,12 +31935,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.jobkorea.co.kr/Recruit/GI_Read/48372299",
       "crawlSourceId": "mid-2118835257",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:28:55.896Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:56:31.639Z"
     },
     {
       "companyName": "씨싸이트주식회사",
@@ -32143,12 +32143,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/VmdQOVlHeE1KMk90Qk0xR2lnQjdGQT09/company_nm/(%EC%A3%BC)%EC%8B%A0%EC%8A%A4%ED%8B%B8",
       "crawlSourceId": "mid-6098184859",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:29:08.237Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:03.787Z"
     },
     {
       "companyName": "(주)이건창호",
@@ -32196,7 +32196,7 @@
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:29:18.120Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:17.660Z"
     },
     {
       "companyName": "주식회사 계선",
@@ -32223,12 +32223,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/ekFvamFNMXdlazIyT0lMb3o2aVZEQT09/company_nm/%EC%97%90%EC%9D%B4%EC%B9%98%EC%94%A8%EC%97%A0(%EC%A3%BC)",
       "crawlSourceId": "mid-1248680871",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:29:24.188Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:24.924Z"
     },
     {
       "companyName": "(주)디엔에프",
@@ -34287,12 +34287,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/SWs1THgvaGVBbFZFOVh6VWFnNVN3UT09/company_nm/%EC%97%90%EC%8A%A4%EC%A0%9C%EC%9D%B4%EC%A7%80%EC%84%B8%EC%9B%80(%EC%A3%BC)",
       "crawlSourceId": "mid-4048121924",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:29:36.420Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:40.229Z"
     },
     {
       "companyName": "펌텍코리아(주)",
@@ -36111,12 +36111,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/cEUvY0wveDFwSmtKcVhqUUhsVkhTQT09/company_nm/(%EC%A3%BC)%EA%B8%88%EA%B0%95%EC%BF%BC%EC%B8%A0\\n[2]",
       "crawlSourceId": "mid-1248148314",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:29:36.657Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:41.199Z"
     },
     {
       "companyName": "농심태경(주)",
@@ -36415,12 +36415,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view?csn=cyttcm9xd2daWVRYM3hzYzlOZWxxdz09",
       "crawlSourceId": "mid-4288600139",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:29:41.706Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:43.432Z"
     },
     {
       "companyName": "이수페타시스",
@@ -38463,12 +38463,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/cmVKRVUrRVBJc1lUOFZESkE0bHNFZz09/company_nm/%EB%8F%99%EC%95%84%EC%97%90%EC%BD%94%ED%8C%A9(%EC%A3%BC)\\n[2]",
       "crawlSourceId": "mid-2048112790",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:29:40.415Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:51.848Z"
     },
     {
       "companyName": "(주)씨플랫폼",
@@ -38495,12 +38495,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/eVJncTA2NHZtckJXSncwdlFHRE41QT09/company_nm/(%EC%A3%BC)%EB%84%A4%ED%8C%A8%EC%8A%A4%EC%95%BC%ED%95%98%EB%93%9C",
       "crawlSourceId": "mid-6088181107",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:29:41.505Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:46.531Z"
     },
     {
       "companyName": "(주)삼보판지",
@@ -38991,12 +38991,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/MzhlcmJNbG1tZFFnbDVJb2FyT3BYZz09/company_nm/%EC%82%BC%EB%B3%B4%ED%94%84%EB%9D%BC%ED%85%8D(%EC%A3%BC)",
       "crawlSourceId": "mid-5048125064",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:29:45.797Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:48.888Z"
     },
     {
       "companyName": "케이씨브이씨에스 주식회사",
@@ -40047,12 +40047,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://inthiswork.com/archives/317523",
+      "careersUrl": "https://www.jobkorea.co.kr/Recruit/GI_Read/50273135?Oem_Code=C1",
       "crawlSourceId": "mid-1198638589",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T02:07:23.336Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:15.948Z"
     },
     {
       "companyName": "(주)화인테크",
@@ -42015,12 +42015,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://www.skcareersjournal.com/3008",
+      "careersUrl": "https://www.jobkorea.co.kr/Recruit/GI_Read/49690010?Oem_Code=C1",
       "crawlSourceId": "mid-1448109125",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T02:11:59.941Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:17.095Z"
     },
     {
       "companyName": "(주)정림건축종합건축사사무소",
@@ -43583,12 +43583,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "http://www.gainnodus.co.kr/recruit/application.php",
       "crawlSourceId": "mid-1128150189",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-25T19:29:52.330Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:57:16.945Z"
     },
     {
       "companyName": "(주)이큐글로벌",
@@ -44079,12 +44079,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://m.jobkorea.co.kr/company/43622658/Recruit",
-      "crawlSourceId": "mid-6208115553",
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view?csn=QXI4eVdGUDdLYnBjNTJYci82ZDNVdz09",
+      "crawlSourceId": "mid-7938600635",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-25T19:29:58.866Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:50.291Z"
     },
     {
       "companyName": "디케이 주식회사",
@@ -51183,12 +51183,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/159298",
+      "careersUrl": "https://www.jobkorea.co.kr/Recruit/GI_Read/50241627?Oem_Code=C1",
       "crawlSourceId": "mid-1198141677",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T02:34:11.572Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:16.222Z"
     },
     {
       "companyName": "디케이스틸텍(주)",
@@ -55247,12 +55247,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/45535",
+      "careersUrl": "https://www.saramin.co.kr/zf_user/jobs/view?rec_idx=40222735",
       "crawlSourceId": "mid-1408147772",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T02:43:59.261Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:18.112Z"
     },
     {
       "companyName": "알리코제약 주식회사",
@@ -56799,12 +56799,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://www.skcareersjournal.com/",
+      "careersUrl": "https://www.saramin.co.kr/zf_user/jobs/list/highschool?rec_idx=26369804",
       "crawlSourceId": "mid-2018801105",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T02:47:59.627Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:20.216Z"
     },
     {
       "companyName": "주식회사 데이원컴퍼니",
@@ -57903,12 +57903,12 @@
       "validTo": "2027-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://higoodday.com/jobSale/1004321/%EB%AF%B8%EC%8B%9C%EA%B0%84-%EC%A1%B0%EC%A7%80%EC%95%84%EC%97%90%EC%84%9C-%ED%95%A8%EA%BB%98-%EC%9D%BC%ED%95%A0-%EC%97%94%EC%A7%80%EB%8B%88%EC%96%B4%EB%B6%84%EC%9D%84-%EC%B1%84%EC%9A%A9-%EC%A4%91%EC%9E%85%EB%8B%88%EB%8B%A4",
+      "careersUrl": "https://www.jobkorea.co.kr/Recruit/GI_Read/50001185?Oem_Code=C1",
       "crawlSourceId": "mid-1298126805",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T02:50:26.779Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:19.675Z"
     },
     {
       "companyName": "다무라케미컬코리아(주)",
@@ -68783,12 +68783,12 @@
       "validTo": "2026-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/218560",
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/dlM2VHFNbmVraytMUGI3YXdGL1ByQT09/company_nm/%EC%B0%BD%ED%99%94%EC%B2%A0%EA%B0%95(%EC%A3%BC)",
       "crawlSourceId": "mid-1048106547",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T03:18:34.115Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:19.286Z"
     },
     {
       "companyName": "주식회사 아이지에이웍스",
@@ -69711,12 +69711,12 @@
       "validTo": "2026-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/289159",
+      "careersUrl": "https://www.jobkorea.co.kr/Recruit/GI_Read/50211219?Oem_Code=C1",
       "crawlSourceId": "mid-2748800730",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T03:20:22.550Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:19.896Z"
     },
     {
       "companyName": "에이스스틸주식회사",
@@ -70623,12 +70623,12 @@
       "validTo": "2025-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/337871",
+      "careersUrl": "https://www.jobkorea.co.kr/Recruit/GI_Read/50124355?Oem_Code=C1",
       "crawlSourceId": "mid-5618602453",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T03:23:04.888Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:20.250Z"
     },
     {
       "companyName": "(주)유진로지스틱스",
@@ -75487,12 +75487,12 @@
       "validTo": "2024-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/205614",
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view?csn=Y282eXdCWkFpaUsxT0JtMHN1d3hVZz09",
       "crawlSourceId": "mid-4018136845",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T03:34:07.364Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:54.928Z"
     },
     {
       "companyName": "(주)HB렌탈",
@@ -76132,7 +76132,7 @@
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-29T21:31:07.155Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:20.729Z"
     },
     {
       "companyName": "디에스디삼호",
@@ -76399,12 +76399,12 @@
       "validTo": "2024-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/123362",
+      "careersUrl": "http://scout.co.kr/jobs/all/contentview.asp?id=1640164",
       "crawlSourceId": "mid-7038801843",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T03:36:08.624Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:22.620Z"
     },
     {
       "companyName": "(주)프라임엔지니어링",
@@ -77759,12 +77759,12 @@
       "validTo": "2024-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/208968",
+      "careersUrl": "https://yongsan.seoulcareerup.or.kr/yongsan/main/main.do",
       "crawlSourceId": "mid-1058792276",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T03:39:20.788Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:33.170Z"
     },
     {
       "companyName": "에이치엔아이엑스 주식회사",
@@ -78292,7 +78292,7 @@
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-29T21:31:33.674Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:53.641Z"
     },
     {
       "companyName": "인크루트 주식회사",
@@ -78303,12 +78303,12 @@
       "validTo": "2024-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/353601",
+      "careersUrl": "https://job.incruit.com/jobdb_main/jobdbclass.asp",
       "crawlSourceId": "mid-3208701210",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T03:40:31.578Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:27.259Z"
     },
     {
       "companyName": "대성홀딩스(주)",
@@ -83279,12 +83279,12 @@
       "validTo": "2023-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view?csn=eHdFVEc1ODRkS3czRXNyV05YRjVFUT09",
       "crawlSourceId": "mid-1438600714",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-29T21:31:34.127Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:58:01.171Z"
     },
     {
       "companyName": "별내에너지 주식회사",
@@ -83295,12 +83295,12 @@
       "validTo": "2023-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/41777",
+      "careersUrl": "https://www.jobkorea.co.kr/Recruit/GI_Read/47949152?Oem_Code=C1",
       "crawlSourceId": "mid-2048606236",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T03:51:33.303Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:28.335Z"
     },
     {
       "companyName": "한미헬스케어(주)",
@@ -83663,12 +83663,12 @@
       "validTo": "2022-04-30",
       "region": null,
       "industry": null,
-      "careersUrl": null,
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/VjJIUmVQQXRHZ092MmVVOU5xQXZYdz09/company_nm/(%EC%A3%BC)%EC%84%B8%EC%95%84%ED%95%AD%EA%B3%B5%EB%B0%A9%EC%82%B0%EC%86%8C%EC%9E%AC",
       "crawlSourceId": "mid-6098151440",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
-      "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-29T21:31:34.294Z"
+      "careersDiscoveryStatus": "found",
+      "careersUrlCheckedAt": "2026-11-01T20:58:01.835Z"
     },
     {
       "companyName": "제이디스포츠패션코리아",
@@ -85695,12 +85695,12 @@
       "validTo": "2022-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/284017",
+      "careersUrl": "https://www.jobkorea.co.kr/Recruit/GI_Read/50262298?Oem_Code=C1",
       "crawlSourceId": "mid-4498601246",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T03:56:59.273Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:35.774Z"
     },
     {
       "companyName": "(주)화영오토텍",
@@ -86751,12 +86751,12 @@
       "validTo": "2022-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/26006",
+      "careersUrl": "https://www.neowiz.com/kr/policy/personal",
       "crawlSourceId": "mid-1448131419",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T03:59:33.935Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:39.479Z"
     },
     {
       "companyName": "오뚜기라면(주)",
@@ -88191,12 +88191,12 @@
       "validTo": "2021-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/channel/%ED%94%BC%EC%97%90%EB%A5%B4%ED%8C%8C%EB%B8%8C%EB%A5%B4%EB%8D%94%EB%AA%A8%EC%BD%94%EC%8A%A4%EB%A9%94%ED%8B%B1%EC%BD%94%EB%A6%AC%EC%95%84-%EC%9C%A0-26411",
+      "careersUrl": "https://www.jobkorea.co.kr/Recruit/GI_Read/49507723?Oem_Code=C1",
       "crawlSourceId": "mid-1208793686",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T04:03:05.371Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:41.471Z"
     },
     {
       "companyName": "(주)커피빈푸드",
@@ -89855,12 +89855,12 @@
       "validTo": "2021-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/135414",
+      "careersUrl": "https://www.theteams.kr/recruit",
       "crawlSourceId": "mid-2988101643",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T04:06:36.560Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:53.447Z"
     },
     {
       "companyName": "주식회사 신성사운드모션",
@@ -90847,12 +90847,12 @@
       "validTo": "2021-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/80514",
+      "careersUrl": "https://www.theteams.kr/recruit",
       "crawlSourceId": "mid-5418100932",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T04:08:40.289Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:47.868Z"
     },
     {
       "companyName": "브라더인터내셔널코리아(주)",
@@ -91551,12 +91551,12 @@
       "validTo": "2021-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/286733",
+      "careersUrl": "https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/M1VkaXpKQjNlQ3ZjUXVOTXhOZnJxdz09/company_nm/%EC%97%90%EC%8A%A4%ED%8A%B8%EB%9D%BC%EC%98%A4%ED%86%A0%EB%AA%A8%ED%8B%B0%EB%B8%8C%EC%8B%9C%EC%8A%A4%ED%85%9C(%EC%A3%BC)",
       "crawlSourceId": "mid-1068138502",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T04:10:02.779Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:42.908Z"
     },
     {
       "companyName": "(주)아트라스비엑스",
@@ -94079,12 +94079,12 @@
       "validTo": "2020-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/126487",
+      "careersUrl": "https://daumcorp.com/",
       "crawlSourceId": "mid-6148800675",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T04:15:07.601Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:46.331Z"
     },
     {
       "companyName": "(주)서연인테크",
@@ -94943,12 +94943,12 @@
       "validTo": "2020-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/45340",
+      "careersUrl": "https://map.kakao.com/recruit",
       "crawlSourceId": "mid-5538500059",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T04:16:54.035Z"
+      "careersUrlCheckedAt": "2026-11-01T20:58:01.189Z"
     },
     {
       "companyName": "(주)티앤지",
@@ -95151,12 +95151,12 @@
       "validTo": "2020-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/19004",
+      "careersUrl": "https://www.dbblog.co.kr/",
       "crawlSourceId": "mid-1048142785",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T04:17:19.371Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:47.678Z"
     },
     {
       "companyName": "(주)디와이엠솔루션",
@@ -100319,12 +100319,12 @@
       "validTo": "2015-03-31",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/19905",
+      "careersUrl": "https://com2us.recruiter.co.kr/career/career",
       "crawlSourceId": "mid-2648113433",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T04:28:11.351Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:45.924Z"
     },
     {
       "companyName": "(주)평화이엔지",
@@ -100591,12 +100591,12 @@
       "validTo": "2015-06-30",
       "region": null,
       "industry": null,
-      "careersUrl": "https://linkareer.com/activity/18916",
+      "careersUrl": "https://brunch.co.kr/@seventhstar/454",
       "crawlSourceId": "mid-6088106020",
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "found",
-      "careersUrlCheckedAt": "2026-10-09T04:28:44.800Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:48.091Z"
     },
     {
       "companyName": "(주)다음티브이",
@@ -101956,7 +101956,7 @@
       "careersAdapter": "generic",
       "greenhouseBoard": null,
       "careersDiscoveryStatus": "not_found",
-      "careersUrlCheckedAt": "2026-10-29T21:31:13.074Z"
+      "careersUrlCheckedAt": "2026-11-01T20:57:46.923Z"
     },
     {
       "companyName": "㈜에스씨디",
