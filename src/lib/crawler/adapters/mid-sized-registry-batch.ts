@@ -8,7 +8,8 @@ import {
   getMidSizedCareersConfigs,
 } from '@/lib/crawler/mid-sized-careers-urls';
 import { getUniqueMidSizedRegistryForCrawl } from '@/lib/mid-sized-companies/registry-for-crawl';
-import { CRAWL_MID_SIZED_SITES_PER_RUN } from '@/lib/crawler/schedule';
+import { CRAWL_MID_SIZED_SITES_PER_RUN, rotatingBatchStart } from '@/lib/crawler/schedule';
+import { isCrawlRunDeadlineReached } from '@/lib/crawler/crawl-deadline';
 import type { CrawlBatchOptions, CrawlerSourceResult } from '@/lib/crawler/types';
 import type { CrawledJob } from '@/types/crawled-job';
 
@@ -28,9 +29,7 @@ function selectCareersConfigBatch(configs: ReturnType<typeof getMidSizedCareersC
     ) || CRAWL_MID_SIZED_SITES_PER_RUN,
   );
   if (configs.length <= batchSize) return configs;
-  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  const day = Math.floor(kst.getTime() / 86_400_000);
-  const start = (day * batchSize) % configs.length;
+  const start = rotatingBatchStart(configs.length, batchSize);
   const batch: ReturnType<typeof getMidSizedCareersConfigs> = [];
   for (let i = 0; i < batchSize; i += 1) {
     batch.push(configs[(start + i) % configs.length]);
@@ -66,6 +65,7 @@ export async function crawlMidSizedRegistryBatch(
   );
 
   for (const record of withUrl) {
+    if (isCrawlRunDeadlineReached()) break;
     if (
       await skipRegistryRecordForRobots({
         crawlSourceId: record.crawlSourceId,

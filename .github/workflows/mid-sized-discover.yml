@@ -5,7 +5,7 @@ permissions:
 
 on:
   schedule:
-    # 수집과 동일 — 한국 월·수·금 02:00 = UTC 일·화·목 17:00
+    # 채용 수집(00:00)과 겹치지 않게 한국 월·수·금 02:00 = UTC 일·화·목 17:00
     - cron: '0 17 * * 0,2,4'
   workflow_dispatch:
     inputs:

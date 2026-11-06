@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
-import { formatKoreaDateDot, formatKoreaDateRangeDot, formatKoreaDateTime } from '@/lib/datetime';
+import { formatKoreaDateTime } from '@/lib/datetime';
 import { JOB_BOARD_REFRESH_EVENT } from '@/lib/job-board/refresh';
 import {
   crawlRunKindLabel,
@@ -26,54 +26,6 @@ function formatDelta(delta: number): string {
 function deltaClassName(delta: number | null): string {
   if (delta == null || delta === 0) return 'text-muted';
   return delta > 0 ? 'text-red-600' : 'text-blue-600';
-}
-
-function NetSparkline({ points }: { points: { at: string; net: number }[] }) {
-  if (points.length < 2) return null;
-  const width = 220;
-  const height = 56;
-  const values = points.map((item) => item.net);
-  const max = Math.max(...values, 0);
-  const min = Math.min(...values, 0);
-  const span = Math.max(max - min, 1);
-  const yFor = (value: number) => height - ((value - min) / span) * (height - 8) - 4;
-  const coords = points.map((item, index) => {
-    const x = (index / (points.length - 1)) * width;
-    return `${x},${yFor(item.net)}`;
-  });
-  const zeroY = yFor(0);
-  const startAt = points[0]!.at;
-  const endAt = points[points.length - 1]!.at;
-  const startLabel = formatKoreaDateDot(startAt, { withYear: false });
-  const endLabel = formatKoreaDateDot(endAt, { withYear: false });
-  const period = formatKoreaDateRangeDot(startAt, endAt);
-  return (
-    <div className="w-full max-w-[220px]">
-      <svg
-        width={width}
-        height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        className="w-full text-foreground"
-        role="img"
-        aria-label={`최근 채용 공고 증감, ${period}`}
-      >
-        <line x1="0" y1={zeroY} x2={width} y2={zeroY} stroke="currentColor" strokeOpacity="0.15" />
-        <polyline
-          fill="none"
-          stroke="currentColor"
-          className="text-primary"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-          points={coords.join(' ')}
-        />
-      </svg>
-      <div className="mt-1 flex justify-between gap-2 text-xs tabular-nums text-muted">
-        <span>{startLabel}</span>
-        <span>{endLabel}</span>
-      </div>
-    </div>
-  );
 }
 
 function TrendBars({
@@ -170,71 +122,30 @@ export default function JobBoardTrendPanel() {
 
   return (
     <div className="flex flex-col gap-5">
-      <Card
-        title="최근 채용 공고 흐름"
-        description="이번 수집 순증감과 어제 노출 공고 대비입니다."
-      >
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            {lastCrawl ? (
-              <>
-                <p className="flex flex-wrap items-baseline gap-2">
-                  <span className={cn('text-3xl font-bold tabular-nums', deltaClassName(lastCrawl.net))}>
-                    {formatDelta(lastCrawl.net)}
-                  </span>
-                  <span className="text-sm text-muted">건 · 이번 수집</span>
-                </p>
+      <Card title="최근 채용 공고 흐름" description="최근 수집에서 추가·마감한 공고입니다.">
+        <div>
+          {lastCrawl ? (
+            <>
+              <p className="flex flex-wrap items-baseline gap-2">
+                <span className={cn('text-3xl font-bold tabular-nums', deltaClassName(lastCrawl.net))}>
+                  {formatDelta(lastCrawl.net)}
+                </span>
+                <span className="text-sm text-muted">건 · 최근 수집</span>
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                {crawlRunKindLabel(lastCrawl.runKind)} {formatKoreaDateTime(lastCrawl.finishedAt)} · 추가{' '}
+                {formatCount(lastCrawl.added)}건 · 마감 {formatCount(lastCrawl.closed)}건
+              </p>
+              {lastCrawl.runKind === 'mid-sized-only' ? (
                 <p className="mt-1 text-xs text-muted">
-                  {crawlRunKindLabel(lastCrawl.runKind)} {formatKoreaDateTime(lastCrawl.finishedAt)} · 추가{' '}
-                  {formatCount(lastCrawl.added)}건 · 마감 {formatCount(lastCrawl.closed)}건
+                  중견기업만 모은 수집입니다. 다른 분류는 이번 수집에 들어가지 않았습니다.
                 </p>
-                {lastCrawl.runKind === 'mid-sized-only' ? (
-                  <p className="mt-1 text-xs text-muted">
-                    중견기업만 모은 수집입니다. 다른 분류는 이번 수집에 들어가지 않았습니다.
-                  </p>
-                ) : null}
-              </>
-            ) : (
-              <p className="text-sm text-muted">아직 비교할 수집 기록이 없습니다.</p>
-            )}
-          </div>
-          <NetSparkline points={data.recentNets} />
-        </div>
-        {data.hasComparison ? (
-          <div className="mt-5 border-t border-border pt-4">
-            <p className="text-sm text-foreground">
-              지금 모집 중{' '}
-              <span className="font-semibold tabular-nums">{formatCount(data.total)}</span>건
-              {data.totalDelta != null ? (
-                <>
-                  {' '}
-                  · 어제 대비{' '}
-                  <span className={cn('font-semibold', deltaClassName(data.totalDelta))}>
-                    {formatDelta(data.totalDelta)}
-                  </span>
-                </>
               ) : null}
-            </p>
-            {data.movers.length > 0 ? (
-              <div className="mt-4">
-                <p className="text-xs font-semibold text-subtle">어제보다 늘어난 분류</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {data.movers.map((bar) => (
-                    <button
-                      key={`mover:${bar.queryKey}:${bar.key}`}
-                      type="button"
-                      onClick={() => selectBar(bar)}
-                      className="rounded-full border border-border bg-neutral-50 px-3 py-1 text-xs font-semibold text-foreground hover:bg-neutral-100"
-                    >
-                      {bar.label}{' '}
-                      <span className={deltaClassName(bar.delta)}>{formatDelta(bar.delta ?? 0)}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+            </>
+          ) : (
+            <p className="text-sm text-muted">아직 비교할 수집 기록이 없습니다.</p>
+          )}
+        </div>
       </Card>
 
       <Card title="현재 노출 채용 공고" description="참고용입니다. 지금 이 사이트에 있는 채용 정보의 분류입니다.">

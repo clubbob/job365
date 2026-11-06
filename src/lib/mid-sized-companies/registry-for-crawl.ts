@@ -1,5 +1,5 @@
 import { countMidSizedCareersConfigs } from '@/lib/crawler/mid-sized-careers-urls';
-import { CRAWL_MID_SIZED_SITES_PER_RUN } from '@/lib/crawler/schedule';
+import { CRAWL_MID_SIZED_SITES_PER_RUN, rotatingBatchStart } from '@/lib/crawler/schedule';
 import { isReservedForItOrSemiSeedRegistry } from '@/lib/registry-segment-membership';
 import {
   loadMidSizedRegistryDbCompanies,
@@ -26,9 +26,7 @@ export function selectMidSizedDbBatch(records: MidSizedRegistryCrawlRecord[]): M
   );
   if (records.length <= batchSize) return records;
 
-  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  const day = Math.floor(kst.getTime() / 86_400_000);
-  const start = (day * batchSize) % records.length;
+  const start = rotatingBatchStart(records.length, batchSize);
   const batch: MidSizedRegistryCrawlRecord[] = [];
   for (let i = 0; i < batchSize; i += 1) {
     batch.push(records[(start + i) % records.length]);

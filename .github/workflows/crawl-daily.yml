@@ -2,14 +2,14 @@ name: Job crawl (Mon Wed Fri)
 
 on:
   schedule:
-    # 한국 월·수·금 02:00 = UTC 일·화·목 17:00 — src/lib/crawler/schedule.ts CRAWL_CRON_UTC
-    - cron: '0 17 * * 0,2,4'
+    # 한국 월·수·금 00:00 = UTC 일·화·목 15:00 — src/lib/crawler/schedule.ts CRAWL_CRON_UTC
+    - cron: '0 15 * * 0,2,4'
   workflow_dispatch:
 
 jobs:
   crawl:
     runs-on: ubuntu-latest
-    # 주 3회·중견 2,000곳. 3시간 안에 끝내 제한으로 회차 전체가 취소되지 않게 합니다.
+    # 주 3회·중견 1,000곳. 3시간 안에 끝내고, 넘기면 그 시각을 최근 수집 일시로 남깁니다.
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
@@ -35,8 +35,8 @@ jobs:
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           CRAWLER_USE_SAMPLES: 'false'
           # src/lib/crawler/schedule.ts CRAWL_MID_SIZED_SITES_PER_RUN 과 동일
-          CRAWL_MID_SIZED_BATCH_SIZE: '2000'
-          CRAWL_MID_SIZED_DB_BATCH_SIZE: '2000'
+          CRAWL_MID_SIZED_BATCH_SIZE: '1000'
+          CRAWL_MID_SIZED_DB_BATCH_SIZE: '1000'
           CRAWL_SOURCE_DELAY_MS: '1200'
           CRAWL_REQUEST_GAP_MS: '300'
           CRAWL_COMPANY_TIMEOUT_MS: '75000'

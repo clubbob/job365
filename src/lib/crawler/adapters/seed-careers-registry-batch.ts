@@ -1,4 +1,5 @@
 import { crawlRegistryCareersRecord } from '@/lib/crawler/adapters/registry-careers-crawl';
+import { isCrawlRunDeadlineReached } from '@/lib/crawler/crawl-deadline';
 import { paceCrawlRequest } from '@/lib/crawler/crawl-throttle';
 import { skipRegistryRecordForRobots } from '@/lib/crawler/robots-blocked-extraction';
 import {
@@ -60,6 +61,7 @@ export async function crawlSeedCareersRegistryBatch(
   );
 
   for (const record of allConfigs) {
+    if (isCrawlRunDeadlineReached()) break;
     if (
       await skipRegistryRecordForRobots({
         crawlSourceId: record.crawlSourceId,

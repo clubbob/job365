@@ -33,6 +33,11 @@ import { emptyCompanySegmentCounts, type JobBoardCompanySegment } from '@/lib/jo
 import { addJobsToPrimaryCompanySegmentCounts } from '@/lib/job-board/stored-active-segment-stats';
 import type { CrawledJob } from '@/types/crawled-job';
 import { captureCrawlStatsDailyBeforeCrawl } from '@/lib/crawl-stats-daily-server';
+import {
+  armCrawlRunDeadline,
+  crawlRunLimitMessage,
+  isCrawlRunDeadlineReached,
+} from '@/lib/crawler/crawl-deadline';
 import { saveCrawlRun } from '@/lib/crawl-runs-server';
 import { countCrawlRunErrorSources } from '@/lib/crawler/crawl-run-log';
 import { getKoreaDateLocalToday } from '@/lib/datetime';
@@ -177,17 +182,97 @@ function createIncrementalSyncAccumulator(closedBySegment: Record<JobBoardCompan
 }
 
 export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
-  const startedAt = new Date().toISOString();
+  const startedAtMs = Date.now();
+  const startedAt = new Date(startedAtMs).toISOString();
+  armCrawlRunDeadline(startedAtMs);
   const sourceSummaries: CrawlRunSummary['sources'] = [];
   const fetchedBySegment = emptyCompanySegmentCounts();
   const closedBySegment = emptyCompanySegmentCounts();
   let totalUpserted = 0;
   let totalClosed = 0;
   let pipelineError: string | undefined;
+  let activeBatch: {
+    sourceId: string;
+    sourceName: string;
+    getTotals: () => { fetched: number; upserted: number; closed: number };
+  } | null = null;
 
   const countFetchedJobs = (jobs: CrawlerSourceResult['jobs']) => {
     addJobsToPrimaryCompanySegmentCounts(fetchedBySegment, jobs);
   };
+
+  let persistPromise: Promise<CrawlRunSummary> | null = null;
+  const persistRun = (stoppedBySignal: boolean): Promise<CrawlRunSummary> => {
+    if (persistPromise) return persistPromise;
+    persistPromise = (async () => {
+      if (
+        !pipelineError &&
+        (isCrawlRunDeadlineReached() ||
+          (stoppedBySignal && process.env.GITHUB_ACTIONS === 'true'))
+      ) {
+        pipelineError = crawlRunLimitMessage();
+      }
+      const sources = [...sourceSummaries];
+      let upserted = totalUpserted;
+      let closed = totalClosed;
+      if (activeBatch) {
+        const totals = activeBatch.getTotals();
+        sources.push({
+          sourceId: activeBatch.sourceId,
+          sourceName: activeBatch.sourceName,
+          fetched: totals.fetched,
+          upserted: totals.upserted,
+          closed: totals.closed,
+          errors: [],
+        });
+        upserted += totals.upserted;
+        closed += totals.closed;
+      }
+      const finishedAt = new Date().toISOString();
+      const run: CrawlRunSummary = {
+        runKind: process.env.CRAWL_MID_SIZED_ONLY === '1' ? 'mid-sized-only' : 'daily',
+        startedAt,
+        finishedAt,
+        sources,
+        totalUpserted: upserted,
+        totalClosed: closed,
+        fetchedBySegment,
+        closedBySegment,
+        errorSourceCount: countCrawlRunErrorSources(sources),
+        sourceCount: sources.length,
+      };
+      if (pipelineError) {
+        run.sources.push({
+          sourceId: 'crawl-pipeline',
+          sourceName: '수집 파이프라인',
+          fetched: 0,
+          upserted: 0,
+          closed: 0,
+          errors: [pipelineError],
+        });
+        run.errorSourceCount = countCrawlRunErrorSources(run.sources);
+        run.sourceCount = run.sources.length;
+      }
+      try {
+        await saveCrawlRun(run);
+      } catch (error) {
+        console.error('[crawl] save run failed', error);
+      }
+      return run;
+    })();
+    return persistPromise;
+  };
+
+  const onStopSignal = () => {
+    void persistRun(true).finally(() => {
+      process.exit(0);
+    });
+  };
+  const watchRunnerStop = process.env.GITHUB_ACTIONS === 'true' || Boolean(process.env.CRAWL_RUN_DEADLINE_MINUTES);
+  if (watchRunnerStop) {
+    process.once('SIGTERM', onStopSignal);
+    process.once('SIGINT', onStopSignal);
+  }
 
   try {
     try {
@@ -198,6 +283,10 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
 
     let isFirstSource = true;
     for (const { company, crawl } of getCompanyCrawlersForRun()) {
+      if (isCrawlRunDeadlineReached()) {
+        pipelineError = crawlRunLimitMessage();
+        break;
+      }
       if (!isFirstSource) {
         await pauseBetweenCrawlSources();
       }
@@ -238,6 +327,11 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
         let result: CrawlerSourceResult;
         if (company.adapter === 'mid-sized-registry-batch') {
           const incremental = createIncrementalSyncAccumulator(closedBySegment);
+          activeBatch = {
+            sourceId: 'mid-sized-registry-batch-careers',
+            sourceName: '중견기업 DB 수집',
+            getTotals: incremental.getTotals,
+          };
           try {
             result = await crawlMidSizedRegistryBatch({ onSourceResult: incremental.sink });
           } catch (error) {
@@ -249,6 +343,7 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
               errors: [message],
             };
           }
+          activeBatch = null;
           countFetchedJobs(result.jobs);
           const totals = incremental.getTotals();
           sourceSummaries.push({
@@ -269,6 +364,11 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
           company.adapter === 'semi-seed-registry-batch'
         ) {
           const incremental = createIncrementalSyncAccumulator(closedBySegment);
+          activeBatch = {
+            sourceId: company.sourceId,
+            sourceName: company.sourceName,
+            getTotals: incremental.getTotals,
+          };
           const crawlSeedBatch =
             company.adapter === 'it-seed-registry-batch'
               ? crawlItSeedCareersRegistryBatch
@@ -284,6 +384,7 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
               errors: [message],
             };
           }
+          activeBatch = null;
           countFetchedJobs(result.jobs);
           const totals = incremental.getTotals();
           sourceSummaries.push({
@@ -360,27 +461,29 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
       }
     }
 
-    try {
-      const expiredClosed = await closeExpiredCrawledJobs(getKoreaDateLocalToday(), closedBySegment);
-      totalClosed += expiredClosed;
-    } catch (error) {
-      console.warn('[crawl] expired job close failed', error);
-    }
+    if (!isCrawlRunDeadlineReached()) {
+      try {
+        const expiredClosed = await closeExpiredCrawledJobs(getKoreaDateLocalToday(), closedBySegment);
+        totalClosed += expiredClosed;
+      } catch (error) {
+        console.warn('[crawl] expired job close failed', error);
+      }
 
-    try {
-      await purgeClosedCrawledJobsPastRetention();
-    } catch (error) {
-      console.warn('[crawl] closed job purge failed', error);
-    }
+      try {
+        await purgeClosedCrawledJobsPastRetention();
+      } catch (error) {
+        console.warn('[crawl] closed job purge failed', error);
+      }
 
-    if (totalUpserted > 0 || totalClosed > 0) {
-      invalidateCrawledJobsListCache();
-    }
+      if (totalUpserted > 0 || totalClosed > 0) {
+        invalidateCrawledJobsListCache();
+      }
 
-    try {
-      await refreshFirestoreStatsAfterCrawl();
-    } catch (error) {
-      console.warn('[crawl] post-crawl stats refresh failed', error);
+      try {
+        await refreshFirestoreStatsAfterCrawl();
+      } catch (error) {
+        console.warn('[crawl] post-crawl stats refresh failed', error);
+      }
     }
   } catch (error) {
     pipelineError = error instanceof Error ? error.message : '수집 파이프라인 오류';
@@ -389,36 +492,10 @@ export async function runCrawlPipeline(): Promise<CrawlRunSummary> {
     await closeBrowserCrawlSession();
   }
 
-  const finishedAt = new Date().toISOString();
-  const run: CrawlRunSummary = {
-    runKind: process.env.CRAWL_MID_SIZED_ONLY === '1' ? 'mid-sized-only' : 'daily',
-    startedAt,
-    finishedAt,
-    sources: sourceSummaries,
-    totalUpserted,
-    totalClosed,
-    fetchedBySegment,
-    closedBySegment,
-    errorSourceCount: countCrawlRunErrorSources(sourceSummaries),
-    sourceCount: sourceSummaries.length,
-  };
-
-  if (pipelineError) {
-    run.sources.push({
-      sourceId: 'crawl-pipeline',
-      sourceName: '수집 파이프라인',
-      fetched: 0,
-      upserted: 0,
-      closed: 0,
-      errors: [pipelineError],
-    });
+  const run = await persistRun(false);
+  if (watchRunnerStop) {
+    process.off('SIGTERM', onStopSignal);
+    process.off('SIGINT', onStopSignal);
   }
-
-  try {
-    await saveCrawlRun(run);
-  } catch (error) {
-    console.error('[crawl] save run failed', error);
-  }
-
   return run;
 }

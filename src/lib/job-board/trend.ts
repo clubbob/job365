@@ -76,7 +76,7 @@ export type JobBoardTrendView = {
 };
 
 export function crawlRunKindLabel(kind: JobBoardTrendLastCrawl['runKind']): string {
-  return kind === 'mid-sized-only' ? '중견기업 수집' : '정기 수집';
+  return kind === 'mid-sized-only' ? '중견기업 수집' : '최근 수집';
 }
 
 type CrawlRunFlowInput = {
