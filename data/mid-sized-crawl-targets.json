@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-12T22:34:04.696Z",
+  "generatedAt": "2026-11-15T21:31:49.010Z",
   "source": "mme+heuristic",
   "targets": [
     {"name":"세운MPC","crawlSourceId":"mid-6098195021","careersUrl":"https://www.mpc.co.kr/recruit","businessNumber":"609-81-95021"},
@@ -6253,6 +6253,22 @@
     {"name":"닥서코리아 주식회사","crawlSourceId":"mid-1058688907","careersUrl":"https://www.dachser.kr/kr/index.php","businessNumber":"105-86-88907"},
     {"name":"(주)아크로스","crawlSourceId":"mid-1388152743","careersUrl":"http://www.seoulexchange.kr","businessNumber":"138-81-52743"},
     {"name":"(주)디오텔","crawlSourceId":"mid-1208195095","careersUrl":"http://www.itdaily.kr/news/articleView.html?idxno=34947","businessNumber":"120-81-95095"},
-    {"name":"다이헨한국(주)","crawlSourceId":"mid-1198156845","careersUrl":"https://gginvest.or.kr/recruit/info/1482","businessNumber":"119-81-56845"}
+    {"name":"다이헨한국(주)","crawlSourceId":"mid-1198156845","careersUrl":"https://gginvest.or.kr/recruit/info/1482","businessNumber":"119-81-56845"},
+    {"name":"딜로이트컨설팅","crawlSourceId":"mid-1168172977","careersUrl":"https://join.deloitte.co.kr/WiseRecruit2/User/AppWriteMasterNew.aspx","businessNumber":"116-81-72977"},
+    {"name":"(주)원하이테크","crawlSourceId":"mid-2208119679","careersUrl":"https://www.ibkonejob.co.kr/jp/ema/recruitDetailView.do?hireSn=001014840","businessNumber":"220-81-19679"},
+    {"name":"애즈유 주식회사","crawlSourceId":"mid-1198801747","careersUrl":"https://kr.findjob24h.com/%5B%EC%95%A0%EC%A6%88%EC%9C%A0%5D-%EC%9E%90%EC%82%AC%EB%AA%B0%EC%9A%B4%EC%98%81-%EB%8B%B4%EB%8B%B9%EC%9E%90-%EC%B1%84%EC%9A%A9-job186027","businessNumber":"119-88-01747"},
+    {"name":"경성철강(주)","crawlSourceId":"mid-2078141877","careersUrl":"https://www.navercorp.com/","businessNumber":"207-81-41877"},
+    {"name":"발렉스코리아 (주)","crawlSourceId":"mid-1258131121","careersUrl":"https://www.mimint.co.kr/bbs/view/news/S1N17/5668345","businessNumber":"125-81-31121"},
+    {"name":"(주) 엠씨엠","crawlSourceId":"mid-3018604499","careersUrl":"https://www.jobs-trend.com/job/FKTIoDjml8c/\\n[2]","businessNumber":"301-86-04499"},
+    {"name":"주식회사 케이디엑스한국데이터거래소","crawlSourceId":"mid-4698701591","careersUrl":"https://www.innoforest.co.kr/","businessNumber":"469-87-01591"},
+    {"name":"에스앤에스아이앤씨(주)","crawlSourceId":"mid-1028100663","careersUrl":"http://snsinc.co.kr/kor/","businessNumber":"102-81-00663"},
+    {"name":"(주)웅진북센","crawlSourceId":"mid-1288122320","careersUrl":"https://www.woongjin.co.kr/recruit/work_booxen.aspx","businessNumber":"128-81-22320"},
+    {"name":"주식회사 푸드웨어","crawlSourceId":"mid-4038132898","careersUrl":"https://job.career.co.kr/recruit/view/22200224","businessNumber":"403-81-32898"},
+    {"name":"대원케미칼 주식회사","crawlSourceId":"mid-1428116241","careersUrl":"https://bgf.recruiter.co.kr/app/jobnotice/view?systemKindCode=MRS2&jobnoticeSn=200756","businessNumber":"142-81-16241"},
+    {"name":"주식회사 아이에이치앤","crawlSourceId":"mid-6358803140","careersUrl":"https://snet-disti-recruit.co.kr/company/ihn","businessNumber":"635-88-03140"},
+    {"name":"아덴텍코리아 주식회사","crawlSourceId":"mid-1258192583","careersUrl":"https://gginvest.or.kr/recruit/info/1286","businessNumber":"125-81-92583"},
+    {"name":"(주)이건홀딩스","crawlSourceId":"mid-1348101053","careersUrl":"http://www.eagon.com","businessNumber":"134-81-01053"},
+    {"name":"(주)라인엘하우징","crawlSourceId":"mid-4088190423","careersUrl":"https://minzip.co.kr/real-estate/sale/remndr/2021910020","businessNumber":"408-81-90423"},
+    {"name":"신영플러스","crawlSourceId":"mid-2168142166","careersUrl":"https://busanjob.net/index.do","businessNumber":"216-81-42166"}
   ]
 }
