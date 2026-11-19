@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-17T23:45:01.568Z",
+  "generatedAt": "2026-11-19T23:25:28.270Z",
   "source": "mme+heuristic",
   "targets": [
     {"name":"세운MPC","crawlSourceId":"mid-6098195021","careersUrl":"https://www.mpc.co.kr/recruit","businessNumber":"609-81-95021"},
@@ -6287,6 +6287,12 @@
     {"name":"대상에프앤에프","crawlSourceId":"mid-2048199666","careersUrl":"http://www.plusbiz.co.kr/?sm=recu&no=17401","businessNumber":"204-81-99666"},
     {"name":"디에스티로봇","crawlSourceId":"mid-1098160401","careersUrl":"http://www.plusbiz.co.kr/?sm=pay&no=17991&rpo=차장","businessNumber":"109-81-60401"},
     {"name":"(주)갑을프라스틱","crawlSourceId":"mid-1308167373","careersUrl":"https://ka.ds.kakao.com/click/http%3A%2F%2Fwww.navimro.com%3Futm_source%3Dkakao%26utm_medium%3Dkeyword%26utm_term%3D%25EA%25B8%25B0%25EC%2597%2585%25EC%25A0%2584%25EC%259A%25A9%26utm_source%3Dkakao%26utm_medium%3Dkeyword%26utm_campaign%3DPREMIUM_LINK%26utm_term%3D%25EA%25B0%2591%25EC%259D%2584%25ED%2594%2584%25EB%259D%25BC%25EC%258A%25A4%25ED%258B%25B1%25EC%25B1%2584%25EC%259A%25A9%26k_campaign%3D461581589791408129%26k_adgroup%3D461814504941895680%26k_media%3DPREMIUM_LINK_SEARCH%26k_creative%3D461466708566577153%26k_creativelink%3D461862879276146688%26k_rank%3D1%26k_keyword%3D%25ED%2594%2584%25EB%259D%25BC%25EC%258A%25A4%25ED%258B%25B1%26k_keyword_id%3D462195673738534913%26k_keyword_type%3D1%26k_query%3D%25EA%25B0%2591%25EC%259D%2584%25ED%2594%2584%25EB%259D%25BC%25EC%258A%25A4%25ED%258B%25B1%25EC%25B1%2584%25EC%259A%25A9%26kclid%3DEt1J_7jGxXKHSBWul0g7X1XsrarZVtFr88qaIqI2tSdXjQ6zmQYZFizYuG9GEPXn/Tpn-g6RqQ1niHX5g47_V_1dcnRosHPSo62K3U4DELwwwj9M2IVxjuRDhBY8LFqLCg8GRln3VIpzf2dxrOgIeefI89XrXv7Qnr02Z8_eKlAS9Np3lsIBFKltkmvsbf2biw4EgGDSbEJv6lY-LZGgLnNHhC2CIv6nvB-oHTRalUlxi9_uNLpAz17s6DALEOxwOUa_h4zE4pVstSxmCcUlNZL9lJAEDjoNMfm56pqyeyXE6wqHnc0GBgWTHVBYB80nMQW1oFhwzb1lC4M4bOW-W8kP_YluFo5U8tW8AaDuVLciSQ35tjamT1OMQAesaWLd459i5VZlwsmSIuvAJo3Xk3fWji9jQ9NxUp9AFlqB3wAZETsU_0Jqdhtw7cr0FbmSYdNAzPyW2zanIREQkJISeC3ZqCPNIge6rD0V7z6to-qIde7-qfQ2IY2lCYmhJLZvXbtT1Xp2GJZ25LFajstejRCHUvE1aoYl7rSJBWyYDrdwCGm7DC0SE9aatBef9li_pyY_k-iYf9LxscF1NqKiWw0c4qZaTarE6EYYmHTO_3WwXy3SCabJvLgkVIk3igvI9sGrrvHHl0WsKCEQ7QXu00DF3FBRq4w==?p=2z502pS2x6wy4TqQUHuUmw","businessNumber":"130-81-67373"},
-    {"name":"(주)엘앤에프신소재","crawlSourceId":"mid-5038169225","careersUrl":"http://www.plusbiz.co.kr/?sm=pay&no=21204","businessNumber":"503-81-69225"}
+    {"name":"(주)엘앤에프신소재","crawlSourceId":"mid-5038169225","careersUrl":"http://www.plusbiz.co.kr/?sm=pay&no=21204","businessNumber":"503-81-69225"},
+    {"name":"(주)모렉스","crawlSourceId":"mid-1348146405","careersUrl":"http://motrex2.designpixel.or.kr/m61.php\\n[2]","businessNumber":"134-81-46405"},
+    {"name":"(주)선일다이파스","crawlSourceId":"mid-3018508125","careersUrl":"https://www.jobploy.kr/ko/company/sunil-daipas-co-ltd","businessNumber":"301-85-08125"},
+    {"name":"(주)덕산토건","crawlSourceId":"mid-6098144968","careersUrl":"https://cworknet.kocea.or.kr/worknet/work/pgm/i-1193/work/recruit/recruitInfoView.do?empNo=199562","businessNumber":"609-81-44968"},
+    {"name":"(주)텔콘","crawlSourceId":"mid-1358129641","careersUrl":"https://www.telcon.co.kr/kor/ir/Index","businessNumber":"135-81-29641"},
+    {"name":"(주)한진피앤씨","crawlSourceId":"mid-1198108440","careersUrl":"https://www.dongwonsystems.com/main","businessNumber":"119-81-08440"},
+    {"name":"대성티.엘.에스","crawlSourceId":"mid-6158147747","careersUrl":"https://biz.statnorth.kr/companies/1913110013848","businessNumber":"615-81-47747"}
   ]
 }
